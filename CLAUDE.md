@@ -72,7 +72,7 @@
 │                            verify_constants.m · live_track.m · base_var.m
 │                            git_autopush.sh · svg2png.sh
 │                            w01_6dof_arcs.awk · w01_euler_geo.awk
-│                            w04_los_geo.awk                         (그림 계산)
+│                            w02_pseudo_geo.awk · w04_los_geo.awk    (그림 계산)
 └── .claude/skills/          gnc-lecture-vault · simulink-gnc-models
 ```
 

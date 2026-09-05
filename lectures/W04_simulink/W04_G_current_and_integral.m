@@ -108,3 +108,57 @@ sgtitle('W04 G — a current is a permanent offset, unless the law knows about i
         'FontWeight','bold');
 exportgraphics(f, fullfile(here,'img','W04_result_current.png'), 'Resolution', 150);
 fprintf('\n  figure -> img/W04_result_current.png\n\n');
+
+
+%% ---- the two states, filling up ----------------------------------------
+%  강의 4-8-5a · 4-9-6a 의 표. 오토파일럿을 빼고 §4-8-6 의 오차동역학만 적분한다 —
+%  "적분기가 어떻게 차오르는가" 를 초 단위로 보여주는 것이 목적이고, 전체 모델의
+%  과도응답이 섞이면 그 그림이 흐려진다. 이상적인 그림임을 강의에도 적어 둔다.
+fprintf('\n  the two states filling up (kinematics only, no autopilot lag)\n');
+
+bta = deg2rad(15.74);          % section G 가 측정한 크랩각
+Uk  = 1.31;                    % 대지속력
+hk  = 0.01;  Tk = 0:hk:400;
+mark = [0 10 25 50 100 200 400];
+
+ye = 0; yi = 0;  ILO = zeros(numel(Tk),3);
+for i = 1:numel(Tk)
+    a        = ye + V.kappa*yi;
+    ILO(i,:) = [ye, yi, rad2deg(atan(a/V.Delta))];
+    ye       = ye + hk*Uk*sin(-atan(a/V.Delta) + bta);
+    yi       = yi + hk*V.Delta*ILO(i,1)/(V.Delta^2 + a^2);
+end
+
+fprintf('\n  ILOS,  kappa = %g\n', V.kappa);
+fprintf('    %8s %12s %12s %14s %14s\n', 't [s]','y_e [m]','y_int [s]','k*y_int [m]','bow tilt [deg]');
+fprintf('    %s\n', repmat('-', 1, 66));
+for t = mark
+    i = round(t/hk)+1;
+    fprintf('    %8g %12.3f %12.3f %14.3f %14.2f\n', ...
+            t, ILO(i,1), ILO(i,2), V.kappa*ILO(i,2), ILO(i,3));
+end
+fprintf('    target: kappa*y_int -> Delta*tan(beta) = %.3f m, tilt -> %.2f deg\n', ...
+        V.Delta*tan(bta), rad2deg(bta));
+
+ye = 0; bh = 0;  ALO = zeros(numel(Tk),2);
+for i = 1:numel(Tk)
+    ALO(i,:) = [ye, rad2deg(bh)];
+    ye       = ye + hk*Uk*sin(bta - bh - atan(ye/V.Delta));
+    bh       = bh + hk*V.gamma*V.Delta*ALO(i,1)/sqrt(V.Delta^2 + ALO(i,1)^2);
+end
+
+fprintf('\n  ALOS,  gamma = %g\n', V.gamma);
+fprintf('    %8s %12s %14s\n', 't [s]','y_e [m]','b_hat [deg]');
+fprintf('    %s\n', repmat('-', 1, 40));
+for t = mark
+    i = round(t/hk)+1;
+    fprintf('    %8g %12.3f %14.2f\n', t, ALO(i,1), ALO(i,2));
+end
+fprintf('    target: b_hat -> beta = %.2f deg\n', rad2deg(bta));
+
+fprintf(['\n    BOTH STATES DO THE SAME JOB AND MEAN DIFFERENT THINGS.\n' ...
+         '    ILOS ends at %.3f - seven and a half SECONDS, a number that\n' ...
+         '    means nothing on its own. ALOS ends at %.2f DEGREES, which is\n' ...
+         '    the angle the water is pushing the hull through. Both vessels\n' ...
+         '    are on the path; only one of them can say why.\n'], ...
+         ILO(end,2), ALO(end,2));

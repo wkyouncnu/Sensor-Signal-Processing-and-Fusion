@@ -272,6 +272,30 @@ $$
 | $\omega = N$ | $N$ | $N/\sqrt 2$ |
 | $\omega \gg N$ | $\omega \to \infty$ | $\to N$, **flat** |
 
+- The table is easier to believe as a picture. The two operators are drawn below for $K_d = 2$, on axes where each gridline is a factor of ten.
+
+![The ideal derivative against the pseudo-derivative](../figures/w02-pseudo-derivative.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| both axes | logarithmic. One gridline is a **factor of ten**, so a straight line of slope 1 means "gain proportional to frequency" |
+| red | the ideal derivative, $\lvert K_d j\omega\rvert = K_d\omega$. A straight line that **never stops rising** |
+| blue, $N = 10$ | the pseudo-derivative. Identical to the red line at low frequency, then **flat at $K_d N = 20$** |
+| amber, $N = 100$ | the same shape with the ceiling ten times higher, at $K_d N = 200$ |
+| blue dot | the corner, at $\omega = N$ exactly. Below it the filter is invisible; above it the filter is everything |
+| teal tick | where the closed loop actually works, $\omega_n = 2$ rad/s. **All three curves agree here** |
+| violet tick | how fast the sensor can report, $\pi/T_s = 314$ rad/s. **The three curves differ by two orders of magnitude here** |
+
+**What the figure says**
+
+- **Meaning.** One picture of why a derivative is dangerous and why one number fixes it. The horizontal axis is frequency; the vertical axis is how much this operator multiplies a signal at that frequency.
+- **Trend, in numbers.** At the teal tick — the frequency the controller is actually designed for — the ideal derivative gives a gain of $K_d\omega_n = 4.00$ and the $N = 10$ filter gives $3.92$: a difference of two per cent. At the violet tick the ideal gives $628$ and the filter gives $20.0$, a factor of **31.4**. The two operators are the same where the work is done and utterly different where the noise is.
+- **Principle.** The red line has **no ceiling**, and that is the entire problem: it is not that differentiation is inaccurate, it is that its gain is unbounded, so whatever is fastest in the measurement is amplified most. Sensor noise is always the fastest thing present.
+- **What the filter changes, and what it does not.** The blue curve lies on the red one until $\omega = N$ and then stops climbing. It does not make the derivative better below $N$; it only refuses to keep amplifying above it. **That is why choosing $N$ just above the closed-loop bandwidth costs nothing and buys everything.**
+- **Why large $N$ is not a safe default.** Moving from $N = 10$ to $N = 100$ lifts the whole right-hand end by a factor of ten while changing nothing near $\omega_n$. Section I measures exactly this: the response barely moves and the actuator RMS grows from $0.23$ to $1.68$.
+
 > [!important] Differentiation multiplies every component by its own frequency
 > That is the whole problem in one sentence. The fastest thing in any real measurement is the sensor noise, so differentiation seeks out the least meaningful part of the signal and multiplies it by the largest number in the problem. The pseudo-derivative is the same operator with its gain capped at $N$, and $N$ is therefore the knob that decides **how much of the noise reaches the actuator**.
 

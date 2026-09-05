@@ -509,6 +509,37 @@ Section G sweeps the current speed with everything else held fixed and compares 
 - The largest disagreement across the whole sweep is $0.002$ m on an offset of $4.1$ m — better than one part in two thousand. The derivation is not an approximation; it is what the loop does.
 - The remainder of this week is two different ways of removing this offset. §4-8 integrates it away without ever learning what caused it. §4-9 estimates the cause and cancels it directly.
 
+### Three answers, in one picture
+
+- Before either derivation, it is worth seeing what the two remaining laws are *for*. The figure below is the whole of §4-8 and §4-9 with no algebra in it.
+
+![The idea behind ILOS and ALOS](../figures/w04-ilos-alos-idea.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| blue arrows, all three panels | the current, identical in each |
+| dashed green line | the path |
+| black hull and arrow | where the **bow** points — the heading $\psi$ |
+| solid green arrow | where the vessel actually **travels** — the course $\chi$ |
+| violet arc | the angle between them, the crab angle |
+| panel 1, red line | the steady offset $\Delta\tan\beta = 2.25$ m that plain LOS is left holding |
+| panel 2, violet dashed line | the **phantom** cross-track error the ILOS integrator has built. There is no vessel there |
+| panel 3, violet arc | the estimate $\hat\beta$, subtracted from the command |
+
+**What the figure says**
+
+- **Meaning.** One vessel, one path, one current, three guidance laws. The question each panel answers is: *where does the bow end up pointing, and is the vessel on the path?*
+- **The one thing that is the same in all three.** The bow is tilted upstream by $15.7°$ in every panel. **That tilt is not optional** — it is the only way to travel along a path while water pushes sideways, and any law that works must produce it. Comparing the three laws is comparing *how they pay for the same tilt*.
+- **Panel 1, and why LOS is stuck.** LOS has exactly one way to tilt the bow: the $\arctan(y_e/\Delta)$ term. Using it to cancel the drift means it is no longer available to close the gap, so the vessel ends up parallel to the path and $2.25$ m beside it. **The law is not short of authority; it is short of terms.**
+- **Panel 2, the trick ILOS plays.** The integrator adds a second quantity inside the same arctan. Once that quantity has grown to $\kappa y_{int} = 2.25$ m, the law is being told there is a $2.25$ m error even though the vessel is exactly on the path — so it keeps the bow tilted while the real error sits at zero. **The integrator is a lie the law tells itself, and the lie is exactly the size of the truth it replaced.**
+- **Panel 3, what ALOS does instead.** ALOS adds a term *outside* the arctan: it subtracts an estimate of the drift angle directly from the command. The bow tilts by $\hat\beta$, and the arctan term is handed back its original job of closing $y_e$. **Nothing is invented; the disturbance is measured and removed.**
+- **What separates the two.** Both end with the same picture — on the path, bow upstream — and the state each carries is what differs. ILOS carries a number with no meaning ($7.52$, in seconds); ALOS carries the crab angle itself ($15.91°$ against a true $15.88°$). **Only one of them can be checked against a measurement.**
+
+> [!tip] If only one sentence from this week is remembered
+> A current is not resisted, it is **answered**. The vessel must point upstream, and the three laws differ only in where they find the authority to do it.
+
 ## 4-8. ILOS — integral line of sight, derived
 
 > [!important] Sections 4-8 and 4-9 are worked to a different standard
@@ -634,6 +665,33 @@ $$
 | both derivatives evaluated at the equilibrium | $\dot y_e = 0$, $\dot y_{int} = 0$, to machine zero |
 | integrating the pair for $400$ s from $y_e = 5$ m, $y_{int} = 0$ | $y_e \to 1.05\times10^{-9}$ m, $y_{int} \to 7.5158$ s — the predicted value |
 | measured on the full model, section G | $y_e = 0.008$ m against LOS's $2.253$ m |
+
+### 4-8-5a. Watching the integrator fill
+
+- The equilibrium above says *where* the integrator ends. This table says *how it gets there*, and it is the clearest way to see what the law is doing. It integrates the error dynamics of §4-8-6 directly, with no autopilot in the loop, so it is the idealised picture rather than the full model.
+- Printed by `W04_G_current_and_integral.m`, at the end of its output.
+
+| $t$ [s] | $y_e$ [m] | $y_{int}$ [s] | $\kappa y_{int}$ [m] | bow tilt [deg] |
+|---|---|---|---|---|
+| 0 | 0.000 | 0.000 | 0.000 | 0.00 |
+| 10 | 1.622 | 1.289 | 0.387 | 14.09 |
+| 25 | 1.337 | 3.997 | 1.199 | 17.59 |
+| 50 | 0.472 | 6.440 | 1.932 | 16.72 |
+| 100 | 0.036 | 7.437 | 2.231 | 15.82 |
+| 200 | 0.000 | 7.515 | 2.255 | **15.74** |
+| 400 | 0.000 | 7.516 | 2.255 | **15.74** |
+
+- Read the table left to right and then top to bottom.
+
+| What to notice | Why it happens |
+|---|---|
+| $y_e$ **grows first**, to $1.62$ m at $t = 10$ s | at $t = 0$ the integrator is empty, so the law is plain LOS and the current pushes the vessel off the path exactly as §4-7 says it must |
+| $\kappa y_{int}$ climbs towards $2.255$ | the fourth column is the phantom error of the figure, filling up |
+| bow tilt **overshoots** to $17.59°$ at $t = 25$ s | the integrator does not know when to stop; it overshoots and comes back, which is why §4-8-8's sweep has an interior minimum |
+| the last column settles on $15.74°$ | which is $\beta_c$ — **the tilt the vessel needed all along**, now supplied by the integrator instead of by a standing error |
+| $\kappa y_{int} \to 2.255$ m | the same $\Delta\tan\beta_c$ that plain LOS carried as a *real* offset, now carried as a *phantom* one |
+
+- **The last two rows are the whole idea.** The vessel is on the path, $y_e = 0.000$, and the bow is still tilted $15.74°$ upstream. Plain LOS could only produce that tilt by being $2.255$ m off the path. ILOS produces it from a state instead.
 
 ### 4-8-6. Stability — and why there are two normalisations
 
@@ -921,6 +979,32 @@ $$
 | **Numeric** | settled cross-track error under current, section G | $-0.004$ m, against LOS's $2.253$ m |
 
 - The estimate converging to the true crab angle to within $0.04°$ is the strongest available evidence that the law is right, since nothing in the law was ever told what the current was.
+
+### 4-9-6a. Watching the estimate converge
+
+- The same idealised integration as §4-8-5a, run with the ALOS law instead, and printed by the same script. Compare the two tables column by column: they are doing the same job with different bookkeeping.
+
+| $t$ [s] | $y_e$ [m] | $\hat\beta$ [deg] |
+|---|---|---|
+| 0 | 0.000 | 0.00 |
+| 10 | 1.602 | 3.01 |
+| 25 | 1.203 | 9.32 |
+| 50 | 0.323 | 14.28 |
+| 100 | 0.013 | 15.69 |
+| 200 | 0.000 | **15.74** |
+| 400 | 0.000 | **15.74** |
+
+| What to notice | Why it happens |
+|---|---|
+| $y_e$ grows to $1.60$ m first | with $\hat\beta = 0$ the law *is* plain LOS, so the vessel drifts off exactly as in §4-7 |
+| $\hat\beta$ climbs **monotonically**, with no overshoot | the update $\dot{\hat\beta} = \gamma\Delta y_e/\sqrt{\Delta^2+y_e^2}$ has the same sign as $y_e$, and $y_e$ never changes sign here |
+| $\hat\beta \to 15.74°$ | which is $\beta_c$ exactly. **The law was never told the current speed or direction, and it recovered the drift angle to two decimals** |
+| $y_e \to 0.000$ | once the estimate is right, $\tilde\beta = 0$ and §4-9-4 reduces to plain LOS with no disturbance left |
+
+> [!tip] The one difference a beginner should take from the two tables
+> ILOS's state ends at $7.516$ — **seven and a half what?** Seconds, as §4-8-3 shows, and the number means nothing on its own.
+> ALOS's state ends at $15.74$ **degrees**, and it is the angle the water is pushing the vessel through. Point a drift-angle sensor at the hull and it would read the same number.
+> Both vessels are on the path. Only one of them can say why.
 
 ### 4-9-7. The assumptions, and the honest picture of $V(t)$
 
@@ -1286,7 +1370,7 @@ Expected output:
 > W04_0_setup
 > W04_G_current_and_integral
 > ```
-> Produces `img/W04_result_current.png`. One four-vessel run, then a six-point sweep of the current speed.
+> Produces `img/W04_result_current.png`. One four-vessel run, a six-point sweep of the current speed, and finally the two state-filling tables printed in §4-8-5a and §4-9-6a.
 
 Expected output:
 

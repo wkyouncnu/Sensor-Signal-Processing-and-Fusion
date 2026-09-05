@@ -447,7 +447,7 @@ $$
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | weight and buoyancy acting at different points |
 | $\boldsymbol{\tau}$ | control force | $\mathbf{B}\mathbf{f}$, §1-9 and Appendix A1 |
 
-- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces feel relative velocity, not ground velocity. Dormant this week ($V_c = 0$), and the subject of Week 6.
+- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces feel relative velocity, not ground velocity. Dormant this week ($V_c = 0$); §1-13 shows exactly where it enters `otter.m`.
 
 ### Reducing to 3 DOF
 
@@ -531,7 +531,7 @@ $$
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | buoyancy and weight acting through different points |
 | $\boldsymbol{\tau}$ | control force | what the thrusters produce |
 
-- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero, and becomes the subject of Week 7.
+- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 4 §4-7 pays for it with a permanent path error, and Week 6 adds wind and waves beside it.
 
 > [!important] The added mass is not a correction term
 > For the Otter, $-X_{\dot u} = 5.50$ kg against a hull-plus-payload mass of $80.0$ kg, so the water contributes $6.4\%$ of the effective surge inertia. In sway it contributes far more, $-Y_{\dot v} = 82.5$ kg against the same $80.0$ kg. It is part of the model, not a refinement of it.
@@ -870,6 +870,116 @@ $$
 | on the beam | the track leaves the heading by a drift angle, and cross-flow drag on $v_r$ makes a yaw moment that slowly **turns the hull into the flow** — with no command given |
 
 - The second is the same crab angle as §1-12, arriving by a different route. Week 4 has to steer around both at once.
+
+### The same thing in `otter.m`, line by line
+
+- The four steps above are four blocks of code in one file. Line numbers are from the MSS 2021 release of `VESSELS/otter.m`, the copy `_tools/mss_path.m` puts on the path.
+
+**Step 1 — build the current in the body frame** (lines 79–81)
+
+$$
+u_c = V_c\cos(\beta_c - \psi),
+\qquad
+v_c = V_c\sin(\beta_c - \psi),
+\qquad
+\boldsymbol{\nu}_c = \begin{bmatrix} u_c & v_c & 0 & 0 & 0 & 0\end{bmatrix}^\top
+$$
+
+```matlab
+u_c = V_c * cos(beta_c - eta(6));           % current surge velocity
+v_c = V_c * sin(beta_c - eta(6));           % current sway velocity
+nu_r = nu - [u_c v_c 0 0 0 0]';             % relative velocity vector
+```
+
+| Piece of code | What it is doing |
+|---|---|
+| `eta(6)` | the heading $\psi$. The current is given in NED, and $\beta_c - \psi$ rotates it into $\{b\}$ |
+| `cos`, `sin` and no matrix | this **is** $\mathbf{R}(\psi)^\top$ of §1-3, written out for the two components that exist |
+| the four zeros | the current is **horizontal and irrotational**: it has no heave and it does not spin the water. That assumption is used again in step 3 |
+| the minus sign | $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$. A following current *reduces* the speed felt by the hull |
+
+**Step 2 — every hydrodynamic force is evaluated at $\boldsymbol{\nu}_r$** (lines 184–194)
+
+$$
+X_h = X_u u_r, \quad Y_h = Y_v v_r, \quad
+N_h = N_r\big(1 + 10\lvert r\rvert\big) r
+$$
+
+```matlab
+Xh = Xu * nu_r(1);
+Yh = Yv * nu_r(2);
+Nh = Nr * (1 + 10 * abs(nu_r(6))) * nu_r(6);
+tau_crossflow = crossFlowDrag(L,B_pont,T,nu_r);
+```
+
+- Every one of these reads `nu_r`, never `nu`. **Search the file for `nu_r` and the answer to "which forces feel the current" is the list of hits.**
+
+**Step 3 — the Coriolis term, and why it may also use $\boldsymbol{\nu}_r$** (lines 104, 120, 126)
+
+```matlab
+CRB_CG = [ (m+mp) * Smtrx(nu2)         O3
+           O3                  -Smtrx(Ig*nu2) ];
+CA  = m2c(MA, nu_r);
+C = CRB + CA;
+```
+
+- $\mathbf{C}_{RB}$ is built from `nu2` $= [p\ q\ r]^\top$, the **angular** rates, while $\mathbf{C}_A$ is built from `nu_r`. That looks inconsistent and is not, because step 1 gave the current no rotational component: $\boldsymbol{\nu}_{2r} = \boldsymbol{\nu}_2$, so the two ways of writing $\mathbf{C}_{RB}$ are the same matrix.
+- This is Fossen's result for a **constant irrotational** current: the whole equation of motion can be written in relative velocity,
+
+$$
+\mathbf{M}\dot{\boldsymbol{\nu}}_r + \mathbf{C}(\boldsymbol{\nu}_r)\boldsymbol{\nu}_r + \mathbf{D}(\boldsymbol{\nu}_r)\boldsymbol{\nu}_r + \mathbf{g}(\boldsymbol{\eta}) = \boldsymbol{\tau}
+$$
+
+- and that is exactly what line 203 evaluates. If the current were unsteady or rotational, this step would fail and a $\dot{\boldsymbol{\nu}}_c$ term would appear.
+
+**Step 4 — the kinematics use $\boldsymbol{\nu}$, and this is the whole trick** (lines 200–204)
+
+$$
+\dot{\boldsymbol{\eta}} = \mathbf{J}(\boldsymbol{\eta})\,\boldsymbol{\nu}
+\qquad\text{---}\qquad
+\boldsymbol{\nu},\ \textbf{not}\ \boldsymbol{\nu}_r
+$$
+
+```matlab
+J = eulerang(eta(4),eta(5),eta(6));
+
+xdot = [ M \ ( tau + tau_damp + tau_crossflow - C * nu_r - G * eta - g_0)
+         J * nu ];
+```
+
+- **Read the two rows of `xdot` against each other.** The top row — the forces — contains `nu_r`. The bottom row — the position — contains `nu`. One file, one line apart, two different velocities.
+- That single asymmetry produces every result of §E: the hull settles at the same speed *through the water* in all four runs, and ends up in four different places.
+
+> [!note] How to convince yourself in one command
+> ```matlab
+> x = zeros(12,1); x(1) = 1.0286;              % 1 m/s ahead, no current yet
+> a = otter(x, [60;60], 25, [0.05 0 -0.35]', 0.0, 0);
+> b = otter(x, [60;60], 25, [0.05 0 -0.35]', 0.5, 0);
+> [a(1) b(1)]      % surge ACCELERATION differs — the hull feels the current
+> [a(7) b(7)]      % north RATE is identical — both integrate the same nu
+> ```
+> It prints $\dot u = 0.000046$ against $0.505557$ m/s² — a difference of $0.51$ — and $\dot N = 1.028600$ against $1.028600$ m/s, a difference of **exactly zero**.
+> The first pair differs because the following current reduces $u_r$, which reduces the damping and leaves a net accelerating force. The second pair is identical because $\dot N$ is read from $\boldsymbol{\nu}$, which the current has not touched. **Two lines of output, and the whole section is in them.**
+
+### And the same thing in the Simulink model
+
+- The plant block does not reimplement any of this. `_tools/add_otter_plant.m` wraps the file itself:
+
+```matlab
+function xdot = otter_hull(x, u_thr, mp, rp, V_c, beta_c)
+coder.extrinsic('otter');
+xdot = zeros(12,1);
+xdot = otter(x, u_thr, mp, rp, V_c, beta_c);
+end
+```
+
+| Where the two numbers come from | |
+|---|---|
+| `V_c`, `beta_c` | Constant blocks inside the plant subsystem, holding the **names** `V_c` and `beta_c` |
+| those names | set by `WXX_0_setup.m` in the base workspace, from `WXX_vars.m` |
+| changing them for one run | `run_sim('W01_current', V, 'V_c', 0.5, 'beta_c', pi/2)` — no block is edited |
+
+- So the current is one number and one angle, entering at one place, and everything else in this section is a consequence of the two lines that subtract it.
 
 ## A. Setting up and running (15 min)
 

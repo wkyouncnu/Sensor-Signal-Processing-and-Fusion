@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="520" fill="#ffffff"/>
+  <!-- geometry: beta = 15.74 deg, y_e_ss = Delta tan(beta) = 2.2547 m at 20 px/m = 45.1 px -->
+  <defs>
+    <marker id="ic" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#0ea5e9"/></marker>
+    <marker id="ik" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1e293b"/></marker>
+    <marker id="ig" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#0d9488"/></marker>
+    <marker id="ir" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#dc2626"/></marker>
+  </defs>
+
+  <text x="20" y="30" font-size="19" font-weight="700" fill="#1e293b">All three laws end up pointing the bow upstream. They differ in what they think they are doing.</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">Same vessel, same path, same current. The bow tilt is the same 15.7&#176; in all three &#8212; but only two of them are on the path.</text>
+
+  <!-- ================================================================= -->
+  <!-- PANEL 1 : plain LOS                                                -->
+  <!-- ================================================================= -->
+  <text x="30" y="84" font-size="16" font-weight="700" fill="#dc2626">1&#8194; LOS</text>
+  <text x="30" y="102" font-size="13" fill="#dc2626">the lean is spent on the drift</text>
+
+  <!-- current arrows -->
+  <g stroke="#0ea5e9" stroke-width="1.6" opacity="0.75">
+    <line x1="55"  y1="120" x2="55" y2="146" marker-end="url(#ic)"/>
+    <line x1="130" y1="120" x2="130" y2="146" marker-end="url(#ic)"/>
+    <line x1="205" y1="120" x2="205" y2="146" marker-end="url(#ic)"/>
+  </g>
+  <text x="228" y="138" font-size="12" fill="#0ea5e9">the current</text>
+
+  <!-- the path -->
+  <line x1="40" y1="200" x2="270" y2="200" stroke="#0d9488" stroke-width="2.6" stroke-dasharray="8 5"/>
+  <text x="40" y="192" font-size="12" fill="#0d9488">the path</text>
+
+  <!-- the vessel, 45.1 px below the path -->
+  <g transform="rotate(-15.74 150 245)">
+    <polygon points="150,245 128,254 128,236" fill="#1e293b"/>
+    <line x1="150" y1="245" x2="214" y2="245" stroke="#1e293b" stroke-width="2" marker-end="url(#ik)"/>
+  </g>
+  <text x="196" y="222" font-size="12" font-weight="700" fill="#1e293b">bow &#968;</text>
+
+  <!-- the track: horizontal, along the path direction -->
+  <line x1="150" y1="245" x2="228" y2="245" stroke="#0d9488" stroke-width="2" marker-end="url(#ig)"/>
+  <text x="196" y="262" font-size="12" font-weight="700" fill="#0d9488">track &#967;</text>
+
+  <!-- the angle between them -->
+  <path d="M 240 245 A 90 90 0 0 0 236.6 220.6" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="248" y="238" font-size="13" font-weight="700" fill="#7c3aed">&#946;</text>
+
+  <!-- the offset -->
+  <line x1="150" y1="200" x2="150" y2="245" stroke="#dc2626" stroke-width="2.2"/>
+  <text x="36" y="286" font-size="13" font-weight="700" fill="#dc2626">y&#8337; = &#916;tan&#946; = 2.25 m</text>
+  <line x1="120" y1="281" x2="146" y2="252" stroke="#dc2626" stroke-width="1" stroke-dasharray="3 3"/>
+  <circle cx="150" cy="200" r="3.5" fill="#dc2626"/>
+
+  <rect x="30" y="292" width="256" height="126" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2" rx="6"/>
+  <text x="44" y="314" font-size="13" fill="#334155">The bow IS tilted upstream by 15.7&#176;.</text>
+  <text x="44" y="334" font-size="13" fill="#334155">But that tilt is the arctan term, and it</text>
+  <text x="44" y="352" font-size="13" fill="#334155">is entirely used up cancelling the drift.</text>
+  <text x="44" y="376" font-size="13" font-weight="700" fill="#dc2626">Nothing is left to close y&#8337;.</text>
+  <text x="44" y="396" font-size="13" fill="#334155">The vessel runs PARALLEL to the path,</text>
+  <text x="44" y="410" font-size="13" fill="#334155">2.25 m to the side of it, for ever.</text>
+
+  <!-- ================================================================= -->
+  <!-- PANEL 2 : ILOS                                                     -->
+  <!-- ================================================================= -->
+  <text x="320" y="84" font-size="16" font-weight="700" fill="#0d9488">2&#8194; ILOS</text>
+  <text x="320" y="102" font-size="13" fill="#0d9488">invent an error that is not there</text>
+
+  <g stroke="#0ea5e9" stroke-width="1.6" opacity="0.75">
+    <line x1="345" y1="120" x2="345" y2="146" marker-end="url(#ic)"/>
+    <line x1="420" y1="120" x2="420" y2="146" marker-end="url(#ic)"/>
+    <line x1="495" y1="120" x2="495" y2="146" marker-end="url(#ic)"/>
+  </g>
+
+  <line x1="330" y1="200" x2="560" y2="200" stroke="#0d9488" stroke-width="2.6" stroke-dasharray="8 5"/>
+
+  <!-- vessel ON the path -->
+  <g transform="rotate(-15.74 440 200)">
+    <polygon points="440,200 418,209 418,191" fill="#1e293b"/>
+    <line x1="440" y1="200" x2="504" y2="200" stroke="#1e293b" stroke-width="2" marker-end="url(#ik)"/>
+  </g>
+  <text x="486" y="177" font-size="12" font-weight="700" fill="#1e293b">bow &#968;</text>
+  <line x1="440" y1="200" x2="518" y2="200" stroke="#0d9488" stroke-width="2" marker-end="url(#ig)"/>
+  <text x="486" y="218" font-size="12" font-weight="700" fill="#0d9488">track &#967;</text>
+  <text x="333" y="192" font-size="12" font-weight="700" fill="#0d9488">y&#8337; = 0</text>
+
+  <!-- the phantom error -->
+  <line x1="440" y1="200" x2="440" y2="245" stroke="#7c3aed" stroke-width="2.2" stroke-dasharray="5 4"/>
+  <circle cx="440" cy="245" r="4" fill="none" stroke="#7c3aed" stroke-width="2"/>
+  <text x="452" y="252" font-size="13" font-weight="700" fill="#7c3aed">&#954;y&#7522;&#8345;&#8348; = 2.25 m</text>
+  <text x="452" y="269" font-size="12" fill="#7c3aed">a PHANTOM error</text>
+  <text x="452" y="284" font-size="12" fill="#7c3aed">the integrator built</text>
+
+  <rect x="320" y="292" width="256" height="126" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.2" rx="6"/>
+  <text x="334" y="314" font-size="13" fill="#334155">The law reads y&#8337; + &#954;y&#7522;&#8345;&#8348;, not y&#8337;.</text>
+  <text x="334" y="334" font-size="13" fill="#334155">The integrator fills until its phantom</text>
+  <text x="334" y="352" font-size="13" fill="#334155">error equals the old 2.25 m offset,</text>
+  <text x="334" y="370" font-size="13" fill="#334155">and then the REAL error can be zero.</text>
+  <text x="334" y="394" font-size="13" font-weight="700" fill="#0d9488">It never learns what a current is.</text>
+  <text x="334" y="410" font-size="13" fill="#334155">It only knows the error must vanish.</text>
+
+  <!-- ================================================================= -->
+  <!-- PANEL 3 : ALOS                                                     -->
+  <!-- ================================================================= -->
+  <text x="610" y="84" font-size="16" font-weight="700" fill="#7c3aed">3&#8194; ALOS</text>
+  <text x="610" y="102" font-size="13" fill="#7c3aed">estimate the drift and subtract it</text>
+
+  <g stroke="#0ea5e9" stroke-width="1.6" opacity="0.75">
+    <line x1="635" y1="120" x2="635" y2="146" marker-end="url(#ic)"/>
+    <line x1="710" y1="120" x2="710" y2="146" marker-end="url(#ic)"/>
+    <line x1="785" y1="120" x2="785" y2="146" marker-end="url(#ic)"/>
+  </g>
+
+  <line x1="620" y1="200" x2="860" y2="200" stroke="#0d9488" stroke-width="2.6" stroke-dasharray="8 5"/>
+
+  <g transform="rotate(-15.74 730 200)">
+    <polygon points="730,200 708,209 708,191" fill="#1e293b"/>
+    <line x1="730" y1="200" x2="794" y2="200" stroke="#1e293b" stroke-width="2" marker-end="url(#ik)"/>
+  </g>
+  <text x="776" y="177" font-size="12" font-weight="700" fill="#1e293b">bow &#968;</text>
+  <line x1="730" y1="200" x2="808" y2="200" stroke="#0d9488" stroke-width="2" marker-end="url(#ig)"/>
+  <text x="776" y="218" font-size="12" font-weight="700" fill="#0d9488">track &#967;</text>
+  <text x="623" y="192" font-size="12" font-weight="700" fill="#0d9488">y&#8337; = 0</text>
+
+  <!-- the estimate, drawn as the tilt itself -->
+  <path d="M 820 200 A 90 90 0 0 0 816.6 175.6" fill="none" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="828" y="193" font-size="13" font-weight="700" fill="#7c3aed">&#946;&#770;</text>
+  <text x="640" y="250" font-size="13" font-weight="700" fill="#7c3aed">&#946;&#770; = 15.91&#176;</text>
+  <text x="640" y="268" font-size="12" fill="#334155">true drift &#946; = 15.88&#176;</text>
+  <text x="640" y="286" font-size="12" fill="#334155">the estimate IS the answer</text>
+
+  <rect x="610" y="292" width="260" height="126" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.2" rx="6"/>
+  <text x="624" y="314" font-size="13" fill="#334155">&#968;&#8340; = &#960;&#8346; &#8722; &#946;&#770; &#8722; atan(y&#8337;/&#916;)</text>
+  <text x="624" y="336" font-size="13" fill="#334155">The estimate is subtracted from the</text>
+  <text x="624" y="354" font-size="13" fill="#334155">command, so the arctan term is free</text>
+  <text x="624" y="372" font-size="13" fill="#334155">to do the job it was designed for.</text>
+  <text x="624" y="396" font-size="13" font-weight="700" fill="#7c3aed">&#946;&#770; is a number you can read off,</text>
+  <text x="624" y="412" font-size="13" fill="#334155">in degrees, and check against atan2(v,u).</text>
+
+  <!-- ================================================================= -->
+  <rect x="30" y="432" width="840" height="78" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" rx="6"/>
+  <text x="46" y="454" font-size="14" font-weight="700" fill="#1e293b">The one idea to take away</text>
+  <text x="46" y="474" font-size="14" fill="#334155">A current cannot be removed by steering harder. It must be ANSWERED by pointing the bow upstream.</text>
+  <text x="46" y="491" font-size="14" fill="#334155">LOS points upstream but spends the whole lean on the drift, so an offset is left over. ILOS and ALOS buy that</text>
+  <text x="46" y="506" font-size="14" fill="#334155">lean somewhere else, and give the arctan term its original job back.</text>
+</svg>
