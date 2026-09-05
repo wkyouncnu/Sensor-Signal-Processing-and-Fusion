@@ -374,6 +374,26 @@ $$
 | the setpoint returns to a reachable value | the error changes sign, but the stored charge must be integrated back out before $X_{\text{cmd}}$ re-enters the attainable set |
 | meanwhile | the vessel does not respond at all |
 
+![Where the loop breaks, and how far outside the limit the demand went](../figures/w02-windup.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left, the block diagram | the ordinary PI loop, with the saturation drawn as its own block between the controller and the hull |
+| red cross | where the loop is broken while the actuator is on its limit |
+| violet dashed path | the signal $X_{\text{cmd}} - X_{\text{sat}}$, which **both** anti-windup schemes add and neither can do without |
+| right, the amber curve | the saturation block itself, plotted to scale: what comes out against what went in |
+| right, red marker | the largest demand measured in section F, placed on that curve |
+
+**What the figure says**
+
+- **Meaning.** The left panel says *why* windup happens; the right panel says *how badly* it happened here.
+- **The trend, in numbers.** The amber curve is a straight line only between $-133.42$ and $+239.36$ N. Outside that band it is flat, and the demand went to $3480$ N — **fourteen and a half times** the largest force the propellers can produce. Everything to the right of the corner is asked for and not delivered.
+- **The principle.** While the actuator is flat, $X_{\text{sat}}$ no longer depends on $X_{\text{cmd}}$, so the controller's output has no effect on the hull, and therefore none on the error. **The loop is open.** An integrator driven by the error of an open loop cannot converge, because nothing it does can change that error.
+- **Why the cross is drawn between the saturation and the hull, and not inside the integrator.** The integrator is behaving exactly as designed. The fault is upstream of it, in a block with no gain left to give. Calling this an "integrator problem" points at the wrong component.
+- **What both cures have in common.** The violet path carries $X_{\text{cmd}} - X_{\text{sat}}$, and that difference is **identically zero whenever the actuator is following**. Clamping and back-calculation use it differently, but neither can act on a loop that is not saturated — which is why anti-windup can be left switched on permanently and never has to be scheduled.
+
 ### The principle, in one line
 
 - Write the controller output and what the actuator actually delivers as two separate signals:

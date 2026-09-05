@@ -103,6 +103,27 @@ x\,e_{y} - y\,e_{x}
 $$
 
 - The bracketed vector is the generalised force produced by **one newton** from that thruster. It is one column of $\mathbf{B}$, and it depends only on geometry.
+
+![One thruster, one column](../figures/a1-column-rule.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| grey axes | the body frame, origin $o_b$, with $x_b$ towards the bow and $y_b$ to starboard |
+| orange arrow | the position vector $\mathbf{r} = (x, y)$ from $o_b$ to the thruster |
+| black square | the thruster |
+| blue arrow | its thrust $T\mathbf{e}$, and the two dashed segments are the components $e_x$ and $e_y$ |
+| grey dashed line | the **line of action** — the thrust extended in both directions |
+| violet arrow | the perpendicular from $o_b$ to that line, with the right-angle mark |
+
+**What the figure says**
+
+- **Meaning.** The first two entries of the column are just the force resolved into the body axes, and need no picture. The third entry is the one worth drawing, and the figure shows what it is.
+- **The trend, in numbers.** With $x = 1.2$ m, $y = 0.8$ m and $\mathbf{e}$ pointing $40°$ to port of the bow, the rule gives $x e_y - y e_x = -1.3842$. The violet perpendicular, measured on the same drawing, is $1.3842$ m. **The two agree exactly**, which is the point of the figure.
+- **The principle.** $x e_y - y e_x$ is the $z$ component of $\mathbf{r} \times \mathbf{e}$, and the magnitude of a cross product with a unit vector *is* the perpendicular distance to the line of action. So the third entry is nothing more exotic than the schoolroom "force times perpendicular distance" — written in a form that produces the **sign** automatically instead of leaving it to be argued about, which is where hand derivations of $\mathbf{B}$ usually go wrong.
+- **What changes from thruster to thruster.** Only $\mathbf{r}$ and $\mathbf{e}$. No hydrodynamics, no calibration, no measured data enters the matrix anywhere — which is why $\mathbf{B}$ can be written down before the vessel exists.
+- **The special case that produces the Otter.** Set $\mathbf{e} = (1,0)$ and $x = 0$: the arm collapses to $-y$, and the two propellers at $y = \mp 0.395$ m give $\pm 0.395$. The middle entry $e_y$ is zero for both, and **that empty row is the whole of §A1-3.**
 - For $n$ thrusters the contributions add, because forces add:
 
 $$
@@ -221,6 +242,26 @@ $$
 | `aft_azimuth` | 2 tilting | 4 | 3 | 1 | 9 |
 | `bow_thruster` | 3 fixed | 3 | 3 | 0 | 10 |
 | `quad_tilt` | 4 tilting | 8 | 3 | 5 | 11 |
+
+![The four layouts and their ranks](../figures/a1-four-layouts.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| grey outline | the hull, drawn identically in all four; the two pontoons are at $y = \mp 0.395$ m |
+| black square with one blue arrow | a **fixed** thruster — one direction, therefore one column |
+| black square with two blue arrows | the **tunnel** thruster, fixed across the hull, $\mathbf{e} = (0,1)$ |
+| violet circle with two arrows | a **tilting** thruster — two directions, therefore two columns |
+| the numbers under each hull | columns, rank and null-space dimension, as printed by section C |
+
+**What the figure says**
+
+- **Meaning.** Four actuator layouts on one hull, drawn to the same scale from the coordinates in `otter_config.m`. The question each panel answers is: how many independent things can this arrangement ask the vessel to do?
+- **The trend, in numbers.** Thruster count goes $2, 2, 3, 4$ and column count goes $2, 4, 3, 8$ — **the two do not track each other**, because a tilting machine contributes two columns and a fixed one contributes one. Rank goes $2, 3, 3, 3$: every layout but the first can produce all three planar generalised forces.
+- **The principle, visible in the first panel.** Both `base` arrows point the same way — along $x_b$. No sum of two parallel vectors has a component across the hull, so $Y$ is unreachable **for reasons of geometry, not of size**. A bigger propeller does not help; a differently pointed one does.
+- **What separates `aft_azimuth` from `base`.** The same two machines, moved aft and made steerable. That single change takes the rank from 2 to 3, which is the strongest argument in this appendix: **actuation authority is a property of directions, not of thrust.**
+- **What separates the last two.** `bow_thruster` is square — three columns, rank 3 — so the allocation has exactly one answer and there is nothing to choose. `quad_tilt` has eight columns for three demands, so it has a five-dimensional set of answers and something must decide between them. That decision is Week 5.
 
 - Two observations follow immediately, and both matter later.
   - `aft_azimuth` reaches rank 3 with **the same two physical machines** as `base`. The third degree of freedom is bought with servos, not with thrusters.

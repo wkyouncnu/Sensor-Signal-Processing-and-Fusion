@@ -69,7 +69,10 @@
 - 와인드업 = 포화 문제. clamping vs back-calculation
 - 손으로 만든 PID 와 Simulink PID 블록 **둘 다**, 선택 가능
 - 별도 모델 둘: `W02_antiwindup` ($1/(s+1)$) · `W02_pseudo` ($1/(s^2+0.4s)$)
-- §I **pseudo-derivative** — 왜 직접 미분하지 않는가, $Ns/(s+N)$, $N$ 고르는 법
+- §I **pseudo-derivative** — 왜 직접 미분하지 않는가, Ns/(s+N), N 고르는 법
+- 개념도 2장(2026-09-05): `w02-pseudo-derivative.svg` — 이상미분에는 천장이 없다.
+  wn=2 에서 4.00 대 3.92, pi/Ts=314 에서 628 대 20.0 (31.4 배) ·
+  `w02-windup.svg` — 루프가 끊기는 자리와 요구가 한계 밖으로 나간 정도 (3480 N 요구, 239 N 전달)
 
 ### W03 · Heading Control — 완료
 
@@ -104,6 +107,9 @@
   60 s 후 표류 $1.9376$ m 대 $0.0435$ m
 - $\mathbf{B}$ 의 빈 행과 $\mathbf{M}^{-1}$ 의 빈 열은 다른 이야기 — $M_{2,6} = 12.25$ kg·m
 - 절 단위 스크립트 · 결과 그림 세 장에 상세 설명 완료
+- 개념도 2장(2026-09-05): `a1-column-rule.svg` — 모멘트 항이 곧 팔이다.
+  x*ey - y*ex = -1.3842 와 수직거리 1.3842 m 가 정확히 같다 ·
+  `a1-four-layouts.svg` — 형상 넷과 계급, otter_config.m 좌표에서 awk 가 생성
 
 ---
 

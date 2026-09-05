@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="500" fill="#ffffff"/>
+  <!-- geometry computed by _tools/a1_column_geo.awk : r=(1.2,0.8) m, e at -40 deg, 1 m = 100 px -->
+  <defs>
+    <marker id="ca" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#64748b"/></marker>
+    <marker id="co" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#d97706"/></marker>
+    <marker id="cb" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1d4ed8"/></marker>
+    <marker id="cp" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#7c3aed"/></marker>
+  </defs>
+
+  <text x="20" y="30" font-size="19" font-weight="700" fill="#1e293b">One thruster, one column. The whole of B comes from this picture.</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">Where the thruster sits and which way it points is all the matrix knows &#8212; and it is all the matrix needs</text>
+
+  <!-- ================= LEFT : the construction ================= -->
+  <text x="30" y="86" font-size="16" font-weight="700" fill="#1e293b">the moment term is an arm</text>
+
+  <!-- line of action, extended -->
+  <line x1="367.8" y1="322.7" x2="194.5" y2="116.2" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="356" y="340" font-size="12" fill="#94a3b8">the line of action</text>
+
+  <!-- body axes -->
+  <line x1="210" y1="350" x2="210" y2="286" stroke="#64748b" stroke-width="1.6" marker-end="url(#ca)"/>
+  <line x1="210" y1="350" x2="274" y2="350" stroke="#64748b" stroke-width="1.6" marker-end="url(#ca)"/>
+  <text x="190" y="284" font-size="14" fill="#64748b">x_b</text>
+  <text x="280" y="355" font-size="14" fill="#64748b">y_b</text>
+  <circle cx="210" cy="350" r="4" fill="#334155"/>
+  <text x="176" y="370" font-size="13" fill="#334155">o_b</text>
+
+  <!-- position vector r -->
+  <line x1="210" y1="350" x2="290" y2="230" stroke="#d97706" stroke-width="2.4" marker-end="url(#co)"/>
+  <text x="228" y="290" font-size="16" font-weight="700" fill="#d97706">r</text>
+
+  <!-- the perpendicular : o_b to the foot F -->
+  <line x1="210" y1="350" x2="316" y2="261" stroke="#7c3aed" stroke-width="2.4" marker-end="url(#cp)"/>
+  <circle cx="316" cy="261" r="3.5" fill="#7c3aed"/>
+  <path d="M 316 261 l -6.9 -8.2 l -8.2 6.9" fill="none" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="326" y="296" font-size="13" font-weight="700" fill="#7c3aed">the moment arm</text>
+  <text x="326" y="313" font-size="13" font-weight="700" fill="#7c3aed">1.3842 m</text>
+
+  <!-- the thruster and its force -->
+  <rect x="282" y="222" width="16" height="16" fill="#1e293b"/>
+  <text x="304" y="228" font-size="12" fill="#334155">the thruster</text>
+  <line x1="290" y1="230" x2="219.3" y2="145.7" stroke="#1d4ed8" stroke-width="2.6" marker-end="url(#cb)"/>
+  <text x="196" y="138" font-size="14" font-weight="700" fill="#1d4ed8">T e</text>
+
+  <!-- components of e -->
+  <line x1="290" y1="230" x2="290" y2="145.7" stroke="#1d4ed8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <line x1="290" y1="145.7" x2="219.3" y2="145.7" stroke="#1d4ed8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="296" y="192" font-size="12" fill="#1d4ed8">e_x</text>
+  <text x="248" y="138" font-size="12" fill="#1d4ed8">e_y</text>
+
+  <rect x="30" y="382" width="440" height="106" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.2" rx="6"/>
+  <text x="44" y="404" font-size="14" font-weight="700" fill="#1e293b">The check that makes the rule believable</text>
+  <text x="44" y="425" font-size="13" fill="#334155">r = (x, y) is the thruster position. With x = 1.2 m, y = 0.8 m and e</text>
+  <text x="44" y="443" font-size="13" fill="#334155">40&#176; to port of the bow, x e_y &#8722; y e_x = <tspan font-weight="700">&#8722;1.3842</tspan> and the arm</text>
+  <text x="44" y="461" font-size="13" fill="#334155">measures <tspan font-weight="700">1.3842 m</tspan>. The third entry is not a new idea &#8212; it is the</text>
+  <text x="44" y="479" font-size="13" fill="#334155">ordinary force times perpendicular distance, sign included.</text>
+
+  <!-- ================= RIGHT : the rule ================= -->
+  <text x="500" y="86" font-size="16" font-weight="700" fill="#1e293b">the rule</text>
+
+  <rect x="500" y="98" width="380" height="96" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.6" rx="6"/>
+  <text x="690" y="124" font-size="14" fill="#334155" text-anchor="middle">one newton from a thruster at (x, y) along e</text>
+  <text x="690" y="158" font-size="18" font-weight="700" fill="#1e293b" text-anchor="middle">b = [ e_x ;&#8194; e_y ;&#8194; x e_y &#8722; y e_x ]</text>
+  <text x="690" y="182" font-size="13" fill="#64748b" text-anchor="middle">that column depends on geometry alone</text>
+
+  <text x="500" y="222" font-size="14" font-weight="700" fill="#1e293b">n thrusters, n columns</text>
+  <text x="500" y="250" font-size="17" font-weight="700" fill="#1e293b">&#964; = [X ; Y ; N] = B f</text>
+  <text x="500" y="274" font-size="13" fill="#334155">Forces add, so the columns sit side by side. No calibration,</text>
+  <text x="500" y="292" font-size="13" fill="#334155">no fitting, no measured data enters anywhere.</text>
+
+  <rect x="500" y="308" width="380" height="96" fill="#fffbeb" stroke="#d97706" stroke-width="1.2" rx="6"/>
+  <text x="514" y="330" font-size="14" font-weight="700" fill="#1e293b">The base Otter, from the same rule</text>
+  <text x="514" y="351" font-size="13" fill="#334155">Both propellers face forward, so e = (1, 0), and they sit at</text>
+  <text x="514" y="369" font-size="13" fill="#334155">x = 0, y = &#8723;0.395 m, giving x e_y &#8722; y e_x = &#177;0.395.</text>
+  <text x="514" y="393" font-size="13" fill="#334155"><tspan font-weight="700">e_y = 0 for both</tspan>, so the middle row of B is empty.</text>
+
+  <rect x="500" y="416" width="380" height="72" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2" rx="6"/>
+  <text x="514" y="438" font-size="14" font-weight="700" fill="#dc2626">e must be a unit vector</text>
+  <text x="514" y="458" font-size="13" fill="#334155">Entering (2, 0) instead of (1, 0) silently doubles that thruster's</text>
+  <text x="514" y="477" font-size="13" fill="#334155">authority, and every rank test still passes.</text>
+</svg>
