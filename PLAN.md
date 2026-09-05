@@ -205,6 +205,10 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
   TeX Live 2026 + `pgf`(TikZ) + `standalone` + `dvisvgm`.
   `_tools/tikz2svg.sh` 이 `figures/src/*.tex` → `figures/*.svg` 로 바꾼다.
   **문서 파이프라인은 이것을 쓰지 않는다** — 결과물은 그냥 SVG 라 Chrome 이 읽는다
+- 2026-09-05 로 **개념도 20장 전부**가 TikZ 원본을 갖는다. 손으로 쓴 SVG 는 없다.
+  3차원 그림의 기하는 MATLAB 이 계산하고(`_tools/w01_euler_R.m`), 사영은 TikZ 가 한다.
+  `_tools/svgzoom.sh` 로 잘라 확대해서 라벨 겹침을 확인한다 →
+  `results-and-figures.md` §2-8·§2-9
 
 ## 7. 한 주차를 끝내기 전
 

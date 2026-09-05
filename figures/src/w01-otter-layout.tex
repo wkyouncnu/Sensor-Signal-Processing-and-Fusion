@@ -1,0 +1,115 @@
+% figures/w01-otter-layout.svg — Otter 를 위에서 본 그림, 그리고 B 가 왜 그 모양인가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-otter-layout.tex figures/w01-otter-layout.svg
+%
+% 치수는 otter.m / _tools/otter_config.m 의 것이다:
+%   y_pont = 0.395 m,  B_pont = 0.25 m,  L = 2.0 m.
+% 갑판 평면도이므로 x_b(선수)를 위로, y_b(우현)를 오른쪽으로 둔다.
+%
+% B 의 값은 눈대중이 아니라 _tools/otter_B.m 의 열 규칙에서 나온다:
+%
+%     열 = [ e_x ; e_y ; x e_y - y e_x ]
+%
+% 'base' 형상은 pos = [0 0; -0.395 +0.395], dir = [1 1; 0 0] 이므로
+%     좌현 열 = [1; 0; 0 - (-0.395)(1)] = [1; 0; +0.395]
+%     우현 열 = [1; 0; 0 - (+0.395)(1)] = [1; 0; -0.395]
+% 세 번째 성분의 부호가 y 좌표와 **반대**라는 것이 이 그림의 요점 하나다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\YP{22.9}        % y_pont = 0.395 m   (1 m = 58 mm)
+\def\HB{58}          % 반선장 = 1.0 m
+\def\PW{7.25}        % 폰툰 반폭 = 0.125 m
+
+\node[ink, font=\small\bfseries, anchor=north west] at (-40,94)
+     {The Otter from above — where the propellers are, and why $\mathbf{B}$ looks the way it does};
+\node[anchor=north west, align=left, text width=118mm, font=\scriptsize, soft] at (-40,88) {%
+  A catamaran: two pontoons, one propeller in each, both bolted facing forward.
+  Every entry of $\mathbf{B}$ follows from this picture and nothing else.};
+
+% ---- 폰툰 둘 ---------------------------------------------------------------
+\fill[ink, opacity=0.04] ({-\YP+\PW},-\HB) rectangle ({\YP-\PW},\HB);
+\foreach \s in {-1,1} {
+  \fill[ink, opacity=0.10] ({\s*\YP-\PW},-\HB) rectangle ({\s*\YP+\PW},\HB);
+  \draw[ink, line width=0.5pt, rounded corners=3pt]
+        ({\s*\YP-\PW},-\HB) rectangle ({\s*\YP+\PW},\HB);
+}
+
+% ---- 중심선 ----------------------------------------------------------------
+\draw[soft, line width=0.4pt, densely dashed] (0,{-\HB-8}) -- (0,{\HB+8});
+\node[note, anchor=south] at (0,{\HB+9}) {centreline};
+
+% ---- 추진기 둘 -------------------------------------------------------------
+% x 위치는 선미로 그렸다. 열 규칙에서 x 는 e_y 와만 곱해지고 e_y = 0 이므로
+% 앞을 향한 프로펠러에서는 x 가 B 에 전혀 들어가지 않는다 — 오른쪽 글에 적었다.
+\foreach \s in {-1,1} {
+  \fill[ink] ({\s*\YP-3.4},-52) rectangle ({\s*\YP+3.4},-42);
+  \draw[alng, line width=1.2pt, -{Stealth[length=5pt,width=3.6pt]}]
+        ({\s*\YP},-40) -- ({\s*\YP},-14);
+}
+\node[note, anchor=north] at ({-\YP},{-\HB-2}) {port};
+\node[note, anchor=north] at ({ \YP},{-\HB-2}) {starboard};
+\node[alng, font=\scriptsize, anchor=south east] at ({-\YP-1},-24) {$T_1$};
+\node[alng, font=\scriptsize, anchor=south west] at ({ \YP+1},-24) {$T_2$};
+
+% ---- 몸체 축 ---------------------------------------------------------------
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,42);
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (44,0);
+\fill[ink] (0,0) circle (0.8);
+\node[font=\small, anchor=east]  at (-1.5,40) {$x_b$};
+\node[font=\small, anchor=north] at (43,-1.5) {$y_b$};
+\node[font=\scriptsize, anchor=north east] at (-1.5,-1.5) {$o_b$};
+
+% ---- 모멘트 팔 -------------------------------------------------------------
+% 브래킷의 끝이 추력선 위에 놓이도록 y = -30 에 그린다.
+\draw[accent, line width=0.6pt, |-|] (0,-30) -- ({-\YP},-30);
+\draw[accent, line width=0.6pt, |-|] (0,-30) -- ({ \YP},-30);
+\node[accent, font=\scriptsize, anchor=north, align=center] at ({-0.5*\YP},-31.5)
+     {$y_1$\\ $-0.395$\,m};
+\node[accent, font=\scriptsize, anchor=north, align=center] at ({ 0.5*\YP},-31.5)
+     {$y_2$\\ $+0.395$\,m};
+
+% ===================== 오른쪽 : B 를 그림에서 읽는다 ========================
+\begin{scope}[shift={(92,0)}]
+  \node[ink, font=\small\bfseries, anchor=north west] at (0,76)
+       {reading $\mathbf{B}$ off the picture};
+
+  \node[anchor=north west, align=left, text width=92mm, font=\scriptsize] at (0,69) {%
+    One propeller at $(x_i, y_i)$ pushing along the unit vector
+    $\mathbf{e}_i = (e_{x}, e_{y})$ contributes exactly one column
+    (\texttt{\_tools/otter\_B.m}, the column rule):};
+  \node[anchor=north west, font=\small] at (6,55) {%
+    $\mathbf{b}_i = \begin{bmatrix} e_{x}\\ e_{y}\\ x_i e_{y} - y_i e_{x}\end{bmatrix}$};
+
+  \node[anchor=north west, align=left, text width=92mm, font=\scriptsize] at (0,32) {%
+    Both propellers are bolted facing forward, so $\mathbf{e}_i = (1,0)$ for both
+    and the picture supplies only $y_1 = -0.395$ and $y_2 = +0.395$\,m.\\[4pt]
+    \textbf{Surge.} Both push forward: $e_{x} = 1$ twice, so the first row is
+    $[\,1\ \ 1\,]$.\\[4pt]
+    \textbf{Sway.} Neither has any component across the hull, $e_{y} = 0$, so the
+    second row is empty: $Y = 0$ — \textbf{exactly, always}. No shaft speed can
+    produce sway.\\[4pt]
+    \textbf{Yaw.} The third entry is $-y_i$, which is the \textbf{negative} of the
+    coordinate marked on the drawing: the port propeller sits at $y = -0.395$ and
+    turns the bow to \emph{starboard}, which is positive yaw.\\[4pt]
+    The along-ship station $x_i$ never appears, because it is multiplied by
+    $e_{y} = 0$. The propellers may be drawn anywhere along their pontoons and
+    $\mathbf{B}$ is unchanged.};
+
+  \node[anchor=north west, font=\small] at (6,-32) {%
+    $\mathbf{B} = \begin{bmatrix} 1 & 1\\ 0 & 0\\ 0.395 & -0.395 \end{bmatrix},
+     \qquad \boldsymbol\tau = \mathbf{B}\,\mathbf{f}$};
+
+  \node[anchor=north west, align=left, text width=92mm, font=\scriptsize] at (0,-50) {%
+    The hull is drawn here at $\psi = 0$, so $\{b\}$ and $\{n\}$ happen to line up.
+    At any other heading the two triads differ by $\mathbf{R}(\psi)$ and
+    \textbf{$\mathbf{B}$ does not change at all} — it is written entirely in
+    $\{b\}$. That is the whole reason the allocation can be designed once and used
+    at every heading.};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,152 @@
+% figures/w01-euler.svg — zyx 오일러각을 네 칸으로.
+%
+%   matlab -batch "addpath _tools; w01_euler_R"       <- 먼저 기하를 계산하고
+%   bash _tools/tikz2svg.sh figures/src/w01-euler.tex figures/w01-euler.svg
+%
+% 축을 눈대중으로 기울이지 않는다 (CLAUDE.md §4 규칙 6-1). 네 칸의 좌표축·
+% 갑판·회전호는 _tools/w01_euler_R.m 이 실제 회전행렬로 계산해 w01-euler-R.tex
+% 에 적어 두었고, 사영은 아래 x/y/z 기저가 한다 — w01-6dof.tex 와 같은 정사영:
+%
+%   P(x) = ( 0.87687, -0.21477)   선수
+%   P(y) = ( 0.48072,  0.39176)   우현
+%   P(z) = ( 0.00000,  0.89465)   아래
+%
+% TikZ 의 y 는 위가 양수이므로 두 번째 성분의 부호를 뒤집어 넣는다.
+% 회전호는 그 축에 수직인 평면 위의 원이므로 사영한 타원의 중심이 저절로
+% 축선 위에 놓인다. 점선 토막이 축과 호 중심을 잇는다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+\input{w01-euler-R}
+
+\definecolor{deckf}{HTML}{F7DCBE}
+\definecolor{decke}{HTML}{8A5A2B}
+
+\tikzset{
+  eul/.style = {x={(0.87687cm,0.21477cm)},
+                y={(0.48072cm,-0.39176cm)},
+                z={(0cm,-0.89465cm)},
+                scale=1.62, baseline={(0,0,0)}},
+  ref/.style = {soft, line width=0.3pt, densely dashed, fill=soft!8},
+  dck/.style = {draw=decke, line width=0.7pt, fill=deckf, fill opacity=0.92},
+  qax/.style = {ink, line width=0.55pt, -{Stealth[length=3.6pt,width=2.6pt]}},
+  aax/.style = {accent, line width=1.0pt, -{Stealth[length=4.4pt,width=3.2pt]}},
+  arcs/.style= {accent, line width=0.9pt, -{Stealth[length=4.4pt,width=3.2pt]}},
+  stub/.style= {soft, line width=0.3pt, densely dotted},
+}
+\newcommand{\hdr}[2]{\parbox[b]{44mm}{\raggedright
+  {\small\bfseries\color{ink}#1}\\[1.5pt]{\scriptsize\color{soft}#2}}}
+% 높이를 못 박아 둔다. \parbox[t] 만 쓰면 tabular 가 두 번째 줄 아래의 깊이를
+% 제대로 세지 않아서, 줄이 긴 칸의 마지막 줄이 다음 문단 위로 올라탄다.
+% 실제로 D 칸의 "attitude." 가 아래 설명 첫 줄과 겹쳤다.
+\newcommand{\ftr}[1]{\parbox[t][15mm][t]{44mm}{\raggedright\scriptsize\color{soft}#1}}
+
+\begin{document}
+\begin{tabular}{@{}l@{}}
+
+\parbox{218mm}{\raggedright
+  {\small\bfseries\color{ink} The zyx Euler angles — one rotation at a time}\\[2pt]
+  {\scriptsize\color{soft}
+   The attitude $\boldsymbol\Theta = [\phi\ \theta\ \psi]^\top$ is not three
+   independent tilts. It is an \textbf{ordered} product of three rotations,
+   $\mathbf{R}(\boldsymbol\Theta) = \mathbf{R}_z(\psi)\,\mathbf{R}_y(\theta)\,
+   \mathbf{R}_x(\phi)$, and each one turns about an axis of the triad the
+   previous one left behind. Drawn here with
+   $\psi = 40^\circ$, $\theta = 20^\circ$, $\phi = 30^\circ$; the dashed square
+   is the horizontal plane of $\{n\}$, kept in every panel so the tilt is
+   readable.}}\\[3.5mm]
+
+\begin{tabular}{@{}c@{\hspace{4mm}}c@{\hspace{4mm}}c@{\hspace{4mm}}c@{}}
+
+\hdr{start}{$\{n\}$ — North, East, Down}
+& \hdr{after $\mathbf{R}_z(\psi)$}{$\{1\}$ — turned about Down}
+& \hdr{after $\mathbf{R}_y(\theta)$}{$\{2\}$ — bow lifted}
+& \hdr{after $\mathbf{R}_x(\phi)$}{$\{b\}$ — the body triad}
+\\[1.5mm]
+
+% ===================== panel A : {n} =======================================
+\begin{tikzpicture}[eul]
+  \draw[ref] (1.15,1.15,0) -- (1.15,-1.15,0) -- (-1.15,-1.15,0) -- (-1.15,1.15,0) -- cycle;
+  \draw[dck] \PAdeck;
+  \draw[qax] (0,0,0) -- \PAaxX;   \node[font=\tiny, ink]    at \PAlabX {$x_n$};
+  \draw[qax] (0,0,0) -- \PAaxY;   \node[font=\tiny, ink]    at \PAlabY {$y_n$};
+  \draw[aax] (0,0,0) -- \PAaxZ;   \node[font=\tiny, accent, anchor=north] at \PAlabact {$z_n$};
+  \fill[ink] (0,0,0) circle (0.7pt);
+  \draw[stub] \PAarcstub -- \PAarcc;
+  \draw[arcs] \PAarc;
+  \fill[accent] \PAarcc circle (0.5pt);
+  \node[font=\scriptsize, accent, anchor=west] at \PAarclab {$\psi$};
+\end{tikzpicture}
+&
+% ===================== panel B : {1} =======================================
+\begin{tikzpicture}[eul]
+  \draw[ref] (1.15,1.15,0) -- (1.15,-1.15,0) -- (-1.15,-1.15,0) -- (-1.15,1.15,0) -- cycle;
+  \draw[dck] \PBdeck;
+  \draw[qax] (0,0,0) -- \PBaxX;   \node[font=\tiny, ink]    at \PBlabX {$x_1$};
+  \draw[aax] (0,0,0) -- \PBaxY;   \node[font=\tiny, accent, anchor=north east] at \PBlabact {$y_1$};
+  \draw[qax] (0,0,0) -- \PBaxZ;   \node[font=\tiny, ink]    at \PBlabZ {$z_1$};
+  \fill[ink] (0,0,0) circle (0.7pt);
+  \draw[stub] \PBarcstub -- \PBarcc;
+  \draw[arcs] \PBarc;
+  \fill[accent] \PBarcc circle (0.5pt);
+  \node[font=\scriptsize, accent, anchor=west] at \PBarclab {$\theta$};
+\end{tikzpicture}
+&
+% ===================== panel C : {2} =======================================
+\begin{tikzpicture}[eul]
+  \draw[ref] (1.15,1.15,0) -- (1.15,-1.15,0) -- (-1.15,-1.15,0) -- (-1.15,1.15,0) -- cycle;
+  \draw[dck] \PCdeck;
+  \draw[aax] (0,0,0) -- \PCaxX;   \node[font=\tiny, accent, anchor=south west] at \PClabact {$x_2$};
+  \draw[qax] (0,0,0) -- \PCaxY;   \node[font=\tiny, ink]    at \PClabY {$y_2$};
+  \draw[qax] (0,0,0) -- \PCaxZ;   \node[font=\tiny, ink]    at \PClabZ {$z_2$};
+  \fill[ink] (0,0,0) circle (0.7pt);
+  \draw[stub] \PCarcstub -- \PCarcc;
+  \draw[arcs] \PCarc;
+  \fill[accent] \PCarcc circle (0.5pt);
+  \node[font=\scriptsize, accent, anchor=north east] at \PCarclab {$\phi$};
+\end{tikzpicture}
+&
+% ===================== panel D : {b} =======================================
+\begin{tikzpicture}[eul]
+  \draw[ref] (1.15,1.15,0) -- (1.15,-1.15,0) -- (-1.15,-1.15,0) -- (-1.15,1.15,0) -- cycle;
+  \draw[dck] \PDdeck;
+  \draw[qax] (0,0,0) -- \PDaxX;   \node[font=\tiny, ink] at \PDlabX {$x_b$};
+  \draw[qax] (0,0,0) -- \PDaxY;   \node[font=\tiny, ink] at \PDlabY {$y_b$};
+  \draw[qax] (0,0,0) -- \PDaxZ;   \node[font=\tiny, ink] at \PDlabZ {$z_b$};
+  \fill[ink] (0,0,0) circle (0.7pt);
+\end{tikzpicture}
+\\[1.5mm]
+
+\ftr{Nothing has turned yet. The deck lies in the dashed plane and the triad is
+     the chart's own: $x_n$ North, $y_n$ East, $z_n$ Down.}
+& \ftr{Yaw acts about $z_n$, which is \textbf{Down} and not the deck normal. The
+       deck is still level, so this rotation alone is the compass heading.}
+& \ftr{Pitch acts about $y_1$ — an axis produced by the first rotation, not about
+       East. This is where the order starts to matter.}
+& \ftr{Roll acts about $x_2$, the already-yawed and already-pitched fore-and-aft
+       axis. Reordering the three gives a different attitude.}
+\\
+\end{tabular}\\[3.5mm]
+
+\parbox{218mm}{\raggedright\scriptsize
+  \textbf{Reading the panels.} The heavy coloured axis in each panel is the one
+  the \emph{next} rotation turns about; the coloured arc is a circle drawn in the
+  plane perpendicular to it, and the dotted stub joins the arc's centre to that
+  axis. An arc whose centre drifts off its axis is the classic way a figure like
+  this goes wrong, so the geometry here is computed rather than drawn by
+  eye.\\[3pt]
+  \textbf{Why the order is fixed.} Rotations do not commute:
+  $\mathbf{R}_z\mathbf{R}_y \neq \mathbf{R}_y\mathbf{R}_z$. The convention used
+  throughout this course is zyx, so
+  $\mathbf{R}(\boldsymbol\Theta) = \mathbf{R}_z(\psi)\mathbf{R}_y(\theta)
+  \mathbf{R}_x(\phi)$ — Fossen (2021) \emph{Handbook of Marine Craft
+  Hydrodynamics and Motion Control}, 2nd ed., eq.~(2.18), and MSS
+  \texttt{Rzyx.m}, which \texttt{\_tools/w01\_euler\_R.m} checks this drawing
+  against.\\[3pt]
+  \textbf{These are angles, not rates.} The body rates $p$, $q$, $r$ of §1-4 are
+  measured about the \emph{body} axes of the last panel only. Turning them into
+  $\dot{\boldsymbol\Theta}$ needs the matrix $\mathbf{T}_\Theta$ of §1-5, which is
+  \textbf{not} a rotation and is singular at $\theta = \pm 90^\circ$ — the reason
+  a surface craft is safe with Euler angles and a submersible may not be.}
+
+\end{tabular}
+\end{document}

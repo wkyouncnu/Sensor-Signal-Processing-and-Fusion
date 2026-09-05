@@ -72,19 +72,26 @@
 │                            verify_guidance.m · verify_alos.m        (W04 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · live_track.m · base_var.m
-│                            git_autopush.sh · svg2png.sh
-│                            tex2svg.sh · tikz2svg.sh                (수식·그림 조판)
-│                            bdiag.sh                                (블록선도 프리미티브)
-│                            labels/                                 (그림 안 수식 배치목록)
+│                            git_autopush.sh
+│                            svg2png.sh · svgzoom.sh                 (렌더해서 눈으로 보기)
+│                            tikz2svg.sh                             (그림 조판. 지금 쓰는 것)
+│                            w01_euler_R.m · w04_track_curves.awk     (그림 기하 계산)
+│                            ── 아래는 TikZ 이전의 그림 도구다. 기록으로 남겨 두고
+│                               **새 그림에는 쓰지 않는다** (figures/*.svg 20장 전부
+│                               figures/src/*.tex 로 옮겼다, 2026-09-05)
+│                            tex2svg.sh · labels/ · bdiag.sh
 │                            w01_6dof_arcs.awk · w01_euler_geo.awk
 │                            w02_pseudo_geo.awk · w02_windup_geo.awk
-│                            w02_windup_fig.sh · w04_three_laws.sh    (그림 생성)
+│                            w02_windup_fig.sh · w04_three_laws.sh
 │                            a1_column_geo.awk · a1_layouts_geo.awk
-│                            w04_los_geo.awk                         (그림 계산)
+│                            w04_los_geo.awk
 └── .claude/skills/          gnc-lecture-vault · simulink-gnc-models
 ```
 
 그림이 어디 있는지 헷갈리지 않게, 규칙은 하나다.
+
+`figures/wNN-….png` 가 SVG 옆에 있으면 그것은 **눈으로 확인하려고 1:1 로 뽑아 둔 것**이다
+(`svg2png.sh`). 문서는 SVG 를 쓴다 — PNG 를 `.md` 에 넣지 않는다.
 
 | 그림 | 어디에 | 누가 만드나 |
 |---|---|---|
@@ -173,6 +180,10 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
    축 둘레의 모멘트는 **그 축에 수직인 평면 위의 원**이며, 사영한 타원의 **중심이 축선 위**에
    있어야 한다. 축선을 점선으로 타원 중심까지 잇는다. 세 축의 화면 길이는 축소율만큼 달라야 한다.
    계산 스크립트를 `_tools/` 에 남긴다 → `standing-orders.md` §3-2
+6-2. **회전 방향도 계산해서 정한다.** 화살표를 "그럴듯한 쪽"으로 그리지 않는다.
+   화면 기저(오른쪽·위·화면밖)로 축을 풀어 오른손 법칙을 적용하고, 그 결과를 그림 주석에
+   적어 둔다. 실제로 `w01-pqr.svg` 의 roll 과 yaw 가 **반대로** 그려져 있었다
+   → `results-and-figures.md` §2-9
 7. **궤적을 그리는 그림에는 선체와 heading 을 함께 그린다.** 궤적선만으로는 배가 어디를
    향하고 있었는지 알 수 없고, 그 차이가 크랩각이다. `_tools/track_ships.m` 을 쓴다
 8. 문서의 모든 수치는 러너 출력까지 추적 가능해야 한다. 추정치를 쓰지 않고,

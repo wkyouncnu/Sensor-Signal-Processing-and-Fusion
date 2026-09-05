@@ -1,0 +1,116 @@
+% figures/w01-6dof.svg — 6자유도: 힘·속도·위치가 어떻게 짝지어지는가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-6dof.tex figures/w01-6dof.svg
+%
+% 3차원은 눈대중으로 기울이지 않는다 (standing-orders.md §3-2). TikZ 에 축 셋의
+% 화면 사영을 직접 주면 좌표 (x,y,z) 를 그대로 쓸 수 있고, 사영은 TikZ 가 한다.
+% 사영은 _tools/w01_6dof_arcs.awk 가 쓰던 것과 같다:
+%
+%   P(x) = ( 0.87687, -0.21477)   선수  — 오른쪽 위 (화면 아래 성분이 음수)
+%   P(y) = ( 0.48072,  0.39176)   우현  — 오른쪽 아래
+%   P(z) = ( 0.00000,  0.89465)   아래
+%
+% TikZ 의 y 는 위가 양수이므로 두 번째 성분의 부호를 뒤집어 넣는다.
+%
+% 모멘트 호는 그 축에 수직인 평면 위의 원이다. 3차원 좌표로 원을 매개하면
+% 사영된 타원과 그 중심이 축선 위에 오는 것이 저절로 보장된다 — 이것이
+% 손으로 타원을 놓지 않는 이유다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[
+    x={(0.87687cm,0.21477cm)},
+    y={(0.48072cm,-0.39176cm)},
+    z={(0cm,-0.89465cm)},
+    scale=3.4]
+
+% ---- 축 --------------------------------------------------------------------
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0,0) -- (1.5,0,0);
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0,0) -- (0,1.5,0);
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0,0) -- (0,0,1.5);
+\node[font=\scriptsize, soft] at (1.72,0,0)  {$x_b$};
+\node[font=\scriptsize, soft] at (0,1.66,0)  {$y_b$};
+\node[font=\scriptsize, soft] at (0,0,1.66)  {$z_b$};
+\fill[ink] (0,0,0) circle (0.6pt);
+\node[font=\scriptsize, soft, anchor=east] at (-0.12,0,0) {$o_b$};
+
+% ---- 갑판 (선수가 +x) -------------------------------------------------------
+\fill[ink, opacity=0.10]
+      (0.62,0,0) -- (0.34,0.26,0) -- (-0.53,0.26,0) -- (-0.62,0.15,0)
+   -- (-0.62,-0.15,0) -- (-0.53,-0.26,0) -- (0.34,-0.26,0) -- cycle;
+\draw[soft, line width=0.3pt]
+      (0.62,0,0) -- (0.34,0.26,0) -- (-0.53,0.26,0) -- (-0.62,0.15,0)
+   -- (-0.62,-0.15,0) -- (-0.53,-0.26,0) -- (0.34,-0.26,0) -- cycle;
+
+% ---- 힘 셋 (직선 화살표) ----------------------------------------------------
+\draw[alng, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0.75,0,0) -- (1.28,0,0);
+\node[alng, font=\scriptsize] at (1.14,0.22,0) {$X$ — surge};
+\draw[alng, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0.45,0) -- (0,1.28,0);
+\node[alng, font=\scriptsize, anchor=north] at (0,1.20,0.22) {$Y$ — sway};
+\draw[alng, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0,0.30) -- (0,0,1.28);
+\node[alng, font=\scriptsize, anchor=west] at (0.10,0,1.24) {$Z$ — heave};
+
+% ---- 모멘트 셋 (축에 수직인 평면 위의 원) ----------------------------------
+% x 축 둘레 : y -> z 방향으로 도는 원, 중심은 x 축 위
+\draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+      plot[domain=40:340, samples=60, variable=\t]
+      ({2.05}, {0.30*cos(\t)}, {0.30*sin(\t)});
+\node[accent, font=\scriptsize, anchor=south] at (2.05,0,-0.42) {$K$ — roll};
+
+% y 축 둘레 : z -> x
+\draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+      plot[domain=40:340, samples=60, variable=\t]
+      ({0.30*sin(\t)}, {1.85}, {0.30*cos(\t)});
+\node[accent, font=\scriptsize, anchor=south] at (0,1.85,-0.42) {$M$ — pitch};
+
+% z 축 둘레 : x -> y
+\draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+      plot[domain=40:340, samples=60, variable=\t]
+      ({0.30*cos(\t)}, {0.30*sin(\t)}, {1.90});
+\node[accent, font=\scriptsize, anchor=west] at (0,0.52,1.90) {$N$ — yaw};
+
+% 축선을 호 중심까지 점선으로 — "이 축 둘레" 임을 보이게 한다
+\draw[soft, line width=0.3pt, densely dotted] (1.5,0,0) -- (2.05,0,0);
+\draw[soft, line width=0.3pt, densely dotted] (0,1.5,0) -- (0,1.85,0);
+\draw[soft, line width=0.3pt, densely dotted] (0,0,1.5) -- (0,0,1.90);
+\fill[accent] (2.05,0,0) circle (0.4pt);
+\fill[accent] (0,1.85,0) circle (0.4pt);
+\fill[accent] (0,0,1.90) circle (0.4pt);
+
+\end{tikzpicture}
+
+\hspace{4mm}
+% ===================== 오른쪽 : 표 =========================================
+\begin{tikzpicture}[x=1mm, y=1mm]
+\node[ink, font=\small\bfseries, anchor=north west] at (0,64)
+     {Six degrees of freedom};
+\node[anchor=north west, align=left, text width=76mm, font=\scriptsize, soft] at (0,58) {%
+  Each row is one direction the vessel can move. Read it across: a force produces
+  a velocity, and integrating that velocity gives a position.};
+
+\node[anchor=north west, font=\scriptsize] at (0,44) {%
+  \begin{tabular}{@{}llll@{}}
+    \textbf{DOF} & \textbf{force / moment} & \textbf{lin. / ang. vel.} & \textbf{position / angle}\\[2pt]
+    1\ \ surge & $X$ & $u$ & $x$\\
+    2\ \ sway  & $Y$ & $v$ & $y$\\
+    3\ \ heave & $Z$ & $w$ & $z$\\
+    4\ \ roll  & $K$ & $p$ & $\phi$\\
+    5\ \ pitch & $M$ & $q$ & $\theta$\\
+    6\ \ yaw   & $N$ & $r$ & $\psi$\\
+  \end{tabular}};
+
+\node[anchor=north west, align=left, text width=76mm, font=\scriptsize] at (0,-4) {%
+  \textbf{Straight arrow} = force. \textbf{Curved arrow} = moment, drawn as a
+  circle in the plane perpendicular to its own axis, by the right-hand rule.
+  The dotted stub joins each circle's centre to its own axis — an ellipse whose
+  centre is off the axis is the classic way this picture goes wrong.\\[4pt]
+  A surface craft is normally reduced to DOF 1, 2 and 6: surge, sway and yaw.
+  Heave, roll and pitch remain in \texttt{otter.m} and appear in §1-12 as the
+  reason $M_{66}$ is not simply $I_z$.};
+\end{tikzpicture}
+
+\end{document}

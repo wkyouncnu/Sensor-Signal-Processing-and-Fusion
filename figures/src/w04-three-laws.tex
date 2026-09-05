@@ -1,0 +1,154 @@
+% figures/w04-three-laws.svg — 세 유도법칙이 갈리는 지점은 한 곳뿐이다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w04-three-laws.tex figures/w04-three-laws.svg
+%
+% 골격은 세 줄이 똑같다:  y_e -> arctan -> (합산, pi_p 와 함께) -> psi_d.
+% 다른 것은 여분의 상태가 **어디로 들어가는가** 하나다.
+%
+%   ILOS : arctan **안쪽** — y_e 에 더해지므로 길이여야 한다  -> kappa 의 단위 m/s
+%   ALOS : arctan **바깥쪽** — pi_p 쪽 합산점에 들어가므로 각이어야 한다 -> rad
+%
+% 오른쪽 칸의 수치는 §4-8·§4-9 의 실행 결과이고, 예시가 아니다.
+%
+% 출처: Fossen (2021) Handbook §12.3 (LOS),
+%       Borhaug, Pavlov & Pettersen (2008) CDC pp. 4984-4991 (ILOS),
+%       Fossen (2023) IEEE TCST 31(6) 2887-2894 (ALOS).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\tikzset{
+  lblk/.style = {blk, minimum width=19mm, minimum height=9mm, font=\small},
+  inj/.style  = {accent, line width=0.9pt, -{Stealth[length=4.4pt,width=3.2pt]}},
+  % text=accent 로 쓴다. 맨 뒤에 색 이름만 두면 TikZ 가 color= 로 읽어서
+  % fill 까지 그 색이 되고, 상자가 통째로 보라색으로 칠해진다.
+  ablk/.style = {draw=accent, line width=0.55pt, fill=white, text=accent,
+                 minimum width=17mm, minimum height=7.5mm, inner sep=2pt,
+                 font=\scriptsize},
+}
+\newcommand{\colhd}[2]{\parbox[b]{#1}{\raggedright
+  {\scriptsize\bfseries\color{soft}\MakeUppercase{#2}}}}
+% 높이를 못 박는다 — \parbox[t] 만으로는 tabular 가 아래 깊이를 세지 않는다
+\newcommand{\lawcell}[1]{\parbox[t][25mm][t]{56mm}{\raggedright#1}}
+\newcommand{\statecell}[1]{\parbox[t][25mm][t]{56mm}{\raggedright\scriptsize\color{ink}#1}}
+
+\begin{document}
+\begin{tabular}{@{}l@{}}
+
+\parbox{206mm}{\raggedright
+  {\small\bfseries\color{ink}
+   The three laws differ in one place only: where the extra term is added}\\[2pt]
+  {\scriptsize\color{soft}
+   ILOS puts it \textbf{inside} the arctan, so it looks like more cross-track
+   error. ALOS puts it \textbf{outside}, so it looks like a rotated path.
+   Everything else — the same $y_e$, the same arctan, the same $\pi_p$ — is
+   shared by all three.}}\\[3.5mm]
+
+\begin{tabular}{@{}l@{\hspace{4mm}}l@{\hspace{4mm}}l@{}}
+
+\colhd{56mm}{the law}
+& \colhd{84mm}{where the term enters}
+& \colhd{56mm}{what the state is}
+\\[1.5mm]
+
+% ===================== 1 : LOS =============================================
+\lawcell{{\small\bfseries\color{ink}1\ \ LOS}\\[3pt]
+  $\psi_d = \pi_p - \arctan\!\dfrac{y_e}{\Delta}$\\[5pt]
+  {\scriptsize\color{soft}Fossen (2021) §12.3}}
+&
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-8,-19) rectangle (78,15);
+  \node[lblk] (at) at (26,0) {$\arctan(\cdot/\Delta)$};
+  \node[sum]  (s2) at (54,0) {};
+  \draw[sig] (-6,0) -- (at.west);   \node[sname, anchor=south] at (2,0.8) {$y_e$};
+  \draw[sig] (at.east) -- (s2.west);
+  \node[font=\scriptsize] at (50.4,1.9) {$-$};
+  \draw[sig] (54,12) -- (s2.north);  \node[sname, anchor=west] at (55.2,9) {$\pi_p$};
+  \node[font=\scriptsize] at (56.4,4.0) {$+$};
+  \draw[sig] (s2.east) -- (72,0);   \node[sname, anchor=west] at (72.5,0) {$\psi_d$};
+  \node[note, anchor=north] at (30,-8) {nothing else enters};
+\end{tikzpicture}
+&
+\statecell{\textbf{No state at all.} The law is a static map from $y_e$ to
+  $\psi_d$.\\[4pt]
+  Settles \textbf{2.253\,m} off the path in a 0.3\,m/s beam current — the
+  $\Delta\tan\beta_c$ of §4-7.}
+\\[2mm]
+
+% ===================== 2 : ILOS ============================================
+\lawcell{{\small\bfseries\color{ink}2\ \ ILOS}\\[3pt]
+  $\psi_d = \pi_p - \arctan\!\dfrac{y_e + {\color{accent}\kappa\,y_{int}}}{\Delta}$\\[5pt]
+  {\scriptsize\color{soft}B\o rhaug, Pavlov \& Pettersen (2008)}}
+&
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-8,-19) rectangle (78,15);
+  \node[lblk] (at) at (26,0) {$\arctan(\cdot/\Delta)$};
+  \node[sum]  (s1) at (6,0) {};
+  \node[sum]  (s2) at (54,0) {};
+  \draw[sig] (-6,0) -- (s1.west);   \node[sname, anchor=south] at (-5.5,0.8) {$y_e$};
+  \node[font=\scriptsize] at (2.2,2.6) {$+$};
+  \draw[sig] (s1.east) -- (at.west);
+  \draw[sig] (at.east) -- (s2.west);
+  \node[font=\scriptsize] at (50.4,1.9) {$-$};
+  \draw[sig] (54,12) -- (s2.north);  \node[sname, anchor=west] at (55.2,9) {$\pi_p$};
+  \node[font=\scriptsize] at (56.4,4.0) {$+$};
+  \draw[sig] (s2.east) -- (72,0);   \node[sname, anchor=west] at (72.5,0) {$\psi_d$};
+
+  \node[ablk] (ki) at (6,-13) {$\kappa\,y_{int}$\ \ [m]};
+  \draw[inj] (ki.north) -- (s1.south);
+  \node[font=\scriptsize, accent] at (3.4,-4.4) {$+$};
+  \node[anote, anchor=west, align=left, text width=44mm] at (16,-13)
+       {\textbf{inside} the arctan — added to $y_e$, so it must be a
+        \textbf{length}};
+\end{tikzpicture}
+&
+\statecell{$y_{int}$, \textbf{in seconds}. Ends at \textbf{7.516} — a number
+  with no physical meaning and nothing to compare it against.\\[4pt]
+  Settles at \textbf{0.008\,m}.}
+\\[2mm]
+
+% ===================== 3 : ALOS ============================================
+\lawcell{{\small\bfseries\color{ink}3\ \ ALOS}\\[3pt]
+  $\psi_d = \pi_p - {\color{accent}\hat\beta} - \arctan\!\dfrac{y_e}{\Delta}$\\[5pt]
+  {\scriptsize\color{soft}Fossen (2023) IEEE TCST 31(6)}}
+&
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-8,-19) rectangle (78,15);
+  \node[lblk] (at) at (26,0) {$\arctan(\cdot/\Delta)$};
+  \node[sum]  (s2) at (54,0) {};
+  \draw[sig] (-6,0) -- (at.west);   \node[sname, anchor=south] at (2,0.8) {$y_e$};
+  \draw[sig] (at.east) -- (s2.west);
+  \node[font=\scriptsize] at (50.4,1.9) {$-$};
+  \draw[sig] (54,12) -- (s2.north);  \node[sname, anchor=west] at (55.2,9) {$\pi_p$};
+  \node[font=\scriptsize] at (56.4,4.0) {$+$};
+  \draw[sig] (s2.east) -- (72,0);   \node[sname, anchor=west] at (72.5,0) {$\psi_d$};
+
+  \node[ablk] (bh) at (54,-13) {$\hat\beta$\ \ [rad]};
+  \draw[inj] (bh.north) -- (s2.south);
+  \node[font=\scriptsize, accent] at (51.4,-4.4) {$-$};
+  \node[anote, anchor=east, align=right, text width=40mm] at (44,-13)
+       {\textbf{outside} the arctan — added on $\pi_p$'s side, so it must be an
+        \textbf{angle}};
+\end{tikzpicture}
+&
+\statecell{$\hat\beta$, \textbf{in degrees}. Ends at \textbf{15.91$^\circ$}
+  against a true crab angle of $15.88^\circ$ — a state that can be checked
+  against a measurement.\\[4pt]
+  Settles at \textbf{$-0.004$\,m}.}
+\\
+\end{tabular}\\[3.5mm]
+
+\parbox{206mm}{\raggedright\scriptsize
+  \textbf{Why the injection point decides everything.} Inside the arctan, a term
+  is \textbf{indistinguishable from more cross-track error} — ILOS steers as if
+  the vessel were $2.25$\,m further out than it is. Outside it, a term is
+  \textbf{indistinguishable from a rotated path} — ALOS steers along a line
+  tilted by the drift it has estimated.\\[3pt]
+  \textbf{And why the units are forced, not chosen.} A quantity added to $y_e$
+  must be a length, which is why $\kappa y_{int}$ is in metres and $\kappa$
+  carries the odd unit m/s (§4-8-3). A quantity added to an angle must be an
+  angle, which is why $\hat\beta$ is simply in radians. The settled error falls
+  from $2.253$\,m with no state to $0.008$\,m and $-0.004$\,m with one scalar
+  each — roughly a factor of $300$.}
+
+\end{tabular}
+\end{document}

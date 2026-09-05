@@ -1,0 +1,175 @@
+% figures/w04-ilos-alos-idea.svg — LOS · ILOS · ALOS 가 같은 조류에 각각 무엇을 하는가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w04-ilos-alos-idea.tex figures/w04-ilos-alos-idea.svg
+%
+% 기하를 눈대중으로 찍지 않는다. 강의 §4-7 의 스윕에서 V_c = 0.3 m/s 일 때
+% beta_c = 15.74 deg, Delta = 8 m 이므로 정상상태 오프셋은
+%
+%     y_e^ss = Delta tan(beta_c) = 8 * tan(15.74 deg) = 2.256 m
+%
+% 강의 표의 측정치는 2.253 m 이다. 그림의 각과 길이는 그 값 그대로 쓴다.
+%
+% ── 부호를 맞춰 둔다 ────────────────────────────────────────────────────────
+% 침로가 경로와 나란하면 chi = pi_p 이고 chi = psi + beta 이므로 psi = pi_p - beta:
+% 선수는 경로 방향에서 **반시계로** beta 만큼 돌아간다. NED 에서 양의 각은
+% 시계방향이므로, 화면에서 경로를 오른쪽(동쪽)으로 그리면 선수는 **위로** 든다.
+% 한편 y_e = +Delta tan(beta) 는 경로 방향의 **우현** 쪽, 곧 화면 아래쪽이다.
+% 그래서 LOS 선체는 경로 아래에 있고 선수는 위를 향한다 — 조류를 거슬러.
+% 조류는 우현으로 밀므로 화면에서 아래로 그린다.
+%
+% 출처: Fossen (2021) Handbook §12.3 (LOS),
+%       Borhaug, Pavlov & Pettersen (2008) CDC, pp. 4984-4991 (ILOS),
+%       Fossen (2023) IEEE TCST 31(6) 2887-2894, doi:10.1109/TCST.2023.3259819 (ALOS).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\def\BE{15.74}       % 크랩각 [deg]
+\def\SC{6}           % 1 m = 6 mm
+\def\OFF{13.5}       % Delta tan(beta) = 2.25 m -> 13.5 mm
+
+\tikzset{
+  pth/.style  = {pathc, line width=0.8pt, densely dashed},
+  cur/.style  = {flow, line width=0.9pt, -{Stealth[length=4.2pt,width=3.0pt]}},
+  bow/.style  = {ink, line width=0.9pt, -{Stealth[length=5pt,width=3.6pt]}},
+  trk/.style  = {pathc, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}},
+}
+% 선체 — 경로 방향에서 반시계로 beta 만큼 돌아간 채로 (x,y) 에 놓는다
+\newcommand{\hull}[2]{%
+  \begin{scope}[shift={(#1,#2)}, rotate=\BE]
+    \fill[ink, opacity=0.88] (7.5,0) -- (-1.5,3.0) -- (-1.5,-3.0) -- cycle;
+  \end{scope}}
+\newcommand{\hd}[2]{\parbox[b]{58mm}{\raggedright
+  {\small\bfseries\color{ink}#1}\\[1.5pt]{\scriptsize\color{soft}#2}}}
+% 높이를 못 박는다 — \parbox[t] 만으로는 tabular 가 아래 깊이를 세지 않는다
+\newcommand{\ft}[1]{\parbox[t][21mm][t]{58mm}{\raggedright\scriptsize\color{ink}#1}}
+
+\begin{document}
+\begin{tabular}{@{}l@{}}
+
+\parbox{194mm}{\raggedright
+  {\small\bfseries\color{ink}
+   All three laws end up pointing the bow upstream. They differ in what they
+   think they are doing.}\\[2pt]
+  {\scriptsize\color{soft}
+   Same vessel, same path, same current: $V_c = 0.3$\,m/s on the beam, so the
+   crab angle is $\beta = 15.74^\circ$ and $\Delta\tan\beta = 2.25$\,m with
+   $\Delta = 8$\,m. The bow tilt is that same $15.74^\circ$ in all three panels
+   — \textbf{only two of them are on the path}.}}\\[3.5mm]
+
+\begin{tabular}{@{}c@{\hspace{5mm}}c@{\hspace{5mm}}c@{}}
+
+\hd{1\ \ LOS}{the lean is spent on the drift}
+& \hd{2\ \ ILOS}{invent an error that is not there}
+& \hd{3\ \ ALOS}{estimate the drift and subtract it}
+\\[1.5mm]
+
+% ===================== 1 : LOS =============================================
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-2,-30) rectangle (60,26);
+  \draw[pth] (0,0) -- (58,0);
+  \node[note, pathc, anchor=south west] at (0,0.8) {the path};
+
+  % 조류 — 경로의 우현(화면 아래)으로 민다
+  \foreach \x in {6,20,34,48} {
+    \draw[cur] (\x,20) -- (\x,13);}
+  \node[note, flow, anchor=west] at (2,23) {the current, $V_c = 0.3$\,m/s};
+
+  % 선체 : 경로 아래 y_e = +2.25 m
+  \hull{20}{-\OFF}
+  \draw[bow] (20,-\OFF) -- ++({26*cos(\BE)},{26*sin(\BE)});
+  % 오른쪽에는 2.25 m 표시가 있다. 이름표는 화살촉 위쪽·왼쪽으로 붙인다
+  \node[note, ink, anchor=south east] at ({20+26*cos(\BE)},{-\OFF+26*sin(\BE)}) {bow, $\psi$};
+  \draw[trk] (20,-\OFF) -- (48,-\OFF);
+  \node[note, pathc, anchor=north] at (36,{-\OFF-1}) {track, $\chi$};
+  \draw[accent, line width=0.6pt] ({20+17},{-\OFF}) arc (0:\BE:17);
+  \node[anote, anchor=west] at ({20+18.5},{-\OFF+3}) {$\beta$};
+
+  % 남는 오프셋
+  \draw[errc, line width=0.7pt, {Stealth[length=3.6pt]}-{Stealth[length=3.6pt]}]
+        (52,0) -- (52,-\OFF);
+  \node[font=\scriptsize, errc, anchor=west] at (53,{-0.5*\OFF}) {$2.25$\,m};
+\end{tikzpicture}
+&
+% ===================== 2 : ILOS ============================================
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-2,-30) rectangle (60,26);
+  \draw[pth] (0,0) -- (58,0);
+  \node[note, pathc, anchor=south west] at (0,0.8) {the path};
+
+  \foreach \x in {6,20,34,48} {
+    \draw[cur] (\x,20) -- (\x,13);}
+  \node[note, flow, anchor=west] at (2,23) {the current, $V_c = 0.3$\,m/s};
+
+  % 선체 : 경로 위, y_e = 0
+  \hull{20}{0}
+  \draw[bow] (20,0) -- ++({26*cos(\BE)},{26*sin(\BE)});
+  \node[note, ink, anchor=south west] at ({20+26*cos(\BE)},{26*sin(\BE)}) {bow, $\psi$};
+  \draw[trk] (20,0) -- (48,0);
+  \node[note, pathc, anchor=north] at (36,-1) {track, $\chi$};
+  \draw[accent, line width=0.6pt] (37,0) arc (0:\BE:17);
+  \node[anote, anchor=west] at (38.5,3) {$\beta$};
+
+  % 있지도 않은 오차
+  \draw[accent, line width=0.7pt, densely dashed] (2,-\OFF) -- (52,-\OFF);
+  \draw[accent, line width=0.6pt, {Stealth[length=3.6pt]}-{Stealth[length=3.6pt]}]
+        (52,0) -- (52,-\OFF);
+  \node[anote, anchor=east] at (51,{-0.5*\OFF}) {$\kappa y_{int} = 2.25$\,m};
+  \node[anote, anchor=north west, align=left, text width=44mm] at (2,{-\OFF-1.5})
+       {a \textbf{phantom} error the integrator built. There is no vessel here.};
+\end{tikzpicture}
+&
+% ===================== 3 : ALOS ============================================
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-2,-30) rectangle (60,26);
+  \draw[pth] (0,0) -- (58,0);
+  \node[note, pathc, anchor=south west] at (0,0.8) {the path};
+
+  \foreach \x in {6,20,34,48} {
+    \draw[cur] (\x,20) -- (\x,13);}
+  \node[note, flow, anchor=west] at (2,23) {the current, $V_c = 0.3$\,m/s};
+
+  \hull{20}{0}
+  \draw[bow] (20,0) -- ++({26*cos(\BE)},{26*sin(\BE)});
+  \node[note, ink, anchor=south west] at ({20+26*cos(\BE)},{26*sin(\BE)}) {bow, $\psi$};
+  \draw[trk] (20,0) -- (48,0);
+  \node[note, pathc, anchor=north] at (36,-1) {track, $\chi$};
+
+  % 추정한 표류각 — 명령에서 그대로 빼는 양
+  \draw[accent, line width=1.1pt] (37,0) arc (0:\BE:17);
+  \node[anote, anchor=west] at (38.5,3) {$\hat\beta = 15.91^\circ$};
+  \node[anote, anchor=north west, align=left, text width=52mm] at (2,-6)
+       {the estimate \textbf{is} the answer: it is subtracted from the command,
+        and it can be read off in degrees and checked against
+        $\mathrm{atan2}(v,u) = 15.88^\circ$.};
+\end{tikzpicture}
+\\[1.5mm]
+
+\ft{The bow \emph{is} tilted upstream by $15.74^\circ$. But that tilt is the
+    $\arctan(y_e/\Delta)$ term, and it is entirely used up cancelling the drift.
+    Nothing is left to close $y_e$. The vessel runs \textbf{parallel} to the
+    path, $2.25$\,m to the side of it, for ever.}
+& \ft{The law reads $y_e + \kappa y_{int}$, not $y_e$. The integrator fills until
+      its phantom error equals the old $2.25$\,m offset, and only then can the
+      \textbf{real} error be zero. It never learns what a current is; it only
+      knows the error must vanish.}
+& \ft{The estimate enters \textbf{outside} the arctan, so the arctan term is
+      handed back the job it was designed for — closing $y_e$. Nothing is
+      invented: the disturbance is estimated and removed.}
+\\
+\end{tabular}\\[3.5mm]
+
+\parbox{194mm}{\raggedright\scriptsize
+  \textbf{The one idea to take away.} A current cannot be removed by steering
+  harder. It must be \textbf{answered} by pointing the bow upstream. LOS points
+  upstream but spends the whole lean on the drift, so an offset is left over;
+  ILOS and ALOS buy that lean somewhere else and give the arctan term its
+  original job back.\\[3pt]
+  \textbf{Sources.} LOS — Fossen (2021), \emph{Handbook of Marine Craft
+  Hydrodynamics and Motion Control}, 2nd ed., §12.3. ILOS — B\o rhaug, Pavlov
+  and Pettersen (2008), \emph{Proc.\ 47th IEEE CDC}, pp.~4984--4991. ALOS —
+  Fossen (2023), \emph{IEEE Trans.\ Control Syst.\ Technol.}\ 31(6),
+  pp.~2887--2894. The numbers in the panels are §4-7's sweep and §4-8 to §4-9's
+  runs, not illustrations.}
+
+\end{tabular}
+\end{document}

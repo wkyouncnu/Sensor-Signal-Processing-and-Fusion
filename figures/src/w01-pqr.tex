@@ -1,0 +1,116 @@
+% figures/w01-pqr.svg — p, q, r 세 각속도.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-pqr.tex figures/w01-pqr.svg
+%
+% 셋 다 선체의 축 하나에 대해 재고, 셋 다 오른손 법칙을 따른다. z 가 아래를
+% 향하므로 양의 yaw 는 위에서 보면 시계방향이고, 양의 pitch 는 선수를 든다.
+% 각 칸은 그 축을 관측자 쪽으로 두고 본 그림이다.
+%
+% ── 회전 방향은 계산해서 정한다 (CLAUDE.md §4 규칙 6) ────────────────────────
+% 화면 기저를 오른쪽 R, 위 U, 화면 밖 O 로 두고 R x U = O 라 하자.
+%
+%   (p) 선미에서 앞을 본다.  x_b = -O (화면 안쪽), z_b = -U (아래).
+%       x_b x y_b = z_b 이므로 y_b = R — 우현이 화면 오른쪽. 맞다.
+%       x_b 둘레의 양의 회전은 y_b 를 z_b 로 보낸다: R -> -U, 즉 오른쪽이 아래로.
+%       화면에서 **시계방향**. 호는 위를 지나 왼쪽에서 오른쪽으로 그린다.
+%   (q) 우현에서 본다.  y_b = +O (화면 밖).  O 둘레의 양의 회전은 반시계방향.
+%       오른쪽(선수)이 올라간다. 호는 위를 지나 오른쪽에서 왼쪽으로.
+%   (r) 위에서 본다.  z_b = -O (화면 안쪽).  다시 **시계방향** — 선수가 우현으로.
+%
+% 출처: SNAME (1950) 표기, Fossen (2021) Handbook §2.1 표 2.1.
+% TikZ 에서 arc 의 각이 **줄어들면** 시계방향, 늘어나면 반시계방향이다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[ink, font=\small\bfseries, anchor=north west] at (-6,60)
+     {$p$, $q$ and $r$ — the three body angular rates};
+\node[anchor=north west, align=left, text width=170mm, font=\scriptsize, soft] at (-6,54) {%
+  Each is measured about one axis of the \textbf{hull}, by a gyroscope bolted to
+  the hull. All three are in rad/s and all three obey the right-hand rule.};
+
+% ===================== p : roll =============================================
+\begin{scope}
+  \node[ink, font=\small\bfseries, anchor=west] at (-6,41) {$p$ — roll rate};
+  \node[note, anchor=west] at (-6,36.5) {seen from astern, looking forward};
+
+  % 선체 단면 : 쌍동선
+  \foreach \s in {-1,1} {
+    \fill[ink, opacity=0.10] ({\s*11-4},0) rectangle ({\s*11+4},7);
+    \draw[ink, line width=0.5pt] ({\s*11-4},0) rectangle ({\s*11+4},7);
+  }
+  \draw[ink, line width=0.5pt] (-15,7) -- (15,7) -- (15,13) -- (-15,13) -- cycle;
+
+  % x 축은 관측자에서 멀어진다 : 원 안의 x
+  \draw[ink, line width=0.5pt] (0,10) circle (2.0);
+  \draw[ink, line width=0.5pt] (-1.4,8.6) -- (1.4,11.4);
+  \draw[ink, line width=0.5pt] (-1.4,11.4) -- (1.4,8.6);
+  \node[font=\scriptsize, anchor=south] at (0,13.8) {$x_b$ — away from you};
+
+  % x 가 화면 안쪽이면 양의 회전은 시계방향 : 각이 줄어드는 호
+  \draw[accent, line width=1.0pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (-19,20) arc (180:10:19 and 7);
+  \node[accent, font=\scriptsize, anchor=south] at (0,28.5) {$p > 0$};
+  \node[note, anchor=north, align=center, text width=48mm] at (0,-2) {%
+    the \textbf{starboard} side goes down;\\ $\dot\phi \approx p$ for a surface craft};
+\end{scope}
+
+% ===================== q : pitch ============================================
+\begin{scope}[shift={(62,0)}]
+  \node[ink, font=\small\bfseries, anchor=west] at (-6,41) {$q$ — pitch rate};
+  \node[note, anchor=west] at (-6,36.5) {seen from starboard, bow to the right};
+
+  \fill[ink, opacity=0.10] (-16,5) -- (14,5) -- (19,11) -- (-16,11) -- cycle;
+  \draw[ink, line width=0.5pt] (-16,5) -- (14,5) -- (19,11) -- (-16,11) -- cycle;
+
+  % y 축은 관측자 쪽 : 원 안의 점
+  \draw[ink, line width=0.5pt] (0,8) circle (2.0);
+  \fill[ink] (0,8) circle (0.7);
+  \node[font=\scriptsize, anchor=south] at (0,11.8) {$y_b$ — towards you};
+
+  % y 가 화면 밖이면 양의 회전은 반시계방향 : 각이 늘어나는 호
+  \draw[accent, line width=1.0pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (19,20) arc (0:170:19 and 7);
+  \node[accent, font=\scriptsize, anchor=south] at (0,28.5) {$q > 0$};
+  \node[note, anchor=north, align=center, text width=48mm] at (0,-2) {%
+    the bow goes \textbf{up} —\\ even though $z$ points down};
+\end{scope}
+
+% ===================== r : yaw ==============================================
+\begin{scope}[shift={(126,0)}]
+  \node[ink, font=\small\bfseries, anchor=west] at (-6,41) {$r$ — yaw rate};
+  \node[note, anchor=west] at (-6,36.5) {seen from above, bow upwards};
+
+  \fill[ink, opacity=0.10] (0,18) -- (-7,4) -- (-7,-6) -- (7,-6) -- (7,4) -- cycle;
+  \draw[ink, line width=0.5pt] (0,18) -- (-7,4) -- (-7,-6) -- (7,-6) -- (7,4) -- cycle;
+
+  % z 축은 화면 안쪽 (아래) : 원 안의 x
+  \draw[ink, line width=0.5pt] (0,7) circle (2.0);
+  \draw[ink, line width=0.5pt] (-1.4,5.6) -- (1.4,8.4);
+  \draw[ink, line width=0.5pt] (-1.4,8.4) -- (1.4,5.6);
+  \node[font=\scriptsize, anchor=west] at (6.8,7) {$z_b$ — into the page};
+
+  % z 가 화면 안쪽이면 양의 회전은 시계방향 : 각이 줄어드는 호
+  \draw[accent, line width=1.0pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (-19,20) arc (180:10:19 and 7);
+  \node[accent, font=\scriptsize, anchor=south] at (0,28.5) {$r > 0$};
+  \node[note, anchor=north, align=center, text width=48mm] at (0,-8) {%
+    the bow swings to \textbf{starboard};\\ $\dot\psi \approx r$ for a surface craft};
+\end{scope}
+
+% ---- 아래 한 줄 -------------------------------------------------------------
+\draw[soft, line width=0.3pt] (-6,-22) -- (166,-22);
+\node[anchor=north west, align=left, text width=172mm, font=\scriptsize] at (-6,-24) {%
+  Point the right thumb along the positive axis; the fingers curl in the positive
+  direction of rotation. With $z$ \textbf{down}, that makes a positive roll and a
+  positive yaw look \textbf{clockwise} on these two views, while a positive pitch
+  looks anticlockwise from starboard and lifts the bow. Both feel wrong once and
+  then never again. The convention is SNAME (1950); Fossen (2021) Handbook §2.1,
+  Table 2.1 states it in this form.\\[3pt]
+  These are body rates, not Euler-angle rates: §1-5 gives the matrix
+  $\mathbf{T}_\Theta$ that separates them, and it is \textbf{not} a rotation.};
+
+\end{tikzpicture}
+\end{document}
