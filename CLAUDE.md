@@ -65,9 +65,14 @@
 │                            gnc_chain.m · gnc_colour.m · add_subsys.m · add_measurement.m
 │                            add_sum.m · mss_style.m · export_diagram.m
 │                            port_xy.m · row_feed.m · lane_line.m · check_overlaps.m
+│                            ensure_base_vars.m
+│                            crosstrack_err.m · wp_switch.m · path_plot.m
+│                            verify_guidance.m                       (W04 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · live_track.m · base_var.m
-│                            w01_6dof_arcs.awk · w01_euler_geo.awk   (그림 계산)
+│                            git_autopush.sh · svg2png.sh
+│                            w01_6dof_arcs.awk · w01_euler_geo.awk
+│                            w04_los_geo.awk                         (그림 계산)
 └── .claude/skills/          gnc-lecture-vault · simulink-gnc-models
 ```
 

@@ -81,7 +81,7 @@ for (i = 0; i <= n; i++) {
 문서에는 **그림 읽는 법**을 표로 덧붙인다.
 
 ```markdown
-![LOS 유도 기하](../figures/w07-los-geometry.svg)
+![LOS 유도 기하](../figures/w04-los-geometry.svg)
 
 | 기호 | 뜻 |
 |---|---|

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="400" fill="#ffffff"/>
+
+  <text x="20" y="30" font-size="19" font-weight="700" fill="#1e293b">Reaching a waypoint and following the line to it are different problems</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">Both vessels start 18 m off the path and both arrive. Only one travels along it.</text>
+
+  <!-- ================= LEFT: atan2 ================= -->
+  <text x="60" y="86" font-size="16" font-weight="700" fill="#dc2626">1&#8194; atan2 &#8212; aim at the waypoint</text>
+  <text x="60" y="108" font-size="14" fill="#64748b">&#968;&#8340; = atan2(E&#8342;&#8330;&#8321; &#8722; E,&#8194; N&#8342;&#8330;&#8321; &#8722; N)</text>
+
+  <line x1="60" y1="150" x2="390" y2="150" stroke="#0d9488" stroke-width="2.5" stroke-dasharray="7 5"/>
+  <circle cx="60"  cy="150" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <circle cx="390" cy="150" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="44"  y="138" font-size="13" fill="#0d9488">wp k</text>
+  <text x="366" y="138" font-size="13" fill="#0d9488">wp k+1</text>
+
+  <line x1="60" y1="209" x2="390" y2="150" stroke="#dc2626" stroke-width="2.6"/>
+  <polygon points="60,209 52,203 52,215" fill="#dc2626"/>
+  <text x="70" y="232" font-size="14" fill="#dc2626">the track</text>
+
+  <line x1="200" y1="150" x2="200" y2="184" stroke="#d97706" stroke-width="1.8"/>
+  <text x="206" y="200" font-size="14" fill="#d97706">y&#8337; still 10 m here</text>
+  <line x1="204" y1="196" x2="200" y2="186" stroke="#d97706" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <text x="60" y="268" font-size="14" fill="#334155">The law regulates the distance to a POINT.</text>
+  <text x="60" y="290" font-size="14" fill="#334155">The line the point sits on plays no part in it,</text>
+  <text x="60" y="312" font-size="14" fill="#334155">so the vessel closes on the waypoint along a</text>
+  <text x="60" y="334" font-size="14" fill="#334155">straight line of its own, and is on the path</text>
+  <text x="60" y="356" font-size="14" fill="#334155">only at the very end &#8212; if at all.</text>
+
+  <!-- ================= RIGHT: LOS ================= -->
+  <text x="490" y="86" font-size="16" font-weight="700" fill="#1d4ed8">2&#8194; LOS &#8212; aim &#916; ahead on the path</text>
+  <text x="490" y="108" font-size="14" fill="#64748b">&#968;&#8340; = &#960;&#8346; &#8722; arctan( y&#8337; / &#916; )</text>
+
+  <line x1="490" y1="150" x2="820" y2="150" stroke="#0d9488" stroke-width="2.5" stroke-dasharray="7 5"/>
+  <circle cx="490" cy="150" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <circle cx="820" cy="150" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="474" y="138" font-size="13" fill="#0d9488">wp k</text>
+  <text x="796" y="138" font-size="13" fill="#0d9488">wp k+1</text>
+
+  <polyline fill="none" stroke="#1d4ed8" stroke-width="2.6"
+    points="490,209 496,201 503,193 510,186 518,179 526,174 535,169 545,165 554,162 564,159 574,157 584,155 594,154 605,153 615,153 625,152 635,151 645,151 656,151 666,151 676,151 686,150 697,150 707,150 717,150 727,150 738,150 748,150 758,150 768,150 778,150 789,150 799,150 809,150 819,150"/>
+  <polygon points="490,209 482,203 482,215" fill="#1d4ed8"/>
+  <text x="500" y="232" font-size="14" fill="#1d4ed8">the track</text>
+
+  <line x1="630" y1="150" x2="630" y2="184" stroke="#d97706" stroke-width="1.8"/>
+  <text x="600" y="200" font-size="14" fill="#d97706">y&#8337; already under 0.5 m</text>
+
+  <text x="490" y="268" font-size="14" fill="#334155">The law regulates the distance to the LINE.</text>
+  <text x="490" y="290" font-size="14" fill="#334155">The aim point moves along the path as the</text>
+  <text x="490" y="312" font-size="14" fill="#334155">vessel does, so the correction fades to zero</text>
+  <text x="490" y="334" font-size="14" fill="#334155">exactly when the vessel reaches the path, and</text>
+  <text x="490" y="356" font-size="14" fill="#334155">the rest of the leg is run along it.</text>
+
+  <!-- the measured comparison -->
+  <rect x="20" y="372" width="860" height="22" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" rx="4"/>
+  <text x="34" y="388" font-size="13" fill="#334155">Measured on the four-leg mission of section C: atan2 holds the path to <tspan font-weight="700">0.55 m</tspan>, LOS to <tspan font-weight="700">0.06 m</tspan> &#8212; a factor of nine, and the only difference is one arctan.</text>
+</svg>

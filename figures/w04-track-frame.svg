@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" width="900" height="450"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="450" fill="#ffffff"/>
+  <defs>
+    <marker id="tg" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#64748b"/></marker>
+    <marker id="to" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#d97706"/></marker>
+    <marker id="tr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#dc2626"/></marker>
+    <marker id="tt" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#0d9488"/></marker>
+  </defs>
+
+  <text x="20" y="30" font-size="19" font-weight="700" fill="#1e293b">Both errors come out of one rotation</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">Write the position error in the frame of the leg, and its two components ARE the two errors</text>
+
+  <!-- NED axes -->
+  <line x1="60" y1="170" x2="60" y2="106" stroke="#64748b" stroke-width="1.6" marker-end="url(#tg)"/>
+  <line x1="60" y1="170" x2="124" y2="170" stroke="#64748b" stroke-width="1.6" marker-end="url(#tg)"/>
+  <text x="48" y="100" font-size="15" fill="#64748b">N</text>
+  <text x="130" y="175" font-size="15" fill="#64748b">E</text>
+  <text x="48" y="192" font-size="13" fill="#94a3b8">the frame that never moves</text>
+
+  <!-- the leg: wp_k (110,340) -> wp_next (430,178), pi_p = 63.2 deg -->
+  <line x1="110" y1="340" x2="430" y2="178" stroke="#0d9488" stroke-width="3" marker-end="url(#tt)"/>
+  <circle cx="110" cy="340" r="7" fill="#ffffff" stroke="#0d9488" stroke-width="2.5"/>
+  <text x="66" y="364" font-size="15" fill="#0d9488">wp&#8342;</text>
+  <text x="440" y="172" font-size="15" fill="#0d9488">wp&#8342;&#8330;&#8321;</text>
+
+  <!-- the leg frame drawn at wp_k: t along the leg, n to starboard -->
+  <line x1="110" y1="340" x2="180" y2="304" stroke="#0d9488" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="150" y="300" font-size="14" fill="#0d9488">t&#770;</text>
+  <line x1="110" y1="340" x2="146" y2="410" stroke="#0d9488" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="150" y="404" font-size="14" fill="#0d9488">n&#770;  (to starboard)</text>
+
+  <!-- pi_p from North -->
+  <line x1="110" y1="340" x2="110" y2="258" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <path d="M 110 296 A 44 44 0 0 1 149 318" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="118" y="284" font-size="15" fill="#64748b">&#960;&#8346;</text>
+
+  <!-- the vessel P (306,318) and the position error wp_k -> P -->
+  <line x1="110" y1="340" x2="306" y2="318" stroke="#334155" stroke-width="2.2" marker-end="url(#tg)"/>
+  <text x="162" y="358" font-size="14" fill="#334155">the position error</text>
+  <polygon points="306,308 314,324 298,324" fill="#1e293b"/>
+  <text x="316" y="330" font-size="14" fill="#1e293b">the vessel</text>
+
+  <!-- its two components: x_e along t, y_e along n. F is the foot -->
+  <line x1="110" y1="340" x2="262" y2="263" stroke="#d97706" stroke-width="2.4" marker-end="url(#to)"/>
+  <text x="150" y="258" font-size="15" fill="#d97706">x&#8337;  along&#8209;track</text>
+  <line x1="262" y1="263" x2="306" y2="318" stroke="#dc2626" stroke-width="2.4" marker-end="url(#tr)"/>
+  <text x="268" y="238" font-size="15" fill="#dc2626">y&#8337;  cross&#8209;track</text>
+  <line x1="288" y1="243" x2="284" y2="286" stroke="#dc2626" stroke-width="1" stroke-dasharray="3 3"/>
+  <path d="M 262 263 l 8.9 4.5 l 4.5 -8.9" fill="none" stroke="#dc2626" stroke-width="1.4"/>
+
+  <!-- the algebra -->
+  <rect x="500" y="76" width="380" height="200" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.2" rx="6"/>
+  <text x="520" y="106" font-size="15" fill="#334155">The leg gives the frame its direction:</text>
+  <text x="520" y="134" font-size="16" font-weight="700" fill="#1e293b">&#960;&#8346; = atan2( E&#8342;&#8330;&#8321; &#8722; E&#8342;,&#8194; N&#8342;&#8330;&#8321; &#8722; N&#8342; )</text>
+  <text x="520" y="164" font-size="15" fill="#334155">and the error, written in that frame, is</text>
+  <text x="520" y="200" font-size="16" font-weight="700" fill="#1e293b">x&#8337; =&#8194;&#8194;(N &#8722; N&#8342;) cos&#960;&#8346; + (E &#8722; E&#8342;) sin&#960;&#8346;</text>
+  <text x="520" y="228" font-size="16" font-weight="700" fill="#1e293b">y&#8337; = &#8722;(N &#8722; N&#8342;) sin&#960;&#8346; + (E &#8722; E&#8342;) cos&#960;&#8346;</text>
+  <text x="520" y="256" font-size="14" fill="#64748b">which is R(&#960;&#8346;)&#7488; applied to the position error.</text>
+
+  <!-- what it means -->
+  <rect x="500" y="292" width="380" height="134" fill="#fffbeb" stroke="#d97706" stroke-width="1.2" rx="6"/>
+  <text x="520" y="318" font-size="15" font-weight="700" fill="#1e293b">One rotation, two answers</text>
+  <text x="520" y="342" font-size="14" fill="#334155">x&#8337; &#8212; how far ALONG the leg the vessel is.</text>
+  <text x="520" y="362" font-size="14" fill="#334155">&#8194;&#8194;&#8194;&#8194;&#8194;The switching test of &#167;4-6 uses it.</text>
+  <text x="520" y="388" font-size="14" fill="#334155">y&#8337; &#8212; how far TO THE SIDE. The guidance</text>
+  <text x="520" y="410" font-size="14" fill="#334155">&#8194;&#8194;&#8194;&#8194;&#8194;law drives this one to zero.</text>
+</svg>

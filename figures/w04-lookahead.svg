@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="430" fill="#ffffff"/>
+  <defs>
+    <marker id="lb" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1d4ed8"/></marker>
+    <marker id="lo" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#d97706"/></marker>
+    <marker id="lp" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#7c3aed"/></marker>
+  </defs>
+
+  <text x="20" y="30" font-size="19" font-weight="700" fill="#1e293b">&#916; sets how hard the vessel is told to turn towards the path</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">One vessel, one cross&#8209;track error, three aim points &#8212; and three very different commands</text>
+
+  <!-- the three Delta bars, stacked clear of the path -->
+  <line x1="130" y1="76"  x2="460" y2="76"  stroke="#d97706" stroke-width="5" opacity="0.4"/>
+  <text x="468" y="81" font-size="14" fill="#d97706">&#916; large</text>
+  <line x1="130" y1="94"  x2="280" y2="94"  stroke="#1d4ed8" stroke-width="5" opacity="0.4"/>
+  <text x="288" y="99" font-size="14" fill="#1d4ed8">&#916; middling</text>
+  <line x1="130" y1="112" x2="190" y2="112" stroke="#7c3aed" stroke-width="5" opacity="0.4"/>
+  <text x="198" y="117" font-size="14" fill="#7c3aed">&#916; small</text>
+
+  <!-- the path -->
+  <line x1="60" y1="140" x2="620" y2="140" stroke="#0d9488" stroke-width="3"/>
+  <text x="632" y="145" font-size="15" fill="#0d9488">the path</text>
+
+  <!-- the vessel, y_e below the foot of the perpendicular at x = 130 -->
+  <line x1="130" y1="140" x2="130" y2="256" stroke="#dc2626" stroke-width="2.2"/>
+  <text x="104" y="206" font-size="15" fill="#dc2626">y&#8337;</text>
+  <path d="M 130 140 l 0 14 l 14 0" fill="none" stroke="#dc2626" stroke-width="1.3"/>
+  <polygon points="130,246 139,264 121,264" fill="#1e293b"/>
+  <text x="60" y="288" font-size="14" fill="#1e293b">the vessel</text>
+  <text x="20" y="132" font-size="13" fill="#64748b">foot of the perpendicular</text>
+  <line x1="128" y1="136" x2="130" y2="142" stroke="#64748b" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- three aim points -->
+  <circle cx="190" cy="140" r="6" fill="#7c3aed"/>
+  <circle cx="280" cy="140" r="6" fill="#1d4ed8"/>
+  <circle cx="460" cy="140" r="6" fill="#d97706"/>
+
+  <line x1="130" y1="256" x2="190" y2="140" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#lp)"/>
+  <line x1="130" y1="256" x2="280" y2="140" stroke="#1d4ed8" stroke-width="2.2" marker-end="url(#lb)"/>
+  <line x1="130" y1="256" x2="460" y2="140" stroke="#d97706" stroke-width="2.2" marker-end="url(#lo)"/>
+
+  <text x="152" y="248" font-size="14" font-weight="700" fill="#7c3aed">63&#176;</text>
+  <text x="212" y="230" font-size="14" font-weight="700" fill="#1d4ed8">39&#176;</text>
+  <text x="300" y="186" font-size="14" font-weight="700" fill="#d97706">20&#176;</text>
+  <text x="150" y="308" font-size="14" fill="#64748b">the angle each aim point asks the vessel to turn through</text>
+
+  <!-- the rule of thumb -->
+  <rect x="640" y="164" width="220" height="140" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.2" rx="6"/>
+  <text x="656" y="190" font-size="15" font-weight="700" fill="#1e293b">The rule of thumb</text>
+  <text x="656" y="214" font-size="14" fill="#334155">&#916; = 2 to 5 hull lengths.</text>
+  <text x="656" y="238" font-size="14" fill="#334155">For the 2 m Otter that is</text>
+  <text x="656" y="258" font-size="14" fill="#334155">4 to 10 m; this course</text>
+  <text x="656" y="278" font-size="14" fill="#334155">uses &#916; = 8 m.</text>
+  <text x="656" y="298" font-size="13" fill="#64748b">Section E measures both ends.</text>
+
+  <!-- the two failure modes -->
+  <rect x="60" y="326" width="390" height="94" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.2" rx="6"/>
+  <text x="76" y="350" font-size="15" font-weight="700" fill="#1e293b">&#916; too small &#8212; closes hard, overshoots</text>
+  <text x="76" y="374" font-size="14" fill="#334155">The arctan saturates almost at once, the vessel turns</text>
+  <text x="76" y="394" font-size="14" fill="#334155">nearly perpendicular to the path and arrives with speed</text>
+  <text x="76" y="412" font-size="14" fill="#334155">across it. Measured: 0.94 m overshoot at &#916; = 2 m.</text>
+
+  <rect x="470" y="326" width="390" height="94" fill="#fffbeb" stroke="#d97706" stroke-width="1.2" rx="6"/>
+  <text x="486" y="350" font-size="15" font-weight="700" fill="#1e293b">&#916; too large &#8212; leans, never arrives</text>
+  <text x="486" y="374" font-size="14" fill="#334155">The correction is gentle and the vessel closes slowly.</text>
+  <text x="486" y="394" font-size="14" fill="#334155">Measured: at &#916; = 30 m it is still 1.29 m off the path</text>
+  <text x="486" y="412" font-size="14" fill="#334155">when the 60 m leg ends.</text>
+</svg>

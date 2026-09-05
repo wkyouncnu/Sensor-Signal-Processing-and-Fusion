@@ -24,9 +24,11 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W01 | [Vessel Kinematics and the Otter Motion Model](lectures/W01_Vessel_Kinematics_and_the_Otter_Model.md) | `W01_openloop` |
 | W02 | [Surge Speed Control](lectures/W02_Surge_Speed_Control.md) | `W02_surge` · `W02_antiwindup` · `W02_pseudo` |
 | W03 | [Heading Control](lectures/W03_Heading_Control.md) | `W03_heading` |
+| W04 | [Waypoint Following and LOS Guidance](lectures/W04_Waypoint_Following_and_LOS_Guidance.md) | `W04_guidance` |
 | A1 | [Actuation and the Control Effectiveness Matrix](lectures/A1_Actuation_and_the_Control_Effectiveness_Matrix.md) (부록) | `A1_actuation` |
 
-W04 이후는 [PLAN.md](PLAN.md) §2 참조.
+W05 이후는 [PLAN.md](PLAN.md) §2 참조. **W04 는 유도, W05 는 Control Allocation** 이다 —
+사용자 결정으로 둘의 순서를 바꿨다.
 
 ## 실행
 

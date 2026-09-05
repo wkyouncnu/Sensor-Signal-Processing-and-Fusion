@@ -286,7 +286,7 @@ $$
 > [!note] Two definitions of $\beta$ are in circulation
 > Fossen writes $\beta = \arcsin(v/U)$ with $U = \sqrt{u^2+v^2}$; the form used here is $\operatorname{atan2}(v,u)$. For $u > 0$ they are identical — at $u = 2.0$, $v = 0.5$ both give $14.036°$. They part company going astern: at $u = -1.0$, $v = 0.5$ the arcsin form gives $26.6°$ and `atan2` gives $153.4°$. Only the second is the direction the vessel is actually travelling, so this course uses `atan2` throughout.
 
-- This week regulates $\psi$ and lets $\chi$ fall where it may. **Week 5 cannot**: a path-following law that steers the heading onto a track while the vessel travels along the course leaves a permanent cross-track error of the order of $\beta$ times the look-ahead distance.
+- This week regulates $\psi$ and lets $\chi$ fall where it may. **Week 4 cannot**: a path-following law that steers the heading onto a track while the vessel travels along the course leaves a permanent cross-track error of the order of $\beta$ times the look-ahead distance.
 
 ## 3-5. The wrap
 
@@ -323,7 +323,7 @@ T_1 = \frac{X}{2} + \frac{N}{2y_{\text{pont}}},
 T_2 = \frac{X}{2} - \frac{N}{2y_{\text{pont}}} .
 $$
 
-- The map is **square** in the $(X, N)$ plane, so the inverse exists and is unique. Nothing is optimised and nothing is chosen. Week 4 meets the case where there are more thrusters than demands.
+- The map is **square** in the $(X, N)$ plane, so the inverse exists and is unique. Nothing is optimised and nothing is chosen. Week 5 meets the case where there are more thrusters than demands.
 - Each thrust is then converted to a shaft speed by inverting the propeller curve one propeller at a time, $n = \operatorname{sign}(T)\sqrt{|T|/k}$, and saturated.
 
 > [!tip] Allocating thrust rather than shaft speed pays a dividend
@@ -637,7 +637,7 @@ $$
 | The measured overshoot is far below the prediction | the step is large enough for $N_h = N_r(1+10\lvert r\rvert)r$ to matter | expected; see §F. Use a small step to test a linear design |
 | Adding $K_d$ makes the response slower but not less damped | $K_d$ is already past critical, $\zeta > 1$ | reduce $K_d$; $\zeta = 1$ is at $K_d = 87.96$ for $K_p = 100$ |
 | Peak yaw rate is the same for two different step sizes | the propellers are saturating | expected; the vessel turns as fast as it can |
-| The vessel drifts sideways while turning | the crab angle of Week 1 | expected, and the subject of Week 5 |
+| The vessel drifts sideways while turning | the crab angle of Week 1 | expected, and the subject of Week 4 |
 
 ---
 
@@ -662,7 +662,7 @@ $$
 
 ## Next Week
 
-- **Week 4 — Control Allocation**
-- This week's allocation had exactly one answer because the map was square. Add a thruster and it has infinitely many, and the question becomes which one to choose.
-- The pseudo-inverse, weighted least squares, and what a weight can and cannot do.
-- Preparation: read **Appendix A1**, which becomes required here — the column rule, the rank of $\mathbf{B}$, and the extended thrust vector.
+- **Week 4 — Waypoint Following and LOS Guidance**
+- This week was told what heading to hold; a human typed the number into a step block. Week 4 asks where that number comes from, and the answer is a list of waypoints and a guidance law.
+- The cross-track and along-track errors from one rotation, the line-of-sight law, and the two laws — integral and adaptive — that survive an ocean current.
+- Preparation: §3-4 of this week, on the crab angle. Week 4 opens by quantifying exactly what it costs.

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="470" fill="#ffffff"/>
+  <defs>
+    <marker id="g" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#64748b"/></marker>
+    <marker id="b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#1d4ed8"/></marker>
+    <marker id="r" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#dc2626"/></marker>
+    <marker id="o" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#d97706"/></marker>
+  </defs>
+
+  <text x="20" y="30" font-size="19" font-weight="700" fill="#1e293b">The line-of-sight law, and where every symbol in it lives</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">Aim at a point on the path, &#916; ahead of the nearest one &#8212; not at the waypoint</text>
+
+  <!-- NED axes -->
+  <line x1="52" y1="150" x2="52" y2="86" stroke="#64748b" stroke-width="1.6" marker-end="url(#g)"/>
+  <line x1="52" y1="150" x2="116" y2="150" stroke="#64748b" stroke-width="1.6" marker-end="url(#g)"/>
+  <text x="40" y="80" font-size="15" fill="#64748b">N</text>
+  <text x="122" y="155" font-size="15" fill="#64748b">E</text>
+
+  <!-- the leg: wp_k (95,405) -> wp_next (455.24,213.46) -->
+  <line x1="95" y1="405" x2="455.24" y2="213.46" stroke="#0d9488" stroke-width="3"/>
+  <circle cx="95" cy="405" r="7" fill="#ffffff" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="455.24" cy="213.46" r="7" fill="#ffffff" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="455.24" cy="213.46" r="54" fill="none" stroke="#0d9488" stroke-width="1.3" stroke-dasharray="5 4"/>
+  <text x="30" y="428" font-size="15" fill="#0d9488">waypoint k</text>
+  <text x="466" y="196" font-size="15" fill="#0d9488">k+1</text>
+  <text x="318" y="128" font-size="14" fill="#0d9488">acceptance radius R</text>
+  <line x1="424" y1="132" x2="446" y2="163" stroke="#0d9488" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="120" y="370" font-size="15" fill="#0d9488" transform="rotate(-28 120 370)">the planned path</text>
+
+  <!-- pi_p from North at wp_k -->
+  <line x1="95" y1="405" x2="95" y2="292" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <path d="M 95 345 A 60 60 0 0 1 148 377" fill="none" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="104" y="330" font-size="15" fill="#64748b">&#960;&#8346; = 62&#176;</text>
+
+  <!-- along-track x_e: wp_k -> F (232.74, 331.76) -->
+  <line x1="95" y1="405" x2="232.74" y2="331.76" stroke="#d97706" stroke-width="2.4" marker-end="url(#o)"/>
+  <text x="128" y="416" font-size="15" fill="#d97706">x&#8337;  along&#8209;track error</text>
+
+  <!-- cross-track y_e: F -> P (266.54, 395.33) -->
+  <line x1="232.74" y1="331.76" x2="266.54" y2="395.33" stroke="#dc2626" stroke-width="2.4" marker-end="url(#r)"/>
+  <text x="300" y="422" font-size="15" fill="#dc2626">y&#8337;  cross&#8209;track error</text>
+  <line x1="298" y1="417" x2="254" y2="368" stroke="#dc2626" stroke-width="1" stroke-dasharray="3 3"/>
+  <!-- right angle at F, drawn in the leg frame -->
+  <path d="M 232.74 331.76 l 9.39 5.00 l 5.00 -9.39" fill="none" stroke="#dc2626" stroke-width="1.4"/>
+
+  <!-- look-ahead Delta: F -> A (338.69, 275.43), along the leg -->
+  <line x1="232.74" y1="331.76" x2="338.69" y2="275.43" stroke="#1d4ed8" stroke-width="2.4" marker-end="url(#b)"/>
+  <text x="228" y="276" font-size="15" fill="#1d4ed8">&#916;  look&#8209;ahead</text>
+
+  <!-- the aim point -->
+  <circle cx="338.69" cy="275.43" r="6" fill="#1d4ed8"/>
+  <text x="352" y="312" font-size="15" fill="#1d4ed8">the aim point</text>
+  <line x1="350" y1="306" x2="343" y2="284" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- the LOS ray P -> A -->
+  <line x1="266.54" y1="395.33" x2="338.69" y2="275.43" stroke="#1d4ed8" stroke-width="2.2"
+        stroke-dasharray="7 4" marker-end="url(#b)"/>
+  <polygon points="266.54,384.33 275.54,400.33 257.54,400.33" fill="#1e293b"/>
+  <text x="188" y="446" font-size="15" fill="#1e293b">the vessel</text>
+  <line x1="244" y1="442" x2="264" y2="404" stroke="#1e293b" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- psi_d from North at P -->
+  <line x1="266.54" y1="395.33" x2="266.54" y2="300" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <path d="M 266.54 335 A 62 62 0 0 1 300 348" fill="none" stroke="#1d4ed8" stroke-width="1.4"/>
+  <text x="306" y="344" font-size="15" fill="#1d4ed8">&#968;&#8340;</text>
+
+  <!-- the equation -->
+  <rect x="520" y="76" width="360" height="176" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.2" rx="6"/>
+  <text x="540" y="108" font-size="17" font-weight="700" fill="#1e293b">&#968;&#8340; = &#960;&#8346; &#8722; arctan( y&#8337; / &#916; )</text>
+  <text x="540" y="138" font-size="15" fill="#334155">&#960;&#8346;   &#8212;  line up with the path</text>
+  <text x="540" y="162" font-size="15" fill="#334155">&#8722;arctan(y&#8337;/&#916;)  &#8212;  and lean towards it</text>
+  <text x="540" y="194" font-size="14" fill="#64748b">Here y&#8337; = 12 m and &#916; = 20 m, so the</text>
+  <text x="540" y="214" font-size="14" fill="#64748b">correction is arctan(12/20) = 30.96&#176;</text>
+  <text x="540" y="236" font-size="14" fill="#64748b">and &#968;&#8340; = 62&#176; &#8722; 30.96&#176; = 31.04&#176;.</text>
+
+  <!-- the two limits -->
+  <rect x="520" y="272" width="360" height="180" fill="#fffbeb" stroke="#d97706" stroke-width="1.2" rx="6"/>
+  <text x="540" y="300" font-size="15" font-weight="700" fill="#1e293b">The correction is bounded by 90&#176;</text>
+  <text x="540" y="326" font-size="14" fill="#334155">y&#8337; &#8594; 0     on the path, so &#968;&#8340; &#8594; &#960;&#8346;</text>
+  <text x="540" y="348" font-size="14" fill="#334155">                and the vessel steers along it</text>
+  <text x="540" y="372" font-size="14" fill="#334155">y&#8337; &#8594; &#8734;     &#968;&#8340; &#8594; &#960;&#8346; &#8722; 90&#176;: head straight at</text>
+  <text x="540" y="392" font-size="14" fill="#334155">                the path, and never away from it</text>
+  <text x="540" y="418" font-size="14" fill="#64748b">&#916; is measured ALONG the path from the foot</text>
+  <text x="540" y="438" font-size="14" fill="#64748b">of the perpendicular, not from the vessel.</text>
+</svg>

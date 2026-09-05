@@ -33,8 +33,8 @@
 | **W02** | Surge Speed Control | **완료** |
 | **W03** | Heading Control | **완료** |
 | **A1** | Actuation and the Control Effectiveness Matrix (부록) | **완료** |
-| W04 | Control Allocation | 미착수 |
-| W05 | Waypoint Following and LOS Guidance | 미착수 |
+| **W04** | Waypoint Following and LOS Guidance | **완료** |
+| W05 | Control Allocation | 미착수 |
 | W06 | Environmental Loads and Wave Filtering | 미착수 |
 | W07 | Dynamic Positioning and Mission Integration | 미착수 |
 | W08 | 본과정 마무리 / 통합 | 미착수 |
@@ -43,8 +43,15 @@
 | W11 | Variant C — Four Tilting Thrusters, and a Comparison | 미착수 |
 | 기말 | Final-Project 명세 | 미착수 |
 
-> [!note] 사용자가 W03 까지 보고 검토하겠다고 했다
-> W04 로 넘어가기 전에 W01~W03 검토를 받는다 → 기억 `usv-lecture-review-deferred`.
+> [!note] W04 와 W05 의 순서를 바꿨다
+> 사용자 결정(2026-09-05): **W04 = 유도, W05 = Control Allocation.** W03 §3-4 가 크랩각을
+> 재고 "경로추종 법칙이 이것 때문에 영구적인 cross-track error 를 남긴다" 고 예고해 두었으므로,
+> 그 빚을 바로 다음 주에 갚는 편이 강의 흐름에 맞는다. W03 의 "Next Week" 과 §3-4·§3-6 의
+> 앞뒤 참조도 함께 바꿨다.
+
+> [!note] 검토는 아직 남아 있다
+> W01~W03 + A1 검토를 사용자에게 받는다 → 기억 `usv-lecture-review-deferred`.
+> W04 도 이제 검토 대상에 들어간다.
 
 ### W01 · Vessel Kinematics and the Otter Motion Model — 완료
 
@@ -68,6 +75,24 @@
 
 - type 1 · `ssa()` · $r$ 에 대한 P–D · 비선형 요 감쇠 · course/crab angle
 
+### W04 · Waypoint Following and LOS Guidance — 완료
+
+- 회전변환 **하나**에서 $(x_e, y_e)$ 둘 다 유도. `crosstrack.m` 의 $\tan\pi_p$ 특이점 경고
+- LOS 유도: 조준점 → 다리 좌표계에서 $[\Delta,\ -y_e]^\top$ → $\psi_d = \pi_p - \arctan(y_e/\Delta)$
+- 전환 두 방식 — MSS 는 **원이 아니라** $d - x_e < R$. 문서와 코드의 불일치까지 실례로
+- $y_e^{ss} = \Delta\tan\beta_c$ 유도, 조류 6점 스윕에서 최대 오차 $0.002$ m
+- **ILOS** — 분모가 왜 그 꼴인가(법칙에 내장된 안티와인드업), 평형 $y_{int}^{eq} = \Delta\tan\beta_c/\kappa$,
+  단위가 heading 판과 course 판에서 **다르다**는 것($\kappa$ 가 m/s 대 무차원)까지
+- **ILOS 안정성** — course 판은 상수 가중 $c = \kappa\cos\beta_c$ 로 교차항이 정확히 소거되고
+  heading 판은 되지 않는다는 것을 $10^4$ 개 상태에서 수치로 확인. MSS 에 정규화가 둘인 이유
+- **ALOS** — MSS 2021 에 구현이 없어 **직접 유도**했다. 적응법칙이 Lyapunov 논증에서
+  **강제되는** 지점, $\gamma$ 의 단위 rad/(m·s), USGES 가 semiglobal 인 이유
+- $\hat\beta = 15.91°$ 대 참 크랩각 $15.88°$ — 법칙은 조류를 들은 적이 없다
+- $\kappa$·$\gamma$ 스윕에서 **내부 최소**를 찾아 기본값 결정 (0.3, 0.005)
+- $V(t)$ 는 **단조가 아니다** (62.2 %). 오토파일럿 지연 때문이며, 그것을 그대로 쓴다
+- 네 척(atan2·LOS·ILOS·ALOS)이 같은 웨이포인트·조류·게인으로 나란히 달린다
+- 개념도 5장 + 결과 그림 6장, 절 스크립트 8개
+
 ### A1 · Actuation and the Control Effectiveness Matrix — 완료
 
 - 열 규칙에서 $\mathbf{B}$ 를 유도하고 네 형상에 적용 — 계급 2/3/3/3
@@ -82,11 +107,10 @@
 
 ## 3. 다음에 할 일
 
-1. **GitHub push** — SSH 키를 등록하면 대기 중인 커밋이 올라간다 (§10)
-2. **W01~W03 + A1 검토를 받는다** (사용자 요청). 사용자가 **W04 는 나중에** 한다고 했다
-3. W04 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`
-4. W05 LOS 유도 — 적분 LOS 포함
-5. 이후 W06~W11
+1. **W01~W04 + A1 검토를 받는다** (사용자 요청) → 기억 `usv-lecture-review-deferred`
+2. W05 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`.
+   A1 이 선수 자료이고, W04 가 네 척 모두에 **같은 정사각 배분**을 쓴 것이 출발점이다
+3. 이후 W06~W11
 
 ---
 
@@ -156,7 +180,7 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 
 ## 6. 환경
 
-- MATLAB **R2024b** + Simulink (+ Stateflow: W07, Optimization Toolbox: W04·W11)
+- MATLAB **R2024b** + Simulink (+ Stateflow: W07, Optimization Toolbox: W05·W11)
 - MSS 는 `10_연구_USV_MILS/Proj_SHI_USV_MILS/Tools/MSS` — `_tools/mss_path.m` 이 찾는다
 - PDF 는 Git Bash + Chrome 만 있으면 된다. **pandoc·LaTeX 없음** (이 PC 에 설치돼 있지 않다)
 
@@ -176,7 +200,7 @@ bash _tools/git_autopush.sh
 
 ## 8. 실습 파일 구조 — 강의 절 하나에 스크립트 하나
 
-사용자 지시로 2026-09-05 에 바꿨다. **W01·W02·W03·A1 넷 모두 끝났다.**
+사용자 지시로 2026-09-05 에 바꿨다. **W01·W02·W03·W04·A1 다섯 모두 끝났다.**
 
 ```
 lectures/W02_simulink/
@@ -214,6 +238,22 @@ lectures/W03_simulink/                 lectures/A1_simulink/
 └── img/                               └── img/
 ```
 
+W04 도 같은 모양이다. 절이 여섯이라 절 스크립트가 여섯이다.
+
+```
+lectures/W04_simulink/
+├── W04_0_setup.m                     학생이 고치는 유일한 파일
+├── W04_1_build_guidance.m            ->  W04_guidance.slx  (네 척이 나란히)
+├── W04_C_aim_at_the_waypoint.m       C 절 — atan2 는 왜 경로추종이 아닌가
+├── W04_D_line_of_sight.m             D 절 — 법칙을 두 조각으로 분해
+├── W04_E_lookahead_distance.m        E 절 — Delta 스윕 다섯
+├── W04_F_waypoint_switching.m        F 절 — 판정 둘, R 스윕 넷
+├── W04_G_current_and_integral.m      G 절 — 조류 아래 네 법칙
+├── W04_H_adaptive_and_stability.m    H 절 — kappa·gamma 스윕과 V(t)
+├── W04_vars.m  W04_read.m  W04_plot.m
+└── img/
+```
+
 W01 도 같은 모양이다. 모델이 둘이라 빌더가 둘이다.
 
 ```
@@ -233,10 +273,10 @@ lectures/W01_simulink/
 | 항목 | 상태 |
 |---|---|
 | W02·W03·A1·W01 을 절 단위로 분할 | **완료** (2026-09-05) |
-| 그림마다 "읽어서 강의가 되는" 자세한 설명 | **완료** — 결과 그래프 **23장 전부** |
+| 그림마다 "읽어서 강의가 되는" 자세한 설명 | **완료** — 결과 그래프 **29장 전부** |
 | Simulink 만 눌러도 그 주차 신호가 뜨는 Scope | **완료** — `add_measurement` 이 `<tag> this week` 스코프를 만든다 |
 
-**그래프 설명 23장의 내역** — 의미 · 경향(수치) · 원리 · 알고리즘별 차이 · 상황별 차이,
+**그래프 설명 29장의 내역** — 의미 · 경향(수치) · 원리 · 알고리즘별 차이 · 상황별 차이,
 중요한 곳은 굵게. 규칙은 `results-and-figures.md`.
 
 | 주차 | 결과 그래프 | 설명 |
@@ -245,6 +285,7 @@ lectures/W01_simulink/
 | W02 | 10 | 10 |
 | W03 | 4 | 4 |
 | A1 | 3 | 3 |
+| W04 | 6 | 6 |
 
 ---
 
@@ -270,6 +311,7 @@ lectures/W01_simulink/
 | `W02_I_pseudo_derivative` | 29 | **0** |
 | `W03_heading_control` | 2 | **0** |
 | `A1_actuation` | 4 | **0** |
+| `W04_guidance` | 572 | **0** |
 
 `add_measurement` 을 다시 썼다. Mux 를 먼저 만들고 포트 높이를 읽은 뒤 셀렉터와 여분
 입력을 그 행에 놓으므로, 로깅 열 하나가 **직선 한 토막**이다. 모든 주차가 이 함수를

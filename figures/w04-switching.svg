@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="420" fill="#ffffff"/>
+  <defs>
+    <marker id="sg" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#0d9488"/></marker>
+    <marker id="so" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#d97706"/></marker>
+  </defs>
+
+  <text x="20" y="30" font-size="19" font-weight="700" fill="#1e293b">Two ways to decide the waypoint is behind you, and they disagree</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">On the path they give the same answer. Off it, one switches and the other waits.</text>
+
+  <!-- ================= LEFT: along-track ================= -->
+  <text x="50" y="90" font-size="16" font-weight="700" fill="#0d9488">1&#8194; along&#8209;track &#8212; what MSS uses</text>
+
+  <line x1="60" y1="200" x2="390" y2="200" stroke="#0d9488" stroke-width="3" marker-end="url(#sg)"/>
+  <circle cx="60"  cy="200" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <circle cx="360" cy="200" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="46"  y="222" font-size="13" fill="#0d9488">wp&#8342;</text>
+  <text x="348" y="184" font-size="13" fill="#0d9488">wp&#8342;&#8330;&#8321;</text>
+
+  <!-- the band: everything with d - x_e < R switches, whatever y_e is -->
+  <rect x="300" y="112" width="60" height="176" fill="#0d9488" opacity="0.13"/>
+  <line x1="300" y1="112" x2="300" y2="288" stroke="#0d9488" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text x="248" y="106" font-size="13" fill="#0d9488">the band d &#8722; x&#8337; &lt; R</text>
+
+  <!-- the vessel, inside the band but far off the path -->
+  <polygon points="326,262 335,280 317,280" fill="#1e293b"/>
+  <line x1="326" y1="200" x2="326" y2="258" stroke="#dc2626" stroke-width="2"/>
+  <text x="334" y="238" font-size="13" fill="#dc2626">y&#8337; = 2R</text>
+  <text x="256" y="304" font-size="14" font-weight="700" fill="#0d9488">SWITCHES</text>
+
+  <text x="50" y="336" font-size="14" fill="#334155">The test looks only at how much of the leg is left.</text>
+  <text x="50" y="356" font-size="14" fill="#334155">Being far off the path cannot defeat it, so a vessel</text>
+  <text x="50" y="376" font-size="14" fill="#334155">blown wide still moves on to the next leg.</text>
+  <text x="50" y="400" font-size="13" fill="#64748b">MSS: if ( d &#8722; x&#8337; &lt; R_switch ) k = k + 1</text>
+
+  <!-- ================= RIGHT: circle ================= -->
+  <text x="500" y="90" font-size="16" font-weight="700" fill="#d97706">2&#8194; circle of acceptance &#8212; what most books draw</text>
+
+  <line x1="510" y1="200" x2="840" y2="200" stroke="#0d9488" stroke-width="3" marker-end="url(#sg)"/>
+  <circle cx="510" cy="200" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <circle cx="810" cy="200" r="6" fill="#ffffff" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="496" y="222" font-size="13" fill="#0d9488">wp&#8342;</text>
+  <text x="788" y="256" font-size="13" fill="#0d9488">wp&#8342;&#8330;&#8321;</text>
+
+  <circle cx="810" cy="200" r="30" fill="#d97706" opacity="0.13"/>
+  <circle cx="810" cy="200" r="30" fill="none" stroke="#d97706" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <line x1="810" y1="200" x2="810" y2="170" stroke="#d97706" stroke-width="1.4"/>
+  <text x="816" y="166" font-size="13" fill="#d97706">R</text>
+
+  <!-- the same vessel, same place relative to the leg -->
+  <polygon points="776,262 785,280 767,280" fill="#1e293b"/>
+  <line x1="776" y1="200" x2="776" y2="258" stroke="#dc2626" stroke-width="2"/>
+  <text x="646" y="238" font-size="13" fill="#dc2626">the same y&#8337; = 2R</text>
+  <text x="700" y="304" font-size="14" font-weight="700" fill="#d97706">DOES NOT SWITCH</text>
+
+  <text x="500" y="336" font-size="14" fill="#334155">The test is a true distance, so a vessel that never</text>
+  <text x="500" y="356" font-size="14" fill="#334155">enters the circle waits for a waypoint it has already</text>
+  <text x="500" y="376" font-size="14" fill="#334155">passed &#8212; and can wait for ever.</text>
+  <text x="500" y="400" font-size="13" fill="#64748b">if ( &#8214;p &#8722; wp&#8342;&#8330;&#8321;&#8214; &lt; R ) k = k + 1</text>
+
+  <!-- the one hard limit -->
+  <rect x="20" y="118" width="0" height="0"/>
+</svg>
