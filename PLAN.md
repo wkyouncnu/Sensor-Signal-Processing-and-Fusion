@@ -5,7 +5,7 @@
 > **이제 계획은 여기 하나뿐이다.** 새 지침이 오면 이 파일부터 고친다.
 
 - **볼트 위치** `C:\Users\admin\Dropbox\센서신호처리및융합\00_GradCourse_2026\`
-- **최종 갱신** 2026-09-04
+- **최종 갱신** 2026-09-05
 - **형식 규칙** → [CLAUDE.md](CLAUDE.md) · **작업 순서** → `.claude/skills/gnc-lecture-vault/`
 
 ---
@@ -82,14 +82,11 @@
 
 ## 3. 다음에 할 일
 
-1. **W01 을 절 단위 스크립트로 분할** — 마지막 남은 하나 (§8)
-2. **그림 설명 붙이기** — W01·W02·W03 의 모든 결과 그림에 "읽으면 강의가 되는" 설명.
-   A1 은 끝났다 (§8)
-3. 절마다 **Scope** 를 붙여 Simulink 에서 Run 만 눌러도 그 절 그림이 뜨게 한다
-4. **W01~W03 검토를 받는다** (사용자 요청)
-5. W04 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`
-6. W05 LOS 유도 — 적분 LOS 포함
-7. 이후 W06~W11
+1. **GitHub push** — SSH 키를 등록하면 대기 중인 커밋이 올라간다 (§10)
+2. **W01~W03 + A1 검토를 받는다** (사용자 요청). 사용자가 **W04 는 나중에** 한다고 했다
+3. W04 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`
+4. W05 LOS 유도 — 적분 LOS 포함
+5. 이후 W06~W11
 
 ---
 
@@ -166,18 +163,20 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 ## 7. 한 주차를 끝내기 전
 
 ```bash
-matlab -batch "cd lectures/WXX_simulink; build_wXX_models; WXX_run"
+matlab -batch "cd lectures/WXX_simulink; WXX_1_build_...; WXX_0_setup; WXX_C_...; WXX_D_..."
 bash _tools/md2pdf.sh lectures/WXX_*.md
 bash .claude/skills/gnc-lecture-vault/scripts/vault_check.sh
+bash _tools/git_autopush.sh
 ```
 
-세 번째 명령이 **전 항목 0 건**이어야 그 주차가 끝난 것이다.
+세 번째 명령이 **전 항목 0 건**이어야 그 주차가 끝난 것이고, 그 뒤에 올린다.
+모델은 `check_overlaps(mdl)` 이 **0** 이어야 한다.
 
 ---
 
 ## 8. 실습 파일 구조 — 강의 절 하나에 스크립트 하나
 
-사용자 지시로 2026-09-05 에 바꿨다. **W02 가 본보기이고, W03 과 A1 이 따라왔다. W01 만 남았다.**
+사용자 지시로 2026-09-05 에 바꿨다. **W01·W02·W03·A1 넷 모두 끝났다.**
 
 ```
 lectures/W02_simulink/
@@ -215,16 +214,37 @@ lectures/W03_simulink/                 lectures/A1_simulink/
 └── img/                               └── img/
 ```
 
-### 남은 일
+W01 도 같은 모양이다. 모델이 둘이라 빌더가 둘이다.
+
+```
+lectures/W01_simulink/
+├── W01_0_setup.m                     파라미터
+├── W01_1_build_openloop.m            ->  W01_openloop.slx
+├── W01_C_terminal_speed.m            강의 C 절 — 그림 2장
+├── W01_D_the_manoeuvre.m             강의 D 절 — 그림 2장
+├── W01_E_build_current.m             ->  W01_current.slx
+├── W01_E_current_run.m               강의 E 절 — 그림 2장
+├── W01_vars.m   W01_read.m           공용
+└── img/
+```
+
+### 남은 일 — 전부 끝났다
 
 | 항목 | 상태 |
 |---|---|
-| W02 를 절 단위로 분할 | **완료** |
-| W03 을 절 단위로 분할 | **완료** |
-| A1 을 절 단위로 분할 | **완료** (2026-09-05) |
-| W01 도 같은 구조로 | **미완** — 마지막 하나 |
-| 그림마다 "읽어서 강의가 되는" 자세한 설명 | **진행 중** — A1 의 결과 그림 세 장에 붙였다. W01·W02·W03 미완 |
-| 절마다 Scope 를 붙여 Simulink 만 눌러도 그 절 그림이 뜨게 | **미완** |
+| W02·W03·A1·W01 을 절 단위로 분할 | **완료** (2026-09-05) |
+| 그림마다 "읽어서 강의가 되는" 자세한 설명 | **완료** — 결과 그래프 **23장 전부** |
+| Simulink 만 눌러도 그 주차 신호가 뜨는 Scope | **완료** — `add_measurement` 이 `<tag> this week` 스코프를 만든다 |
+
+**그래프 설명 23장의 내역** — 의미 · 경향(수치) · 원리 · 알고리즘별 차이 · 상황별 차이,
+중요한 곳은 굵게. 규칙은 `results-and-figures.md`.
+
+| 주차 | 결과 그래프 | 설명 |
+|---|---|---|
+| W01 | 6 | 6 |
+| W02 | 10 | 10 |
+| W03 | 4 | 4 |
+| A1 | 3 | 3 |
 
 ---
 
@@ -256,3 +276,23 @@ lectures/W03_simulink/                 lectures/A1_simulink/
 쓰므로 한 번 고쳐서 전부 좋아졌다.
 
 규칙은 `simulink-gnc-models/references/model-layout.md` 의 **"선이 겹치면 안 된다"** 절.
+
+---
+
+## 10. GitHub — 기록을 잇는다
+
+| | |
+|---|---|
+| 원격 | `git@github.com:wkyouncnu/Sensor-Signal-Processing-and-Fusion.git` · **private** |
+| 올라가는 것 | `00_GradCourse_2026/` **하나뿐** |
+| 올라가지 않는 것 | 상위 폴더 — `강의자료` · `10_연구_USV_MILS`(MSS 120 MB) · `90_보관`(**출석부**) |
+| 언제 | SessionEnd 훅이 `_tools/git_autopush.sh` 를 부른다. 세션 하나에 커밋 하나 |
+
+**남은 것은 인증뿐이다.** 커밋은 로컬에 쌓이고 있고 하나도 잃지 않는다.
+
+1. `~/.ssh/id_ed25519.pub` 를 GitHub → Settings → SSH and GPG keys 에 등록
+2. GitHub 에서 `Sensor-Signal-Processing-and-Fusion` 저장소를 **private** 으로 생성
+   (README·.gitignore 체크하지 않는다 — 여기 이미 있어서 충돌한다)
+3. `git push -u origin main`
+
+자세한 것은 `gnc-lecture-vault/references/git-and-history.md`.

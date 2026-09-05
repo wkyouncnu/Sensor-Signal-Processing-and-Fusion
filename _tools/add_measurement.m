@@ -72,8 +72,13 @@ add_block('simulink/Signal Routing/Mux', [sub '/vel'], ...
 %  rest evenly, so five ports on a block of height H are (H-40)/4 apart. 260
 %  gives 55, which is enough for the clock and the switch to sit on their own
 %  rows with their names underneath them.
+%
+%  It is placed BELOW the log ladder, whose height grows with the number of
+%  logged channels. A fixed y would be overrun by any week that logs more than
+%  eight, and the two blocks would be drawn on top of each other.
+yA = 90 + 52*nlog + 80;
 add_block('simulink/User-Defined Functions/MATLAB Function', [sub '/Animate'], ...
-          'Position',[420 560 540 820]);
+          'Position',[420 yA 540 yA+260]);
 set_mlfcn([sub '/Animate'], { ...
 'function ok = Animate(N, E, psi, t, en)'
 '%#codegen'
@@ -136,13 +141,41 @@ VL = [265 280 295];                   % one vertical lane per velocity
 for i = 1:3, lane_line(sub, L{i}, 1, 'vel', i, VL(i)); end
 add_line(sub, 'vel/1', 'vessel  u v r/1');
 
+%% ---- and a second scope, showing THIS WEEK'S signals -------------------
+%  The three velocities are the same in every week of the course, so a scope
+%  on them alone cannot show what a particular week is about. The extra
+%  signals are exactly what the week added - the command it follows, the
+%  force it demands, the state it stores - so a second scope on those makes
+%  pressing Run in Simulink produce the week's own picture and not a generic
+%  one. Both open with the model.
+%
+%  It sits to the LEFT of the log ladder, below it, so its lines never have to
+%  cross the log Mux. One lane per signal, 8 px apart, in the empty corridor
+%  between the inports at x = 90 and the selectors at x = 200.
+if ~isempty(extra)
+    y0 = logy(end) + 80;
+    add_block('simulink/Signal Routing/Mux', [sub '/week'], ...
+              'Inputs', num2str(numel(extra)), ...
+              'Position',[155 y0 160 y0+52*numel(extra)]);
+    for i = 1:numel(extra)
+        lane_line(sub, extra{i}, 1, 'week', i, 100 + 8*i);
+    end
+    yw = port_xy(sub, 'week', 'Outport', 1);
+    add_block('simulink/Sinks/Scope', [sub '/' tag '  this week'], ...
+              'Position',[220 yw(2)-15 250 yw(2)+15]);
+    add_line(sub, 'week/1', [tag '  this week/1']);
+    set_param([sub '/' tag '  this week'], 'Open', 'on');
+end
+
 %% ---- the live view ------------------------------------------------------
 %  The clock and the enable switch are placed on the rows of the ports they
 %  feed, so only the three state feeds need a lane.
+%  At x = 300 rather than 200: the corridor left of that belongs to the
+%  week's own scope, which shares these rows.
 add_block('simulink/Sources/Digital Clock', [sub '/clock'], ...
-          'SampleTime','h', 'Position',[200 anmy(4)-15 250 anmy(4)+15]);
+          'SampleTime','h', 'Position',[300 anmy(4)-15 350 anmy(4)+15]);
 add_block('simulink/Sources/Constant', [sub '/live view'], ...
-          'Value','animate', 'Position',[198 anmy(5)-15 253 anmy(5)+15]);
+          'Value','animate', 'Position',[298 anmy(5)-15 353 anmy(5)+15]);
 ya = port_xy(sub, 'Animate', 'Outport', 1);
 add_block('simulink/Sinks/Terminator', [sub '/anim end'], ...
           'Position',[600 ya(2)-10 620 ya(2)+10]);

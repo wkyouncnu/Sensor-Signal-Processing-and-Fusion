@@ -281,6 +281,20 @@ ax = gca;  ax.ThetaZeroLocation = 'top';  ax.ThetaDir = 'clockwise';
 "reading the figure" 표만으로는 부족하다. 그 표는 **무엇이 그려져 있는가**를 말하고,
 여기서 요구하는 것은 **그것이 무슨 뜻인가**이다. 그림마다 표 **다음에** 다음을 붙인다.
 
+> [!important] 제목은 `**What the figure says**` 로 고정한다
+> 결과 그래프마다 이 제목의 불릿 목록이 하나씩 있어야 한다. 고정된 문자열이라
+> 세어서 확인할 수 있다.
+>
+> ```bash
+> for f in lectures/W*.md lectures/A*.md; do
+>     echo "$f  그림 $(grep -c '^!\[' "$f")  설명 $(grep -c '^\*\*What the figure says\*\*' "$f")"
+> done
+> ```
+>
+> 개념도(SVG)와 블록도에는 붙이지 않는다 — 그 둘은 "reading the figure" 표로 끝난다.
+> **결과 그래프에는 예외 없이 붙인다.** 2026-09-05 현재 W01 6 · W02 10 · W03 4 · A1 3,
+> 전부 완료.
+
 | # | 무엇을 쓰는가 | 예 |
 |---|---|---|
 | 1 | **한 줄 결론** — 이 그림이 말하는 것 하나 | "미분항은 이 축에서 감쇠가 아니라 질량이다" |

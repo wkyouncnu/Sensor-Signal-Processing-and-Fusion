@@ -78,18 +78,27 @@
 | 개념도 (좌표계·기하·배치) | `figures/wNN-….svg` | 손으로 그리거나 `_tools/*.awk` 가 계산 |
 | 블록도 · 결과 그래프 | `lectures/WNN_simulink/img/*.png` | **러너가** 저장한다 |
 
-주차 실습 폴더는 항상 같은 모양이다.
+주차 실습 폴더는 항상 같은 모양이다. **강의 절 하나에 스크립트 하나**이고, 파일명이
+강의 순서 그대로다. 하나를 돌리면 그 절의 표와 그림만 나온다.
 
 ```
 lectures/WXX_simulink/
-├── build_wXX_models.m     모델을 코드로 생성한다. 손으로 그리지 않는다
-├── WXX_setup.m            학생이 고치는 유일한 파일 — 모든 Constant 변수
-├── WXX_plot.m             StopFcn 과 러너가 함께 부르는 플로팅 함수
+├── WXX_0_setup.m          학생이 고치는 유일한 파일 — 모든 Constant 변수
+├── WXX_1_build_<모델>.m   모델을 코드로 생성한다. 손으로 그리지 않는다
+├── WXX_C_<절 제목>.m      강의 C 절 — 표 하나와 그림 한둘
+├── WXX_D_<절 제목>.m      강의 D 절
+├── …                      절이 있는 만큼
+├── WXX_vars.m             같은 값을 struct 로. run_sim 이 하나씩 바꿔 쓴다
+├── WXX_read.m             로그를 이름 붙은 필드로. 열 번호를 세지 않는다
+├── WXX_plot.m             StopFcn 과 절 스크립트가 함께 부르는 플로팅 함수
 ├── WXX_animate.m          Animate 블록이 매 스텝 부르는 실시간 그리기
-├── WXX_run.m              실행 → 수치 표 출력 → img/ 에 그림 저장
 ├── WXX_*.slx
 └── img/                   블록도 PNG + 결과 그래프 PNG
 ```
+
+> [!important] `.m` 과 `.slx` 이름이 겹치면 안 된다
+> `W02_H_antiwindup.m` 과 `W02_H_antiwindup.slx` 가 함께 있으면 MATLAB 이 **모델을 열고**
+> 스크립트는 **조용히 아무것도 하지 않는다.** 러너는 `_run` 을 붙인다.
 
 ---
 
@@ -187,6 +196,7 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
 | 색 | 플랜트 `[0.81 0.93 0.81]` 초록 · 로깅/표시 `[0.93 0.93 0.93]` 회색 |
 | 실행 | `set_param(m,'ReturnWorkspaceOutputs','off')` — 없으면 To Workspace 결과가 `out` 에 갇힌다 |
 | 자동 그림 | `set_param(m,'StopFcn','WXX_plot;')` — Run 만 눌러도 그림이 뜬다 |
+| **주차 스코프** | `add_measurement` 이 `vessel u v r` 과 **`<tag> this week`** 두 개를 만들어 모델과 함께 연다. 앞의 것은 모든 주차가 같고, 뒤의 것은 **그 주차가 추가한 신호**다 — 명령·요구 힘·적분기 상태 |
 | 살아 있는 궤적 | Animate 블록 + WXX_animate.m. 궤적만 그리지 말고 선체와 heading 을 함께 그린다 |
 
 연구실 MILS 통합모델에서 **제어기·유도법칙·배분기를 복사하지 않는다.**

@@ -298,6 +298,8 @@ d = (-sin b * sin a,  sin b * cos a,  cos b )
 | — | 그래프마다 **읽으면 강의가 되는** 설명 — 의미·경향(수치)·원리·알고리즘별·상황별 | `results-and-figures.md` |
 | 2026-09-05 | **선 겹침은 `check_overlaps` 로 기계 검사. 합격선 0** — `row_feed`·`lane_line`·`port_xy` 로 만든다 | 이 문서 §3-4 · `model-layout.md` |
 | 2026-09-05 | **세션이 끝나거나 갱신되면 GitHub 에 자동 push.** 올리는 것은 `00_GradCourse_2026` 뿐, private | `git-and-history.md` · `_tools/git_autopush.sh` |
+| 2026-09-05 | **결과 그래프마다 "What the figure says"** — 의미·경향(수치)·원리·차이·상황별. W01~W03·A1 의 23장 전부 완료 | `results-and-figures.md` |
+| 2026-09-05 | **`<tag> this week` 스코프** — Run 만 눌러도 그 주차가 추가한 신호가 보인다 | `add_measurement.m` · `CLAUDE.md` §5 |
 
 ---
 

@@ -337,7 +337,7 @@ $$
 
 ```matlab
 cd GradCourse/lectures/W03_simulink
-W03_setup
+W03_0_setup
 ```
 
 Expected output:
@@ -353,9 +353,26 @@ Expected output:
     simulation      40 s at h = 0.02 s
 ```
 
-- `W03_setup.m` is **the only file to edit this week**. To restore a broken model: `build_w03_models`.
+- `W03_0_setup.m` is **the only file to edit this week**. To restore a broken model: `W03_1_build_heading`.
+
+**The files of this week, in the order the sections use them**
+
+| Order | File | Section | What it produces |
+|---|---|---|---|
+| 0 | `W03_0_setup.m` | A | the base workspace, so the model can be run from Simulink |
+| 1 | `W03_1_build_heading.m` | B | `W03_heading_control.slx` and `img/W03_heading_control.png` |
+| C | `W03_C_proportional_only.m` | C | `img/W03_result_P.png` |
+| D | `W03_D_derivative_action.m` | D | `img/W03_result_D.png` |
+| E | `W03_E_the_wrap.m` | E | `img/W03_result_ssa.png` |
+| F | `W03_F_big_turns_overshoot_less.m` | F | `img/W03_result_size.png` |
+
+- Each laboratory section is one script. Running a section leaves exactly the numbers and the one figure that section discusses, so a class can work through the week a page at a time.
+- Sections C to F build the model themselves if it is missing, so any one of them can be run first.
 
 ## B. Reading the model (10 min)
+
+> [!note] To produce this figure
+> `W03_1_build_heading` writes `W03_simulink/img/W03_heading_control.png` at the end of the build. The diagram belongs to the builder and to nothing else, so it changes when the model changes and not when a gain changes.
 
 ![Block diagram of the heading loop](W03_simulink/img/W03_heading_control.png)
 
@@ -375,8 +392,11 @@ Expected output:
 ## C. Proportional only (15 min)
 
 ```matlab
-W03_run
+W03_C_proportional_only
 ```
+
+> [!note] To produce this figure
+> `W03_C_proportional_only.m` runs `W03_heading_control.slx` three times with `Kd = 0`, prints the table below, and writes `img/W03_result_P.png`.
 
 $K_d = 0$, step to $60°$:
 
@@ -393,12 +413,27 @@ $K_d = 0$, step to $60°$:
 | Element | Meaning |
 |---|---|
 | left panel | three step responses; all three arrive at the dashed setpoint |
-| right panel | the error, going to zero at every gain |
+| right panel | the commanded yaw moment $\tau_N$, which returns to zero in every run |
 
 - The steady-state error is **zero at every gain**, to the tolerance of the solver. Week 2's table at the same place read $43.68$, $13.43$ and $3.73$ per cent.
 - The difference between the two weeks is one structural fact about the axis. No better controller was written.
 
+**What the figure says**
+
+- **Meaning.** The left panel is what the vessel did; the right panel is what the controller had to ask for to make it do that. Reading them together is what separates this week from the last.
+- **Trend, in numbers.** All three headings converge on $60°$ and stay there. Raising $K_p$ from 30 to 300 cuts the 2 % settling time from $12.24$ to $3.46$ s and buys that speed with moment: the peak demand rises from about $30$ to $313$ N·m, a factor of ten. Overshoot grows too, from $-0.01\%$ to $1.53\%$, but stays small because the hull's own damping is large.
+- **Principle.** $\psi = \int r$, so the plant contains a free integrator and the loop is **type 1**. The final-value theorem then gives zero steady-state error for a step at any finite gain. **Nothing was tuned to achieve this, and no integral term was added.**
+- **Why the right panel is the proof.** In steady state $\tau_N$ returns to **zero** in all three runs. A vessel that has stopped turning needs no moment to keep its heading, so the controller can be at its setpoint and demanding nothing at the same time. Week 2 could not do this: holding a speed needs a permanent force, that force can only come from a non-zero error, and the error therefore never vanished.
+- **What changes with the situation.** Raising $K_p$ trades peak actuator demand for speed and never touches the steady state. That is a different bargain from Week 2, where raising the gain bought accuracy the loop could not otherwise have. The limit here is the actuator, and section D adds the term that lets $K_p$ rise without the response ringing.
+
 ## D. Derivative action (20 min)
+
+```matlab
+W03_D_derivative_action
+```
+
+> [!note] To produce this figure
+> `W03_D_derivative_action.m` runs `W03_heading_control.slx` four times with `Kp` held and `Kd` swept, prints the table below, and writes `img/W03_result_D.png`.
 
 $K_p = 100$ held, and a deliberately **small** step of $5°$:
 
@@ -416,15 +451,31 @@ $K_p = 100$ held, and a deliberately **small** step of $5°$:
 | Element | Meaning |
 |---|---|
 | left panel | four step responses; overshoot falls monotonically with $K_d$ |
-| right panel | $\zeta$ against $K_d$, with the four designs marked and the critically damped line |
+| right panel, dashed | overshoot predicted from $\zeta$ by the second-order formula |
+| right panel, solid | overshoot actually measured, for the same four gains |
 
 - The **trend** is exactly as predicted: more $K_d$, more damping, less overshoot. Compare Week 2's table, where more $K_d$ meant *more* overshoot.
 - The **magnitudes** are not. The measured overshoot is roughly a third of the predicted one at $K_d = 0$. Section F explains why, and the explanation is not a modelling error.
+
+**What the figure says**
+
+- **Meaning.** The left panel shows the same $5°$ command answered by four controllers that differ in one number. The right panel puts the design formula and the simulation side by side, so the reader can see where the paper agrees with the vessel and where it does not.
+- **Trend, in numbers.** Overshoot falls from $11.74\%$ at $K_d = 0$ to zero at $K_d = 74.9$, and beyond that nothing more is bought: $K_d = 150$ also overshoots nothing but takes $7.52$ s to settle instead of $4.14$. **The best settling time in the table is at $K_d = 25$, which still overshoots $4.1\%$** — the fastest gain and the smoothest gain are not the same gain.
+- **Principle.** Substituting the control law into the equation of motion gives $M_{66}\ddot\psi + (\lvert N_r\rvert + K_d)\dot\psi + K_p\psi = K_p\psi_d$. The derivative gain lands **beside the damping**. In Week 2 the controlled variable was a velocity, its derivative was an acceleration, and the identical term landed beside the *mass* and made the response worse. The term did not change; the axis did.
+- **Why the two curves in the right panel differ.** They agree at the right-hand end and diverge at the left. The prediction is a linear result computed from $N_r$ alone, but the hull's real damping is $N_h = N_r(1 + 10\lvert r\rvert)r$, which is larger whenever the vessel turns quickly. At $K_d = 0$ the response is quick, the extra damping is largest, and the true overshoot is a third of the predicted one. As $K_d$ grows the motion slows, $\lvert r\rvert$ falls, and the linear prediction becomes correct.
+- **What changes with the situation.** The step is only $5°$ for this reason. Section F holds the gains fixed and varies the step size instead, turning the same nonlinearity from a nuisance into the subject.
 
 > [!note] Why the step is only 5 degrees here
 > The design equations of §3-3 use $N_r$ alone. The hull's actual damping is $N_h = N_r(1 + 10|r|)r$, which is larger whenever the vessel is turning quickly. A small step keeps $|r|$ small and the linear prediction close. Section F makes the same nonlinearity the subject rather than a nuisance.
 
 ## E. The wrap (15 min)
+
+```matlab
+W03_E_the_wrap
+```
+
+> [!note] To produce this figure
+> `W03_E_the_wrap.m` runs `W03_heading_control.slx` twice — once with `use_ssa = 1`, once with `use_ssa = 0` — prints the table below, and writes `img/W03_result_ssa.png`.
 
 The vessel is commanded to $+170°$, allowed to settle, and then commanded to $-170°$ — a change of $20°$.
 
@@ -439,17 +490,33 @@ The vessel is commanded to $+170°$, allowed to settle, and then commanded to $-
 
 | Element | Meaning |
 |---|---|
-| left panel | the heading; both runs end at the same physical heading |
-| centre panel | the yaw rate; one vessel nudges, the other spins |
-| right panel | the track, hull and heading drawn along it |
+| left panel | the heading over time; the two dotted lines are $+170°$ and $-170°$ |
+| left panel, blue | with `ssa` — the heading rises through $170°$ and stops at $190°$ |
+| left panel, orange | without `ssa` — the heading falls all the way to $-170°$ |
+| right panel | the two tracks over the ground, from the same start marker |
 
 - Both vessels end pointing the same way. One turned $20°$ and the other turned $340°$ the other way.
 - The settled headings read $190°$ and $-170°$ because $\psi$ is never wrapped in this course. They are the same heading, expressed differently, which is precisely the point.
+
+**What the figure says**
+
+- **Meaning.** Two runs of one model with one flag changed. The left panel is what each vessel believed it had to do; the right panel is what that cost in the water.
+- **Trend, in numbers.** Up to $t = 25$ s the two curves are identical — both reach $+170°$ and hold it. At the second command they separate completely. The blue heading climbs $20°$ and stops; the orange one falls $340°$, through zero, all the way to $-170°$. Peak yaw rate more than doubles, from $8.375$ to $19.640$ deg/s. On the right the blue track is a gentle bend while the orange one **closes a full loop** and ends 60 m away, pointing the same way as the vessel that never left the line.
+- **Principle.** $\psi_d - \psi = -170 - 170 = -340°$ is a perfectly valid number and a perfectly wrong error. The smallest-signed-angle map $\operatorname{ssa}(a) = \operatorname{atan2}(\sin a, \cos a)$ folds it into $(-\pi, \pi]$ and returns $+20°$. **The controller is identical in both runs; only the arithmetic that forms its input differs.**
+- **What separates the two.** Not stability, not tuning, not the plant. Both loops are stable and both reach their setpoint. The failure is that one of them reaches it **the long way round**, and no gain adjustment would have prevented it.
+- **What changes with the situation.** The two runs are indistinguishable anywhere away from the $\pm 180°$ boundary, which is what makes the bug dangerous: it passes every test that does not cross the boundary, and a real mission crosses it routinely.
 
 > [!important] One line of arithmetic separates the two runs
 > The only difference is `e = atan2(sin(e), cos(e))`. It costs nothing, it is one line, and without it a heading controller is wrong near a boundary it will certainly cross during a mission.
 
 ## F. Big turns overshoot less (15 min)
+
+```matlab
+W03_F_big_turns_overshoot_less
+```
+
+> [!note] To produce this figure
+> `W03_F_big_turns_overshoot_less.m` runs `W03_heading_control.slx` four times with the gains held and the step size swept, prints the table below, and writes `img/W03_result_size.png`.
 
 $K_p = 100$, $K_d = 0$, four step sizes:
 
@@ -480,6 +547,14 @@ $$
 - At the peak rate of the $120°$ step, $19.505$ deg/s $= 0.3404$ rad/s, the damping is $4.40$ times its small-signal value. The design equations of §3-3 are therefore a **small-signal** result: accurate for the $5°$ step and conservative for the large ones.
 - The peak rate is the same for the $60°$ and $120°$ steps. Both saturate the propellers, so beyond a certain step size the vessel turns as fast as it can and no faster.
 
+**What the figure says**
+
+- **Meaning.** Four commands of different size, answered by one unchanged controller. The left panel removes the size difference by normalising, so the only thing left to compare is the **shape** of the response. The right panel puts the measured overshoot against the physical quantity that explains it.
+- **Trend, in numbers.** Overshoot falls from $11.74\%$ at $5°$ to $0.10\%$ at $120°$ — a factor of 117, from a controller that was never retuned. Over the same range the damping multiplier $1 + 10\lvert r\rvert$ climbs from $1.67$ to $4.40$. The two curves in the right panel are mirror images, which is the claim being made: **the extra damping is the reason for the missing overshoot.**
+- **Principle.** `otter.m` models yaw damping as $N_h = N_r(1 + 10\lvert r\rvert)r$. Damping therefore grows with how fast the vessel is already turning, so a big turn damps itself. A linear plant has no such term, and the four normalised curves would lie exactly on top of one another.
+- **Why the left panel is the proof rather than the right.** Normalisation is what makes the nonlinearity visible: after dividing by the step, any linear system must give one curve. These four are visibly different — the $5°$ response overshoots to $1.12$ while the $120°$ one never exceeds $1.00$. **Superposition fails, and that is the definition of a nonlinear plant.**
+- **What changes with the situation.** The $60°$ and $120°$ runs share a peak rate of $19.505$ deg/s because both saturate the propellers; past that point the vessel turns as fast as it can and the damping multiplier stops rising too, which is why the orange curve flattens. The practical consequence is that the design of §3-3 is a **small-signal** result: honest for small corrections, and conservative — never optimistic — for large ones.
+
 ---
 
 # Summary
@@ -505,8 +580,8 @@ $$
 
 ### Laboratory
 
-- [ ] `W03_setup` printed $\zeta = 0.9000$ and $\omega_n = 1.5312$
-- [ ] `W03_run` completed and wrote five PNG files into `W03_simulink/img/`
+- [ ] `W03_0_setup` printed $\zeta = 0.9000$ and $\omega_n = 1.5312$
+- [ ] Sections C, D, E and F were run in that order and together wrote four result PNG files into `W03_simulink/img/`
 - [ ] The `use_ssa = 0` run was watched in the live view to the end
 
 ### Recorded observations
@@ -521,7 +596,7 @@ $$
 ## Assignment 3
 
 - **Due**: before the Week 4 session
-- **Submit**: the modified `W03_setup.m`, a derivation, the numbers requested below, and one figure
+- **Submit**: the modified `W03_0_setup.m`, a derivation, the numbers requested below, and one figure
 
 ### ① Requirements
 
@@ -576,9 +651,10 @@ $$
 
 ### Course files
 
-- `W03_simulink/build_w03_models.m` — the model generator
-- `W03_simulink/W03_setup.m` — the parameters, including the design equations
-- `W03_simulink/W03_run.m` — the experiments and the figures
+- `W03_simulink/W03_1_build_heading.m` — the model generator
+- `W03_simulink/W03_0_setup.m` — the parameters, including the design equations
+- `W03_simulink/W03_C_proportional_only.m` · `W03_D_derivative_action.m` · `W03_E_the_wrap.m` · `W03_F_big_turns_overshoot_less.m` — one script per laboratory section
+- `W03_simulink/W03_vars.m` · `W03_read.m` — the same numbers as a struct, and the log with the angles in degrees
 - `W03_simulink/W03_plot.m` — the summary figure, called by both the runner and the model's `StopFcn`
 - `_tools/gnc_chain.m`, `_tools/add_subsys.m`, `_tools/add_measurement.m` — the standard layout
 
