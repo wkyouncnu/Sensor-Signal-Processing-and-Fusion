@@ -1,0 +1,592 @@
+---
+type: week
+week: 3
+title: Week 3 — Heading Control
+date: 2026-09-04
+tags: [week, control, heading, ssa, otter, simulink]
+summary: The same chain, one axis further — a type 1 plant, a derivative term that finally damps, and the wrap that sends a vessel the long way round
+status: done
+---
+
+# Week 3 · Heading Control
+
+> [!important] Reference material — read this first
+> <span style="font-size:0.88em">The five courses below are **taught by the instructor of this course** and are the assumed background for it. They run from the fundamentals down to the graduate material, so start wherever the gap is. Every frame, symbol and derivation used here is developed in them at length; anyone whose prerequisites are thin should work through them first, then return.</span>
+>
+> | # | Course | Level | Lang. | Video | Slides and code |
+> |---|---|---|---|---|---|
+> | 1 | **Control Engineering** (제어공학) — the foundation: transfer functions, feedback, stability, root locus, PID | undergraduate | KO | [playlist](https://youtube.com/playlist?list=PLFaUxNRM4BvJMpF9HZS-Mp8tDv9dTdglk) | [drive](https://drive.google.com/drive/folders/1TNIPDNtS_Iy8li-olka5WJslSXDYf0aT) |
+> | 2 | **Control System Design** (제어시스템설계) — design rather than analysis: specifications, loop shaping, discrete implementation | undergraduate | KO | [playlist](https://youtube.com/playlist?list=PLFaUxNRM4BvIGroZ5rgn7x08F7C79d9WZ) | [drive](https://drive.google.com/drive/folders/11m5Xxl_PHJvxgHghLSP-jhCpmRpbvoXh) |
+> | 3 | **Advanced Control Engineering** (제어공학특론) — reference frames, the 6-DOF equation of motion, rotation matrices and Euler angles, linearisation and trim, vehicle control design | graduate | EN | [playlist](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [drive](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
+> | 4 | **Sensor Signal Processing and Fusion** (센서신호처리 및 융합) — sensor models, noise, estimation and multi-sensor fusion | graduate | EN | [playlist](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [drive](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
+> | 5 | **Capstone Design** (캡스톤디자인) — a vehicle project carried end to end | undergraduate | KO | [playlist](https://youtube.com/playlist?list=PLFaUxNRM4BvLu7L0pDoLzDXTv8mm6rCmj) | [drive](https://drive.google.com/drive/folders/1haIQejlJfrdhtOuof-MpffR9ydVscXZS) |
+>
+> <span style="font-size:0.88em">**Not fluent in MATLAB or Simulink yet? Do these before Part 2.** Every laboratory in this course is Simulink, and the Onramp courses are free and take a few hours each.</span>
+>
+> | Tool | Where to start |
+> |---|---|
+> | MATLAB | [MATLAB Onramp](https://matlabacademy.mathworks.com/kr/details/matlab-onramp/gettingstarted) · [Core MATLAB Skills](https://matlabacademy.mathworks.com/details/core-matlab-skills/lpmlcms) |
+> | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · instructor's Simulink lectures [part 1](https://youtu.be/a-afHg_fSaU) · [part 2](https://youtu.be/070Yn0Hw5a0) |
+
+
+- **Course**: USV Guidance, Navigation and Control (Graduate)
+- **Department**: Autonomous Vehicle System Engineering, Chungnam National University
+- **This week**: ① why proportional control alone reaches the setpoint on this axis and could not on the last ② where the derivative term goes when the controlled variable is an angle ③ the wrap at $\pm 180°$, and one line of arithmetic that fixes it
+
+> [!important] Prerequisites from the previous week
+> - The signal chain: **command → controller → allocation → plant → measurement**, each stage a subsystem.
+> - The finding of §2-4: a term must be substituted into the equation of motion before its effect is assumed. This week is that lesson applied a second time, with the opposite answer.
+> - From Week 1: $M_{66} = 42.65$ kg·m², $N_r = -42.65$ N·m per rad/s, and the nonlinear yaw damping $N_h = N_r(1 + 10|r|)r$.
+
+---
+
+## Learning Outcomes
+
+Upon completion of this week, the learner is able to:
+
+1. State why the heading loop is type 1 and predict, without computing, that proportional control leaves no steady-state error.
+2. Choose $K_p$ and $K_d$ for a specified $\omega_n$ and $\zeta$ from the yaw equation of motion.
+3. Explain why the derivative term damps this loop and did not damp the loop of Week 2, in terms of where each one lands in the equation of motion.
+4. Implement the smallest-signed-angle wrap and state what a controller does without it.
+5. Account for the difference between a predicted overshoot and a measured one when the hull's damping is not linear.
+
+## Prerequisites and Setup
+
+| Item | Requirement |
+|---|---|
+| MATLAB | R2024b, with Simulink |
+| Toolboxes | none beyond Simulink for this week |
+| MSS | `Tools/MSS`, added by the setup script |
+| Course folder | `GradCourse/lectures/W03_simulink` |
+| Expected duration | 60 min theory, 75 min laboratory |
+
+---
+
+# Part 1 · Theory
+
+## 3-1. The yaw axis, and one structural difference
+
+- The heading is not a velocity. It is the **integral** of one:
+
+$$
+\dot\psi = r .
+$$
+
+### Deriving the second-order heading equation
+
+- This equation is the **third row** of the 3-DOF model of §1-7, and the derivation matters because the terms dropped here are not zero, unlike those dropped in §2-1.
+- Start again from $\mathbf{M}\dot{\boldsymbol{\nu}} + \mathbf{C}(\boldsymbol{\nu})\boldsymbol{\nu} + \mathbf{D}(\boldsymbol{\nu})\boldsymbol{\nu} = \boldsymbol{\tau}$ with $\boldsymbol{\nu} = [u\ v\ r]^{\!\top}$. The yaw row is
+
+$$
+\underbrace{(m x_g - N_{\dot v})\,\dot v}_{\text{sway-yaw coupling}}
++ (I_z - N_{\dot r})\,\dot r
++ \underbrace{m x_g u r + (X_{\dot u} - Y_{\dot v})\,u v}_{\text{Coriolis}}
+= N + N_r r + N_v v
+$$
+
+- Three terms stand between this and the scalar plant. Unlike §2-1, **none of them is identically zero**, and each is dropped for a stated reason:
+
+| Term | Why it is dropped | When it bites |
+|---|---|---|
+| $(m x_g - N_{\dot v})\dot v$ | sway acceleration is small once the turn has settled | during the first seconds of a turn |
+| $(X_{\dot u} - Y_{\dot v})\,u v$ | proportional to $uv$; $v$ is a few per cent of $u$ | at speed, in a hard turn |
+| $N_v v$ | the Otter has no linear sway damping, $Y_v = 0$ | never, for this hull |
+
+- Dropping them, writing $M_{66}$ for the $(6,6)$ entry of $\mathbf{M}$ and substituting $r = \dot\psi$ from the kinematics:
+
+$$
+\begin{aligned}
+M_{66}\,\dot r &= N + N_r r \\[2pt]
+M_{66}\,\ddot\psi &= \tau_N + N_r\,\dot\psi
+\end{aligned}
+$$
+
+> [!warning] This reduction is an approximation, and Week 1 already measured the error
+> In §2-1 the dropped terms were exactly zero and the reduction was exact. Here they are not. Week 1 measured $v = \pm 0.1264$ m/s in a turn — real sway, produced by the very Coriolis coupling dropped above. The linear model below is therefore a **design model**, and §3-5 shows where the vessel stops obeying it.
+
+> [!caution] $M_{66}$ is not $I_z - N_{\dot r}$
+> The textbook symbol suggests it is, and for a vessel whose origin sits at its centre of gravity it would be. The Otter's does not: `otter.m` places the body origin on the waterline and carries $x_g = 0.153$ m, so building $\mathbf{M}_{RB}$ transfers the inertia from CG to CO and $M_{66}$ picks up rigid-body terms beyond $I_z$. Week 1 §1-12 works the number through. Take $M_{66} = 42.65$ kg·m² from the model, not from the symbol.
+
+$$
+M_{66}\,\ddot\psi = \tau_N + N_r\,\dot\psi .
+$$
+
+| Symbol | Quantity | Value / source |
+|---|---|---|
+| $M_{66}$ | yaw inertia including added mass | $42.65$ kg·m², `otter.m` |
+| $N_r$ | linear yaw damping | $-42.65$ N·m per rad/s, $-M_{66}/T_{\text{yaw}}$ |
+| $\tau_N$ | commanded yaw moment | the controller's output |
+
+- Taking Laplace transforms:
+
+$$
+\frac{\psi(s)}{\tau_N(s)} = \frac{1}{s\left(M_{66}s + |N_r|\right)} .
+$$
+
+> [!important] There is a free $1/s$, and it changes everything
+> Week 2's plant had no integrator, so the loop was **type 0** and proportional control could never reach the setpoint. This plant has one, so the loop is **type 1** and proportional control reaches the setpoint at every gain. Nothing was tuned to achieve that. It is a property of the axis.
+
+- The reason is the same physical argument as Week 2, run backwards. Holding a steady **speed** needs a steady force, because damping never stops. Holding a steady **heading** needs no moment at all, because a vessel that is not turning has no yaw damping to overcome. A proportional controller can supply zero moment at zero error, and that is exactly what is required.
+
+| | Week 2, surge | Week 3, heading |
+|---|---|---|
+| controlled variable | a velocity | an angle |
+| plant | $K_u/(\tau_u s + 1)$ | $1/[s(M_{66}s + \lvert N_r\rvert)]$ |
+| type | 0 | 1 |
+| steady state needs | a non-zero force | no moment |
+| P alone reaches the setpoint | no, at any gain | yes, at every gain |
+
+### The same plant under its usual name: Nomoto
+
+- The model just derived has a name. Every paper on ship steering writes it as **Nomoto's model** (Nomoto et al., 1957), and a student who does not recognise it will not recognise most of the steering literature.
+- Keeping the sway–yaw coupling that §3-1 discarded and eliminating $v$ between the two rows gives a **second-order** relation between rudder angle $\delta$ and yaw rate:
+
+$$
+T_1 T_2\,\ddot r + (T_1 + T_2)\,\dot r + r = K\left(\delta + T_3\,\dot\delta\right)
+$$
+
+- The sway dynamics are fast compared with the yaw dynamics, so $T_2$ and $T_3$ nearly cancel. Dropping them leaves the **first-order Nomoto model**, which is what almost every autopilot is designed on:
+
+$$
+\boxed{\ T\,\dot r + r = K\,\delta\ },
+\qquad
+T = T_1 + T_2 - T_3
+$$
+
+| Symbol | Meaning |
+|---|---|
+| $K$ | rudder gain — how much steady yaw rate one degree of rudder buys |
+| $T$ | time constant — how long the rate takes to build |
+| $K/T$ | turning ability; large $K/T$ is a nimble vessel |
+
+- The Otter has no rudder. Its yaw moment comes from the **difference between two propellers**, so $\delta$ is replaced by $\tau_N$ and the same first-order form appears directly from §3-1:
+
+$$
+M_{66}\,\dot r + |N_r|\,r = \tau_N
+\qquad\Longleftrightarrow\qquad
+\underbrace{\frac{M_{66}}{|N_r|}}_{T}\,\dot r + r = \underbrace{\frac{1}{|N_r|}}_{K}\,\tau_N
+$$
+
+- Putting in the two numbers from `otter.m`:
+
+$$
+T = \frac{42.6515}{42.6515} = 1.000000\ \text{s},
+\qquad
+K = \frac{1}{42.6515} = 0.023446\ \frac{\text{rad/s}}{\text{N}\cdot\text{m}}
+$$
+
+- Both numbers, and every other coefficient quoted in this course, are checked against the source rather than remembered:
+
+```matlab
+verify_constants
+```
+
+- That script rebuilds $\mathbf{M}$ exactly as `otter.m` lines 55–120 build it and compares all sixteen quoted values. It reports `every quoted value agrees with otter.m to its printed precision`.
+
+> [!note] $T = 1$ s exactly, and it is not a coincidence
+> `otter.m` sets the yaw damping as $N_r = -M_{66}/T_{\text{yaw}}$ with $T_{\text{yaw}} = 1$ s — the damping is *defined* from a chosen time constant rather than measured. So the Nomoto $T$ of this vessel is $1$ s by construction. Read the source before quoting a hydrodynamic coefficient as if it were a measurement.
+
+- Adding the kinematics $\dot\psi = r$ turns the first-order Nomoto model into the type 1 plant used for the rest of this week:
+
+$$
+\frac{\psi(s)}{\tau_N(s)} = \frac{K}{s\,(Ts + 1)} = \frac{1}{s\left(M_{66}s + |N_r|\right)}
+$$
+
+- The two right-hand sides are the same expression, divided top and bottom by $|N_r|$. Nothing new has been introduced; the Nomoto form simply names the two numbers that matter.
+
+> [!warning] Nomoto is linear, and this hull is not
+> Nomoto's model has a constant $T$. Section 3-5 shows that the Otter's damping grows with $|r|$, so its effective $T$ **shrinks as the turn gets harder**. The nonlinear extension that repairs this is Norrbin's, $T\dot r + r + \alpha r^3 = K\delta$, and it is the reason a large turn overshoots less than a small one.
+
+## 3-2. The control law
+
+- The controller is proportional on the heading error and derivative on the **yaw rate**:
+
+$$
+\boxed{\ \tau_N = K_p\,\operatorname{ssa}\!\left(\psi_d - \psi\right) - K_d\,r\ }
+$$
+
+- Two choices are being made, and both are deliberate.
+
+| Choice | Reason |
+|---|---|
+| $\operatorname{ssa}$ on the error | angles wrap; §3-5 is what happens without it |
+| $-K_d r$, not $-K_d \dot e$ | $r$ is measured directly by the gyro. Differentiating the error would also differentiate every step in $\psi_d$ |
+
+## 3-3. Where the derivative term goes this time
+
+- Substitute the control law into the equation of motion, ignoring the wrap for a moment:
+
+$$
+\begin{aligned}
+M_{66}\ddot\psi &= K_p(\psi_d - \psi) - K_d\dot\psi + N_r\dot\psi \\[4pt]
+M_{66}\ddot\psi &+ \left(|N_r| + K_d\right)\dot\psi + K_p\psi = K_p\psi_d .
+\end{aligned}
+$$
+
+- Comparing with $\ddot\psi + 2\zeta\omega_n\dot\psi + \omega_n^2\psi = \omega_n^2\psi_d$:
+
+$$
+\omega_n = \sqrt{\frac{K_p}{M_{66}}},
+\qquad
+\zeta = \frac{|N_r| + K_d}{2\sqrt{K_p M_{66}}} .
+$$
+
+- Inverting for a chosen pair:
+
+$$
+K_p = \omega_n^2 M_{66},
+\qquad
+K_d = 2\zeta\sqrt{K_p M_{66}} - |N_r| .
+$$
+
+- For $\omega_n = 1.53$ rad/s and $\zeta = 0.9$ this gives $K_p = 100.00$ and $K_d = 74.90$.
+
+> [!important] The same term, the opposite effect
+> In Week 2 the controlled variable was a velocity, so $K_d$ multiplied an **acceleration** and landed beside the mass: $\left(M_{11} + K_d\right)\dot u$. Here the controlled variable is an angle, so $K_d$ multiplies a **rate** and lands beside the damping: $\left(|N_r| + K_d\right)\dot\psi$. Nothing about the controller changed. The axis did.
+
+- Two further remarks, both measurable in Part 2.
+  - There is **no zero** in the closed loop. The numerator is $K_p$ alone, so the tabulated relation $M_p = \exp\!\left(-\pi\zeta/\sqrt{1-\zeta^2}\right)$ applies here in a way it did not in Week 2.
+  - The hull already supplies damping. At $K_p = 100$ and $K_d = 0$, $\zeta = 42.65/(2\sqrt{100 \times 42.65}) = 0.327$. Most of what damps a heading loop on this vessel is $N_r$, not the controller.
+
+## 3-4. Heading is not course — the crab angle
+
+- A heading controller regulates where the vessel **points**. It does not regulate where the vessel **goes**, and those are two different directions.
+
+![Heading, course and the crab angle](../figures/w03-course-crab.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| orange ray | the heading $\psi$ — the direction $x_b$ points |
+| blue ray | the course $\chi$ — the direction the velocity actually goes |
+| green arc | the crab angle $\beta$, the gap between them |
+
+| Symbol | Definition | Unit |
+|---|---|---|
+| $\psi$ | heading, from North to $x_b$ | rad |
+| $\chi$ | course over ground, from North to the velocity vector | rad |
+| $\beta$ | crab angle | rad |
+
+$$
+\boxed{\ \beta = \operatorname{atan2}(v,\ u), \qquad \chi = \psi + \beta\ }
+$$
+
+- With the example of Week 1, $u = 2.0$ m/s and $v = 0.5$ m/s at $\psi = 30°$:
+
+$$
+\beta = \operatorname{atan2}(0.5,\ 2.0) = 14.04^\circ, \qquad \chi = 44.04^\circ .
+$$
+
+- And the check: $\operatorname{atan2}(\dot E, \dot N) = \operatorname{atan2}(1.4330,\ 1.4821) = 44.04°$. The course computed from the body velocity and the course computed from the NED velocity are the same number, as they must be.
+
+> [!important] $\beta$ is not a disturbance
+> The crab angle is non-zero whenever $v \neq 0$ — in a turn, in a current, in a beam wind. It is what the hull is doing, not an error to be removed. Week 1 measured $\beta = -20.3°$ in the turning run of a vessel with **no** sway actuation at all.
+
+> [!note] Two definitions of $\beta$ are in circulation
+> Fossen writes $\beta = \arcsin(v/U)$ with $U = \sqrt{u^2+v^2}$; the form used here is $\operatorname{atan2}(v,u)$. For $u > 0$ they are identical — at $u = 2.0$, $v = 0.5$ both give $14.036°$. They part company going astern: at $u = -1.0$, $v = 0.5$ the arcsin form gives $26.6°$ and `atan2` gives $153.4°$. Only the second is the direction the vessel is actually travelling, so this course uses `atan2` throughout.
+
+- This week regulates $\psi$ and lets $\chi$ fall where it may. **Week 5 cannot**: a path-following law that steers the heading onto a track while the vessel travels along the course leaves a permanent cross-track error of the order of $\beta$ times the look-ahead distance.
+
+## 3-5. The wrap
+
+- Headings are angles, and angles are not numbers on a line. Commanding $-170°$ while the vessel heads $+170°$ gives
+
+$$
+\psi_d - \psi = -170° - 170° = -340° ,
+$$
+
+- which is a perfectly valid subtraction and a perfectly wrong error. The two headings are $20°$ apart.
+- The **smallest signed angle** maps any angle into $(-\pi, \pi]$:
+
+$$
+\operatorname{ssa}(a) = \operatorname{atan2}\!\left(\sin a,\ \cos a\right) .
+$$
+
+- Applied to the example, $\operatorname{ssa}(-340°) = +20°$, and the vessel turns the short way.
+
+> [!warning] Wrap the error, not the heading
+> $\psi$ itself is left unwrapped throughout this course, exactly as `otter.m` produces it. Wrapping the state would put a $360°$ jump into a signal that is differentiated and plotted. The wrap belongs at the **one place an angle is subtracted from an angle**, which is inside the `heading error` block and nowhere else.
+
+## 3-6. Allocation, now with two demands
+
+- The controller asks for a yaw moment. A constant forward force $X_{\text{ff}}$ is added so that the vessel travels while it turns and the track is worth looking at. Two demands, two propellers:
+
+$$
+X = T_1 + T_2, \qquad N = y_{\text{pont}}\left(T_1 - T_2\right)
+$$
+
+$$
+\Longrightarrow\quad
+T_1 = \frac{X}{2} + \frac{N}{2y_{\text{pont}}},
+\qquad
+T_2 = \frac{X}{2} - \frac{N}{2y_{\text{pont}}} .
+$$
+
+- The map is **square** in the $(X, N)$ plane, so the inverse exists and is unique. Nothing is optimised and nothing is chosen. Week 4 meets the case where there are more thrusters than demands.
+- Each thrust is then converted to a shaft speed by inverting the propeller curve one propeller at a time, $n = \operatorname{sign}(T)\sqrt{|T|/k}$, and saturated.
+
+> [!tip] Allocating thrust rather than shaft speed pays a dividend
+> Appendix A1 derived, by hand, that a pure turn needs $n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}}$ rather than $-n_1$. This allocation produces that pair **by itself**: a pure yaw moment gives $T_2 = -T_1$, and because $k_{\text{neg}} < k_{\text{pos}}$ the reverse shaft comes out faster. Doing the arithmetic in the right units removes a whole class of error.
+
+---
+
+# Part 2 · Laboratory
+
+## A. Setting up (10 min)
+
+```matlab
+cd GradCourse/lectures/W03_simulink
+W03_setup
+```
+
+Expected output:
+
+```
+  W03 setup complete
+    plant           M66 = 42.65 kg m^2,  Nr = -42.65
+    controller      Kp = 100, Kd = 74.9, ssa = 1
+    closed loop     wn = 1.5312 rad/s,  zeta = 0.9000
+    hull alone      zeta = 0.3265  (Kd = 0)
+    reference       60 -> 60 deg at t = 5 s
+    forward force   60 N
+    simulation      40 s at h = 0.02 s
+```
+
+- `W03_setup.m` is **the only file to edit this week**. To restore a broken model: `build_w03_models`.
+
+## B. Reading the model (10 min)
+
+![Block diagram of the heading loop](W03_simulink/img/W03_heading_control.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| `Heading command` (white) | two steps in degrees, converted to radians once; and the constant forward force |
+| `Heading autopilot` (blue) | selectors for $\psi$ and $r$, the wrapped error, and $K_p$, $K_d$ |
+| `Control allocation` (sand) | $(\tau_N, X_{\text{ff}}) \to$ two shaft speeds, by the inverse of §3-6 |
+| `Otter USV` (green) | `otter.m`, called unchanged |
+| `Measurements` (grey) | selectors, scope, workspace log and live view |
+
+- The chain is the same one as Week 2 with the controller replaced. **One signal travels backwards**: the state $\mathbf{x}$, from which the autopilot selects $\psi$ and $r$.
+- Angles are in **degrees at the command and in the plots, and in radians everywhere between**. The single `deg2rad` gain inside `Heading command` is the boundary, and it is the only place a conversion happens on the way in.
+
+## C. Proportional only (15 min)
+
+```matlab
+W03_run
+```
+
+$K_d = 0$, step to $60°$:
+
+| $K_p$ | $\omega_n$ | $\zeta$ | steady error [deg] | overshoot [%] | $t_s$ (2%) [s] |
+|---|---|---|---|---|---|
+| 30 | $0.8387$ | $0.5962$ | $7.9\times10^{-3}$ | $-0.01$ | $12.24$ |
+| 100 | $1.5312$ | $0.3265$ | $1.8\times10^{-3}$ | $0.24$ | $5.06$ |
+| 300 | $2.6522$ | $0.1885$ | $5.7\times10^{-4}$ | $1.53$ | $3.46$ |
+
+![Proportional control on a type 1 plant](W03_simulink/img/W03_result_P.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left panel | three step responses; all three arrive at the dashed setpoint |
+| right panel | the error, going to zero at every gain |
+
+- The steady-state error is **zero at every gain**, to the tolerance of the solver. Week 2's table at the same place read $43.68$, $13.43$ and $3.73$ per cent.
+- The difference between the two weeks is one structural fact about the axis. No better controller was written.
+
+## D. Derivative action (20 min)
+
+$K_p = 100$ held, and a deliberately **small** step of $5°$:
+
+| $K_d$ | $\zeta$ | predicted $M_p$ [%] | measured $M_p$ [%] | $t_s$ (2%) [s] |
+|---|---|---|---|---|
+| 0 | $0.3265$ | $33.78$ | $11.74$ | $5.40$ |
+| 25 | $0.5179$ | $14.92$ | $4.10$ | $3.88$ |
+| 74.90 | $0.9000$ | $0.15$ | $-0.02$ | $4.14$ |
+| 150 | $1.4750$ | $0.00$ | $-0.02$ | $7.52$ |
+
+![Derivative action on a heading loop](W03_simulink/img/W03_result_D.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left panel | four step responses; overshoot falls monotonically with $K_d$ |
+| right panel | $\zeta$ against $K_d$, with the four designs marked and the critically damped line |
+
+- The **trend** is exactly as predicted: more $K_d$, more damping, less overshoot. Compare Week 2's table, where more $K_d$ meant *more* overshoot.
+- The **magnitudes** are not. The measured overshoot is roughly a third of the predicted one at $K_d = 0$. Section F explains why, and the explanation is not a modelling error.
+
+> [!note] Why the step is only 5 degrees here
+> The design equations of §3-3 use $N_r$ alone. The hull's actual damping is $N_h = N_r(1 + 10|r|)r$, which is larger whenever the vessel is turning quickly. A small step keeps $|r|$ small and the linear prediction close. Section F makes the same nonlinearity the subject rather than a nuisance.
+
+## E. The wrap (15 min)
+
+The vessel is commanded to $+170°$, allowed to settle, and then commanded to $-170°$ — a change of $20°$.
+
+| `use_ssa` | peak $\lvert r\rvert$ [deg/s] | total turn [deg] | settled $\psi$ [deg] |
+|---|---|---|---|
+| 1 | $8.375$ | $20.0$ | $190.00$ |
+| 0 | $19.640$ | $340.0$ | $-170.00$ |
+
+![The wrap, with and without ssa](W03_simulink/img/W03_result_ssa.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left panel | the heading; both runs end at the same physical heading |
+| centre panel | the yaw rate; one vessel nudges, the other spins |
+| right panel | the track, hull and heading drawn along it |
+
+- Both vessels end pointing the same way. One turned $20°$ and the other turned $340°$ the other way.
+- The settled headings read $190°$ and $-170°$ because $\psi$ is never wrapped in this course. They are the same heading, expressed differently, which is precisely the point.
+
+> [!important] One line of arithmetic separates the two runs
+> The only difference is `e = atan2(sin(e), cos(e))`. It costs nothing, it is one line, and without it a heading controller is wrong near a boundary it will certainly cross during a mission.
+
+## F. Big turns overshoot less (15 min)
+
+$K_p = 100$, $K_d = 0$, four step sizes:
+
+| step [deg] | peak $\lvert r\rvert$ [deg/s] | overshoot [%] | $t_s$ (2%) [s] |
+|---|---|---|---|
+| 5 | $3.840$ | $11.74$ | $5.40$ |
+| 20 | $10.926$ | $2.00$ | $3.90$ |
+| 60 | $19.505$ | $0.24$ | $5.06$ |
+| 120 | $19.505$ | $0.10$ | $7.86$ |
+
+![Step size and the nonlinear damping](W03_simulink/img/W03_result_size.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left panel | the same steps normalised to $100\%$; a linear system would superimpose exactly |
+| right panel, left axis | the measured overshoot, falling with step size |
+| right panel, right axis | the damping multiplier $1 + 10\lvert r\rvert$ at the peak rate of each run |
+
+- A **larger** step overshoots **less**. No linear model can produce this, and normalising the responses makes it obvious: they do not superimpose.
+- The mechanism is the yaw damping of `otter.m`:
+
+$$
+N_h = N_r\left(1 + 10|r|\right)r .
+$$
+
+- At the peak rate of the $120°$ step, $19.505$ deg/s $= 0.3404$ rad/s, the damping is $4.40$ times its small-signal value. The design equations of §3-3 are therefore a **small-signal** result: accurate for the $5°$ step and conservative for the large ones.
+- The peak rate is the same for the $60°$ and $120°$ steps. Both saturate the propellers, so beyond a certain step size the vessel turns as fast as it can and no faster.
+
+---
+
+# Summary
+
+## Week Summary
+
+| Step | What was done | How it was verified |
+|---|---|---|
+| 1 | Identified the heading loop as type 1 | steady-state error $\le 8\times10^{-3}$ deg at $K_p = 30$, $100$, $300$ |
+| 2 | Derived $\omega_n$ and $\zeta$ from the yaw equation | $K_p = 100$, $K_d = 74.90$ gives the requested $\zeta = 0.900$ |
+| 3 | Showed $K_d$ damping this axis | overshoot $11.74 \to 4.10 \to -0.02$ per cent as $K_d$ rises, the reverse of Week 2 |
+| 4 | Implemented and removed the wrap | $20°$ of turn against $340°$, for the same commanded heading |
+| 5 | Measured the nonlinear yaw damping | overshoot $11.74 \to 0.10$ per cent as the step grows; damping multiplier $1.67 \to 4.40$ |
+
+## Progress Check
+
+### Theory
+
+- [ ] Able to state why the heading loop is type 1 without computing anything
+- [ ] Able to obtain $K_p$ and $K_d$ from a required $\omega_n$ and $\zeta$
+- [ ] Able to explain, from the equation of motion, why $K_d$ damps here and did not in Week 2
+- [ ] Able to write $\operatorname{ssa}$ and say where in the model it belongs
+
+### Laboratory
+
+- [ ] `W03_setup` printed $\zeta = 0.9000$ and $\omega_n = 1.5312$
+- [ ] `W03_run` completed and wrote five PNG files into `W03_simulink/img/`
+- [ ] The `use_ssa = 0` run was watched in the live view to the end
+
+### Recorded observations
+
+- [ ] The steady-state error at three gains, with the averaging window stated
+- [ ] Predicted and measured overshoot for all four $K_d$, and the size of the gap
+- [ ] Total turn with and without the wrap
+- [ ] Peak $\lvert r\rvert$ for each step size, and the damping multiplier it implies
+
+---
+
+## Assignment 3
+
+- **Due**: before the Week 4 session
+- **Submit**: the modified `W03_setup.m`, a derivation, the numbers requested below, and one figure
+
+### ① Requirements
+
+1. Derive $\omega_n$ and $\zeta$ for the heading loop from the yaw equation of motion, showing each step. Then determine, by hand, the pair $(K_p, K_d)$ that gives $\omega_n = 1.0$ rad/s and $\zeta = 0.7$.
+2. Determine the largest $K_p$ for which the hull's own damping alone, with $K_d = 0$, still gives $\zeta \ge 0.5$.
+3. Determine, by hand, the yaw moment $\tau_N$ demanded at the instant a $90°$ step is applied with the design of ①.1, and state whether it lies inside the attainable set $|N| \le 73.62$ N·m of Appendix A1.
+
+### ② Verification — mandatory
+
+> [!important] A claim is not a result. Numbers are required, with the tolerance band and the averaging window stated
+
+1. Run the design of ①.1 with a $5°$ step and report the measured overshoot and $2\%$ settling time. Compare with the prediction and state the gap.
+2. Repeat ②.1 with a $90°$ step. Report both, and explain the difference using $1 + 10|r|$ at the measured peak rate.
+3. Run the design of ①.2 and report the measured overshoot. State whether the hull alone was enough.
+4. Command $+179°$, let it settle, then command $-179°$. Report the total turn with `use_ssa = 1` and with `use_ssa = 0`, and the time each takes to settle. Produce **one figure** of heading against time for both.
+
+### ③ Analysis (6–10 lines)
+
+- Item ②.2 shows a prediction that is wrong in a specific direction. State the direction, explain it from $N_h = N_r(1 + 10|r|)r$, and say whether a controller designed with the small-signal equations is therefore **safe** or **unsafe** for large steps. Then state one situation in which the same nonlinearity would be a problem rather than a help.
+
+### Grading
+
+| Criterion | Weight |
+|---|---|
+| Derivation in ① is complete and correct | 20% |
+| **Verification performed and numbers reported with bands and windows stated** | 40% |
+| The figure in ②.4 is correct and readable | 15% |
+| Analysis in ③ identifies the direction of the error and its consequence | 25% |
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| The vessel turns almost all the way round for a small heading change | `use_ssa = 0` | set `use_ssa = 1`; see §3-5 |
+| The heading plot passes $360°$ and keeps rising | $\psi$ is not wrapped, by design | expected. Only the error is wrapped |
+| The measured overshoot is far below the prediction | the step is large enough for $N_h = N_r(1+10\lvert r\rvert)r$ to matter | expected; see §F. Use a small step to test a linear design |
+| Adding $K_d$ makes the response slower but not less damped | $K_d$ is already past critical, $\zeta > 1$ | reduce $K_d$; $\zeta = 1$ is at $K_d = 87.96$ for $K_p = 100$ |
+| Peak yaw rate is the same for two different step sizes | the propellers are saturating | expected; the vessel turns as fast as it can |
+| The vessel drifts sideways while turning | the crab angle of Week 1 | expected, and the subject of Week 5 |
+
+---
+
+## References
+
+### Primary
+
+- Fossen, T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. §12.2.7 (PID heading autopilot) and §15.3 (course and heading autopilots).
+- MSS toolbox, `Tools/MSS/GNC/ssa.m` — the wrap used throughout MSS.
+- MSS toolbox, `Tools/MSS/SIMULINK/mssSimulinkDemos/demoOtterUSVHeadingControl.slx` — the demonstration whose layout every model in this course follows.
+
+### Course files
+
+- `W03_simulink/build_w03_models.m` — the model generator
+- `W03_simulink/W03_setup.m` — the parameters, including the design equations
+- `W03_simulink/W03_run.m` — the experiments and the figures
+- `W03_simulink/W03_plot.m` — the summary figure, called by both the runner and the model's `StopFcn`
+- `_tools/gnc_chain.m`, `_tools/add_subsys.m`, `_tools/add_measurement.m` — the standard layout
+
+---
+
+## Next Week
+
+- **Week 4 — Control Allocation**
+- This week's allocation had exactly one answer because the map was square. Add a thruster and it has infinitely many, and the question becomes which one to choose.
+- The pseudo-inverse, weighted least squares, and what a weight can and cannot do.
+- Preparation: read **Appendix A1**, which becomes required here — the column rule, the rank of $\mathbf{B}$, and the extended thrust vector.

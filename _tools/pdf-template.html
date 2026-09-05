@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>강의자료</title>
+<style>
+  @page { size: A4; margin: 13mm 12mm 14mm 12mm; }
+
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, "Malgun Gothic", sans-serif;
+    font-size: 10.2pt; line-height: 1.5; color: #1e293b; margin: 0;
+  }
+
+  /* ---------- 제목 ---------- */
+  h1, h2, h3, h4 { line-height: 1.35; break-after: avoid; page-break-after: avoid; }
+  h1 {
+    font-size: 18pt; margin: 0 0 10px; padding-bottom: 6px;
+    border-bottom: 3px solid #1d4ed8; color: #0f172a;
+  }
+  h1.pagebreak { break-before: page; page-break-before: always; padding-top: 4px; }
+  h2 {
+    font-size: 14pt; margin: 18px 0 8px; padding: 5px 0 5px 10px;
+    border-left: 5px solid #1d4ed8; background: #f1f5f9; color: #0f172a;
+  }
+  h3 { font-size: 11.6pt; margin: 13px 0 6px; color: #1d4ed8; }
+  h4 { font-size: 11pt; margin: 14px 0 6px; color: #334155; }
+
+  /* ---------- 본문 ---------- */
+  p { margin: 5px 0; orphans: 2; widows: 2; }
+  strong { color: #0f172a; }
+  hr { border: 0; border-top: 1px solid #cbd5e1; margin: 14px 0; }
+  a { color: #1d4ed8; text-decoration: none; }
+
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { margin: 1.5px 0; }
+  li > ul, li > ol { margin: 2px 0; }
+
+  /* 체크박스 */
+  li:has(> input[type=checkbox]) { list-style: none; margin-left: -18px; }
+  input[type=checkbox] {
+    width: 11px; height: 11px; margin-right: 7px; vertical-align: -1px;
+    appearance: none; border: 1.6px solid #64748b; border-radius: 2px; background: #fff;
+  }
+
+  /* ---------- 코드 ---------- */
+  code {
+    font-family: Consolas, "D2Coding", monospace; font-size: 9.5pt;
+    background: #eef2f7; padding: 1px 5px; border-radius: 3px; color: #b91c1c;
+  }
+  pre {
+    background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #64748b;
+    border-radius: 4px; padding: 8px 11px; margin: 7px 0;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  pre code {
+    background: none; padding: 0; color: #0f172a; font-size: 9pt; line-height: 1.5;
+    white-space: pre-wrap; word-break: break-all;
+  }
+
+  /* ---------- 표 ---------- */
+  table {
+    border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 9.6pt;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  th, td { border: 1px solid #cbd5e1; padding: 4px 7px; text-align: left; vertical-align: top; }
+  th { background: #e2e8f0; font-weight: 700; color: #0f172a; }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* ---------- 그림 ---------- */
+  img { max-width: 100%; display: block; margin: 9px auto;
+        break-inside: avoid; page-break-inside: avoid; }
+
+  /* ---------- 콜아웃 ---------- */
+  blockquote {
+    margin: 9px 0; padding: 7px 12px; border-left: 4px solid #94a3b8;
+    background: #f8fafc; color: #334155;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  blockquote p:first-child { margin-top: 0; }
+  blockquote p:last-child  { margin-bottom: 0; }
+  .callout-title { font-weight: 700; margin-bottom: 5px; color: #0f172a; }
+  .cal-note      { border-left-color: #1d4ed8; background: #eff6ff; }
+  .cal-tip       { border-left-color: #0d9488; background: #f0fdfa; }
+  .cal-important { border-left-color: #7c3aed; background: #f5f3ff; }
+  .cal-warning   { border-left-color: #d97706; background: #fffbeb; }
+  .cal-caution   { border-left-color: #dc2626; background: #fef2f2; }
+  .cal-note .callout-title      { color: #1d4ed8; }
+  .cal-tip .callout-title       { color: #0d9488; }
+  .cal-important .callout-title { color: #7c3aed; }
+  .cal-warning .callout-title   { color: #b45309; }
+  .cal-caution .callout-title   { color: #dc2626; }
+
+  /* 위키링크 */
+  .wl { color: #1d4ed8; border-bottom: 1px dotted #1d4ed8; }
+
+  /* 표지 정보 */
+  .docmeta {
+    font-size: 9pt; color: #64748b; border: 1px solid #e2e8f0;
+    background: #f8fafc; padding: 6px 10px; border-radius: 4px; margin: 0 0 16px;
+  }
+</style>
+</head>
+<body>
+<div id="out"></div>
+
+<script id="mdsrc" type="text/plain">
+<!--MDCONTENT-->
+</script>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [["$","$"]],
+    displayMath: [["$$","$$"]],
+    processEscapes: true,
+    tags: "none"
+  },
+  svg: { fontCache: "global", scale: 1.0 },
+  options: { skipHtmlTags: ["script","noscript","style","textarea","pre","code"] },
+  startup: { typeset: false }
+};
+</script>
+<script>
+<!--MATHJAXJS-->
+</script>
+<script>
+<!--MARKEDJS-->
+</script>
+<script>
+(function () {
+  var raw = document.getElementById('mdsrc').textContent;
+
+  // YAML 프론트매터 제거 + title 추출
+  var meta = {};
+  var fm = raw.match(/^\s*---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+  if (fm) {
+    fm[1].split(/\r?\n/).forEach(function (l) {
+      var m = l.match(/^([a-zA-Z_]+):\s*(.*)$/);
+      if (m) meta[m[1]] = m[2];
+    });
+    raw = raw.slice(fm[0].length);
+  }
+
+  // ── 수식 보호 ───────────────────────────────────────────────────────
+  //  마크다운은 $y_e$ 의 밑줄을 강조로, \\ 를 줄바꿈으로 해석한다.
+  //  그래서 코드 -> 수식 순으로 자리표시자로 빼 두고, 코드는 곧바로 되돌린다.
+  //  ($HOME, $(...) 같은 셸 표현이 수식으로 잡히는 것을 막기 위한 순서다)
+  var codeStore = [], mathStore = [];
+  raw = raw.replace(/```[\s\S]*?```/g, function (s) {
+    codeStore.push(s); return '@C' + (codeStore.length - 1) + '@';
+  });
+  raw = raw.replace(/`[^`\n]*`/g, function (s) {
+    codeStore.push(s); return '@C' + (codeStore.length - 1) + '@';
+  });
+  raw = raw.replace(/\$\$([\s\S]+?)\$\$/g, function (s) {
+    mathStore.push(s); return '@M' + (mathStore.length - 1) + '@';
+  });
+  raw = raw.replace(/\$([^\$\n]+?)\$/g, function (s) {
+    mathStore.push(s); return '@M' + (mathStore.length - 1) + '@';
+  });
+  raw = raw.replace(/@C(\d+)@/g, function (_, i) { return codeStore[+i]; });
+
+  marked.setOptions({ gfm: true, breaks: true, headerIds: false, mangle: false });
+  var html = marked.parse(raw);
+
+  // 자리표시자를 수식 원문으로 되돌린다. MathJax 가 이것을 읽는다.
+  html = html.replace(/@M(\d+)@/g, function (_, i) {
+    return mathStore[+i].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  });
+
+  // [[위키링크]] -> 일반 텍스트 강조
+  html = html.replace(/\[\[([^\]|#]+)(\|[^\]]+)?\]\]/g, function (_, a, b) {
+    return '<span class="wl">' + (b ? b.slice(1) : a) + '</span>';
+  });
+
+  document.getElementById('out').innerHTML = html;
+
+  // 콜아웃 변환
+  var ICON = { note:'ℹ', tip:'✎', important:'★', warning:'⚠', caution:'✖' };
+  document.querySelectorAll('#out blockquote').forEach(function (bq) {
+    var p = bq.querySelector('p');
+    if (!p) return;
+    var m = p.innerHTML.match(/^\s*\[!(\w+)\]\s*([\s\S]*)$/);
+    if (!m) return;
+    var type = m[1].toLowerCase(), rest = m[2];
+    bq.classList.add('cal-' + type);
+    var brIdx = rest.search(/<br\s*\/?>/i);
+    var title, body;
+    if (brIdx >= 0) {
+      title = rest.slice(0, brIdx);
+      body  = rest.slice(brIdx).replace(/^<br\s*\/?>\s*/i, '');
+    } else { title = rest; body = ''; }
+    p.innerHTML = body;
+    if (!body.trim()) p.remove();
+    var t = document.createElement('div');
+    t.className = 'callout-title';
+    t.innerHTML = (ICON[type] || '') + ' ' + title;
+    bq.insertBefore(t, bq.firstChild);
+  });
+
+  // 1부 / 2부 / 마무리 등 두 번째 이후 h1 은 새 페이지에서 시작
+  var h1s = document.querySelectorAll('#out h1');
+  for (var i = 1; i < h1s.length; i++) h1s[i].classList.add('pagebreak');
+
+  // 문서 정보 박스
+  if (meta.title) {
+    document.title = meta.title;
+    var d = document.createElement('div');
+    d.className = 'docmeta';
+    d.textContent = 'USV Guidance, Navigation and Control (Graduate) · '
+                  + 'Department of Autonomous Vehicle System Engineering, Chungnam National University'
+                  + (meta.date ? '   |   revised ' + meta.date : '');
+    var first = document.querySelector('#out h1');
+    if (first && first.nextSibling) first.parentNode.insertBefore(d, first.nextSibling);
+  }
+
+  // 수식 조판 — MathJax 가 끝난 뒤에 인쇄 준비 완료 표시를 단다
+  if (window.MathJax && MathJax.startup) {
+    MathJax.startup.promise
+      .then(function () { return MathJax.typesetPromise([document.getElementById('out')]); })
+      .then(function () { document.documentElement.setAttribute('data-ready', '1'); })
+      .catch(function () { document.documentElement.setAttribute('data-ready', '1'); });
+  } else {
+    document.documentElement.setAttribute('data-ready', '1');
+  }
+})();
+</script>
+</body>
+</html>

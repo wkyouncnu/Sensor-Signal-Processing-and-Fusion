@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 500" width="820" height="500"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="500" fill="#ffffff"/>
+  <defs>
+    <marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9aa4b0"/>
+    </marker>
+    <marker id="c2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+    <marker id="c3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0073BD"/>
+    </marker>
+    <marker id="c4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4f7d1e"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#1b3a5c">Heading, course and the crab angle</text>
+  <text x="24" y="56" font-size="13" fill="#55606d">Where the vessel POINTS and where it GOES are two different directions. A heading controller regulates the first one only.</text>
+
+  <!-- North reference -->
+  <line x1="330" y1="400" x2="330" y2="140" stroke="#9aa4b0" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#c1)"/>
+  <text x="330" y="132" font-size="13" font-weight="600" fill="#6b7785" text-anchor="middle">North</text>
+
+  <!-- vessel, heading 30 deg -->
+  <g transform="translate(330,400) rotate(30)">
+    <path d="M -16,32 L -16,-16 L 0,-38 L 16,-16 L 16,32 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="2"/>
+  </g>
+
+  <!-- heading ray, 30 deg, length 230 -->
+  <line x1="330" y1="400" x2="445" y2="201" stroke="#D95319" stroke-width="2.6" marker-end="url(#c2)"/>
+  <!-- course ray, 44.04 deg, length 275 -->
+  <line x1="330" y1="400" x2="521" y2="202" stroke="#0073BD" stroke-width="3" marker-end="url(#c3)"/>
+
+  <!-- ray labels, placed clear of both rays -->
+  <text x="452" y="178" font-size="14" font-weight="600" fill="#D95319">where it points</text>
+  <text x="452" y="196" font-size="13" fill="#D95319">heading <tspan font-style="italic">&#968;</tspan> = 30&#176;</text>
+
+  <text x="536" y="244" font-size="14" font-weight="600" fill="#0073BD">where it goes</text>
+  <text x="536" y="262" font-size="13" fill="#0073BD">course <tspan font-style="italic">&#967;</tspan> = 44.04&#176;</text>
+  <text x="536" y="280" font-size="12.5" fill="#0073BD">the velocity vector</text>
+
+  <!-- psi arc, radius 80, North to 30 deg -->
+  <path d="M 330,320 A 80,80 0 0,1 370,330.7" fill="none" stroke="#D95319" stroke-width="1.8"/>
+  <text x="341" y="310" font-size="15" font-style="italic" fill="#D95319">&#968;</text>
+
+  <!-- chi arc, radius 215, North to 44.04 deg -->
+  <path d="M 330,225 A 175,175 0 0,1 451.7,274.2" fill="none" stroke="#0073BD" stroke-width="1.8"/>
+  <text x="378" y="232" font-size="15" font-style="italic" fill="#0073BD" text-anchor="end">&#967;</text>
+
+  <!-- beta arc, radius 150, 30 deg to 44.04 deg -->
+  <path d="M 395,287.4 A 130,130 0 0,1 420.3,306.5" fill="none" stroke="#4f7d1e" stroke-width="2.6" marker-end="url(#c4)"/>
+  <text x="424" y="292" font-size="15" font-style="italic" font-weight="600" fill="#4f7d1e">&#946;</text>
+
+  <!-- definition panel -->
+  <rect x="24" y="120" width="252" height="290" rx="8" fill="#f7f9fb" stroke="#dfe4ea"/>
+  <text x="44" y="150" font-size="14" font-weight="600" fill="#1b3a5c">Three angles, one identity</text>
+
+  <text x="44" y="182" font-size="13" fill="#33404e"><tspan font-style="italic">&#968;</tspan>&#160;&#160;heading &#8212; the hull&#8217;s</text>
+  <text x="68" y="200" font-size="13" fill="#33404e">x axis, from North</text>
+  <text x="44" y="226" font-size="13" fill="#33404e"><tspan font-style="italic">&#967;</tspan>&#160;&#160;course over ground &#8212;</text>
+  <text x="68" y="244" font-size="13" fill="#33404e">the velocity, from North</text>
+  <text x="44" y="270" font-size="13" fill="#33404e"><tspan font-style="italic">&#946;</tspan>&#160;&#160;crab angle &#8212; the gap</text>
+
+  <rect x="44" y="288" width="212" height="34" rx="5" fill="#e8f0e0" stroke="#a9c98a"/>
+  <text x="150" y="311" font-size="16" fill="#33404e" text-anchor="middle"><tspan font-style="italic">&#967;</tspan> = <tspan font-style="italic">&#968;</tspan> + <tspan font-style="italic">&#946;</tspan></text>
+
+  <text x="44" y="350" font-size="13" fill="#33404e"><tspan font-style="italic">&#946;</tspan> = atan2(<tspan font-style="italic">v</tspan>, <tspan font-style="italic">u</tspan>)</text>
+  <text x="44" y="374" font-size="12.5" fill="#55606d">With u = 2.0 and v = 0.5,</text>
+  <text x="44" y="392" font-size="12.5" fill="#55606d"><tspan font-style="italic">&#946;</tspan> = 14.04&#176;, so <tspan font-style="italic">&#967;</tspan> = 44.04&#176;.</text>
+
+  <rect x="24" y="436" width="772" height="1" fill="#dfe4ea"/>
+  <text x="24" y="458" font-size="12.5" fill="#55606d">&#946; is non-zero whenever the sway velocity v is &#8212; in a turn, in a current, in a beam wind. It is not a</text>
+  <text x="24" y="476" font-size="12.5" fill="#55606d">disturbance to be rejected; it is what the hull is doing. Steering &#968; while travelling along &#967; is the</text>
+  <text x="24" y="494" font-size="12.5" fill="#55606d">permanent path error that Week 5 has to remove.</text>
+</svg>

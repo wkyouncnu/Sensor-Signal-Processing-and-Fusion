@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 486" width="900" height="486"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="486" fill="#ffffff"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0073BD"/>
+    </marker>
+    <marker id="s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0073BD"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="30" font-size="17" font-weight="600" fill="#1b3a5c">Three rotations, in this order and no other</text>
+  <text x="24" y="52" font-size="13" fill="#55606d">Start from NED and turn three times. Each turn is about the blue axis &#8212; an axis of the frame the previous turn produced, never a fixed one.</text>
+
+  <!-- transition arrows -->
+  <line x1="170" y1="112" x2="266" y2="112" stroke="#0073BD" stroke-width="2.2" marker-end="url(#s)"/>
+  <line x1="390" y1="112" x2="486" y2="112" stroke="#0073BD" stroke-width="2.2" marker-end="url(#s)"/>
+  <line x1="610" y1="112" x2="706" y2="112" stroke="#0073BD" stroke-width="2.2" marker-end="url(#s)"/>
+
+  <text x="218" y="84" font-size="13.5" font-weight="600" fill="#0073BD" text-anchor="middle">yaw <tspan font-style="italic">&#968;</tspan> = 40&#176;</text>
+  <text x="218" y="102" font-size="12.5" fill="#0073BD" text-anchor="middle">about z<tspan font-size="9" dy="3">n</tspan></text>
+  <text x="438" y="84" font-size="13.5" font-weight="600" fill="#0073BD" text-anchor="middle">pitch <tspan font-style="italic">&#952;</tspan> = 20&#176;</text>
+  <text x="438" y="102" font-size="12.5" fill="#0073BD" text-anchor="middle">about y<tspan font-size="9" dy="3">1</tspan></text>
+  <text x="658" y="84" font-size="13.5" font-weight="600" fill="#0073BD" text-anchor="middle">roll <tspan font-style="italic">&#966;</tspan> = 30&#176;</text>
+  <text x="658" y="102" font-size="12.5" fill="#0073BD" text-anchor="middle">about x<tspan font-size="9" dy="3">2</tspan></text>
+
+  <!-- ============ panel 0 : {n} ============ -->
+  <polygon points="178.59,214.20 128.60,173.46 37.41,195.80 87.40,236.54" fill="#f2f5f8" stroke="#d3dae1" stroke-width="1" stroke-dasharray="5 4"/>
+  <polygon points="153.60,193.83 143.58,207.41 79.74,223.05 68.40,221.06 56.40,211.28 58.74,205.94 122.58,190.30 " fill="#F7DCBE" fill-opacity="0.92" stroke="#8a5a2b" stroke-width="1.8"/>
+  <line x1="108.00" y1="205.00" x2="165.00" y2="191.04" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="179.57" y="191.47" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">x<tspan font-size="9" dy="3">n</tspan></text>
+  <line x1="108.00" y1="205.00" x2="139.25" y2="230.46" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="150.87" y="243.94" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">y<tspan font-size="9" dy="3">n</tspan></text>
+  <line x1="108.00" y1="205.00" x2="108.00" y2="263.15" stroke="#0073BD" stroke-width="3" marker-end="url(#r)"/>
+  <text x="79.00" y="267.15" font-size="12" font-weight="600" fill="#0073BD" text-anchor="middle">z<tspan font-size="9" dy="3">n</tspan></text>
+  <circle cx="108.00" cy="205.00" r="3.6" fill="#1b3a5c"/>
+  <line x1="108.00" y1="263.15" x2="108.00" y2="272.46" stroke="#9aa4b0" stroke-width="1" stroke-dasharray="4 4"/>
+  <path d="M 122.28,273.73 L 121.98,274.28 L 121.57,274.82 L 121.06,275.34 L 120.45,275.83 L 119.74,276.30 L 118.94,276.75 L 118.07,277.16 L 117.11,277.53 L 116.09,277.87 L 115.00,278.16 L 113.86,278.41 L 112.68,278.62 L 111.46,278.78 L 110.21,278.89 L 108.95,278.95 L 107.68,278.96 L 106.41,278.92 L 105.16,278.84 L 103.92,278.70 L 102.72,278.52 L 101.56,278.29 L 100.44,278.02 L 99.39,277.70 L 98.40,277.35 L 97.48,276.95 L 96.64,276.53 L 95.89,276.07 L 95.23,275.58 L 94.67,275.07 L 94.21,274.55 L 93.86,274.00 L 93.61,273.44 L 93.47,272.88 L 93.44,272.31 L 93.53,271.75 L 93.72,271.19 L 94.02,270.63 L 94.43,270.10 L 94.94,269.58 L 95.55,269.08 L 96.26,268.61 L 97.06,268.17 L 97.93,267.76 L 98.89,267.38 L 99.91,267.05 L 101.00,266.75 L 102.14,266.50 L 103.32,266.30 L 104.54,266.14 L 105.79,266.03 L 107.05,265.97 L 108.32,265.95 L 109.59,265.99 L 110.84,266.08 L 112.08,266.21 L 113.28,266.39 L 114.44,266.62 L 115.56,266.90 L 116.61,267.21 L 117.60,267.57 " fill="none" stroke="#0073BD" stroke-width="2.4" marker-end="url(#r)"/>
+  <circle cx="108.00" cy="272.46" r="2.4" fill="#0073BD"/>
+  <text x="108.00" y="344" font-size="15" font-weight="600" fill="#1b3a5c" text-anchor="middle">{n}</text>
+
+  <!-- ============ panel 1 : {1} ============ -->
+  <polygon points="398.59,214.20 348.60,173.46 257.41,195.80 307.40,236.54" fill="#f2f5f8" stroke="#d3dae1" stroke-width="1" stroke-dasharray="5 4"/>
+  <polygon points="379.00,209.54 351.78,217.07 280.38,210.71 274.56,205.93 279.44,194.99 288.92,191.57 360.32,197.93 " fill="#F7DCBE" fill-opacity="0.92" stroke="#8a5a2b" stroke-width="1.8"/>
+  <line x1="328.00" y1="205.00" x2="391.75" y2="210.67" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="406.69" y="216.00" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">x<tspan font-size="9" dy="3">1</tspan></text>
+  <line x1="328.00" y1="205.00" x2="315.30" y2="233.48" stroke="#0073BD" stroke-width="3" marker-end="url(#r)"/>
+  <text x="341.79" y="249.29" font-size="12" font-weight="600" fill="#0073BD" text-anchor="middle">y<tspan font-size="9" dy="3">1</tspan></text>
+  <line x1="328.00" y1="205.00" x2="328.00" y2="263.15" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="328.00" y="282.15" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">z<tspan font-size="9" dy="3">1</tspan></text>
+  <circle cx="328.00" cy="205.00" r="3.6" fill="#1b3a5c"/>
+  <line x1="315.30" y1="233.48" x2="313.27" y2="238.04" stroke="#9aa4b0" stroke-width="1" stroke-dasharray="4 4"/>
+  <path d="M 322.45,248.83 L 323.36,248.15 L 324.21,247.38 L 324.96,246.55 L 325.63,245.65 L 326.21,244.69 L 326.69,243.69 L 327.06,242.64 L 327.33,241.55 L 327.49,240.44 L 327.55,239.31 L 327.49,238.17 L 327.33,237.03 L 327.06,235.89 L 326.69,234.78 L 326.21,233.68 L 325.63,232.62 L 324.96,231.61 L 324.21,230.64 L 323.36,229.72 L 322.45,228.88 L 321.46,228.10 L 320.41,227.39 L 319.30,226.77 L 318.15,226.23 L 316.96,225.78 L 315.75,225.43 L 314.51,225.17 L 313.27,225.01 L 312.02,224.95 L 310.79,224.99 L 309.57,225.13 L 308.38,225.36 L 307.23,225.69 L 306.13,226.12 L 305.08,226.64 L 304.09,227.24 L 303.17,227.93 L 302.33,228.69 L 301.57,229.52 L 300.90,230.42 L 300.33,231.38 L 299.85,232.39 L 299.47,233.44 L 299.21,234.52 L 299.04,235.64 L 298.99,236.77 L 299.04,237.91 L 299.21,239.05 L 299.47,240.18 L 299.85,241.30 L 300.33,242.39 L 300.90,243.45 L 301.57,244.47 L 302.33,245.44 L 303.17,246.35 L 304.09,247.20 L 305.08,247.98 L 306.13,248.68 L 307.23,249.31 L 308.38,249.84 " fill="none" stroke="#0073BD" stroke-width="2.4" marker-end="url(#r)"/>
+  <circle cx="313.27" cy="238.04" r="2.4" fill="#0073BD"/>
+  <text x="328.00" y="344" font-size="15" font-weight="600" fill="#1b3a5c" text-anchor="middle">{1}</text>
+
+  <!-- ============ panel 2 : {2} ============ -->
+  <polygon points="618.59,214.20 568.60,173.46 477.41,195.80 527.40,236.54" fill="#f2f5f8" stroke="#d3dae1" stroke-width="1" stroke-dasharray="5 4"/>
+  <polygon points="595.92,193.35 570.09,208.16 503.00,224.47 497.64,222.11 502.52,211.18 511.53,205.33 578.62,189.03 " fill="#F7DCBE" fill-opacity="0.92" stroke="#8a5a2b" stroke-width="1.8"/>
+  <line x1="548.00" y1="205.00" x2="607.90" y2="190.44" stroke="#0073BD" stroke-width="3" marker-end="url(#r)"/>
+  <text x="614.75" y="222.62" font-size="12" font-weight="600" fill="#0073BD" text-anchor="middle">x<tspan font-size="9" dy="3">2</tspan></text>
+  <line x1="548.00" y1="205.00" x2="535.30" y2="233.48" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="529.19" y="251.18" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">y<tspan font-size="9" dy="3">2</tspan></text>
+  <line x1="548.00" y1="205.00" x2="569.80" y2="261.59" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="575.20" y="279.58" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">z<tspan font-size="9" dy="3">2</tspan></text>
+  <circle cx="548.00" cy="205.00" r="3.6" fill="#1b3a5c"/>
+  <line x1="607.90" y1="190.44" x2="617.49" y2="188.11" stroke="#9aa4b0" stroke-width="1" stroke-dasharray="4 4"/>
+  <path d="M 618.45,201.15 L 618.93,201.59 L 619.40,201.92 L 619.86,202.16 L 620.29,202.28 L 620.71,202.30 L 621.10,202.21 L 621.47,202.01 L 621.80,201.70 L 622.10,201.30 L 622.37,200.79 L 622.60,200.18 L 622.79,199.49 L 622.94,198.71 L 623.05,197.84 L 623.12,196.91 L 623.14,195.90 L 623.12,194.84 L 623.06,193.72 L 622.95,192.57 L 622.81,191.37 L 622.62,190.16 L 622.39,188.93 L 622.13,187.69 L 621.83,186.45 L 621.50,185.23 L 621.14,184.03 L 620.75,182.86 L 620.33,181.73 L 619.90,180.65 L 619.44,179.63 L 618.97,178.67 L 618.49,177.78 L 618.00,176.97 L 617.51,176.25 L 617.02,175.62 L 616.53,175.08 L 616.05,174.64 L 615.57,174.30 L 615.12,174.07 L 614.68,173.95 L 614.26,173.93 L 613.87,174.02 L 613.51,174.22 L 613.17,174.52 L 612.87,174.93 L 612.60,175.44 L 612.37,176.04 L 612.18,176.74 L 612.03,177.52 L 611.92,178.38 L 611.86,179.32 L 611.84,180.33 L 611.85,181.39 L 611.92,182.50 L 612.02,183.66 L 612.17,184.85 L 612.36,186.07 L 612.58,187.30 L 612.84,188.54 L 613.14,189.77 " fill="none" stroke="#0073BD" stroke-width="2.4" marker-end="url(#r)"/>
+  <circle cx="617.49" cy="188.11" r="2.4" fill="#0073BD"/>
+  <text x="548.00" y="344" font-size="15" font-weight="600" fill="#1b3a5c" text-anchor="middle">{2}</text>
+
+  <!-- ============ panel 3 : {b} ============ -->
+  <polygon points="838.59,214.20 788.60,173.46 697.41,195.80 747.40,236.54" fill="#f2f5f8" stroke="#d3dae1" stroke-width="1" stroke-dasharray="5 4"/>
+  <polygon points="815.92,193.35 794.32,216.39 727.23,232.69 720.06,226.81 720.10,206.48 727.30,197.11 794.39,180.80 " fill="#F7DCBE" fill-opacity="0.92" stroke="#8a5a2b" stroke-width="1.8"/>
+  <line x1="768.00" y1="205.00" x2="827.90" y2="190.44" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="842.48" y="190.90" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">x<tspan font-size="9" dy="3">b</tspan></text>
+  <line x1="768.00" y1="205.00" x2="767.90" y2="257.96" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="767.88" y="276.96" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">y<tspan font-size="9" dy="3">b</tspan></text>
+  <line x1="768.00" y1="205.00" x2="793.23" y2="239.76" stroke="#1b3a5c" stroke-width="2" marker-end="url(#a)"/>
+  <text x="802.04" y="255.90" font-size="12" font-weight="600" fill="#1b3a5c" text-anchor="middle">z<tspan font-size="9" dy="3">b</tspan></text>
+  <circle cx="768.00" cy="205.00" r="3.6" fill="#1b3a5c"/>
+  <text x="768.00" y="344" font-size="15" font-weight="600" fill="#1b3a5c" text-anchor="middle">{b}</text>
+
+  <text x="24" y="368" font-size="12" fill="#8a95a1">The dashed grey square is the horizontal plane of NED, repeated in every panel. The deck leaves it only when the pitch and roll turns arrive.</text>
+
+  <rect x="150" y="382" width="600" height="42" rx="6" fill="#eef3f8" stroke="#c6d3e0"/>
+  <text x="450" y="409" font-size="16" fill="#1b3a5c" text-anchor="middle">
+    R<tspan font-size="11" dy="-6">n</tspan><tspan font-size="11" dy="12">b</tspan><tspan dy="-6">(&#920;) = R</tspan><tspan font-size="11" dy="4">z</tspan><tspan dy="-4">(&#968;) &#183; R</tspan><tspan font-size="11" dy="4">y</tspan><tspan dy="-4">(&#952;) &#183; R</tspan><tspan font-size="11" dy="4">x</tspan><tspan dy="-4">(&#966;)</tspan>
+  </text>
+
+  <rect x="24" y="438" width="852" height="1" fill="#dfe4ea"/>
+  <text x="24" y="460" font-size="12.5" fill="#55606d">Matrix multiplication does not commute, so the order is part of the definition. Reversing it gives a different attitude for the same three numbers.</text>
+  <text x="24" y="478" font-size="12.5" fill="#55606d">Read the product right to left: the rightmost rotation is applied first. MSS builds exactly this matrix in <tspan font-family="Consolas, monospace">Rzyx(phi, theta, psi)</tspan>.</text>
+</svg>

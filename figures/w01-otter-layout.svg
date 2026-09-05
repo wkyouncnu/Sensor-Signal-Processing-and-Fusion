@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 560" width="860" height="560"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="860" height="560" fill="#ffffff"/>
+  <defs>
+    <marker id="o1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+    <marker id="o3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7785"/>
+    </marker>
+    <marker id="o5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#1b3a5c">The Otter from above — where the propellers are, and why B looks the way it does</text>
+  <text x="24" y="56" font-size="13" fill="#55606d">A catamaran: two pontoons, one propeller in each, both bolted facing forward. Every entry of B follows from this picture and nothing else.</text>
+
+  <!-- centreline -->
+  <line x1="330" y1="440" x2="330" y2="120" stroke="#c9a77e" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="336" y="132" font-size="12" fill="#a3865f">centreline</text>
+
+  <!-- port pontoon, drawn on the left, y_b negative -->
+  <path d="M 262,410 L 262,215 L 288,178 L 314,215 L 314,410 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="2"/>
+  <!-- starboard pontoon, right, y_b positive -->
+  <path d="M 346,410 L 346,215 L 372,178 L 398,215 L 398,410 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="2"/>
+  <!-- deck bridging them -->
+  <rect x="262" y="250" width="136" height="120" fill="#F7DCBE" stroke="#8a5a2b" stroke-width="1.6" opacity="0.75"/>
+
+  <!-- body axes at o_b, midship on the centreline -->
+  <line x1="330" y1="310" x2="330" y2="150" stroke="#1b3a5c" stroke-width="2.4" marker-end="url(#o5)"/>
+  <line x1="330" y1="310" x2="470" y2="310" stroke="#1b3a5c" stroke-width="2.4" marker-end="url(#o5)"/>
+  <circle cx="330" cy="310" r="8" fill="#fff" stroke="#1b3a5c" stroke-width="2"/>
+  <line x1="324.3" y1="304.3" x2="335.7" y2="315.7" stroke="#1b3a5c" stroke-width="1.5"/>
+  <line x1="335.7" y1="304.3" x2="324.3" y2="315.7" stroke="#1b3a5c" stroke-width="1.5"/>
+
+  <text x="344" y="152" font-size="14" font-weight="600" fill="#1b3a5c">x<tspan font-size="10" dy="4">b</tspan><tspan dy="-4"> forward</tspan></text>
+  <text x="478" y="315" font-size="14" font-weight="600" fill="#1b3a5c">y<tspan font-size="10" dy="4">b</tspan><tspan dy="-4"> starboard</tspan></text>
+  <text x="250" y="333" font-size="13" font-weight="600" fill="#1b3a5c" text-anchor="end">o<tspan font-size="10" dy="4">b</tspan></text>
+  <text x="250" y="351" font-size="11.5" fill="#55606d" text-anchor="end">z<tspan font-size="9" dy="3">b</tspan><tspan dy="-3"> into the page</tspan></text>
+
+  <!-- propellers -->
+  <rect x="274" y="392" width="28" height="18" rx="3" fill="#5B7A99" stroke="#33506b" stroke-width="1.6"/>
+  <rect x="358" y="392" width="28" height="18" rx="3" fill="#5B7A99" stroke="#33506b" stroke-width="1.6"/>
+
+  <!-- thrust arrows, both forward -->
+  <line x1="288" y1="392" x2="288" y2="336" stroke="#D95319" stroke-width="3" marker-end="url(#o1)"/>
+  <line x1="372" y1="392" x2="372" y2="336" stroke="#D95319" stroke-width="3" marker-end="url(#o1)"/>
+  <text x="280" y="330" font-size="13" font-weight="600" fill="#D95319" text-anchor="end">T<tspan font-size="10" dy="4">1</tspan></text>
+  <text x="382" y="330" font-size="13" font-weight="600" fill="#D95319">T<tspan font-size="10" dy="4">2</tspan></text>
+  <text x="288" y="428" font-size="12" fill="#33506b" text-anchor="middle">port</text>
+  <text x="372" y="428" font-size="12" fill="#33506b" text-anchor="middle">starboard</text>
+
+  <!-- lever arms -->
+  <line x1="288" y1="470" x2="330" y2="470" stroke="#9aa4b0" stroke-width="1.6"/>
+  <line x1="330" y1="470" x2="372" y2="470" stroke="#9aa4b0" stroke-width="1.6"/>
+  <line x1="288" y1="464" x2="288" y2="476" stroke="#9aa4b0" stroke-width="1.6"/>
+  <line x1="330" y1="464" x2="330" y2="476" stroke="#9aa4b0" stroke-width="1.6"/>
+  <line x1="372" y1="464" x2="372" y2="476" stroke="#9aa4b0" stroke-width="1.6"/>
+  <line x1="288" y1="412" x2="288" y2="460" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="372" y1="412" x2="372" y2="460" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="330" y1="318" x2="330" y2="460" stroke="#cfd6dd" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="309" y="492" font-size="12" fill="#6b7785" text-anchor="middle">0.395 m</text>
+  <text x="351" y="492" font-size="12" fill="#6b7785" text-anchor="middle">0.395 m</text>
+  <text x="330" y="514" font-size="12.5" fill="#55606d" text-anchor="middle">y<tspan font-size="9" dy="3">1</tspan><tspan dy="-3"> = &#8722;0.395 m,&#160;&#160;&#160;y</tspan><tspan font-size="9" dy="3">2</tspan><tspan dy="-3"> = +0.395 m&#160;&#160;&#8212; symmetric about the centreline</tspan></text>
+
+  <!-- global frame, upper left -->
+  <line x1="86" y1="196" x2="86" y2="118" stroke="#6b7785" stroke-width="2" marker-end="url(#o3)"/>
+  <line x1="86" y1="196" x2="164" y2="196" stroke="#6b7785" stroke-width="2" marker-end="url(#o3)"/>
+  <circle cx="86" cy="196" r="6.5" fill="none" stroke="#6b7785" stroke-width="1.8"/>
+  <line x1="81.4" y1="191.4" x2="90.6" y2="200.6" stroke="#6b7785" stroke-width="1.3"/>
+  <line x1="90.6" y1="191.4" x2="81.4" y2="200.6" stroke="#6b7785" stroke-width="1.3"/>
+  <text x="94" y="114" font-size="12.5" font-weight="600" fill="#6b7785">North</text>
+  <text x="170" y="200" font-size="12.5" font-weight="600" fill="#6b7785">East</text>
+  <text x="40" y="228" font-size="12" fill="#6b7785">{n}, fixed to the water</text>
+
+  <text x="40" y="256" font-size="12" fill="#55606d">The hull is drawn here at &#968; = 0,</text>
+  <text x="40" y="274" font-size="12" fill="#55606d">so x<tspan font-size="9" dy="3">b</tspan><tspan dy="-3"> happens to point North.</tspan></text>
+  <text x="40" y="298" font-size="12" fill="#55606d">At any other heading the two</text>
+  <text x="40" y="316" font-size="12" fill="#55606d">triads differ by R(&#968;), and B</text>
+  <text x="40" y="334" font-size="12" fill="#55606d">does not change at all &#8212; it is</text>
+  <text x="40" y="352" font-size="12" fill="#55606d">written entirely in {b}.</text>
+
+  <!-- reading B off the picture -->
+  <rect x="540" y="96" width="296" height="306" rx="8" fill="#f7f9fb" stroke="#dfe4ea"/>
+  <text x="560" y="124" font-size="14" font-weight="600" fill="#1b3a5c">Reading B off the picture</text>
+
+  <text x="560" y="154" font-size="13" fill="#33404e">Surge: both push forward, so</text>
+  <text x="578" y="178" font-size="14" font-weight="600" fill="#0073BD">X = T<tspan font-size="10" dy="4">1</tspan><tspan dy="-4"> + T</tspan><tspan font-size="10" dy="4">2</tspan></text>
+
+  <text x="560" y="212" font-size="13" fill="#33404e">Sway: neither has a component</text>
+  <text x="560" y="230" font-size="13" fill="#33404e">across the hull, so</text>
+  <text x="578" y="254" font-size="14" font-weight="600" fill="#0073BD">Y = 0&#160;&#160;&#8212; exactly, always</text>
+
+  <text x="560" y="288" font-size="13" fill="#33404e">Yaw: equal and opposite arms</text>
+  <text x="560" y="306" font-size="13" fill="#33404e">about o<tspan font-size="10" dy="4">b</tspan><tspan dy="-4">, so</tspan></text>
+  <text x="578" y="330" font-size="14" font-weight="600" fill="#0073BD">N = 0.395 (T<tspan font-size="10" dy="4">1</tspan><tspan dy="-4"> &#8722; T</tspan><tspan font-size="10" dy="4">2</tspan><tspan dy="-4">)</tspan></text>
+
+  <line x1="558" y1="348" x2="818" y2="348" stroke="#dfe4ea" stroke-width="1"/>
+  <text x="560" y="374" font-size="13.5" fill="#1b3a5c">B = [ &#160;&#160;&#160;1&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;1&#160;&#160;&#160;&#160;;</text>
+  <text x="560" y="392" font-size="13.5" fill="#1b3a5c">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;0&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;0&#160;&#160;&#160;&#160;;</text>
+  <text x="560" y="410" font-size="13.5" fill="#1b3a5c">&#160;&#160;&#160;&#160;&#160;0.395&#160;&#160;&#8722;0.395 ]</text>
+
+  <rect x="24" y="528" width="812" height="1" fill="#dfe4ea"/>
+  <text x="24" y="550" font-size="12.5" fill="#55606d">The empty middle row is the symmetry made arithmetic: two forces that both point along x<tspan font-size="9" dy="3">b</tspan><tspan dy="-3"> can add to no force along y</tspan><tspan font-size="9" dy="3">b</tspan><tspan dy="-3">. Appendix A1 turns this reading into a general rule.</tspan></text>
+</svg>

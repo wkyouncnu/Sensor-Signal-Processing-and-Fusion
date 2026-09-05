@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 430" width="880" height="430"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="880" height="430" fill="#ffffff"/>
+  <defs>
+    <marker id="p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+    <marker id="p2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#1b3a5c">p, q and r — the three body angular rates</text>
+  <text x="24" y="56" font-size="13" fill="#55606d">Each is measured about one axis of the HULL, by a gyroscope bolted to the hull. All three are in rad/s and all three obey the right-hand rule.</text>
+
+  <!-- ============ p : roll, seen from astern ============ -->
+  <rect x="24" y="78" width="264" height="256" rx="8" fill="#f7f9fb" stroke="#dfe4ea"/>
+  <text x="156" y="102" font-size="14" font-weight="600" fill="#1b3a5c" text-anchor="middle">p &#8212; roll rate</text>
+  <text x="156" y="122" font-size="12.5" fill="#55606d" text-anchor="middle">seen from astern, looking forward</text>
+  <!-- hull cross-section -->
+  <g transform="translate(156,222) rotate(16)">
+    <path d="M -62,-14 L 62,-14 L 46,22 L -46,22 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="2"/>
+    <line x1="0" y1="-14" x2="0" y2="-52" stroke="#8a5a2b" stroke-width="2.2"/>
+  </g>
+  <!-- x_b out of the page -->
+  <circle cx="156" cy="222" r="8" fill="#fff" stroke="#1b3a5c" stroke-width="2"/>
+  <circle cx="156" cy="222" r="2.6" fill="#1b3a5c"/>
+  <text x="156" y="278" font-size="12.5" fill="#1b3a5c" text-anchor="middle">x<tspan font-size="9" dy="3">b</tspan><tspan dy="-3"> out of the page</tspan></text>
+  <!-- rotation arrow -->
+  <path d="M 100,192 A 68,68 0 0,1 212,188" fill="none" stroke="#D95319" stroke-width="2.6" marker-end="url(#p1)"/>
+  <text x="156" y="158" font-size="14" font-weight="600" fill="#D95319" text-anchor="middle">p &gt; 0</text>
+  <text x="156" y="304" font-size="12.5" fill="#55606d" text-anchor="middle">starboard side goes down</text>
+  <text x="156" y="322" font-size="12.5" fill="#55606d" text-anchor="middle">&#966;&#775; &#8776; p for a surface craft</text>
+
+  <!-- ============ q : pitch, seen from starboard ============ -->
+  <rect x="308" y="78" width="264" height="256" rx="8" fill="#f7f9fb" stroke="#dfe4ea"/>
+  <text x="440" y="102" font-size="14" font-weight="600" fill="#1b3a5c" text-anchor="middle">q &#8212; pitch rate</text>
+  <text x="440" y="122" font-size="12.5" fill="#55606d" text-anchor="middle">seen from starboard, bow to the right</text>
+  <!-- hull profile -->
+  <g transform="translate(440,226) rotate(-13)">
+    <path d="M -70,-12 L 52,-12 L 76,2 L 52,18 L -70,18 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="2"/>
+  </g>
+  <!-- y_b into the page -->
+  <circle cx="440" cy="226" r="8" fill="#fff" stroke="#1b3a5c" stroke-width="2"/>
+  <line x1="434.3" y1="220.3" x2="445.7" y2="231.7" stroke="#1b3a5c" stroke-width="1.6"/>
+  <line x1="445.7" y1="220.3" x2="434.3" y2="231.7" stroke="#1b3a5c" stroke-width="1.6"/>
+  <text x="440" y="278" font-size="12.5" fill="#1b3a5c" text-anchor="middle">y<tspan font-size="9" dy="3">b</tspan><tspan dy="-3"> into the page</tspan></text>
+  <!-- rotation arrow: bow up -->
+  <path d="M 512,222 A 70,70 0 0,0 494,166" fill="none" stroke="#D95319" stroke-width="2.6" marker-end="url(#p1)"/>
+  <text x="524" y="160" font-size="14" font-weight="600" fill="#D95319">q &gt; 0</text>
+  <text x="440" y="304" font-size="12.5" fill="#55606d" text-anchor="middle">the bow goes UP</text>
+  <text x="440" y="322" font-size="12.5" fill="#55606d" text-anchor="middle">even though z points down</text>
+
+  <!-- ============ r : yaw, seen from above ============ -->
+  <rect x="592" y="78" width="264" height="256" rx="8" fill="#f7f9fb" stroke="#dfe4ea"/>
+  <text x="724" y="102" font-size="14" font-weight="600" fill="#1b3a5c" text-anchor="middle">r &#8212; yaw rate</text>
+  <text x="724" y="122" font-size="12.5" fill="#55606d" text-anchor="middle">seen from above, bow upwards</text>
+  <!-- hull plan -->
+  <g transform="translate(724,216) rotate(20)">
+    <path d="M -22,44 L -22,-24 L 0,-50 L 22,-24 L 22,44 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="2"/>
+    <line x1="0" y1="44" x2="0" y2="-50" stroke="#c9a77e" stroke-width="1.2" stroke-dasharray="4 3"/>
+  </g>
+  <!-- z_b into the page -->
+  <circle cx="724" cy="216" r="8" fill="#fff" stroke="#1b3a5c" stroke-width="2"/>
+  <line x1="718.3" y1="210.3" x2="729.7" y2="221.7" stroke="#1b3a5c" stroke-width="1.6"/>
+  <line x1="729.7" y1="210.3" x2="718.3" y2="221.7" stroke="#1b3a5c" stroke-width="1.6"/>
+  <text x="724" y="290" font-size="12.5" fill="#1b3a5c" text-anchor="middle">z<tspan font-size="9" dy="3">b</tspan><tspan dy="-3"> into the page</tspan></text>
+  <!-- rotation arrow -->
+  <path d="M 668,194 A 72,72 0 0,1 780,182" fill="none" stroke="#D95319" stroke-width="2.6" marker-end="url(#p1)"/>
+  <text x="724" y="152" font-size="14" font-weight="600" fill="#D95319" text-anchor="middle">r &gt; 0</text>
+  <text x="724" y="312" font-size="12.5" fill="#55606d" text-anchor="middle">the bow swings to STARBOARD</text>
+  <text x="724" y="330" font-size="12.5" fill="#55606d" text-anchor="middle">&#968;&#775; &#8776; r for a surface craft</text>
+
+  <rect x="24" y="352" width="832" height="1" fill="#dfe4ea"/>
+  <text x="24" y="376" font-size="12.5" fill="#55606d"><tspan font-weight="600">The right-hand rule.</tspan> Point the right thumb along the positive axis; the fingers curl in the positive direction of rotation. With z DOWN, that makes a positive yaw</text>
+  <text x="24" y="394" font-size="12.5" fill="#55606d">look clockwise from above, and a positive pitch lift the bow. Both feel wrong once and then never again.</text>
+  <text x="24" y="416" font-size="12.5" fill="#55606d"><tspan font-weight="600">p, q, r are not &#966;&#775;, &#952;&#775;, &#968;&#775;.</tspan> They are equal only when the vessel is level. The matrix that relates them is T<tspan font-size="9" dy="3">&#920;</tspan><tspan dy="-3">, and it is not a rotation matrix &#8212; see &#167;1-5.</tspan></text>
+</svg>

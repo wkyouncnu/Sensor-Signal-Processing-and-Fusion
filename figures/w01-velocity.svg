@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 500" width="820" height="500"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="500" fill="#ffffff"/>
+  <defs>
+    <marker id="v1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+    <marker id="v2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+    <marker id="v3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0073BD"/>
+    </marker>
+    <marker id="v4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#77AC30"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#1b3a5c">u and v are not the rate of change of position</text>
+  <text x="24" y="56" font-size="13" fill="#55606d">A worked example. Heading &#968; = 30&#176;, body velocity u = 2.0 m/s forward and v = 0.5 m/s to starboard.</text>
+
+  <!-- NED axes -->
+  <line x1="120" y1="420" x2="120" y2="120" stroke="#1b3a5c" stroke-width="2" marker-end="url(#v1)"/>
+  <line x1="120" y1="420" x2="470" y2="420" stroke="#1b3a5c" stroke-width="2" marker-end="url(#v1)"/>
+  <text x="132" y="116" font-size="13" font-weight="600" fill="#1b3a5c">North</text>
+  <text x="478" y="425" font-size="13" font-weight="600" fill="#1b3a5c">East</text>
+
+  <!-- vessel at origin of the velocity diagram -->
+  <g transform="translate(200,360) rotate(30)">
+    <path d="M -13,26 L -13,-14 L 0,-30 L 13,-14 L 13,26 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="1.8"/>
+  </g>
+  <line x1="200" y1="360" x2="200" y2="255" stroke="#9aa4b0" stroke-width="1.3" stroke-dasharray="5 4"/>
+  <path d="M 200,300 A 60,60 0 0,1 230,308" fill="none" stroke="#1b3a5c" stroke-width="1.6"/>
+  <text x="214" y="292" font-size="14" font-style="italic" fill="#1b3a5c">&#968;</text>
+
+  <!-- body velocity components, drawn in body axes -->
+  <!-- x_b direction (sin30, -cos30) = (0.5,-0.866); u = 2 m/s at 60 px per m/s -> 120 px -->
+  <line x1="200" y1="360" x2="260" y2="256" stroke="#D95319" stroke-width="2.6" marker-end="url(#v2)"/>
+  <text x="256" y="326" font-size="14" font-weight="600" fill="#D95319">u = 2.0</text>
+  <!-- y_b direction (cos30, sin30) = (0.866,0.5); v = 0.5 -> 30 px, drawn from tip of u -->
+  <line x1="260" y1="256" x2="286" y2="271" stroke="#D95319" stroke-width="2.6" marker-end="url(#v2)"/>
+  <text x="288" y="266" font-size="14" font-weight="600" fill="#D95319">v = 0.5</text>
+
+  <!-- resultant -->
+  <line x1="200" y1="360" x2="286" y2="271" stroke="#0073BD" stroke-width="3" marker-end="url(#v3)"/>
+  <text x="298" y="286" font-size="13" font-weight="600" fill="#0073BD">the same vector</text>
+
+  <!-- NED components of the same vector -->
+  <line x1="200" y1="360" x2="200" y2="271" stroke="#77AC30" stroke-width="2.4" stroke-dasharray="7 4" marker-end="url(#v4)"/>
+  <line x1="200" y1="271" x2="286" y2="271" stroke="#77AC30" stroke-width="2.4" stroke-dasharray="7 4" marker-end="url(#v4)"/>
+  <text x="188" y="304" font-size="13" font-weight="600" fill="#4f7d1e" text-anchor="end">N&#775; = 1.4821</text>
+  <text x="228" y="264" font-size="13" font-weight="600" fill="#4f7d1e">E&#775; = 1.4330</text>
+
+  <text x="120" y="452" font-size="12.5" fill="#6b7785">orange: measured in {b} by the vessel &#8212; green: what the position actually does, in {n}</text>
+
+  <!-- the arithmetic panel -->
+  <rect x="500" y="96" width="296" height="304" rx="8" fill="#f7f9fb" stroke="#dfe4ea"/>
+  <text x="520" y="126" font-size="14" font-weight="600" fill="#1b3a5c">The arithmetic</text>
+
+  <text x="520" y="156" font-size="13" fill="#33404e">N&#775; = u cos&#968; &#8722; v sin&#968;</text>
+  <text x="520" y="176" font-size="13" fill="#33404e">E&#775; = u sin&#968; + v cos&#968;</text>
+
+  <text x="520" y="208" font-size="13" fill="#33404e">N&#775; = 2.0(0.8660) &#8722; 0.5(0.5000)</text>
+  <text x="540" y="226" font-size="13" font-weight="600" fill="#4f7d1e">= 1.4821 m/s</text>
+  <text x="520" y="250" font-size="13" fill="#33404e">E&#775; = 2.0(0.5000) + 0.5(0.8660)</text>
+  <text x="540" y="268" font-size="13" font-weight="600" fill="#4f7d1e">= 1.4330 m/s</text>
+
+  <line x1="518" y1="286" x2="778" y2="286" stroke="#dfe4ea" stroke-width="1"/>
+  <text x="520" y="310" font-size="13" font-weight="600" fill="#1b3a5c">The check that always works</text>
+  <text x="520" y="332" font-size="13" fill="#33404e">&#8730;(2.0&#178; + 0.5&#178;)&#160;&#160;&#160;&#160;= 2.0616</text>
+  <text x="520" y="352" font-size="13" fill="#33404e">&#8730;(1.4821&#178; + 1.4330&#178;) = 2.0616</text>
+  <text x="520" y="378" font-size="12.5" fill="#55606d">A rotation changes the components,</text>
+  <text x="520" y="394" font-size="12.5" fill="#55606d">never the length.</text>
+
+  <rect x="24" y="466" width="772" height="1" fill="#dfe4ea"/>
+  <text x="24" y="490" font-size="12.5" fill="#55606d">Neither N&#775; nor E&#775; equals u. Integrating u to get a north position is wrong at every heading except &#968; = 0, and it is wrong silently.</text>
+</svg>

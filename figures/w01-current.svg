@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="470" fill="#ffffff"/>
+  <defs>
+    <marker id="k1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9aa4b0"/>
+    </marker>
+    <marker id="k2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+    <marker id="k3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0073BD"/>
+    </marker>
+    <marker id="k4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="32" font-size="17" font-weight="600" fill="#1b3a5c">A current is a velocity, not a force</text>
+  <text x="24" y="54" font-size="13" fill="#55606d">The hull feels water flowing past it, so the current is rotated into the body frame and subtracted. Nothing is added to the right-hand side.</text>
+
+  <!-- ================= left: the geometry in NED ================= -->
+  <text x="150" y="86" font-size="13.5" font-weight="600" fill="#1b3a5c" text-anchor="middle">in NED &#8212; what the chart shows</text>
+
+  <!-- north reference -->
+  <line x1="150" y1="380" x2="150" y2="140" stroke="#9aa4b0" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#k1)"/>
+  <text x="150" y="132" font-size="12.5" font-weight="600" fill="#6b7785" text-anchor="middle">North</text>
+  <line x1="150" y1="380" x2="330" y2="380" stroke="#9aa4b0" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#k1)"/>
+  <text x="340" y="384" font-size="12.5" font-weight="600" fill="#6b7785">East</text>
+
+  <!-- vessel, heading psi = 25 deg -->
+  <g transform="translate(150,380) rotate(25)">
+    <path d="M -13,26 L -13,-13 L 0,-31 L 13,-13 L 13,26 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="1.8"/>
+  </g>
+
+  <!-- heading ray, 25 deg -->
+  <line x1="150" y1="380" x2="211.7" y2="247.6" stroke="#1b3a5c" stroke-width="2.4" marker-end="url(#k2)"/>
+  <text x="216" y="240" font-size="13" font-weight="600" fill="#1b3a5c">x<tspan font-size="10" dy="3">b</tspan><tspan dy="-3">, heading &#968;</tspan></text>
+
+  <!-- psi arc, r = 70 -->
+  <path d="M 150,310 A 70,70 0 0,1 179.6,316.6" fill="none" stroke="#1b3a5c" stroke-width="1.6"/>
+  <text x="161" y="300" font-size="14" font-style="italic" fill="#1b3a5c">&#968;</text>
+
+  <!-- current vector, beta_c = 70 deg, drawn from the vessel -->
+  <line x1="150" y1="380" x2="272.8" y2="335.3" stroke="#0073BD" stroke-width="3" marker-end="url(#k3)"/>
+  <text x="252" y="322" font-size="13" font-weight="600" fill="#0073BD">V<tspan font-size="10" dy="3">c</tspan></text>
+
+  <!-- beta_c arc, r = 118 -->
+  <path d="M 150,262 A 118,118 0 0,1 260.9,339.6" fill="none" stroke="#0073BD" stroke-width="1.6"/>
+  <text x="232" y="268" font-size="14" font-style="italic" fill="#0073BD">&#946;<tspan font-size="10" dy="3">c</tspan></text>
+
+  <text x="24" y="422" font-size="12" fill="#55606d">&#946;<tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> is the direction the water GOES, clockwise from north.</tspan></text>
+  <text x="24" y="440" font-size="12" fill="#55606d">&#946;<tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> = 0 sets the water north, so a vessel heading north is pushed along.</tspan></text>
+
+  <!-- ================= right: the same current in the body frame ================= -->
+  <text x="620" y="86" font-size="13.5" font-weight="600" fill="#1b3a5c" text-anchor="middle">in the body frame &#8212; what the hull feels</text>
+
+  <!-- body axes, drawn upright: x_b up, y_b right -->
+  <line x1="560" y1="330" x2="560" y2="150" stroke="#1b3a5c" stroke-width="2" marker-end="url(#k2)"/>
+  <text x="560" y="142" font-size="13" font-weight="600" fill="#1b3a5c" text-anchor="middle">x<tspan font-size="10" dy="3">b</tspan></text>
+  <line x1="560" y1="330" x2="760" y2="330" stroke="#1b3a5c" stroke-width="2" marker-end="url(#k2)"/>
+  <text x="770" y="334" font-size="13" font-weight="600" fill="#1b3a5c">y<tspan font-size="10" dy="3">b</tspan></text>
+
+  <!-- vessel at the origin, pointing along x_b -->
+  <g transform="translate(560,330)">
+    <path d="M -11,22 L -11,-11 L 0,-26 L 11,-11 L 11,22 Z" fill="#F2C8A0" stroke="#8a5a2b" stroke-width="1.6"/>
+  </g>
+
+  <!-- current in body frame: beta_c - psi = 45 deg  -> u_c up, v_c right -->
+  <line x1="560" y1="330" x2="666" y2="224" stroke="#0073BD" stroke-width="3" marker-end="url(#k3)"/>
+  <text x="672" y="218" font-size="13" font-weight="600" fill="#0073BD">V<tspan font-size="10" dy="3">c</tspan></text>
+
+  <!-- components -->
+  <line x1="560" y1="330" x2="560" y2="224" stroke="#0073BD" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <line x1="560" y1="224" x2="666" y2="224" stroke="#0073BD" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <line x1="560" y1="330" x2="666" y2="330" stroke="#0073BD" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text x="534" y="280" font-size="12.5" font-weight="600" fill="#0073BD" text-anchor="end">u<tspan font-size="9" dy="3">c</tspan></text>
+  <text x="613" y="350" font-size="12.5" font-weight="600" fill="#0073BD" text-anchor="middle">v<tspan font-size="9" dy="3">c</tspan></text>
+
+  <!-- the angle beta_c - psi -->
+  <path d="M 560,270 A 60,60 0 0,1 602.4,287.6" fill="none" stroke="#0073BD" stroke-width="1.5"/>
+  <text x="574" y="268" font-size="12" font-style="italic" fill="#0073BD">&#946;<tspan font-size="9" dy="3">c</tspan><tspan dy="-3">&#8722;&#968;</tspan></text>
+
+  <rect x="470" y="360" width="410" height="66" rx="7" fill="#f7f9fb" stroke="#dfe4ea"/>
+  <text x="486" y="381" font-size="12.5" fill="#33404e">u<tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> = V</tspan><tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> cos(&#946;</tspan><tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> &#8722; &#968;)</tspan><tspan dy="0">&#160;&#160;&#160;&#160;&#160;v</tspan><tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> = V</tspan><tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> sin(&#946;</tspan><tspan font-size="9" dy="3">c</tspan><tspan dy="-3"> &#8722; &#968;)</tspan></text>
+  <text x="486" y="401" font-size="12.5" font-weight="600" fill="#D95319">&#957;<tspan font-size="9" dy="3">r</tspan><tspan dy="-3"> = &#957; &#8722; &#957;</tspan><tspan font-size="9" dy="3">c</tspan></text>
+  <text x="556" y="401" font-size="12" fill="#55606d">&#8212; every hydrodynamic term uses this</text>
+  <text x="486" y="419" font-size="12.5" font-weight="600" fill="#1b3a5c">&#951;&#775; = J(&#951;) &#957;</text>
+  <text x="556" y="419" font-size="12" fill="#55606d">&#8212; but the position uses &#957;, not &#957;<tspan font-size="9" dy="3">r</tspan></text>
+
+  <rect x="24" y="448" width="852" height="1" fill="#dfe4ea"/>
+  <text x="24" y="464" font-size="11.5" fill="#8a95a1">otter.m lines 79&#8211;81 build &#957;<tspan font-size="9" dy="2">r</tspan><tspan dy="-2">; lines 184&#8211;203 use it for damping, cross-flow drag and Coriolis, and use &#957; for the kinematics.</tspan></text>
+</svg>

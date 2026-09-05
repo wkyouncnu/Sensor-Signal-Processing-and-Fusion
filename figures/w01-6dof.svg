@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="900" height="560" fill="#ffffff"/>
+  <defs>
+    <marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+    <marker id="d2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+    <marker id="d3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7A4CA0"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#1b3a5c">Six degrees of freedom &#8212; the force, the velocity and the position that belong to each</text>
+  <text x="24" y="56" font-size="13" fill="#55606d">Each row is one direction the vessel can move. Read it across: a force produces a velocity, and integrating that velocity gives a position.</text>
+
+  <!-- ================= the vessel and its axes =================
+       True orthographic projection. Screen-right and screen-down are two
+       orthonormal 3-D directions, so a unit body vector lands at
+         x_b -> ( 0.87687, -0.21477)   y_b -> ( 0.48072, 0.39176)   z_b -> (0, 0.89465)
+       scaled by 105 px per unit, with o_b at (200, 215).
+       Visible faces at this attitude: deck (z = 0), starboard (y = +0.54), stern (x = -1). -->
+  <polygon points="264.81,170.24 319.33,214.66 135.19,259.76 80.67,215.34"
+           fill="#F7DCBE" stroke="#8a5a2b" stroke-width="1.8"/>
+  <polygon points="319.33,214.66 319.33,242.84 135.19,287.94 135.19,259.76"
+           fill="#EFCBA4" stroke="#8a5a2b" stroke-width="1.6"/>
+  <polygon points="135.19,259.76 135.19,287.94 80.67,243.52 80.67,215.34"
+           fill="#E4B98A" stroke="#8a5a2b" stroke-width="1.6"/>
+
+  <!-- body axes, all three the same 3-D length; they project to different
+       screen lengths, and that foreshortening is the whole point -->
+  <line x1="200" y1="215" x2="324.30" y2="184.56" stroke="#1b3a5c" stroke-width="2.2" marker-end="url(#d1)"/>
+  <line x1="200" y1="215" x2="268.14" y2="270.53" stroke="#1b3a5c" stroke-width="2.2" marker-end="url(#d1)"/>
+  <line x1="200" y1="215" x2="200" y2="341.82" stroke="#1b3a5c" stroke-width="2.2" marker-end="url(#d1)"/>
+  <circle cx="200" cy="215" r="4.5" fill="#1b3a5c"/>
+  <text x="192" y="207" font-size="13" font-weight="600" fill="#1b3a5c" text-anchor="end">o<tspan font-size="10" dy="4">b</tspan></text>
+  <text x="320" y="175" font-size="13.5" font-weight="600" fill="#1b3a5c" text-anchor="end">x<tspan font-size="10" dy="4">b</tspan></text>
+  <text x="262" y="284" font-size="13.5" font-weight="600" fill="#1b3a5c" text-anchor="end">y<tspan font-size="10" dy="4">b</tspan></text>
+  <text x="192" y="330" font-size="13.5" font-weight="600" fill="#1b3a5c" text-anchor="end">z<tspan font-size="10" dy="4">b</tspan></text>
+
+  <!-- each axis continues as a dashed line to the centre of its own moment ellipse,
+       so that "the moment turns about THIS axis" is visible and not merely asserted -->
+  <g stroke="#9aa4b0" stroke-width="1" stroke-dasharray="4 4" fill="none">
+    <line x1="324.30" y1="184.56" x2="439.38" y2="156.37"/>
+    <line x1="268.14" y1="270.53" x2="343.86" y2="332.23"/>
+    <line x1="200" y1="341.82" x2="200" y2="435.75"/>
+  </g>
+  <g fill="#7A4CA0">
+    <circle cx="439.38" cy="156.37" r="2.6"/>
+    <circle cx="343.86" cy="332.23" r="2.6"/>
+    <circle cx="200" cy="435.75" r="2.6"/>
+  </g>
+
+  <!-- surge: force X along x_b, then moment K about x_b.
+       The K ellipse is a circle in the y-z plane, so its centre sits on the x_b axis. -->
+  <line x1="338.11" y1="181.17" x2="393.35" y2="167.64" stroke="#D95319" stroke-width="3.2" marker-end="url(#d2)"/>
+  <path d="M 451.76,185.77 L 450.81,186.93 L 449.77,187.86 L 448.65,188.54 L 447.46,188.98 L 446.21,189.17 L 444.91,189.12 L 443.57,188.81 L 442.19,188.26 L 440.79,187.46 L 439.38,186.43 L 437.98,185.17 L 436.58,183.69 L 435.20,182.00 L 433.86,180.11 L 432.56,178.05 L 431.31,175.82 L 430.12,173.44 L 429.00,170.93 L 427.96,168.32 L 427.01,165.61 L 426.15,162.83 L 425.40,160.00 L 424.75,157.14 L 424.21,154.28 L 423.78,151.43 L 423.48,148.62 L 423.29,145.87 L 423.23,143.20 L 423.29,140.63 L 423.48,138.18 L 423.78,135.87 L 424.21,133.72 L 424.75,131.73 L 425.40,129.94 L 426.15,128.34 L 427.01,126.96 L 427.96,125.80 L 429.00,124.88 L 430.12,124.19 L 431.31,123.75 L 432.56,123.56 L 433.86,123.62 L 435.20,123.92 L 436.58,124.48 L 437.98,125.27 L 439.38,126.31 L 440.79,127.57 L 442.19,129.05 L 443.57,130.74 L 444.91,132.62 L 446.21,134.69 L 447.46,136.92 L 448.65,139.29 L 449.77,141.80 L 450.81,144.42 L 451.76,147.13 L 452.62,149.91 L 453.37,152.74 L 454.02,155.59 L 454.56,158.46 " fill="none" stroke="#7A4CA0" stroke-width="2.4" marker-end="url(#d3)"/>
+  <text x="340" y="150" font-size="13.5" font-weight="600" fill="#D95319">X &#8212; surge</text>
+  <text x="439" y="211" font-size="13.5" font-weight="600" fill="#7A4CA0" text-anchor="middle">K &#8212; roll</text>
+
+  <!-- sway: force Y along y_b, then moment M about y_b (circle in the z-x plane) -->
+  <line x1="273.19" y1="274.65" x2="300.95" y2="297.27" stroke="#D95319" stroke-width="3.2" marker-end="url(#d2)"/>
+  <path d="M 362.79,350.62 L 364.69,348.39 L 366.43,346.03 L 367.99,343.57 L 369.37,341.02 L 370.56,338.40 L 371.54,335.73 L 372.32,333.04 L 372.87,330.35 L 373.21,327.67 L 373.32,325.02 L 373.21,322.43 L 372.87,319.91 L 372.32,317.48 L 371.54,315.17 L 370.56,312.99 L 369.37,310.96 L 367.99,309.08 L 366.43,307.38 L 364.69,305.88 L 362.79,304.57 L 360.76,303.47 L 358.59,302.59 L 356.31,301.94 L 353.93,301.52 L 351.48,301.33 L 348.97,301.38 L 346.42,301.66 L 343.86,302.17 L 341.29,302.92 L 338.74,303.88 L 336.23,305.07 L 333.78,306.46 L 331.41,308.04 L 329.13,309.81 L 326.96,311.75 L 324.92,313.85 L 323.02,316.08 L 321.29,318.44 L 319.72,320.90 L 318.34,323.45 L 317.15,326.07 L 316.17,328.73 L 315.40,331.43 L 314.84,334.12 L 314.51,336.80 L 314.39,339.45 L 314.51,342.04 L 314.84,344.56 L 315.40,346.99 L 316.17,349.30 L 317.15,351.48 L 318.34,353.51 L 319.72,355.39 L 321.29,357.09 L 323.02,358.59 L 324.92,359.90 L 326.96,361.00 L 329.13,361.88 L 331.41,362.53 L 333.78,362.95 " fill="none" stroke="#7A4CA0" stroke-width="2.4" marker-end="url(#d3)"/>
+  <text x="312" y="272" font-size="13.5" font-weight="600" fill="#D95319">Y &#8212; sway</text>
+  <text x="344" y="382" font-size="13.5" font-weight="600" fill="#7A4CA0" text-anchor="middle">M &#8212; pitch</text>
+
+  <!-- heave: force Z along z_b, then moment N about z_b (circle in the x-y plane,
+       so the N ellipse lies flat, parallel to the deck) -->
+  <line x1="200" y1="355.91" x2="200" y2="402.88" stroke="#D95319" stroke-width="3.2" marker-end="url(#d2)"/>
+  <path d="M 232.95,438.69 L 232.25,439.96 L 231.31,441.20 L 230.13,442.40 L 228.72,443.55 L 227.09,444.63 L 225.26,445.66 L 223.23,446.60 L 221.02,447.46 L 218.66,448.24 L 216.15,448.92 L 213.52,449.50 L 210.79,449.97 L 207.98,450.34 L 205.10,450.59 L 202.19,450.73 L 199.26,450.76 L 196.33,450.68 L 193.44,450.48 L 190.59,450.16 L 187.81,449.74 L 185.13,449.22 L 182.56,448.59 L 180.12,447.86 L 177.84,447.04 L 175.72,446.13 L 173.79,445.15 L 172.06,444.09 L 170.54,442.97 L 169.24,441.80 L 168.18,440.58 L 167.36,439.32 L 166.79,438.03 L 166.47,436.73 L 166.41,435.42 L 166.60,434.12 L 167.05,432.82 L 167.75,431.55 L 168.69,430.31 L 169.87,429.11 L 171.28,427.96 L 172.91,426.87 L 174.74,425.85 L 176.77,424.91 L 178.98,424.04 L 181.34,423.27 L 183.85,422.59 L 186.48,422.01 L 189.21,421.54 L 192.02,421.17 L 194.90,420.92 L 197.81,420.77 L 200.74,420.75 L 203.67,420.83 L 206.56,421.03 L 209.41,421.34 L 212.19,421.77 L 214.87,422.29 L 217.44,422.92 L 219.88,423.65 L 222.16,424.47 " fill="none" stroke="#7A4CA0" stroke-width="2.4" marker-end="url(#d3)"/>
+  <text x="186" y="388" font-size="13.5" font-weight="600" fill="#D95319" text-anchor="end">Z &#8212; heave</text>
+  <text x="248" y="441" font-size="13.5" font-weight="600" fill="#7A4CA0">N &#8212; yaw</text>
+
+  <text x="24" y="472" font-size="12" fill="#55606d">Straight arrow = force. Curved arrow = moment, drawn as a circle in the plane perpendicular to its own axis; right-hand rule.</text>
+
+  <!-- ================= the table ================= -->
+  <rect x="520" y="86" width="356" height="366" rx="8" fill="#f7f9fb" stroke="#dfe4ea"/>
+
+  <text x="536" y="112" font-size="12" font-weight="600" fill="#1b3a5c">DOF</text>
+  <text x="600" y="112" font-size="12" font-weight="600" fill="#D95319">force /</text>
+  <text x="600" y="126" font-size="12" font-weight="600" fill="#7A4CA0">moment</text>
+  <text x="690" y="112" font-size="12" font-weight="600" fill="#0073BD">linear /</text>
+  <text x="690" y="126" font-size="12" font-weight="600" fill="#0073BD">angular vel.</text>
+  <text x="800" y="112" font-size="12" font-weight="600" fill="#4f7d1e">position /</text>
+  <text x="800" y="126" font-size="12" font-weight="600" fill="#4f7d1e">Euler angle</text>
+  <line x1="534" y1="136" x2="862" y2="136" stroke="#c6d3e0" stroke-width="1.4"/>
+
+  <g font-size="13.5" fill="#33404e">
+    <text x="536" y="166">1&#160;&#160;surge</text>
+    <text x="612" y="166" font-weight="600" fill="#D95319">X</text>
+    <text x="702" y="166" font-weight="600" fill="#0073BD">u</text>
+    <text x="812" y="166" font-weight="600" fill="#4f7d1e">x</text>
+
+    <text x="536" y="202">2&#160;&#160;sway</text>
+    <text x="612" y="202" font-weight="600" fill="#D95319">Y</text>
+    <text x="702" y="202" font-weight="600" fill="#0073BD">v</text>
+    <text x="812" y="202" font-weight="600" fill="#4f7d1e">y</text>
+
+    <text x="536" y="238">3&#160;&#160;heave</text>
+    <text x="612" y="238" font-weight="600" fill="#D95319">Z</text>
+    <text x="702" y="238" font-weight="600" fill="#0073BD">w</text>
+    <text x="812" y="238" font-weight="600" fill="#4f7d1e">z</text>
+  </g>
+  <line x1="534" y1="256" x2="862" y2="256" stroke="#e4e9ee" stroke-width="1"/>
+  <g font-size="13.5" fill="#33404e">
+    <text x="536" y="286">4&#160;&#160;roll</text>
+    <text x="612" y="286" font-weight="600" fill="#7A4CA0">K</text>
+    <text x="702" y="286" font-weight="600" fill="#0073BD">p</text>
+    <text x="812" y="286" font-weight="600" fill="#4f7d1e">&#966;</text>
+
+    <text x="536" y="322">5&#160;&#160;pitch</text>
+    <text x="612" y="322" font-weight="600" fill="#7A4CA0">M</text>
+    <text x="702" y="322" font-weight="600" fill="#0073BD">q</text>
+    <text x="812" y="322" font-weight="600" fill="#4f7d1e">&#952;</text>
+
+    <text x="536" y="358">6&#160;&#160;yaw</text>
+    <text x="612" y="358" font-weight="600" fill="#7A4CA0">N</text>
+    <text x="702" y="358" font-weight="600" fill="#0073BD">r</text>
+    <text x="812" y="358" font-weight="600" fill="#4f7d1e">&#968;</text>
+  </g>
+
+  <line x1="534" y1="376" x2="862" y2="376" stroke="#c6d3e0" stroke-width="1.4"/>
+  <text x="536" y="400" font-size="12.5" fill="#55606d">unit</text>
+  <text x="600" y="400" font-size="12.5" fill="#55606d">N, N&#183;m</text>
+  <text x="690" y="400" font-size="12.5" fill="#55606d">m/s, rad/s</text>
+  <text x="800" y="400" font-size="12.5" fill="#55606d">m, rad</text>
+  <text x="536" y="424" font-size="12.5" fill="#55606d">frame</text>
+  <text x="600" y="424" font-size="12.5" fill="#55606d">{b}</text>
+  <text x="690" y="424" font-size="12.5" fill="#55606d">{b}</text>
+  <text x="800" y="424" font-size="12.5" fill="#4f7d1e" font-weight="600">{n}</text>
+  <text x="536" y="444" font-size="12" fill="#8a95a1">only the last column is in {n} &#8212; see &#167;1-4</text>
+
+  <!-- the three vectors -->
+  <rect x="24" y="486" width="852" height="1" fill="#dfe4ea"/>
+  <text x="24" y="510" font-size="13" fill="#33404e">&#964; = [ X  Y  Z  K  M  N ]<tspan font-size="10" dy="-5">T</tspan><tspan dy="5">&#160;&#160;in {b}&#160;&#160;&#160;&#160;&#160;&#160;&#957; = [ u  v  w  p  q  r ]</tspan><tspan font-size="10" dy="-5">T</tspan><tspan dy="5">&#160;&#160;in {b}&#160;&#160;&#160;&#160;&#160;&#160;&#951; = [ x  y  z  &#966;  &#952;  &#968; ]</tspan><tspan font-size="10" dy="-5">T</tspan><tspan dy="5">&#160;&#160;in {n}</tspan></text>
+  <text x="24" y="536" font-size="12.5" fill="#55606d">The kinetics of &#167;1-7 relates the first two, &#160;M &#957;&#775; + C&#957; + D&#957; + g = &#964;. The kinematics of &#167;1-6 relates the last two, &#160;&#951;&#775; = J(&#951;) &#957;.</text>
+</svg>

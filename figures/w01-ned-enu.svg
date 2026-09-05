@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 500" width="840" height="500"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="840" height="500" fill="#ffffff"/>
+  <defs>
+    <marker id="n1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+    <marker id="n2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7A4CA0"/>
+    </marker>
+    <marker id="n3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#1b3a5c">NED and ENU — the same world, two conventions</text>
+  <text x="24" y="56" font-size="13" fill="#55606d">Marine and aerospace practice is NED. ROS, Gazebo and most robotics stacks are ENU. Crossing the boundary without converting is a classic field failure.</text>
+
+  <!-- ================= NED ================= -->
+  <rect x="24" y="76" width="380" height="330" rx="8" fill="#f6f9fc" stroke="#c6d3e0"/>
+  <text x="214" y="102" font-size="15" font-weight="600" fill="#1b3a5c" text-anchor="middle">NED &#8212; this course, and MSS</text>
+
+  <line x1="130" y1="330" x2="130" y2="140" stroke="#1b3a5c" stroke-width="2.2" marker-end="url(#n1)"/>
+  <line x1="130" y1="330" x2="330" y2="330" stroke="#1b3a5c" stroke-width="2.2" marker-end="url(#n1)"/>
+  <circle cx="130" cy="330" r="8.5" fill="none" stroke="#1b3a5c" stroke-width="2"/>
+  <line x1="124" y1="324" x2="136" y2="336" stroke="#1b3a5c" stroke-width="1.6"/>
+  <line x1="136" y1="324" x2="124" y2="336" stroke="#1b3a5c" stroke-width="1.6"/>
+
+  <text x="140" y="136" font-size="13" font-weight="600" fill="#1b3a5c">x &#8212; North</text>
+  <text x="338" y="335" font-size="13" font-weight="600" fill="#1b3a5c">y &#8212; East</text>
+  <text x="92" y="358" font-size="12.5" fill="#1b3a5c">z &#8212; Down, into the page</text>
+
+  <!-- yaw sense: clockwise from North -->
+  <path d="M 130,240 A 90,90 0 0,1 193.6,266.4" fill="none" stroke="#D95319" stroke-width="2.4" marker-end="url(#n3)"/>
+  <text x="196" y="238" font-size="13" font-weight="600" fill="#D95319">&#968; positive</text>
+  <text x="196" y="256" font-size="12.5" fill="#D95319">North &#8594; East</text>
+  <text x="196" y="274" font-size="12.5" fill="#D95319">clockwise from above</text>
+
+  <text x="46" y="386" font-size="12.5" fill="#55606d">right-handed:  x &#215; y = z,  and z points DOWN</text>
+
+  <!-- ================= ENU ================= -->
+  <rect x="436" y="76" width="380" height="330" rx="8" fill="#faf7fc" stroke="#d8c8e6"/>
+  <text x="626" y="102" font-size="15" font-weight="600" fill="#7A4CA0" text-anchor="middle">ENU &#8212; ROS, Gazebo, most robotics</text>
+
+  <line x1="542" y1="330" x2="542" y2="140" stroke="#7A4CA0" stroke-width="2.2" marker-end="url(#n2)"/>
+  <line x1="542" y1="330" x2="742" y2="330" stroke="#7A4CA0" stroke-width="2.2" marker-end="url(#n2)"/>
+  <circle cx="542" cy="330" r="8.5" fill="none" stroke="#7A4CA0" stroke-width="2"/>
+  <circle cx="542" cy="330" r="2.6" fill="#7A4CA0"/>
+
+  <text x="552" y="136" font-size="13" font-weight="600" fill="#7A4CA0">y &#8212; North</text>
+  <text x="750" y="335" font-size="13" font-weight="600" fill="#7A4CA0">x &#8212; East</text>
+  <text x="500" y="358" font-size="12.5" fill="#7A4CA0">z &#8212; Up, out of the page</text>
+
+  <!-- yaw sense: counter-clockwise from East -->
+  <path d="M 632,330 A 90,90 0 0,0 605.6,266.4" fill="none" stroke="#D95319" stroke-width="2.4" marker-end="url(#n3)"/>
+  <text x="576" y="196" font-size="13" font-weight="600" fill="#D95319">&#968; positive</text>
+  <text x="576" y="214" font-size="12.5" fill="#D95319">East &#8594; North</text>
+  <text x="576" y="232" font-size="12.5" fill="#D95319">counter-clockwise</text>
+
+  <text x="458" y="386" font-size="12.5" fill="#55606d">right-handed:  x &#215; y = z,  and z points UP</text>
+
+  <!-- ================= conversion ================= -->
+  <rect x="24" y="420" width="792" height="62" rx="8" fill="#eef3f8" stroke="#c6d3e0"/>
+  <text x="44" y="444" font-size="13.5" font-weight="600" fill="#1b3a5c">Converting</text>
+  <text x="140" y="444" font-size="13.5" fill="#33404e">position:  [x, y, z]<tspan font-size="10" dy="4">ENU</tspan><tspan dy="-4"> = [ y, x, &#8722;z ]</tspan><tspan font-size="10" dy="4">NED</tspan></text>
+  <text x="440" y="444" font-size="13.5" fill="#33404e">heading:  &#968;<tspan font-size="10" dy="4">ENU</tspan><tspan dy="-4"> = 90&#176; &#8722; &#968;</tspan><tspan font-size="10" dy="4">NED</tspan></text>
+  <text x="140" y="468" font-size="12.5" fill="#55606d">Swap the first two components and flip the third. The swap alone would be a reflection; the flip makes it a proper rotation again, det = +1.</text>
+</svg>

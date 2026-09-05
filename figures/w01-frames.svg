@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 480" width="820" height="480"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <rect x="0" y="0" width="820" height="480" fill="#ffffff"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b3a5c"/>
+    </marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#D95319"/>
+    </marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7785"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#1b3a5c">The two reference frames</text>
+  <text x="24" y="56" font-size="13" fill="#55606d">Position and attitude live in {n}. Velocities live in {b}. Confusing the two is the most common error in marine control code.</text>
+
+  <!-- ===== NED frame ===== -->
+  <line x1="110" y1="400" x2="110" y2="130" stroke="#1b3a5c" stroke-width="2.2" marker-end="url(#a)"/>
+  <line x1="110" y1="400" x2="380" y2="400" stroke="#1b3a5c" stroke-width="2.2" marker-end="url(#a)"/>
+  <circle cx="110" cy="400" r="9" fill="none" stroke="#1b3a5c" stroke-width="2"/>
+  <line x1="103.6" y1="393.6" x2="116.4" y2="406.4" stroke="#1b3a5c" stroke-width="1.6"/>
+  <line x1="116.4" y1="393.6" x2="103.6" y2="406.4" stroke="#1b3a5c" stroke-width="1.6"/>
+
+  <text x="122" y="124" font-size="14" font-weight="600" fill="#1b3a5c">x<tspan font-size="10" dy="4">n</tspan><tspan dy="-4" font-size="13" font-weight="400"> — North</tspan></text>
+  <text x="388" y="405" font-size="14" font-weight="600" fill="#1b3a5c">y<tspan font-size="10" dy="4">n</tspan><tspan dy="-4" font-size="13" font-weight="400"> — East</tspan></text>
+  <text x="80" y="432" font-size="13" fill="#1b3a5c">z<tspan font-size="10" dy="4">n</tspan><tspan dy="-4"> into the page — Down</tspan></text>
+  <text x="60" y="392" font-size="13" font-weight="600" fill="#1b3a5c">o<tspan font-size="10" dy="4">n</tspan></text>
+  <text x="150" y="152" font-size="13" font-weight="600" fill="#1b3a5c">{n}  NED, treated as inertial</text>
+
+  <!-- position vector -->
+  <line x1="110" y1="400" x2="520" y2="205" stroke="#6b7785" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#ag)"/>
+  <text x="255" y="322" font-size="13" fill="#6b7785" transform="rotate(-25 255 322)">position in {n}</text>
+
+  <!-- components -->
+  <line x1="110" y1="205" x2="520" y2="205" stroke="#b9c2cc" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <line x1="520" y1="205" x2="520" y2="400" stroke="#b9c2cc" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <text x="96" y="200" font-size="13" fill="#55606d" text-anchor="end">N</text>
+  <text x="524" y="424" font-size="13" fill="#55606d">E</text>
+
+  <!-- ===== the vessel and its body frame ===== -->
+  <!-- heading 40 deg from North: x_b = (sin40, -cos40) = (0.643, -0.766) -->
+  <g transform="translate(520,205) rotate(40)">
+    <path d="M -13,26 L -13,-14 L 0,-30 L 13,-14 L 13,26 Z"
+          fill="#F2C8A0" stroke="#8a5a2b" stroke-width="1.8"/>
+  </g>
+  <line x1="520" y1="205" x2="623" y2="82" stroke="#D95319" stroke-width="2.2" marker-end="url(#ab)"/>
+  <line x1="520" y1="205" x2="612" y2="282" stroke="#D95319" stroke-width="2.2" marker-end="url(#ab)"/>
+  <circle cx="520" cy="205" r="8" fill="none" stroke="#D95319" stroke-width="1.8"/>
+  <line x1="514.3" y1="199.3" x2="525.7" y2="210.7" stroke="#D95319" stroke-width="1.4"/>
+  <line x1="525.7" y1="199.3" x2="514.3" y2="210.7" stroke="#D95319" stroke-width="1.4"/>
+
+  <text x="632" y="78" font-size="14" font-weight="600" fill="#D95319">x<tspan font-size="10" dy="4">b</tspan><tspan dy="-4" font-size="13" font-weight="400"> — forward</tspan></text>
+  <text x="620" y="292" font-size="14" font-weight="600" fill="#D95319">y<tspan font-size="10" dy="4">b</tspan><tspan dy="-4" font-size="13" font-weight="400"> — starboard</tspan></text>
+  <text x="452" y="188" font-size="13" font-weight="600" fill="#D95319" text-anchor="end">o<tspan font-size="10" dy="4">b</tspan></text>
+  <text x="600" y="330" font-size="13" font-weight="600" fill="#D95319">{b}  fixed in the hull, moves with it</text>
+  <text x="600" y="350" font-size="13" fill="#8a5a2b">z<tspan font-size="10" dy="4">b</tspan><tspan dy="-4"> into the page — down through the keel</tspan></text>
+
+  <!-- heading angle arc -->
+  <line x1="520" y1="205" x2="520" y2="95" stroke="#9aa4b0" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <path d="M 520,145 A 60,60 0 0,1 558.6,159.0" fill="none" stroke="#1b3a5c" stroke-width="1.8"/>
+  <text x="538" y="136" font-size="15" font-style="italic" fill="#1b3a5c">&#968;</text>
+  <text x="466" y="88" font-size="12" fill="#6b7785">North, carried along</text>
+
+  <!-- caption strip -->
+  <rect x="24" y="446" width="772" height="1" fill="#dfe4ea"/>
+  <text x="24" y="468" font-size="12.5" fill="#55606d">Both frames are right-handed with z pointing DOWN. A positive yaw &#968; turns the bow from North towards East, that is, clockwise seen from above.</text>
+</svg>
