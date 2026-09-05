@@ -2,7 +2,7 @@ function f = W01_cur_plot(R, LBL, V, ttl)
 %W01_CUR_PLOT  Draw the current runs: where the vessel went, and what it felt.
 %
 %   W01_cur_plot                     the run in the base workspace
-%   W01_cur_plot(R, LBL, V, ttl)     a cell array of runs, for W01_cur_run
+%   W01_cur_plot(R, LBL, V, ttl)     a cell array of runs, for W01_E_current_run
 %
 %   Called by the model's StopFcn and by the runner, so the figure on screen
 %   and the figure in the note come from one piece of code.

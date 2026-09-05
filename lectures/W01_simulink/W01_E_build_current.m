@@ -1,7 +1,7 @@
-function build_w01_current()
-%BUILD_W01_CURRENT  Generate W01_current.slx — what an ocean current does.
+function W01_E_build_current()
+%W01_E_BUILD_CURRENT  Generate W01_current.slx — what an ocean current does.
 %
-%   >> build_w01_current
+%   >> W01_E_build_current
 %
 %   WHY A SECOND MODEL
 %
@@ -186,7 +186,7 @@ note(m, [40 330 860 700], strjoin({ ...
 '   drag on the now non-zero v_r produces a yaw moment that slowly turns'
 '   the hull into the flow. Nothing commanded either.'
 ''
-'Edit V_c and beta_c in W01_setup.m, or run W01_cur_run for all cases.'}, newline));
+'Edit V_c and beta_c in W01_0_setup.m, or run W01_E_current_run for all.'}, newline));
 
 set_param(m, 'StopFcn', 'W01_cur_plot;');
 set_param(m, 'ReturnWorkspaceOutputs', 'off');

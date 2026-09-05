@@ -2,11 +2,11 @@ function f = W01_plot(R, LBL, ttl)
 %W01_PLOT  Draw the states and the track of one or more W01 runs.
 %
 %   W01_plot                      the run sitting in the base workspace
-%   W01_plot(R, LBL, ttl)         a cell array of runs, for W01_run
+%   W01_plot(R, LBL, ttl)         a cell array of runs, for W01_D_the_manoeuvre
 %   f = W01_plot(...)             the figure handle
 %
 %   Called automatically by the model's StopFcn, so pressing Run in Simulink
-%   produces the figure without any further command. W01_run calls the same
+%   produces the figure without any further command. Section D calls the same
 %   function, so the figure a student sees on screen and the figure embedded
 %   in the lecture note are produced by one piece of code.
 %

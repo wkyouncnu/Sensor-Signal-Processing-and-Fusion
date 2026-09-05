@@ -1,13 +1,20 @@
-%% W01_setup.m — the only file to edit this week
+%% W01_0_setup.m — the only file to edit this week
 %
 %  Every Constant block in W01_openloop.slx reads a variable defined here.
 %  Change a value, run this script, and the model runs with it.
 %
-%     >> W01_setup
+%     >> W01_0_setup
+%
+%  Then work through the laboratory one section at a time:
+%
+%     >> W01_C_terminal_speed    section C — predict on paper, then measure
+%     >> W01_D_the_manoeuvre     section D — straight, port, straight, starboard
+%     >> W01_E_current_run       section E — the same command in four currents
 %
 %  To restore a model that has been broken:
 %
-%     >> build_w01_models
+%     >> W01_1_build_openloop        W01_openloop.slx
+%     >> W01_E_build_current         W01_current.slx
 
 clear; close all; bdclose('all');
 
@@ -36,7 +43,7 @@ dn = 3.5;         % differential [rad/s] — sets the turn rate, about 3.2 deg/s
 %                         starboard turn runs t_phase(3)..t_phase(4)
 t_phase = [30 60 90 120];
 
-%  dn = 0 collapses the manoeuvre to a constant command. W01_run uses that for
+%  dn = 0 collapses the manoeuvre to a constant command. W01_C_terminal_speed uses that for
 %  the terminal-speed sweep, where a turn would only get in the way.
 
 %% ---- vessel and environment --------------------------------------------

@@ -1,7 +1,7 @@
-function build_w01_models()
-%BUILD_W01_MODELS  Generate W01_openloop.slx from code.
+function W01_1_build_openloop()
+%W01_1_BUILD_OPENLOOP  Generate W01_openloop.slx from code.
 %
-%   >> build_w01_models
+%   >> W01_1_build_openloop
 %
 %   THE SIGNAL CHAIN
 %
@@ -30,8 +30,8 @@ function build_w01_models()
 %   rotation matrix, because psi never changes. The S-shape does both, and it
 %   is also the first thing anyone would drive a real USV through.
 %
-%   Setting dn = 0 in W01_setup.m collapses the manoeuvre back to a constant
-%   command, which is how the runner performs its terminal-speed sweep.
+%   Setting dn = 0 in W01_0_setup.m collapses the manoeuvre back to a constant
+%   command, which is how section C performs its terminal-speed sweep.
 %
 %   Each stage is a subsystem. The top level shows the chain and nothing else;
 %   everything that makes a stage work lives inside it.
@@ -92,7 +92,7 @@ set_mlfcn([cmd '/schedule'], { ...
 '%  the bow to starboard, so a PORT turn slows the LEFT propeller.'
 '%'
 '%  dn = 0 gives a constant command, which is what the terminal-speed sweep'
-'%  in W01_run uses.'
+'%  in section C uses.'
 ''
 'nL = n0;  nR = n0;'
 'if t >= t_phase(1) && t < t_phase(2)'
@@ -142,7 +142,7 @@ note(m, [40 300 800 640], strjoin({ ...
 '   to starboard n = [n0+dn ; n0-dn]'
 ''
 'because N = y_p (T_left - T_right). More left thrust turns the bow'
-'to starboard. Edit n0, dn and t_phase in W01_setup.m.'
+'to starboard. Edit n0, dn and t_phase in W01_0_setup.m.'
 ''
 'WHAT TO WATCH'
 ''
@@ -170,7 +170,7 @@ note(m, [40 300 800 640], strjoin({ ...
 %% ---- plot when the run finishes ----------------------------------------
 %  Pressing Run must produce something to look at without any further command.
 %  The Animate block inside Measurements draws the hull live, and StopFcn calls
-%  W01_plot, which draws the same summary figure that W01_run exports.
+%  W01_plot, which draws the same summary figure that section D exports.
 set_param(m, 'StopFcn', 'W01_plot;');
 
 %  R2024b packs To Workspace results into a single object called out unless

@@ -11,7 +11,7 @@ function W01_animate(N, E, psi, t)
 %     t      simulation time [s]
 %
 %   The axis limits and the redraw interval are read from the base workspace,
-%   so widening the window is an edit to W01_setup.m and not to the model.
+%   so widening the window is an edit to W01_0_setup.m and not to the model.
 
 o.tag   = 'W01';
 o.name  = 'W01 live track';

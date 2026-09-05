@@ -1,7 +1,7 @@
 function [f, T] = W01_frames(R)
 %W01_FRAMES  Body velocity against NED velocity, worked and drawn.
 %
-%   [f, T] = W01_frames(R)      R is one run from W01_run, or omitted
+%   [f, T] = W01_frames(R)      R is one run from section D, or omitted
 %
 %   The one confusion this week exists to remove:
 %
@@ -19,7 +19,7 @@ function [f, T] = W01_frames(R)
 %   rotating. Anyone who has integrated u to get a north position sees the
 %   error here and nowhere else.
 %
-%   T is a table of the hand-worked example printed by W01_run.
+%   T is a table of the hand-worked example printed by section C.
 
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)),'_tools'), here);
