@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/_tools/git_autopush.sh\"",
+            "timeout": 120
+          }
+        ]
+      }
     ]
   }
 }

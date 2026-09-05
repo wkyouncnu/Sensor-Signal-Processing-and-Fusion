@@ -33,13 +33,15 @@
 새 지침을 받았을 때만이 아니다. **모델을 하나 만들었거나, 절을 하나 추가했거나,
 그림을 하나 그렸거나, 폴더를 옮겼으면** 그 작업이 끝나기 전에 셋을 갱신한다.
 
-| 무엇을 했든 | 반드시 손대는 곳 셋 |
+| 무엇을 했든 | 반드시 손대는 곳 넷 |
 |---|---|
-| 새 주차·절·모델·그림·스크립트 | ① `PLAN.md` ② 이 스킬 ③ `CLAUDE.md` |
+| 새 주차·절·모델·그림·스크립트 | ① `PLAN.md` ② 이 스킬 ③ `CLAUDE.md` ④ **GitHub 에 push** |
 
 - `PLAN.md` — §2 진행 상황 표의 상태, §3 다음에 할 일, 새로 생긴 산출물
 - 스킬 — 새 관용구·함정·규칙이 생겼으면 해당 `references/*.md`, 그리고 §4 누적 대장 한 줄
 - `CLAUDE.md` — 폴더·파일 목록이 바뀌었거나 형식 규칙이 생겼으면
+- **GitHub** — SessionEnd 훅이 `_tools/git_autopush.sh` 로 알아서 올린다.
+  손으로 올리려면 같은 스크립트를 부른다 → `git-and-history.md`
 
 **"나중에 한꺼번에" 는 하지 않는다.** 대화가 길어지면 무엇을 만들었는지 잊고,
 다음 세션은 옛날 계획을 읽는다.
@@ -295,6 +297,7 @@ d = (-sin b * sin a,  sin b * cos a,  cos b )
 | — | 그림마다 **어떤 `.m`·`.slx` 를 돌리면 나오는지** 강의에 적는다 | `results-and-figures.md` |
 | — | 그래프마다 **읽으면 강의가 되는** 설명 — 의미·경향(수치)·원리·알고리즘별·상황별 | `results-and-figures.md` |
 | 2026-09-05 | **선 겹침은 `check_overlaps` 로 기계 검사. 합격선 0** — `row_feed`·`lane_line`·`port_xy` 로 만든다 | 이 문서 §3-4 · `model-layout.md` |
+| 2026-09-05 | **세션이 끝나거나 갱신되면 GitHub 에 자동 push.** 올리는 것은 `00_GradCourse_2026` 뿐, private | `git-and-history.md` · `_tools/git_autopush.sh` |
 
 ---
 

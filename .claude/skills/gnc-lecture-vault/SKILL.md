@@ -141,6 +141,7 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 | `references/pdf-and-math.md` | PDF 가 안 나올 때, 템플릿을 고칠 때 |
 | `references/figures-svg.md` | 개념도 SVG 를 그릴 때 |
 | `references/vault-upkeep.md` | 문서를 추가·이동·개편할 때, 지식카드를 만들 때 |
+| `references/git-and-history.md` | **작업을 GitHub 에 남길 때. 무엇을 올리고 무엇을 올리지 않는가** |
 
 모델 작업은 **다른 스킬**이다 — `.claude/skills/simulink-gnc-models/`
 (배치 정리 `layout.md`, 생성 관용구 `build-models.md`, MSS 규약 `gnc-conventions.md`,

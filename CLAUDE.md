@@ -197,9 +197,28 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
 ## 6. 끝내기 전
 
 ```bash
-matlab -batch "cd lectures/WXX_simulink; build_wXX_models; WXX_run"
+matlab -batch "cd lectures/WXX_simulink; WXX_1_build_...; WXX_0_setup"
 bash _tools/md2pdf.sh lectures/WXX_*.md
 bash .claude/skills/gnc-lecture-vault/scripts/vault_check.sh
+bash _tools/git_autopush.sh
 ```
 
-세 번째 명령이 **전 항목 0 건**이어야 그 주차가 끝난 것이다.
+세 번째 명령이 **전 항목 0 건**이어야 그 주차가 끝난 것이고, 그 뒤에 올린다.
+깨진 상태를 기록으로 남기지 않는다.
+
+---
+
+## 7. 기록
+
+이 볼트는 **git 저장소**다. 원격은
+`git@github.com:wkyouncnu/Sensor-Signal-Processing-and-Fusion.git`, **private**.
+
+| | |
+|---|---|
+| 올라가는 것 | `00_GradCourse_2026/` **하나뿐** |
+| 올라가지 않는 것 | 상위 폴더 전부 — `강의자료`·`10_연구_USV_MILS`(MSS 120 MB)·`90_보관`(출석부) |
+| 언제 | SessionEnd 훅이 `_tools/git_autopush.sh` 를 부른다. 세션 하나에 커밋 하나 |
+
+> [!warning] 범위를 넓히지 않는다
+> 상위 폴더에는 **출석부**가 있다. 학생 개인정보이고, 한 번 올라가면 지워도 남는다.
+> 범위를 바꾸려면 사용자에게 다시 묻는다 → `gnc-lecture-vault/references/git-and-history.md`
