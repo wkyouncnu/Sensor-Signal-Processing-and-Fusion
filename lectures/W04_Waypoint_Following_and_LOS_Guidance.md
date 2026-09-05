@@ -540,6 +540,31 @@ Section G sweeps the current speed with everything else held fixed and compares 
 > [!tip] If only one sentence from this week is remembered
 > A current is not resisted, it is **answered**. The vessel must point upstream, and the three laws differ only in where they find the authority to do it.
 
+### The same three laws, as equations
+
+- The figure above shows what the three laws *achieve*. This one shows how they *differ*, and the difference turns out to be a single structural choice.
+
+![Where each law adds its extra term](../figures/w04-three-laws.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left column | the law itself, with the term that distinguishes it printed in violet |
+| middle column | the same law as a signal path: $y_e$ enters, the arctan acts, $\pi_p$ is added, $\psi_d$ leaves |
+| violet arrow | where the extra state is injected — **into the arctan block** for ILOS, **into the summing junction** for ALOS |
+| right column | what that state physically is, and the settled error it produces |
+
+**What the figure says**
+
+- **Meaning.** Three laws, one skeleton. Every row has the same $y_e$, the same arctan, the same $\pi_p$. Only the violet arrow moves.
+- **The trend, in numbers.** Settled cross-track error falls from $2.253$ m (no state) to $0.008$ m and $-0.004$ m (one state each) — **a factor of roughly 300**, from adding a single scalar.
+- **The principle, and it is the whole section in one line.** ILOS injects **inside** the arctan; ALOS injects **outside** it. Everything else follows:
+  - A term inside the arctan is added to $y_e$ before the nonlinearity sees it, so the law **cannot distinguish it from real cross-track error**. ILOS therefore behaves as though the vessel were $2.25$ m further out than it is.
+  - A term outside the arctan is added to $\pi_p$'s side of the sum, so the law **cannot distinguish it from a rotated path**. ALOS therefore behaves as though it were following a line tilted by the drift it has estimated.
+- **Why this explains the unit puzzle of §4-8-3.** A quantity added to $y_e$ must be a length, which is why $\kappa y_{int}$ is in metres and $\kappa$ carries the odd unit m/s. A quantity added to an angle must be an angle, which is why $\hat\beta$ is simply in radians. **The units are not a convention; they are forced by where the term enters.**
+- **What separates the two in practice.** Nothing in accuracy on this mission. The difference is in the right-hand column: ILOS's state is a number, ALOS's state is the crab angle.
+
 ## 4-8. ILOS — integral line of sight, derived
 
 > [!important] Sections 4-8 and 4-9 are worked to a different standard

@@ -1,0 +1,24 @@
+# figures/w04-ilos-alos-idea.svg 의 수식 라벨
+#   x | y(기준선) | 크기 | 정렬 | 색 | TeX
+#
+# 색이 "-" 이면 그림이 정한 색을 따른다.
+# "bow"·"track" 이라는 낱말은 SVG text 로 남기고, 그 뒤에 기호만 조판해 붙인다.
+#
+# ---- panel 1 : LOS -------------------------------------------------------
+226 | 222 | 14 | start  | #1e293b | \psi
+235 | 262 | 14 | start  | #0d9488 | \chi
+248 | 239 | 14 | start  | #7c3aed | \beta
+36  | 288 | 14 | start  | #dc2626 | y_e = \Delta\tan\beta_c = 2.25\ \text{m}
+# ---- panel 2 : ILOS ------------------------------------------------------
+516 | 177 | 14 | start  | #1e293b | \psi
+525 | 218 | 14 | start  | #0d9488 | \chi
+333 | 193 | 14 | start  | #0d9488 | y_e = 0
+452 | 253 | 14 | start  | #7c3aed | \kappa\,y_{int} = 2.25\ \text{m}
+# ---- panel 3 : ALOS ------------------------------------------------------
+806 | 177 | 14 | start  | #1e293b | \psi
+815 | 218 | 14 | start  | #0d9488 | \chi
+828 | 195 | 14 | start  | #7c3aed | \hat\beta
+623 | 193 | 14 | start  | #0d9488 | y_e = 0
+640 | 252 | 14 | start  | #7c3aed | \hat\beta = 15.91^\circ
+640 | 271 | 12 | start  | #334155 | \text{true drift}\ \beta = 15.88^\circ
+624 | 316 | 13 | start  | #1e293b | \psi_d = \pi_p - \hat\beta - \arctan(y_e/\Delta)
