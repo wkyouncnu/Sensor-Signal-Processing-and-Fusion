@@ -1,0 +1,76 @@
+% figures/w04-lookahead.svg — Delta 가 하는 일.
+%
+%   bash _tools/tikz2svg.sh figures/src/w04-lookahead.tex figures/w04-lookahead.svg
+%
+% 하나의 y_e 에 Delta 셋. 각도는 arctan(y_e/Delta) 로 계산한 값이고,
+% 그림에서 잰 각과 같아야 한다.
+%   y_e = 12 m :  Delta = 6  -> 63.43 deg
+%                 Delta = 15 -> 38.66 deg
+%                 Delta = 33 -> 19.98 deg
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\SC{1.35}        % 1 m = 1.35 mm
+\def\YE{16.2}        % y_e = 12 m
+\def\DA{8.1}         % Delta = 6 m
+\def\DB{20.25}       % Delta = 15 m
+\def\DC{44.55}       % Delta = 33 m
+
+% ---- Delta 세 개를 막대로 (경로와 떨어뜨려 그린다) -------------------------
+\draw[accent,   line width=2.2pt, opacity=0.35] (0,26) -- (\DC,26);
+\node[accent,   font=\scriptsize, anchor=west] at ({\DC+2},26) {$\Delta$ large};
+\draw[flow,     line width=2.2pt, opacity=0.45] (0,21) -- (\DB,21);
+\node[flow,     font=\scriptsize, anchor=west] at ({\DB+2},21) {$\Delta$ middling};
+\draw[warn,     line width=2.2pt, opacity=0.45] (0,16) -- (\DA,16);
+\node[warn,     font=\scriptsize, anchor=west] at ({\DA+2},16) {$\Delta$ small};
+
+% ---- 경로 -------------------------------------------------------------------
+\draw[pathc, line width=0.9pt] (-6,0) -- (72,0);
+\node[pathc, font=\scriptsize, anchor=west] at (73,0) {the path};
+
+% ---- 수선의 발과 배 ---------------------------------------------------------
+\draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,-\YE);
+\draw[errc, line width=0.4pt] (0,-2.4) -- (2.4,-2.4) -- (2.4,0);
+\node[errc, font=\small, anchor=east] at (-1.5,{-0.55*\YE}) {$y_e$};
+\fill[ink] (0,{-\YE-1.0}) -- (-2.6,{-\YE-6.2}) -- (2.6,{-\YE-6.2}) -- cycle;
+\node[note, anchor=north] at (0,{-\YE-8}) {the vessel};
+\node[note, anchor=south east] at (-1.5,1.5) {foot of the perpendicular};
+
+% ---- 세 조준점과 세 시선 ----------------------------------------------------
+\foreach \d/\col in {\DA/warn, \DB/flow, \DC/accent} {
+  \fill[\col] (\d,0) circle (1.0);
+  \draw[\col, line width=0.8pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (0,-\YE) -- (\d,0);
+}
+
+% ---- 각 — 계산한 값을 적는다 -----------------------------------------------
+\node[warn,   font=\scriptsize, anchor=west] at (4,{-\YE+4.5}) {$63.4^\circ$};
+\node[flow,   font=\scriptsize, anchor=west] at (12,{-\YE+3.2}) {$38.7^\circ$};
+\node[accent, font=\scriptsize, anchor=west] at (24,{-\YE+2.2}) {$20.0^\circ$};
+\node[note, anchor=north west] at (6,{-\YE-4})
+     {the angle each aim point asks the vessel to turn through};
+
+% ===================== 오른쪽 : 무엇을 사고 무엇을 파는가 ===================
+\begin{scope}[shift={(96,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (0,28) {the trade};
+  \node[anchor=north west, align=left, text width=76mm, font=\scriptsize] at (0,23) {%
+    One and the same $y_e$. Only $\Delta$ has changed, and the command has changed
+    by a factor of three.\\[5pt]
+    \textcolor{warn}{\textbf{$\Delta$ too small}} — the arctan saturates almost at
+    once, the vessel turns nearly perpendicular to the path and arrives with speed
+    across it. Measured: $0.939$\,m of overshoot at $\Delta = 2$\,m.\\[4pt]
+    \textcolor{accent}{\textbf{$\Delta$ too large}} — the correction is gentle and
+    the vessel closes slowly. At $\Delta = 30$\,m it never gets within $0.4$\,m
+    before the $60$\,m leg ends, and is still $1.29$\,m out.\\[5pt]
+    The rule of thumb is $\Delta = 2$ to $5$ hull lengths; for the $2$\,m Otter
+    that is $4$ to $10$\,m, and this course uses $8$\,m. \textbf{Section E is the
+    evidence, and the rule of thumb only the sanity check.}\\[5pt]
+    A third cost appears in §4-7: the steady offset a current leaves is
+    $\Delta\tan\beta_c$, \textbf{linear in $\Delta$}.};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

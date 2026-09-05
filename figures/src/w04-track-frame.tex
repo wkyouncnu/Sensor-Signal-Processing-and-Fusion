@@ -1,0 +1,92 @@
+% figures/w04-track-frame.svg — 두 오차가 회전변환 하나에서 나온다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w04-track-frame.tex figures/w04-track-frame.svg
+%
+% 다리는 북에서 pi_p = 62 deg. 배는 다리 위 32 m 지점에서 우현으로 14 m.
+% [rotate=28] 안에서 다리를 +x 로 두면 우현이 국소 -y 다 (90 - 62 = 28).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\XE{51.2}      % x_e = 32 m at 1.6 mm/m
+\def\YE{22.4}      % y_e = 14 m
+\def\LG{104}       % 다리 65 m
+
+% ---- NED --------------------------------------------------------------------
+\begin{scope}[shift={(-4,54)}]
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,10);
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (10,0);
+  \node[font=\small, anchor=east]  at (-0.8,9) {$N$};
+  \node[font=\small, anchor=north] at (9,-0.8) {$E$};
+  \node[note, anchor=north west] at (0,-3) {the frame that never moves};
+\end{scope}
+
+\begin{scope}[rotate=28]
+  % 다리
+  \draw[pathc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\LG,0);
+  \filldraw[pathc, fill=white, line width=0.7pt] (0,0) circle (1.1);
+
+  % 다리가 정하는 프레임 : t 는 다리를 따라, n 은 우현으로
+  \draw[pathc, line width=0.6pt, densely dashed, -{Stealth[length=4pt,width=3pt]}]
+        (0,0) -- (22,0);
+  \draw[pathc, line width=0.6pt, densely dashed, -{Stealth[length=4pt,width=3pt]}]
+        (0,0) -- (0,-22);
+  \node[pathc, font=\small, anchor=south] at (17,1.2) {$\hat{\mathbf{t}}$};
+  \node[pathc, font=\small, anchor=west]  at (1.5,-19) {$\hat{\mathbf{n}}$ (to starboard)};
+
+  % 위치오차 벡터
+  \draw[ink, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (0,0) -- (\XE,-\YE);
+  % 두 성분
+  \draw[alng, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\XE,0);
+  \draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (\XE,0) -- (\XE,-\YE);
+  \draw[errc, line width=0.4pt] (\XE,-2.4) -- ({\XE-2.4},-2.4) -- ({\XE-2.4},0);
+
+  % 배 — 다리 방향으로 대충 놓는다 (이 그림의 주제가 아니다)
+  \fill[ink] ({\XE+3.6},{-\YE+1.9}) -- ({\XE-3.4},{-\YE+2.6})
+          -- ({\XE-1.4},{-\YE-3.4}) -- cycle;
+
+  \node[pathc, font=\small, anchor=north east] at (-1.5,-1.5) {$\mathbf{wp}_k$};
+  \node[pathc, font=\small, anchor=north west] at ({\LG-16},-2) {$\mathbf{wp}_{k+1}$};
+  \node[alng, font=\small, anchor=south]  at ({0.5*\XE},1.5) {$x_e$};
+  \node[errc, font=\small, anchor=west]   at ({\XE+2},{-0.55*\YE}) {$y_e$};
+  \node[ink, font=\scriptsize, anchor=north east] at ({0.62*\XE},{-0.62*\YE-3.5})
+       {the position error};
+  \node[ink, font=\scriptsize, anchor=north] at ({\XE+2},{-\YE-4}) {the vessel};
+\end{scope}
+
+% pi_p
+\draw[soft, line width=0.4pt, densely dashed] (0,0) -- (0,30);
+\draw[soft, line width=0.5pt] (0,23) arc (90:28:23);
+\node[soft, font=\small] at (7,26) {$\pi_p$};
+
+% ===================== 오른쪽 : 대수 =======================================
+\begin{scope}[shift={(122,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (0,54) {one rotation, two answers};
+
+  \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,48) {%
+    The leg gives the frame its direction:};
+  \node[anchor=north west, font=\small] at (0,41)
+       {$\pi_p = \mathrm{atan2}(E_{k+1}-E_k,\ N_{k+1}-N_k)$};
+  \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,34) {%
+    and the error, written in that frame, is};
+  \node[anchor=north west, font=\small] at (0,27)
+       {$\begin{bmatrix} x_e \\ y_e \end{bmatrix}
+         = \mathbf{R}(\pi_p)^{\!\top}
+           \begin{bmatrix} N-N_k \\ E-E_k \end{bmatrix}$};
+
+  \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,6) {%
+    $x_e$ — how far \textbf{along} the leg the vessel has come.
+    The switching test of §4-6 uses it.\\[3pt]
+    $y_e$ — how far \textbf{to the side}. The guidance law drives this one to
+    zero.\\[6pt]
+    Both are projections of the same vector onto the same orthonormal pair, so
+    $x_e^2 + y_e^2 = \lVert\mathbf{p}-\mathbf{wp}_k\rVert^2$ — a rotation
+    preserves length, and that is the cheapest check on the whole construction.};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

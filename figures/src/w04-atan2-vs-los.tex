@@ -1,0 +1,76 @@
+% figures/w04-atan2-vs-los.svg — 점을 겨냥하는 것과 경로를 따르는 것은 다른 문제다.
+%
+%   awk -f _tools/w04_track_curves.awk > figures/src/w04-tracks.tex
+%   bash _tools/tikz2svg.sh figures/src/w04-atan2-vs-los.tex figures/w04-atan2-vs-los.svg
+%
+% LOS 궤적은 손으로 그린 곡선이 아니라 법칙에서 적분한 것이다 (w04_track_curves.awk).
+% 두 배 다 경로에서 18 m 벗어난 곳에서 출발한다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+\input{w04-tracks}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\XE{60}          % 다리 100 m = 60 mm
+\def\Y0{-10.8}       % 18 m 오프셋
+
+% ===================== (a) atan2 ===========================================
+\begin{scope}
+  \node[font=\small\bfseries, anchor=west] at (0,22) {(a)\quad atan2 — aim at the waypoint};
+  \node[note, anchor=west] at (0,17.5) {$\psi_d = \mathrm{atan2}(E_{k+1}-E,\ N_{k+1}-N)$};
+
+  \draw[pathc, line width=0.7pt, densely dashed] (0,0) -- (\XE,0);
+  \filldraw[pathc, fill=white, line width=0.6pt] (0,0)   circle (0.9);
+  \filldraw[pathc, fill=white, line width=0.6pt] (\XE,0) circle (0.9);
+  \node[pathc, font=\scriptsize, anchor=south] at (0,1.4)   {$\mathbf{wp}_k$};
+  \node[pathc, font=\scriptsize, anchor=south] at (\XE,1.4) {$\mathbf{wp}_{k+1}$};
+
+  \draw[warn, line width=0.9pt] plot coordinates{\ATANtrack};
+  \node[warn, font=\scriptsize, anchor=north west] at (6,-8) {the track};
+
+  % x = 40 m 에서의 오차 — 직선이므로 정확히 10.8 m
+  \draw[errc, line width=0.7pt] (24,0) -- (24,-6.48);
+  \node[errc, font=\scriptsize, anchor=west] at (25,-3.4) {$y_e = 10.8$\,m here};
+
+  \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,-13) {%
+    The law regulates the distance to a \textbf{point}. The line that point sits
+    on plays no part in it, so the vessel closes on the waypoint along a straight
+    line of its own and is on the path only at the very end — if at all.};
+\end{scope}
+
+% ===================== (b) LOS =============================================
+\begin{scope}[shift={(76,0)}]
+  \node[font=\small\bfseries, anchor=west] at (0,22) {(b)\quad LOS — aim $\Delta$ ahead on the path};
+  \node[note, anchor=west] at (0,17.5) {$\psi_d = \pi_p - \arctan(y_e/\Delta)$,\ \ $\Delta = 8$\,m};
+
+  \draw[pathc, line width=0.7pt, densely dashed] (0,0) -- (\XE,0);
+  \filldraw[pathc, fill=white, line width=0.6pt] (0,0)   circle (0.9);
+  \filldraw[pathc, fill=white, line width=0.6pt] (\XE,0) circle (0.9);
+  \node[pathc, font=\scriptsize, anchor=south] at (0,1.4)   {$\mathbf{wp}_k$};
+  \node[pathc, font=\scriptsize, anchor=south] at (\XE,1.4) {$\mathbf{wp}_{k+1}$};
+
+  \draw[accent, line width=0.9pt] plot coordinates{\LOStrack};
+  \node[accent, font=\scriptsize, anchor=north west] at (6,-8) {the track};
+
+  \draw[errc, line width=0.7pt] (24,0) -- (24,-0.07);
+  \node[errc, font=\scriptsize, anchor=west] at (25,-3.4) {$y_e = 0.11$\,m here};
+
+  \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,-13) {%
+    The law regulates the distance to the \textbf{line}. The aim point moves along
+    the path as the vessel does, so the correction fades to zero exactly when the
+    vessel reaches the path, and the rest of the leg is run along it.};
+\end{scope}
+
+% ---- 아래 한 줄 -------------------------------------------------------------
+\draw[soft, line width=0.3pt] (0,-30) -- (136,-30);
+\node[anchor=north west, align=left, text width=136mm, font=\scriptsize] at (0,-32) {%
+  Both vessels start 18\,m off the path and both reach the waypoint. Only one
+  travels along the line to it. The tracks are not sketched: the LOS curve is the
+  guidance law integrated along the path,
+  $\mathrm{d}y_e/\mathrm{d}s = -y_e/\sqrt{\Delta^2+y_e^2}$, by
+  \texttt{\_tools/w04\_track\_curves.awk}. Measured on the four-leg mission of
+  section C: atan2 holds the path to $0.547$\,m and LOS to $0.060$\,m.};
+
+\end{tikzpicture}
+\end{document}

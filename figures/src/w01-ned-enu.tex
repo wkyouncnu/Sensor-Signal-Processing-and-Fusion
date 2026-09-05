@@ -1,0 +1,79 @@
+% figures/w01-ned-enu.svg — 같은 세계, 두 관례.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-ned-enu.tex figures/w01-ned-enu.svg
+%
+% 왼쪽 NED (이 강의, MSS), 오른쪽 ENU (ROS, Gazebo). 둘 다 오른손계지만
+% z 가 반대이고, 그래서 yaw 의 양의 방향도 반대다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=north west] at (0,58)
+     {NED and ENU — the same world, two conventions};
+\node[anchor=north west, align=left, text width=170mm, font=\scriptsize, soft] at (0,52) {%
+  Marine and aerospace practice is NED. ROS, Gazebo and most robotics stacks are
+  ENU. Crossing the boundary without converting is a classic field failure.};
+
+% ===================== NED =================================================
+\begin{scope}[shift={(14,0)}]
+  \node[font=\small\bfseries, ink, anchor=west] at (-12,38) {NED — this course, and MSS};
+
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,28);
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (30,0);
+  \node[font=\small, anchor=east]  at (-1,26) {$x$ — North};
+  \node[font=\small, anchor=north] at (29,-1)  {$y$ — East};
+
+  % z 는 지면 속으로 : 원 안에 x
+  \draw[ink, line width=0.6pt] (0,0) circle (2.2);
+  \draw[ink, line width=0.6pt] (-1.55,-1.55) -- (1.55,1.55);
+  \draw[ink, line width=0.6pt] (-1.55,1.55) -- (1.55,-1.55);
+  \node[note, anchor=north west] at (-12,-4) {$z$ — Down, into the page};
+
+  % yaw 의 양의 방향 : 북 -> 동, 위에서 보면 시계방향
+  \draw[accent, line width=0.8pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (0,17) arc (90:35:17);
+  \node[accent, font=\scriptsize, anchor=west] at (12,17)
+       {$\psi$ positive: North $\rightarrow$ East};
+  \node[accent, font=\scriptsize, anchor=west] at (12,13) {clockwise from above};
+
+  \node[note, anchor=north west] at (-12,-9)
+       {right-handed:\ \ $x \times y = z$,\ \ and $z$ points \textbf{down}};
+\end{scope}
+
+% ===================== ENU =================================================
+\begin{scope}[shift={(110,0)}]
+  \node[font=\small\bfseries, ink, anchor=west] at (-12,38) {ENU — ROS, Gazebo, most robotics};
+
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,28);
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (30,0);
+  \node[font=\small, anchor=east]  at (-1,26) {$y$ — North};
+  \node[font=\small, anchor=north] at (29,-1)  {$x$ — East};
+
+  % z 는 지면 밖으로 : 원 안에 점
+  \draw[ink, line width=0.6pt] (0,0) circle (2.2);
+  \fill[ink] (0,0) circle (0.7);
+  \node[note, anchor=north west] at (-12,-4) {$z$ — Up, out of the page};
+
+  \draw[accent, line width=0.8pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (17,0) arc (0:55:17);
+  \node[accent, font=\scriptsize, anchor=west] at (12,17)
+       {$\psi$ positive: East $\rightarrow$ North};
+  \node[accent, font=\scriptsize, anchor=west] at (12,13) {counter-clockwise};
+
+  \node[note, anchor=north west] at (-12,-9)
+       {right-handed:\ \ $x \times y = z$,\ \ and $z$ points \textbf{up}};
+\end{scope}
+
+% ---- 변환 -------------------------------------------------------------------
+\draw[soft, line width=0.3pt] (0,-18) -- (170,-18);
+\node[anchor=north west, align=left, text width=170mm, font=\scriptsize] at (0,-20) {%
+  \textbf{Converting.} Swap the first two components and flip the third:
+  $(x,y,z)_{\mathrm{NED}} \leftrightarrow (y,x,-z)_{\mathrm{ENU}}$.
+  The swap alone would be a reflection; the flip makes it a proper rotation
+  again, $\det = +1$. Both frames are right-handed — that is exactly why one
+  cannot simply relabel the axes and move on.};
+
+\end{tikzpicture}
+\end{document}

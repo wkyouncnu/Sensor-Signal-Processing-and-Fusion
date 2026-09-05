@@ -1,0 +1,67 @@
+% figures/w01-frames.svg — 좌표계 둘, 그리고 무엇이 어디에 사는가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-frames.tex figures/w01-frames.svg
+%
+% psi = 35 deg. {b} 축은 {n} 축을 psi 만큼 돌린 것이고, 그림에서 잰 각이
+% 그 값과 같아야 한다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\PSI{35}          % 선수각, 북에서 잰다
+\def\PB{55}           % 그 방향의 화면각 = 90 - PSI.  N 이 위, E 가 오른쪽이므로
+                      % 북에서 psi 인 방향은 화면에서 (sin psi, cos psi) 이다.
+                      % 이것을 (cos psi, sin psi) 로 쓰면 각이 동에서 잰 것이 되어
+                      % 호는 55 도인데 라벨은 35 도가 된다 — 한 번 그렇게 틀렸다.
+
+\node[font=\small\bfseries, anchor=north west] at (0,66) {The two reference frames};
+\node[anchor=north west, align=left, text width=150mm, font=\scriptsize, soft] at (0,60) {%
+  Position and attitude live in $\{n\}$. Velocities live in $\{b\}$.
+  Confusing the two is the most common error in marine control code.};
+
+% ===================== {n} =================================================
+\node[font=\small, anchor=west] at (0,46) {$\{n\}$\ \ NED, treated as inertial};
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (10,0) -- (10,38);
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (10,0) -- (48,0);
+\node[font=\small, anchor=east]  at (9,36)  {$N$};
+\node[font=\small, anchor=north] at (46,-1) {$E$};
+\fill[ink] (10,0) circle (0.7);
+
+% 위치벡터
+\draw[alng, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (10,0) -- (36,22);
+\node[alng, font=\scriptsize, anchor=south east] at (26,15) {position in $\{n\}$};
+
+% ===================== {b} =================================================
+\begin{scope}[shift={(36,22)}]
+  % 선체 — 선수는 x_b 방향
+  \fill[ink, opacity=0.85, rotate=\PB]
+        (7,0) -- (-4,4.2) -- (-4,-4.2) -- cycle;
+  % 바디 축
+  \draw[flow, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}]
+        (0,0) -- ({22*cos(\PB)},{22*sin(\PB)});
+  \draw[flow, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}]
+        (0,0) -- ({16*cos(\PB-90)},{16*sin(\PB-90)});
+  \node[flow, font=\small] at ({25*cos(\PB)},{25*sin(\PB)+1.5}) {$x_b$};
+  \node[flow, font=\small] at ({19*cos(\PB-90)},{19*sin(\PB-90)}) {$y_b$};
+
+  % 북쪽 기준선과 psi
+  \draw[soft, line width=0.4pt, densely dashed] (0,0) -- (0,24);
+  \draw[soft, line width=0.5pt] (0,17) arc (90:\PB:17);
+  \node[soft, font=\small] at (4.0,19.5) {$\psi$};
+  \node[soft, font=\scriptsize, anchor=south] at (0,24.5) {$N$};
+\end{scope}
+\node[flow, font=\small, anchor=north west] at (48,30)
+     {$\{b\}$\ \ fixed in the hull, moves with it};
+
+% ---- 아래 한 줄 -------------------------------------------------------------
+\draw[soft, line width=0.3pt] (0,-8) -- (150,-8);
+\node[anchor=north west, align=left, text width=150mm, font=\scriptsize] at (0,-10) {%
+  Both frames are right-handed with $z$ pointing \textbf{down}. A positive yaw
+  $\psi$ turns the bow from North towards East — that is, clockwise seen from
+  above. The body frame is the same frame, rotated by $\psi$ and carried along
+  with the hull; nothing else distinguishes them.};
+
+\end{tikzpicture}
+\end{document}
