@@ -56,20 +56,24 @@
 
   % ---- 배 -----------------------------------------------------------------
   % 선수는 psi_d 방향, 즉 국소 프레임에서 +30.96 deg
-  \begin{scope}[shift={(\XE,-\YE)}, rotate=30.96]
-    \fill[ink] (2.6,0) -- (-2.0,1.9) -- (-2.0,-1.9) -- cycle;
-  \end{scope}
+  % 선수 방향이 곧 psi_d 다. 중첩된 [rotate=] 는 합성 방향을 착각하기 쉬워
+  % (한 번 반대로 그렸다) 좌표를 직접 쓴다.
+  %   다리 프레임에서 선수 = 30.96 deg,  (cos, sin) = (0.8575, 0.5146)
+  \fill[ink] ({\XE+3.60},{-\YE+2.16}) -- ({\XE-3.74},{-\YE+0.79})
+          -- ({\XE-1.06},{-\YE-3.67}) -- cycle;
+  \draw[ink, line width=0.4pt, densely dotted]
+        ({\XE+3.60},{-\YE+2.16}) -- ({\XE+10.29},{-\YE+6.18});
 
   % ---- 라벨 (회전을 되돌려 수평으로) --------------------------------------
   \node[pathc, font=\small, anchor=north east] at (-1.5,-1.5) {waypoint $k$};
   \node[pathc, font=\small, anchor=south west] at ({\LG+1.5},2.5) {$k+1$};
-  \node[pathc, font=\scriptsize, anchor=south]
-       at ({\LG}, {\RA+1.5}) {acceptance radius $R$};
+  \node[pathc, font=\scriptsize, anchor=north]
+       at ({\LG}, {-\RA-2}) {acceptance radius $R$};
   \node[alng, font=\small, anchor=south] at ({0.5*\XE}, 1.5) {$x_e$};
   \node[errc, font=\small, anchor=west]  at ({\XE+1.8}, {-0.6*\YE}) {$y_e$};
   \node[accent, font=\small, anchor=south] at ({\XE+0.5*\DL}, 1.6) {$\Delta$};
-  \node[accent, font=\scriptsize, anchor=south west]
-       at ({\XE+\DL+1.5}, 1.5) {the aim point};
+  \node[accent, font=\scriptsize, anchor=north west]
+       at ({\XE+\DL+1.5}, -2.5) {the aim point};
   \node[ink, font=\scriptsize, anchor=north east]
        at ({\XE-1.5}, {-\YE-1.5}) {the vessel};
 \end{scope}
