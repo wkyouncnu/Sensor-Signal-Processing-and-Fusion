@@ -159,7 +159,7 @@ M_{11} = (m + m_p) - X_{\dot u} = 85.50\ \text{kg}
 $$
 
 > [!note] When the dropped terms come back
-> The moment a heading command is added, $r \neq 0$ and $vr$ reappears in the surge equation — the vessel slows in a turn without any change in thrust. Week 1 measured exactly this: surge fell from $1.0286$ to $1.0218$ m/s in the turns, a loss of $0.7\%$, produced entirely by the term dropped above. Week 3 controls heading and Week 5 runs both loops at once.
+> The moment a heading command is added, $r \neq 0$ and $vr$ reappears in the surge equation — the vessel slows in a turn without any change in thrust. Week 1 measured exactly this: surge fell from $1.0286$ to $1.0218$ m/s in the turns, a loss of $0.7\%$, produced entirely by the term dropped above. Week 3 controls heading, Week 4 runs a guidance loop above it, and Week 7 closes surge and heading together.
 
 - Taking Laplace transforms with $u(0) = 0$ gives a first-order lag:
 
@@ -327,7 +327,7 @@ $$
 X_{\text{sat}} = 2\,k\,n_{\text{sat}}|n_{\text{sat}}| .
 $$
 
-- The equal split is forced: a pure surge demand contains nothing that distinguishes the two propellers. Week 4 treats the case where the demand does distinguish them and the split is no longer obvious.
+- The equal split is forced: a pure surge demand contains nothing that distinguishes the two propellers. Week 5 treats the case where the demand does distinguish them and the split is no longer obvious.
 
 > [!warning] $X_{\text{sat}}$ must leave the allocation block
 > Without it the controller has no way of knowing that the actuator has stopped following the demand. Every anti-windup scheme in §2-6 is built on the difference $X_{\text{cmd}} - X_{\text{sat}}$, and a block that does not report what it delivered makes all of them impossible.
@@ -564,11 +564,11 @@ Expected output:
 
 Measured with $u_d = 1.5$ m/s, $K_i = K_d = 0$:
 
-| $K_p$ | $K_p K_u$ | predicted $u_{ss}$ | measured $u_{ss}$ | error [%] | $X_{ss}$ [N] |
-|---|---|---|---|---|---|
-| 100 | $1.2894$ | $0.8448$ | $0.8448$ | $43.68$ | $65.519$ |
-| 500 | $6.4471$ | $1.2986$ | $1.2986$ | $13.43$ | $100.711$ |
-| 2000 | $25.7883$ | $1.4440$ | $1.4440$ | $3.73$ | $111.989$ |
+| $K_p$ | $K_p K_u$ | predicted $u_{ss}$ | measured $u_{ss}$ | error [%] | $X_{ss}$ [N] | peak $X_{\text{cmd}}$ [N] |
+|---|---|---|---|---|---|---|
+| 100 | $1.2894$ | $0.8448$ | $0.8448$ | $43.68$ | $65.519$ | $149.3$ |
+| 500 | $6.4471$ | $1.2986$ | $1.2986$ | $13.43$ | $100.711$ | $744.8$ |
+| 2000 | $25.7883$ | $1.4440$ | $1.4440$ | $3.73$ | $111.989$ | $2979.2$ |
 
 ![Proportional control](W02_simulink/img/W02_result_P.png)
 
@@ -585,7 +585,7 @@ Measured with $u_d = 1.5$ m/s, $K_i = K_d = 0$:
 **What the figure says**
 
 - **Meaning.** One setpoint, $1.5$ m/s, and three proportional controllers. The left panel is how close each got; the right panel is what each had to demand to get there.
-- **Trend, in numbers.** Raising $K_p$ from 100 to 2000 moves the settled speed from $0.8448$ to $1.4440$ m/s — closer at every step, and **short at every step**. The remaining gap shrinks from $44\%$ to $13\%$ to $3.7\%$: each twentyfold increase in gain buys roughly one decimal place, and none of them buys the last one. Meanwhile the peak demand explodes from about $700$ to $3000$ N, more than ten times what the propellers can deliver.
+- **Trend, in numbers.** Raising $K_p$ from 100 to 2000 moves the settled speed from $0.8448$ to $1.4440$ m/s — closer at every step, and **short at every step**. The remaining gap shrinks from $44\%$ to $13\%$ to $3.7\%$: each twentyfold increase in gain buys roughly one decimal place, and none of them buys the last one. Meanwhile the peak demand explodes from $149.3$ to $2979.2$ N — the last of those is **twelve times** what the propellers can deliver, since $X_{\max} = 239.36$ N.
 - **Principle.** The plant has no free integrator, so the loop is **type 0** and the final-value theorem gives $u_{ss}/u_d = K_pK_u/(1 + K_pK_u)$ — a ratio that approaches one and never reaches it. Holding a speed requires a permanent force to balance the drag; a proportional controller manufactures force only from error; **so the error is what pays for the force, and it cannot be zero.**
 - **Why the right panel settles rather than falling to zero.** All three demands converge to roughly $65$–$112$ N and stay there. That plateau *is* the drag at the speed each vessel reached. Compare Week 3, where the same panel returns to zero because a vessel that has stopped turning needs no moment: the structural difference between the two axes is visible in this one plot.
 - **What changes with the situation.** Raising the gain here costs actuator authority to buy accuracy, and both run out: at $K_p = 2000$ the transient demand is an order of magnitude past saturation, so the response the figure shows is already partly fictional. Section E adds the integral term, which supplies the steady force from a **zero** error and settles the question rather than shrinking it.
@@ -748,7 +748,7 @@ The same two runs, with `pid_mode = 0` and `pid_mode = 1`:
 | Case | largest gap in $u$ [m/s] | $M_p$ hand-built [%] | $M_p$ library block [%] |
 |---|---|---|---|
 | PI, $K_d = 0$ | $2.2\times 10^{-16}$ | $8.15$ | $8.15$ |
-| PID, $K_d = 60$ | $1.8\times 10^{-1}$ | $16.88$ | $11.40$ |
+| PID, $K_d = 60$ | $7.0\times 10^{-1}$ | $16.88$ | $11.54$ |
 
 ![Two implementations of one controller](W02_simulink/img/W02_result_block.png)
 
@@ -970,7 +970,7 @@ W02_I_pseudo_derivative_run
 **What the figure says**
 
 - **Meaning.** Four controllers, one plant, one shared realisation of the measurement noise. The left column is the useful signal; the right column is what the actuator was asked to do while producing it.
-- **Trend, in numbers.** The top-left panel says the derivative is genuinely wanted here: row 1 rings for the whole 20 s and overshoots $73.2\%$, while the other three settle in about 3 s at under $10\%$. **On that panel the three derivative rows are almost indistinguishable.** The top-right panel says they are nothing alike: the ideal derivative swings $\pm 106$ against a steady demand of 4, and quiet-state RMS runs $0.18$, $8.75$, $1.68$, $0.23$ across the four rows — a factor of 38 between the ideal and the slower filter.
+- **Trend, in numbers.** The top-left panel says the derivative is genuinely wanted here: row 1 rings for the whole 20 s and overshoots $73.2\%$, while the other three settle in about 3 s at under $10\%$. **On that panel the three derivative rows are almost indistinguishable.** The top-right panel says they are nothing alike: the ideal derivative swings $\pm 106$ against a steady demand of 4, and quiet-state RMS runs $0.18$, $8.75$, $1.68$, $0.23$ across the four rows — a factor of 37 between the ideal and the slower filter.
 - **Principle.** Differentiation has gain $\lvert j\omega\rvert$, which grows without bound. It therefore finds the fastest thing in the measurement — the noise — and multiplies it by the largest number available. The pseudo-derivative $N s/(s+N)$ has the same gain below $N$ and levels off at $N$ above it, so **it is the same operator with a ceiling on how much it may amplify.**
 - **Why the bottom-left panel omits the ideal row.** With it included, the other three collapse onto the axis and nothing can be read. Leaving it out is not hiding the result; the number $\pm 96$ is printed on the panel, and the omission is what makes the remaining comparison visible at all.
 - **What separates $N = 100$ from $N = 10$.** The bottom-right panel isolates the derivative term itself: the fast filter passes eight times the noise the slow one does, for a response that is $2.8$ points *worse* in overshoot. Above a certain $N$ nothing is bought and the noise is charged for anyway — which is what the sweep in ③ turns into a rule.

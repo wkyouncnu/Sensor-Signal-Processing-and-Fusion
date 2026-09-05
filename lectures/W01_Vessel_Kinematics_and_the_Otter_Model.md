@@ -817,7 +817,7 @@ $$
 \beta = \operatorname{atan2}(v, u), \qquad \chi = \psi + \beta
 $$
 
-where $\chi$ is the course angle. Week 6 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error.
+where $\chi$ is the course angle. Week 4 §4-7 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error, and measures it as $\Delta\tan\beta_c$.
 
 ## 1-13. Ocean current — a velocity, not a force
 
@@ -869,7 +869,7 @@ $$
 | fore-and-aft ($\beta_c = 0°$ or $180°$) | the track stays straight; only the **ground speed** changes, by exactly $\pm V_c$ |
 | on the beam | the track leaves the heading by a drift angle, and cross-flow drag on $v_r$ makes a yaw moment that slowly **turns the hull into the flow** — with no command given |
 
-- The second is the same crab angle as §1-12, arriving by a different route. Week 6 has to steer around both at once.
+- The second is the same crab angle as §1-12, arriving by a different route. Week 4 has to steer around both at once.
 
 ## A. Setting up and running (15 min)
 
@@ -966,7 +966,7 @@ $$
 | the track | **where** the hull went |
 | the hull outline and the line leaving its bow | **where the hull was pointing** while it went there |
 
-- Those are not the same question. A marine vehicle carries a sway velocity, so its heading $\psi$ and its course over ground differ by the crab angle $\beta = \operatorname{atan2}(v, u)$. In the turning run of §D they differ by more than 20°, and no track drawn on its own can show that. Week 6 has to steer around exactly this difference.
+- Those are not the same question. A marine vehicle carries a sway velocity, so its heading $\psi$ and its course over ground differ by the crab angle $\beta = \operatorname{atan2}(v, u)$. In the turning run of §D they differ by more than 20°, and no track drawn on its own can show that. Week 4 has to steer around exactly this difference.
 - A MATLAB Function block cannot plot. The drawing function is therefore declared extrinsic, which makes Simulink hand the call back to MATLAB instead of generating code for it:
 
 ```matlab
@@ -1148,7 +1148,7 @@ W01_D_the_manoeuvre
 - **Trend, in numbers.** The track runs due north for 30 s, swings about 62 m to the west during the port turn, and straightens again — a shallow S. On the right, heading and course leave zero together at 30 s but **separate immediately**: $\psi$ reaches $-71°$ while $\chi$ stops at $-64°$, a gap of $7.05°$ held for the whole turn. In the starboard turn the gap reappears with the opposite sign.
 - **Principle.** $\chi = \psi + \beta$ with $\beta = \operatorname{atan2}(v, u)$. A turning vessel has $v \neq 0$, so it moves at an angle to its own centreline. **Heading is not course, and the difference is not an error** — it is the crab angle, and it is $7°$ here.
 - **Where the difference shows up in each panel.** On the left it is visible only because the hulls are drawn: on the turning legs the silhouettes point slightly inside the curve they are tracing. On the right it is the green line, which is flat at zero on every straight leg and steps to $\pm 7°$ the moment a turn starts.
-- **What changes with the situation.** $\beta$ scales with the turn rate, so a larger `dn` widens the gap and a straight run closes it. Week 3 has to steer around this: a heading controller that reaches its commanded $\psi$ still leaves the vessel travelling $7°$ off, and Week 5's line-of-sight guidance is where that finally has to be paid for.
+- **What changes with the situation.** $\beta$ scales with the turn rate, so a larger `dn` widens the gap and a straight run closes it. Week 3 has to steer around this: a heading controller that reaches its commanded $\psi$ still leaves the vessel travelling $7°$ off, and Week 4's line-of-sight guidance is where that finally has to be paid for.
 
 ### Three observations
 
@@ -1277,10 +1277,10 @@ $$
 - **Trend, in numbers.** The polar plot is an egg, not a circle: widest at the top, $1.5286$ m/s with the current astern, narrowest at the bottom, $0.5286$ m/s with it ahead, and $1.1091$ m/s on either beam. The ratio between best and worst is $2.9$, from a current worth half the vessel's own speed. The drift curve crosses zero exactly twice — at $\beta_c = 0°$ and $180°$ — and peaks at $\pm 27.96°$, not on the beam but past it, at $120°$ and $240°$.
 - **Principle.** Ground velocity is the vector sum of the vessel's velocity through the water and the current itself. That sum is largest when the two are parallel, smallest when opposed, and turns the resultant furthest when the current has both a large sideways component and a retarding one — which is why the drift maximum sits past the beam rather than on it.
 - **What separates the two panels.** Speed and direction are damaged by different currents. A head current costs the most speed and produces **no drift at all**; a quartering current from $120°$ costs moderate speed and produces the worst drift. **A vessel can be slowed without being pushed off course, and pushed off course without being much slowed.**
-- **What changes with the situation.** The whole picture scales with $V_c / u$. At $V_c = 0.5$ m/s against a vessel doing $1.03$ m/s the drift reaches $28°$; a slower vessel or a stronger current makes it worse, and a current stronger than the vessel makes the northern part of the egg collapse through zero. This is the problem Week 5's line-of-sight guidance exists to solve, and the reason it needs an integral term.
+- **What changes with the situation.** The whole picture scales with $V_c / u$. At $V_c = 0.5$ m/s against a vessel doing $1.03$ m/s the drift reaches $28°$; a slower vessel or a stronger current makes it worse, and a current stronger than the vessel drives the **narrow end** of the egg — the head-current case at $\beta_c = 180°$, drawn at the bottom — through zero, so the vessel makes sternway while still commanded ahead. This is the problem Week 4's line-of-sight guidance exists to solve, and the reason it needs an integral term.
 
 > [!note] The vessel is doing the same thing in all twelve runs
-> Same command, same thrust, same speed through the water. Everything different in the polar plot is the water, not the vessel. That is worth stating out loud before Week 6 asks a guidance law to cope with it.
+> Same command, same thrust, same speed through the water. Everything different in the polar plot is the water, not the vessel. That is worth stating out loud before Week 4 asks a guidance law to cope with it.
 
 ## Week Summary
 
@@ -1405,4 +1405,4 @@ $$
 - Preparation: bring $\tau_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-6, and the derivation of $u_{ss}(n)$ from Assignment 1.
 
 > [!note] Appendix A1 is available but not required yet
-> The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 2 and 3 quote its two results where they need them. It becomes required reading before Week 4.
+> The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 2 and 3 quote its two results where they need them. It becomes required reading before Week 5.

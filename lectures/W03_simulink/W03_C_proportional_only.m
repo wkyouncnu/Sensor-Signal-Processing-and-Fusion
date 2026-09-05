@@ -22,9 +22,12 @@ RP  = cell(size(KPS));
 LP  = cell(size(KPS));
 
 fprintf('\n  W03 section C — proportional only, Kd = 0, step to %g deg\n\n', V.psi_1);
-fprintf('    %8s %10s %10s %20s %14s %12s\n', ...
-        'Kp', 'wn', 'zeta', 'steady error [deg]', 'overshoot [%]', 'ts 2% [s]');
-fprintf('    %s\n', repmat('-', 1, 78));
+%  peak |tau_N| is printed because the lecture quotes it. A number read off
+%  the right-hand panel is not traceable to a runner; this column makes it so.
+fprintf('    %8s %10s %10s %20s %14s %12s %16s\n', ...
+        'Kp', 'wn', 'zeta', 'steady error [deg]', 'overshoot [%]', 'ts 2% [s]', ...
+        'peak |tau_N| [N.m]');
+fprintf('    %s\n', repmat('-', 1, 96));
 
 for i = 1:numel(KPS)
     RP{i} = W03_read(run_sim('W03_heading_control', V, 'Kp', KPS(i), 'Kd', 0, 'T_final', 60));
@@ -32,8 +35,9 @@ for i = 1:numel(KPS)
     ze    = abs(V.Nr)/(2*sqrt(KPS(i)*V.M66));
     [Mp, ts] = step_metrics(RP{i}.t, RP{i}.psi, V.psi_1, V.t_up);
     LP{i} = sprintf('K_p = %.4g', KPS(i));
-    fprintf('    %8.4g %10.4f %10.4f %20.2e %14.2f %12.2f\n', ...
-            KPS(i), wn, ze, V.psi_1 - RP{i}.psi(end), Mp, ts);
+    fprintf('    %8.4g %10.4f %10.4f %20.2e %14.2f %12.2f %16.1f\n', ...
+            KPS(i), wn, ze, V.psi_1 - RP{i}.psi(end), Mp, ts, ...
+            max(abs(RP{i}.tau_N)));
 end
 
 fprintf(['\n    The steady-state error is zero at EVERY gain, to solver tolerance.\n' ...

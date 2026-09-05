@@ -241,13 +241,26 @@ check_svg() {
   return 0
 }
 
+# 14. 주차 상호참조 — 주차 번호를 바꾸면 다른 자료가 조용히 낡는다
+check_weeks() {
+  head2 "14. 주차 상호참조 (PLAN.md §2 의 주차표)"
+  local out n
+  out="$(bash "$(dirname "${BASH_SOURCE[0]}")/week_refs.sh" 2>/dev/null)"
+  n=$(printf "%s" "$out" | grep -c "<- " || true)
+  printf "%s
+" "$out" | grep "<- " | sed "s/^/  /"
+  note "PLAN 의 주차와 어긋나는 참조" "$n"
+  FAIL=$((FAIL+n))
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
   --style) check_style ;;
   --links) check_links ;;
   --figs)  check_figs ;;
-  *)       check_pdf; check_links; check_figs; check_style; check_svg ;;
+  *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks ;;
 esac
 
 echo

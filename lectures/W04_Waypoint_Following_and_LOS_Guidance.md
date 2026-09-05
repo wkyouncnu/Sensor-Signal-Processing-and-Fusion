@@ -59,7 +59,7 @@ After this week the learner should be able to:
 | Week 1 §1-3 | $\boldsymbol{\eta} = [N\ E\ \psi]^\top$, $\boldsymbol{\nu} = [u\ v\ r]^\top$, and the rotation $\mathbf{R}(\psi)$ |
 | Week 1 §1-4 | body velocity is not the rate of change of position — the same rotation reappears in §4-3 |
 | Week 1 §1-9 | the ocean current enters as a velocity, so the vessel's speed **through the water** differs from its speed over ground |
-| Week 3 §3-4 | the crab angle $\beta_c = \operatorname{atan2}(v,u)$ and the course $\chi = \psi + \beta_c$ |
+| Week 3 §3-4 | the crab angle and the course $\chi = \psi + \beta_c$. **Weeks 1 and 3 write this angle $\beta$; this week writes $\beta_c$**, following Fossen, because §4-9 needs $\beta$ free for the estimated quantity. The two symbols mean the same thing: $\operatorname{atan2}(v,u)$ |
 | Week 3 §3-5 | the P–D heading autopilot, used here **unchanged** so that the only difference between the four vessels is the guidance law |
 | Appendix A1 | the column rule and the allocation $\boldsymbol{\tau} = \mathbf{B}\mathbf{f}$ |
 
@@ -791,7 +791,7 @@ $$
 |---|---|---|---|
 | $\Delta$ | look-ahead distance | m | §4-5; $8$ m |
 | $\hat\beta$ | estimate of the crab angle | rad | a state of the guidance block |
-| $\beta$ | the true crab angle | rad | unknown to the law; measured only for verification |
+| $\beta$ | the true crab angle — **the same $\beta_c$ used in §4-7 and §4-8**, written without the subscript here so that $\hat\beta$ and $\tilde\beta$ stay legible | rad | unknown to the law; measured only for verification |
 | $\tilde\beta$ | estimation error $\beta - \hat\beta$ | rad | appears only in the analysis |
 | $\gamma$ | adaptation gain | **rad/(m·s)** | §4-9-8; $0.005$, from the sweep of section H |
 | $U$ | speed over ground | m/s | $\approx 1.31$ m/s for the Otter at this thrust |

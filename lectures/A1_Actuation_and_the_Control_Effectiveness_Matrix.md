@@ -35,7 +35,7 @@ status: done
 
 > [!important] When to read this
 > - This appendix is **optional for Weeks 2 and 3**. Those weeks need only two results from it, and both are quoted where they are used: the vessel can produce $X \in [-133.42,\ 239.36]$ N, and its yaw moment is $N = y_{\text{pont}}(T_1 - T_2)$.
-> - It becomes **required before Week 4**, where the allocation problem stops having an obvious answer, and before Weeks 8 to 10, where the thruster layout changes three times.
+> - It becomes **required before Week 5**, where the allocation problem stops having an obvious answer, and before Weeks 9 to 11, where the thruster layout changes three times.
 > - Prerequisites: Week 1 — the twelve states, $T = k\,n|n|$ with $k_{\text{pos}} \neq k_{\text{neg}}$, and the observation that $Y \equiv 0$. Here that observation becomes a theorem.
 
 ---
@@ -73,7 +73,7 @@ Upon completion of this week, the learner is able to:
 |---|---|
 | Weeks 9 to 11 change the thruster layout three times | a transcribed matrix would have to be re-derived and re-checked three times |
 | This project already ships two mutually **negative** $\mathbf{B}$ matrices | a transcribed matrix cannot be told apart from its own sign error |
-| Week 4 inverts $\mathbf{B}$ | an inverse is only as trustworthy as the matrix it inverts |
+| Week 5 inverts $\mathbf{B}$ | an inverse is only as trustworthy as the matrix it inverts |
 
 > [!caution] Two contradictory matrices exist in this repository
 > `Lecture/_tools/otter4_B.m` and `otter_params.m` line 41 differ by an overall sign. Neither is imported into this course. Every $\mathbf{B}$ used from this week onward is produced by `_tools/otter_B.m` from the single rule of §A1-2, so a sign convention cannot enter twice.
@@ -181,7 +181,7 @@ $$
 \mathbf{B}^{\dagger}\begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix} = \begin{bmatrix} 0 \\ 0 \end{bmatrix},
 $$
 
-- that is, the least-squares allocator correctly answers *do nothing*, because doing nothing is the closest reachable point to a request that lies outside the column space. Week 4 makes this precise.
+- that is, the least-squares allocator correctly answers *do nothing*, because doing nothing is the closest reachable point to a request that lies outside the column space. Week 5 makes this precise.
 
 ## A1-4. Tilting thrusters and the extended thrust vector
 
@@ -209,7 +209,7 @@ $$
 $$
 
 - This is the **extended thrust vector** of Fossen (2011) §12.3.4. The azimuth is recovered after the allocation rather than solved for during it.
-- The cost is that the two components of one machine are not independent: $\sqrt{f_{ix}^2 + f_{iy}^2} \le T_{\max}$ is a circular constraint, and $\delta_i$ is subject to a mechanical limit and a rate limit. Week 4 handles both; this week only records that the linear structure has been bought and what it was bought with.
+- The cost is that the two components of one machine are not independent: $\sqrt{f_{ix}^2 + f_{iy}^2} \le T_{\max}$ is a circular constraint, and $\delta_i$ is subject to a mechanical limit and a rate limit. Week 5 handles both; this week only records that the linear structure has been bought and what it was bought with.
 
 ### The four layouts of this course
 
@@ -224,7 +224,7 @@ $$
 
 - Two observations follow immediately, and both matter later.
   - `aft_azimuth` reaches rank 3 with **the same two physical machines** as `base`. The third degree of freedom is bought with servos, not with thrusters.
-  - `bow_thruster` has a **square** $\mathbf{B}$ with rank 3, so the allocation has a unique solution and there is nothing to optimise. `quad_tilt` has a five-dimensional null space, so it has infinitely many solutions and Week 4's machinery finally has something to do.
+  - `bow_thruster` has a **square** $\mathbf{B}$ with rank 3, so the allocation has a unique solution and there is nothing to optimise. `quad_tilt` has a five-dimensional null space, so it has infinitely many solutions and Week 5's machinery finally has something to do.
 
 ## A1-5. Symmetry in the command is not symmetry in the force
 
@@ -406,7 +406,7 @@ The table is produced from `otter_config` alone; no simulation is involved.
   B * that            = [0.000e+00 ; 0.000e+00 ; 0.000e+00]
 ```
 
-- The least-squares allocator asks for no thrust at all when it is asked for pure sway. That is the correct answer to an impossible request, and it is worth seeing before Week 4 assigns it a name.
+- The least-squares allocator asks for no thrust at all when it is asked for pure sway. That is the correct answer to an impossible request, and it is worth seeing before Week 5 assigns it a name.
 
 ## D. The attainable control set (15 min)
 
@@ -665,5 +665,5 @@ The table probes the plant at rest, where $\mathbf{C}(\boldsymbol{\nu})$ and the
 | $X \in [-133.42,\ 239.36]$ N | Week 2, as the saturation that causes integrator windup |
 | $N = y_{\text{pont}}(T_1 - T_2)$ | Week 3, as the yaw allocation |
 | $n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}}$ | Week 3, which produces the same pair automatically by allocating **thrust** rather than shaft speed |
-| the column rule and $\mathbf{B}^{\dagger}$ | Week 4, control allocation |
-| the four layouts and their ranks | Weeks 8 to 10, the hull variants |
+| the column rule and $\mathbf{B}^{\dagger}$ | Week 5, control allocation |
+| the four layouts and their ranks | Weeks 9 to 11, the hull variants |

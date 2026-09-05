@@ -400,11 +400,11 @@ W03_C_proportional_only
 
 $K_d = 0$, step to $60°$:
 
-| $K_p$ | $\omega_n$ | $\zeta$ | steady error [deg] | overshoot [%] | $t_s$ (2%) [s] |
-|---|---|---|---|---|---|
-| 30 | $0.8387$ | $0.5962$ | $7.9\times10^{-3}$ | $-0.01$ | $12.24$ |
-| 100 | $1.5312$ | $0.3265$ | $1.8\times10^{-3}$ | $0.24$ | $5.06$ |
-| 300 | $2.6522$ | $0.1885$ | $5.7\times10^{-4}$ | $1.53$ | $3.46$ |
+| $K_p$ | $\omega_n$ | $\zeta$ | steady error [deg] | overshoot [%] | $t_s$ (2%) [s] | peak $\lvert\tau_N\rvert$ [N·m] |
+|---|---|---|---|---|---|---|
+| 30 | $0.8387$ | $0.5962$ | $7.9\times10^{-3}$ | $-0.01$ | $12.24$ | $31.4$ |
+| 100 | $1.5312$ | $0.3265$ | $1.8\times10^{-3}$ | $0.24$ | $5.06$ | $104.7$ |
+| 300 | $2.6522$ | $0.1885$ | $5.7\times10^{-4}$ | $1.53$ | $3.46$ | $314.2$ |
 
 ![Proportional control on a type 1 plant](W03_simulink/img/W03_result_P.png)
 
@@ -421,7 +421,7 @@ $K_d = 0$, step to $60°$:
 **What the figure says**
 
 - **Meaning.** The left panel is what the vessel did; the right panel is what the controller had to ask for to make it do that. Reading them together is what separates this week from the last.
-- **Trend, in numbers.** All three headings converge on $60°$ and stay there. Raising $K_p$ from 30 to 300 cuts the 2 % settling time from $12.24$ to $3.46$ s and buys that speed with moment: the peak demand rises from about $30$ to $313$ N·m, a factor of ten. Overshoot grows too, from $-0.01\%$ to $1.53\%$, but stays small because the hull's own damping is large.
+- **Trend, in numbers.** All three headings converge on $60°$ and stay there. Raising $K_p$ from 30 to 300 cuts the 2 % settling time from $12.24$ to $3.46$ s and buys that speed with moment: the peak demand rises from $31.4$ to $314.2$ N·m, a factor of exactly ten, because at the instant of the step $\tau_N = K_p\,\psi_d$ and nothing else. Overshoot grows too, from $-0.01\%$ to $1.53\%$, but stays small because the hull's own damping is large.
 - **Principle.** $\psi = \int r$, so the plant contains a free integrator and the loop is **type 1**. The final-value theorem then gives zero steady-state error for a step at any finite gain. **Nothing was tuned to achieve this, and no integral term was added.**
 - **Why the right panel is the proof.** In steady state $\tau_N$ returns to **zero** in all three runs. A vessel that has stopped turning needs no moment to keep its heading, so the controller can be at its setpoint and demanding nothing at the same time. Week 2 could not do this: holding a speed needs a permanent force, that force can only come from a non-zero error, and the error therefore never vanished.
 - **What changes with the situation.** Raising $K_p$ trades peak actuator demand for speed and never touches the steady state. That is a different bargain from Week 2, where raising the gain bought accuracy the loop could not otherwise have. The limit here is the actuator, and section D adds the term that lets $K_p$ rise without the response ringing.
