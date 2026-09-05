@@ -508,6 +508,25 @@ bash _tools/svgzoom.sh figures/w01-pqr.svg 3 out.png  0 55 250 210
 - 임시 HTML 은 **출력 파일 옆**에 만든다. `/tmp` 는 Git Bash 와 Chrome 이 서로 다른
   곳으로 해석해서 Chrome 이 못 찾는 일이 있었다.
 
+### 그림은 **PDF 에 실릴 크기로** 다시 본다
+
+1:1 렌더에서 멀쩡하던 글자가 PDF 에서는 작아진다. `pdf-template.html` 이
+`@page { size: A4; margin: 13mm 12mm }` 에 `img { max-width: 100% }` 이므로
+본문 폭은 **186 mm = 703 px** 이고, 그보다 넓은 SVG 는 **줄어든 채로 인쇄된다.**
+
+```bash
+W=$(grep -oE 'width="[0-9.]+"' figures/w01-euler.svg | head -1 | grep -oE '[0-9.]+')
+Z=$(awk -v w=$W 'BEGIN{printf "%.3f", 703/w}')      # PDF 에서의 실제 배율
+bash _tools/svgzoom.sh figures/w01-euler.svg $Z out.png
+```
+
+- 이 볼트에서 줄어드는 그림: `w04-los-geometry`(78 %) · `w01-otter-layout`(83 %) ·
+  `w01-euler`(84 %) · `w04-three-laws`(90 %) 등 여덟 장.
+- **그래서 그림 안의 최소 글자는 `\scriptsize` 다. `\tiny` 를 쓰지 않는다.**
+  `w01-euler` 의 축 이름표가 `\tiny` (5 pt) 였고, 84 % 로 줄면 **4.2 pt** 라
+  인쇄본에서 읽히지 않았다. `\scriptsize` 로 올려 5.8 pt 가 되었다.
+- 폭 703 px 안에 들어오면 1:1 로 인쇄되니, 새 그림은 되도록 그 안에서 잡는다.
+
 ### 3차원 그림의 기하는 MATLAB 이 계산하고 TikZ 가 사영한다
 
 `w01-euler` 가 지금의 본보기다.

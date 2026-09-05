@@ -1,4 +1,4 @@
-%% W04_0_setup.m — the only file to edit this week
+DD%% W04_0_setup.m — the only file to edit this week
 %
 %     >> W04_0_setup
 %
