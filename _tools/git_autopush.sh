@@ -19,6 +19,36 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 0
 
+#  ---- 밀지 못한 커밋을 올린다 ---------------------------------------------
+#  새 변경이 있든 없든 부른다. 지난 세션에 인증이나 네트워크 때문에 실패한
+#  커밋이 남아 있으면 여기서 올라간다.
+push_pending() {
+    git remote get-url origin >/dev/null 2>&1 || {
+        echo "  [autopush] origin 이 없다. 커밋만 남겼다."
+        return 0
+    }
+    BR=$(git rev-parse --abbrev-ref HEAD)
+
+    #  원격에 아직 이 브랜치가 없으면 첫 push 이므로 -u 로 추적을 건다.
+    if git rev-parse --verify --quiet "origin/$BR" >/dev/null; then
+        AHEAD=$(git rev-list --count "origin/$BR..HEAD" 2>/dev/null || echo 1)
+        [ "$AHEAD" = "0" ] && { echo "  [autopush] 원격과 같다. 올릴 것 없음"; return 0; }
+        echo "  [autopush] 밀지 못한 커밋 $AHEAD 개"
+        SET_UP=""
+    else
+        echo "  [autopush] 원격에 $BR 이 없다. 첫 push"
+        SET_UP="-u"
+    fi
+
+    if git push $SET_UP -q origin "$BR" 2>/tmp/autopush.err; then
+        echo "  [autopush] push 완료  ->  $(git remote get-url origin)  ($BR)"
+    else
+        echo "  [autopush] push 실패 — 커밋은 남아 있다. 다음에 다시 올라간다."
+        sed 's/^/      /' /tmp/autopush.err | head -6
+        echo "      인증이 문제라면 ~/.ssh/id_ed25519.pub 를 GitHub 에 등록한다."
+    fi
+}
+
 [ -d .git ] || { echo "  [autopush] git 저장소가 아니다: $ROOT"; exit 0; }
 
 DRY=0
@@ -28,7 +58,10 @@ DRY=0
 git add -A
 
 if git diff --cached --quiet; then
+    #  올릴 변경은 없어도, 지난번에 push 하지 못한 커밋이 남아 있을 수 있다.
+    #  그때 그냥 끝내면 기록이 영원히 로컬에만 남는다.
     echo "  [autopush] 변경 없음"
+    push_pending
     exit 0
 fi
 
@@ -66,16 +99,4 @@ EOF
 echo "  [autopush] 커밋 $(git rev-parse --short HEAD)  —  $SUBJECT"
 
 #  ---- push ----------------------------------------------------------------
-git remote get-url origin >/dev/null 2>&1 || {
-    echo "  [autopush] origin 이 없다. 커밋만 남겼다."
-    exit 0
-}
-
-BR=$(git rev-parse --abbrev-ref HEAD)
-if git push -q origin "$BR" 2>/tmp/autopush.err; then
-    echo "  [autopush] push 완료  ->  $(git remote get-url origin)  ($BR)"
-else
-    echo "  [autopush] push 실패 — 커밋은 남아 있다. 다음에 다시 올라간다."
-    sed 's/^/      /' /tmp/autopush.err | head -6
-    echo "      인증이 문제라면 ~/.ssh/id_ed25519.pub 를 GitHub 에 등록한다."
-fi
+push_pending
