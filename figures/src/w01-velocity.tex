@@ -1,0 +1,86 @@
+% figures/w01-velocity.svg — u 와 v 는 위치의 변화율이 아니다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-velocity.tex figures/w01-velocity.svg
+%
+% psi = 30 deg, u = 2.0, v = 0.5 로 실제로 계산한다:
+%   Ndot = u cos - v sin = 1.4821,  Edot = u sin + v cos = 1.4330
+%   |nu| = 2.0616 = |etadot|  (회전은 길이를 바꾸지 않는다)
+% 화면은 N 위 / E 오른쪽이므로 북에서 psi 인 방향의 화면각은 90 - psi 다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\PB{60}          % x_b 의 화면각 = 90 - 30
+\def\SC{20}          % 1 m/s = 20 mm
+
+\node[ink, font=\small\bfseries, anchor=north west] at (-14,74)
+     {$u$ and $v$ are not the rate of change of position};
+\node[anchor=north west, align=left, text width=104mm, font=\scriptsize, soft] at (-14,68) {%
+  A worked example. Heading $\psi = 30^\circ$, body velocity $u = 2.0$\,m/s
+  forward and $v = 0.5$\,m/s to starboard.};
+
+% ---- NED 축 ---------------------------------------------------------------
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,54);
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (56,0);
+\node[font=\small, anchor=east]  at (-1,52) {North};
+\node[font=\small, anchor=north] at (54,-1) {East};
+
+% ---- psi -------------------------------------------------------------------
+\draw[soft, line width=0.5pt] (0,20) arc (90:\PB:20);
+\node[soft, font=\small] at (5.5,23) {$\psi$};
+
+% ---- u 와 v (바디에서 잰 것) -----------------------------------------------
+\draw[alng, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- ({2.0*\SC*cos(\PB)},{2.0*\SC*sin(\PB)});
+\node[alng, font=\small, anchor=south east] at ({1.1*\SC*cos(\PB)},{1.1*\SC*sin(\PB)})
+     {$u = 2.0$};
+\draw[alng, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      ({2.0*\SC*cos(\PB)},{2.0*\SC*sin(\PB)})
+   -- ({2.0*\SC*cos(\PB)+0.5*\SC*cos(\PB-90)},{2.0*\SC*sin(\PB)+0.5*\SC*sin(\PB-90)});
+\node[alng, font=\small, anchor=west] at ({2.0*\SC*cos(\PB)+0.6*\SC*cos(\PB-90)+1},
+                                          {2.0*\SC*sin(\PB)+0.6*\SC*sin(\PB-90)})
+     {$v = 0.5$};
+
+% ---- 같은 벡터를 {n} 성분으로 ----------------------------------------------
+\draw[pathc, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- ({1.4330*\SC},{1.4821*\SC});
+\node[pathc, font=\scriptsize, anchor=north west] at ({0.62*1.4330*\SC},{0.62*1.4821*\SC})
+     {the same vector};
+\draw[pathc, line width=0.4pt, densely dashed] (0,{1.4821*\SC}) -- ({1.4330*\SC},{1.4821*\SC});
+\draw[pathc, line width=0.4pt, densely dashed] ({1.4330*\SC},0) -- ({1.4330*\SC},{1.4821*\SC});
+\node[pathc, font=\scriptsize, anchor=east] at (-1,{1.4821*\SC}) {$\dot N = 1.4821$};
+\node[pathc, font=\scriptsize, anchor=north] at ({1.4330*\SC},-1) {$\dot E = 1.4330$};
+
+\node[note, anchor=north west] at (-14,-9) {%
+  \textcolor{alng}{orange}: measured in $\{b\}$ by the vessel \quad
+  \textcolor{pathc}{green}: what the position actually does, in $\{n\}$};
+
+% ===================== 오른쪽 : 산수 =======================================
+\begin{scope}[shift={(78,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (0,58) {the arithmetic};
+  \node[anchor=north west, font=\small] at (0,52)
+       {$\dot N = u\cos\psi - v\sin\psi$};
+  \node[anchor=north west, font=\small] at (0,44)
+       {$\dot E = u\sin\psi + v\cos\psi$};
+  \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,36) {%
+    $\dot N = 2.0(0.8660) - 0.5(0.5000) = 1.4821$\,m/s\\[2pt]
+    $\dot E = 2.0(0.5000) + 0.5(0.8660) = 1.4330$\,m/s};
+
+  \node[font=\small\bfseries, anchor=north west] at (0,22) {the check that always works};
+  \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,16) {%
+    $\sqrt{2.0^2+0.5^2} = 2.0616$\\[2pt]
+    $\sqrt{1.4821^2+1.4330^2} = 2.0616$\\[3pt]
+    A rotation changes the components, never the length.};
+\end{scope}
+
+% ---- 아래 한 줄 -------------------------------------------------------------
+\draw[soft, line width=0.3pt] (-14,-18) -- (146,-18);
+\node[anchor=north west, align=left, text width=160mm, font=\scriptsize] at (-14,-20) {%
+  Neither $\dot N$ nor $\dot E$ equals $u$. Integrating $u$ to get a north
+  position is wrong at every heading except $\psi = 0$, and \textbf{it is wrong
+  silently} — the number keeps looking plausible.};
+
+\end{tikzpicture}
+\end{document}

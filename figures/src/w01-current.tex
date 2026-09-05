@@ -1,0 +1,98 @@
+% figures/w01-current.svg — 조류는 속도이지 힘이 아니다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-current.tex figures/w01-current.svg
+%
+% otter.m 79-81 행이 하는 일 그대로:
+%   u_c = V_c cos(beta_c - psi),  v_c = V_c sin(beta_c - psi),  nu_r = nu - nu_c
+% 예: V_c = 0.5 m/s, beta_c = 70 deg, psi = 30 deg  ->  beta_c - psi = 40 deg
+%     u_c = 0.5 cos40 = 0.3830,  v_c = 0.5 sin40 = 0.3214
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\PB{60}          % psi = 30 -> 화면 60
+\def\CB{20}          % beta_c = 70 -> 화면 20
+\def\SC{56}          % 1 m/s = 56 mm  (V_c = 0.5 -> 28 mm)
+
+\node[ink, font=\small\bfseries, anchor=north west] at (-14,58)
+     {A current is a velocity, not a force};
+\node[anchor=north west, align=left, text width=160mm, font=\scriptsize, soft] at (-14,52) {%
+  The hull feels water flowing past it, so the current is rotated into the body
+  frame and \textbf{subtracted}. Nothing is added to the right-hand side.};
+
+% ===================== (a) NED =============================================
+\begin{scope}
+  \node[ink, font=\small\bfseries, anchor=west] at (-14,38) {(a)\ \ in NED — what the chart gives};
+
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,30);
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (34,0);
+  \node[font=\small, anchor=east]  at (-1,28) {North};
+  \node[font=\small, anchor=north] at (32,-1) {East};
+
+  \draw[flow, line width=1.1pt, -{Stealth[length=5pt,width=3.6pt]}]
+        (0,0) -- ({0.5*\SC*cos(\CB)},{0.5*\SC*sin(\CB)});
+  \node[flow, font=\scriptsize, anchor=west]
+       at ({0.5*\SC*cos(\CB)+1.5},{0.5*\SC*sin(\CB)}) {$V_c = 0.5$\,m/s};
+
+  \draw[soft, line width=0.5pt] (0,14) arc (90:\CB:14);
+  \node[soft, font=\small] at (7.5,15) {$\beta_c$};
+
+  \node[note, anchor=north west, align=left, text width=52mm] at (-14,-18) {%
+    $\beta_c$ is the direction the water \textbf{goes towards}, clockwise from
+    North like every other angle in NED.};
+\end{scope}
+
+% ===================== (b) body ============================================
+\begin{scope}[shift={(66,0)}]
+  \node[ink, font=\small\bfseries, anchor=west] at (-8,38) {(b)\ \ in the body frame — what the hull feels};
+
+  % 바디 축
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (0,0) -- ({30*cos(\PB)},{30*sin(\PB)});
+  \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (0,0) -- ({22*cos(\PB-90)},{22*sin(\PB-90)});
+  \node[font=\small] at ({33*cos(\PB)},{33*sin(\PB)}) {$x_b$};
+  \node[font=\small] at ({25*cos(\PB-90)},{25*sin(\PB-90)}) {$y_b$};
+  \fill[ink, opacity=0.8, rotate=\PB] (8,0) -- (-2,3.4) -- (-2,-3.4) -- cycle;
+
+  % 조류
+  \draw[flow, line width=1.1pt, -{Stealth[length=5pt,width=3.6pt]}]
+        (0,0) -- ({0.5*\SC*cos(\CB)},{0.5*\SC*sin(\CB)});
+  % 성분 분해
+  \draw[flow, line width=0.4pt, densely dashed]
+        ({0.3830*\SC*cos(\PB)},{0.3830*\SC*sin(\PB)})
+     -- ({0.5*\SC*cos(\CB)},{0.5*\SC*sin(\CB)});
+  \draw[flow, line width=0.4pt, densely dashed]
+        ({0.3214*\SC*cos(\PB-90)},{0.3214*\SC*sin(\PB-90)})
+     -- ({0.5*\SC*cos(\CB)},{0.5*\SC*sin(\CB)});
+  \node[flow, font=\scriptsize, anchor=south east]
+       at ({0.3830*\SC*cos(\PB)},{0.3830*\SC*sin(\PB)}) {$u_c = 0.383$};
+  \node[flow, font=\scriptsize, anchor=north west]
+       at ({0.3214*\SC*cos(\PB-90)+1},{0.3214*\SC*sin(\PB-90)}) {$v_c = 0.321$};
+
+  \draw[accent, line width=0.7pt] ({16*cos(\CB)},{16*sin(\CB)}) arc (\CB:\PB:16);
+  \node[accent, font=\scriptsize, anchor=west] at ({18*cos(40)},{18*sin(40)}) {$\beta_c-\psi$};
+
+  \node[note, anchor=north west, align=left, text width=64mm] at (-8,-18) {%
+    Only the \textbf{difference} $\beta_c-\psi$ matters to the hydrodynamics, so a
+    turning vessel sees a changing current even in a steady one.};
+\end{scope}
+
+% ---- 아래 : 코드 세 줄과 그 결과 -------------------------------------------
+\draw[soft, line width=0.3pt] (-14,-34) -- (172,-34);
+\node[anchor=north west, align=left, text width=186mm, font=\scriptsize] at (-14,-36) {%
+  \textbf{The three lines that put a current into the model} —
+  \texttt{otter.m} 79--81:\ \
+  \texttt{u\_c = V\_c*cos(beta\_c-eta(6));}\ \
+  \texttt{v\_c = V\_c*sin(beta\_c-eta(6));}\ \
+  \texttt{nu\_r = nu - [u\_c v\_c 0 0 0 0]';}\\[3pt]
+  \textbf{And the one line that keeps it out of the kinematics} —
+  \texttt{otter.m} 204: \ $\dot{\boldsymbol\eta} = \mathbf{J}(\boldsymbol\eta)\,\boldsymbol\nu$,
+  with $\boldsymbol\nu$ and \textbf{not} $\boldsymbol\nu_r$. Every hydrodynamic
+  term uses $\boldsymbol\nu_r$; the position uses $\boldsymbol\nu$. That single
+  asymmetry is why a current moves a vessel without pushing it.};
+
+\end{tikzpicture}
+\end{document}

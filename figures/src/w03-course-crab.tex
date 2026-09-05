@@ -1,0 +1,74 @@
+% figures/w03-course-crab.svg — 선수각, 침로, 크랩각.
+%
+%   bash _tools/tikz2svg.sh figures/src/w03-course-crab.tex figures/w03-course-crab.svg
+%
+% u = 2.0, v = 0.5 이면 beta = atan2(0.5, 2.0) = 14.04 deg 이고,
+% psi = 30 deg 이므로 chi = 44.04 deg. 그림에서 잰 각이 그것과 같아야 한다.
+% 화면각 = 90 - (북에서 잰 각).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\PB{60}        % psi = 30  -> 화면 60
+\def\CB{45.96}     % chi = 44.04 -> 화면 45.96
+\def\SC{20}
+
+\node[font=\small\bfseries, anchor=north west] at (-14,66)
+     {Heading, course and the crab angle};
+\node[anchor=north west, align=left, text width=100mm, font=\scriptsize, soft] at (-14,60) {%
+  Where the vessel \textbf{points} and where it \textbf{goes} are two different
+  directions. A heading controller regulates the first one only.};
+
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,50);
+\node[font=\small, anchor=east] at (-1,48) {North};
+
+% ---- 선수 방향 (psi) --------------------------------------------------------
+\draw[ink, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- ({2.3*\SC*cos(\PB)},{2.3*\SC*sin(\PB)});
+\node[ink, font=\scriptsize, anchor=south west]
+     at ({2.3*\SC*cos(\PB)+1},{2.3*\SC*sin(\PB)}) {where it points, $\psi = 30^\circ$};
+% 선체
+\fill[ink, opacity=0.85, rotate=\PB] (13,0) -- (2,4.0) -- (2,-4.0) -- cycle;
+
+% ---- 속도 벡터 (chi) --------------------------------------------------------
+\draw[pathc, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- ({2.06*\SC*cos(\CB)},{2.06*\SC*sin(\CB)});
+\node[pathc, font=\scriptsize, anchor=north west]
+     at ({2.06*\SC*cos(\CB)+1},{2.06*\SC*sin(\CB)-1}) {where it goes, $\chi = 44.04^\circ$};
+\node[pathc, font=\scriptsize, anchor=north west]
+     at ({1.15*\SC*cos(\CB)+2},{1.15*\SC*sin(\CB)-1}) {the velocity vector};
+
+% ---- 세 각 -----------------------------------------------------------------
+\draw[soft, line width=0.5pt] (0,34) arc (90:\PB:34);
+\node[soft, font=\small] at (9,37) {$\psi$};
+\draw[pathc, line width=0.5pt] (0,26) arc (90:\CB:26);
+\node[pathc, font=\small] at (12,28) {$\chi$};
+\draw[accent, line width=0.8pt] ({19*cos(\PB)},{19*sin(\PB)}) arc (\PB:\CB:19);
+\node[accent, font=\small] at ({22*cos(52)},{22*sin(52)}) {$\beta$};
+
+% ===================== 오른쪽 : 항등식 =====================================
+\begin{scope}[shift={(92,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (0,50) {three angles, one identity};
+  \node[anchor=north west, font=\normalsize] at (0,43) {$\chi = \psi + \beta$};
+  \node[anchor=north west, align=left, text width=64mm, font=\scriptsize] at (0,34) {%
+    $\psi$\ \ heading — the hull's $x$ axis, from North\\[3pt]
+    $\chi$\ \ course over ground — the velocity, from North\\[3pt]
+    $\beta$\ \ crab angle — the gap between them,
+    $\beta = \mathrm{atan2}(v,u)$\\[6pt]
+    With $u = 2.0$ and $v = 0.5$:
+    $\beta = 14.04^\circ$ and $\chi = 44.04^\circ$.};
+\end{scope}
+
+% ---- 아래 한 줄 -------------------------------------------------------------
+\draw[soft, line width=0.3pt] (-14,-10) -- (158,-10);
+\node[anchor=north west, align=left, text width=172mm, font=\scriptsize] at (-14,-12) {%
+  $\beta$ is non-zero whenever the sway velocity $v$ is — in a turn, in a current,
+  in a beam wind. \textbf{It is not a disturbance to be rejected; it is what the
+  hull is doing.} Steering $\psi$ while travelling along $\chi$ is the permanent
+  path error that Week 4 has to remove, and §4-7 measures it as
+  $\Delta\tan\beta_c$.};
+
+\end{tikzpicture}
+\end{document}
