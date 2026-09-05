@@ -422,8 +422,19 @@ Measured in section F on the same mission:
 ### The end of the mission
 
 - On the last leg there is no $\mathbf{wp}_{k+2}$ to switch to, and the two implementations differ.
-- MSS holds the final waypoint as **both** ends of the leg. Then $E_{k+1} - E_k = N_{k+1} - N_k = 0$, so $\pi_p = \operatorname{atan2}(0,0) = 0$ by the IEEE convention, and the vessel is silently commanded due North for ever.
-- This course stops the leg index at $n-1$ and keeps the last leg active, so the vessel continues along its extension. The behaviour is at least predictable.
+- The **2021** MSS holds the final waypoint as *both* ends of the leg. Then $E_{k+1} - E_k = N_{k+1} - N_k = 0$, so $\pi_p = \operatorname{atan2}(0,0) = 0$ by the IEEE convention, and the vessel is silently commanded due North for ever.
+- **Fossen fixed this in the 2023 release.** `ALOSpsi.m` extends the last leg along its own bearing instead:
+
+```matlab
+else                            % else, continue with last bearing
+    bearing = atan2((wpt.pos.y(n)-wpt.pos.y(n-1)), (wpt.pos.x(n)-wpt.pos.x(n-1)));
+    R = 1e10;
+    xk_next = wpt.pos.x(n) + R * cos(bearing);
+    yk_next = wpt.pos.y(n) + R * sin(bearing);
+end
+```
+
+- This course does the same thing by a different route: it stops the leg index at $n-1$ and keeps the last leg active, so the vessel continues along its extension. The two give the same track.
 - **Neither of these is a mission-termination policy.** A real vehicle needs one — hold station at the last waypoint, loiter around it, or stop the propellers — and the choice belongs to the mission, not to the guidance law. Week 7 puts a Stateflow chart in charge of it.
 
 ## 4-7. Heading is not course — the debt from Week 3
@@ -846,9 +857,11 @@ $$
 
 ## 4-9. ALOS — adaptive line of sight, derived
 
-> [!warning] The source situation for this section, stated plainly
-> The MSS release vendored for this course is the **2021** one. It contains `ILOSpsi.m` and `ILOSchi.m` but **no `ALOSpsi.m`** — adaptive LOS entered MSS in 2023. There is therefore no reference implementation to check against, and the exact equation could not be extracted from the available Fossen PDFs in a form that could be quoted with confidence.
-> **The derivation below was therefore carried out here from first principles, and it is verified numerically instead of by citation**: the adaptation law is shown to be forced by the Lyapunov argument, and the estimate it produces is checked against the true crab angle in simulation (§4-9-6). Where this differs from Fossen (2023) in scaling, the derivation, not the citation, is what this course stands behind.
+> [!important] How this section was written, and how it was checked
+> The MSS release vendored for this course is the **2021** one, which contains `ILOSpsi.m` and `ILOSchi.m` but no `ALOSpsi.m` — adaptive LOS entered MSS in 2023. The derivation below was therefore carried out **from first principles**, without reading an implementation.
+> It has since been checked against the official one. `_tools/verify_alos.m` drives Fossen's `ALOSpsi.m` (MSS 2023+) and the equations of §4-9-2 side by side for 400 steps on this week's mission: **the largest disagreement in $\psi_d$ and in $y_e$ is exactly zero.** The law derived here is the published law, to the letter.
+>
+> **Source.** T. I. Fossen (2023). *An Adaptive Line-of-sight (ALOS) Guidance Law for Path Following of Aircraft and Marine Craft.* IEEE Transactions on Control Systems Technology **31**(6), 2887–2894. [doi:10.1109/TCST.2023.3259819](https://doi.org/10.1109/TCST.2023.3259819) — cited in the header of `ALOSpsi.m` itself.
 
 ### 4-9-1. A different idea
 
@@ -865,7 +878,14 @@ $$
 \boxed{\ \dot{\hat\beta} = \gamma\,\frac{\Delta\,y_e}{\sqrt{\Delta^2 + y_e^2}}\ }
 $$
 
+| Source | Where |
+|---|---|
+| Fossen (2023), *IEEE TCST* **31**(6), 2887–2894 | the law and its USGES proof |
+| MSS `ALOSpsi.m` (2023+) | `psi_ref = pi_h - beta_hat - atan(y_e/Delta_h)` and `beta_hat + h*gamma_h*Delta_h*y_e/sqrt(Delta_h^2 + y_e^2)` — the two boxed lines above, in code |
+| `_tools/verify_alos.m` | drives both for 400 steps; largest disagreement **exactly zero** |
+
 - The guidance term is the plain LOS law of §4-4 with one extra term: the estimate of the crab angle, subtracted so that the *course* rather than the *heading* points where LOS wants it.
+- The second line is written here as a differential equation and in `ALOSpsi.m` as its forward-Euler step. They are the same law; §4-10 puts the two side by side.
 - The rest of this section derives the second equation. It is not a design choice — the Lyapunov argument leaves no alternative.
 
 ### 4-9-3. Every parameter, with its unit
@@ -876,7 +896,7 @@ $$
 | $\hat\beta$ | estimate of the crab angle | rad | a state of the guidance block |
 | $\beta$ | the true crab angle — **the same $\beta_c$ used in §4-7 and §4-8**, written without the subscript here so that $\hat\beta$ and $\tilde\beta$ stay legible | rad | unknown to the law; measured only for verification |
 | $\tilde\beta$ | estimation error $\beta - \hat\beta$ | rad | appears only in the analysis |
-| $\gamma$ | adaptation gain | **rad/(m·s)** | §4-9-8; $0.005$, from the sweep of section H |
+| $\gamma$ | adaptation gain | **rad/(m·s)** | §4-9-8; $0.005$, from the sweep of section H. `ALOSpsi.m` suggests $\gamma_h \approx 0.001$ and $\Delta_h = 5$–$20$ m as typical; the sweep of section H picks a faster gain for this hull and mission |
 | $U$ | speed over ground | m/s | $\approx 1.31$ m/s for the Otter at this thrust |
 
 - **The unit of $\gamma$ is worth checking**, because it is the one number a reader is likely to carry across from another vehicle. $\dot{\hat\beta}$ is rad/s. The fraction $\Delta y_e/\sqrt{\Delta^2+y_e^2}$ has metres times metres over metres, so it is a **length**. For the product to be rad/s, $\gamma$ must be $\text{rad}/(\text{m}\cdot\text{s})$. It is not dimensionless, and a value tuned on a vehicle of a different size is not transferable without rescaling.
@@ -1002,6 +1022,7 @@ $$
 | **Limit** $y_e \to \infty$ | the rate must not run away | $\dot{\hat\beta} \to \gamma\Delta$, bounded — a built-in rate limit, as in §4-8-4 |
 | **Numeric** | measured in section G: does $\hat\beta$ converge to the true crab angle? | $\hat\beta = 15.91°$ against a true $\beta_c = 15.88°$ — an error of $0.04°$ |
 | **Numeric** | settled cross-track error under current, section G | $-0.004$ m, against LOS's $2.253$ m |
+| **Source** | `_tools/verify_alos.m` drives this derivation and Fossen's `ALOSpsi.m` (MSS 2023+) for 400 steps | largest disagreement in $\psi_d$ and $y_e$: **exactly zero** |
 
 - The estimate converging to the true crab angle to within $0.04°$ is the strongest available evidence that the law is right, since nothing in the law was ever told what the current was.
 
@@ -1512,7 +1533,7 @@ Expected output:
 | §4-7 | derived $\dot y_e = U\sin(\chi-\pi_p)$ and $y_e^{ss} = \Delta\tan\beta_c$ | six-point current sweep, section G; worst disagreement $0.002$ m on a $4.1$ m offset |
 | §4-8 | derived ILOS, its units, its built-in anti-windup and its equilibrium | $y_{int}^{eq} = \Delta\tan\beta_c/\kappa$ predicted $7.5158$ s, measured $7.519$ s; closed form of $\dot y_e$ checked to $6.7\times10^{-16}$ over $10^4$ states |
 | §4-8-6 | showed the course normalisation admits a constant-weight Lyapunov function and the heading one does not | $\dot V$ matches $-U\cos\beta_c y_e^2/D$ to $1.1\times10^{-14}$; the heading form leaves a residual of rms $2.94$ |
-| §4-9 | derived ALOS and showed the adaptation law is forced | $\hat\beta = 15.91°$ against a true $15.88°$, with nothing in the law told what the current was |
+| §4-9 | derived ALOS and showed the adaptation law is forced | $\hat\beta = 15.91°$ against a true $15.88°$, with nothing in the law told what the current was; and the derived law checked against Fossen's `ALOSpsi.m` over 400 steps — **disagreement exactly zero** |
 | §4-10 | put every equation beside the line of MATLAB that implements it | the code shown is generated by `guidance_code(law)`, so it cannot drift from the model |
 | Part 2 | eight scripts, six result figures | every number quoted in this document appears in the console output of the script named above it |
 
@@ -1587,10 +1608,13 @@ Only problems actually encountered while building this week.
 | Lekkas, A. M. and Fossen, T. I. (2014). Integral LOS path following for curved paths based on a monotone cubic Hermite spline parametrization | *IEEE TCST* 22(6), 2287–2301. The course-angle ILOS and the curved-path extension |
 | Nelson, D. R. et al. (2007). Vector field path following for miniature air vehicles | *IEEE Trans. Robotics* 23(3), 519–529. §4-11 |
 | Faulwasser, T. and Findeisen, R. (2016). Nonlinear model predictive control for constrained output path following | *IEEE TAC* 61(4), 1026–1039. §4-11 |
+| **Fossen, T. I. (2023). An Adaptive Line-of-sight (ALOS) Guidance Law for Path Following of Aircraft and Marine Craft** | *IEEE TCST* **31**(6), 2887–2894, [doi:10.1109/TCST.2023.3259819](https://doi.org/10.1109/TCST.2023.3259819). The ALOS law of §4-9 and its USGES proof |
 | MSS `ILOSpsi.m`, `ILOSchi.m`, `LOSchi.m`, `crosstrackWpt.m` | the vendored 2021 release, located by `_tools/mss_path.m` |
+| MSS `ALOSpsi.m` (2023+) | not in the vendored release; `_tools/verify_alos.m` locates a newer copy on this machine and checks §4-9 against it |
 
-> [!warning] One reference this week does **not** have
-> The vendored MSS is the 2021 release and contains no `ALOSpsi.m`; adaptive LOS entered MSS in 2023. The ALOS derivation of §4-9 was therefore carried out from first principles in this document and verified numerically — by the convergence of $\hat\beta$ to the true crab angle — rather than checked against a reference implementation. Where it differs in scaling from Fossen (2023), the derivation is what this course stands behind, and §4-9 says so at the top.
+> [!note] A correction worth recording
+> An earlier draft of this week stated that ALOS had **no reference implementation to check against**, because the vendored MSS is the 2021 release. That was wrong: `ALOSpsi.m` exists in MSS 2023 and later, and a copy is present on this machine. The derivation of §4-9 was written before that copy was found and turned out to match it **exactly** — `_tools/verify_alos.m` reports zero disagreement in both $\psi_d$ and $y_e$ over 400 steps.
+> The error was not in the derivation but in the claim that no source existed. **"There is no implementation" is a statement about one release on one day, and it has to be checked before it is written.**
 
 ## Next Week
 

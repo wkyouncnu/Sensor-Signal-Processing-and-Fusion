@@ -1,0 +1,102 @@
+% figures/a1-column-rule.svg — 열 규칙, 그리고 모멘트 항이 곧 팔이라는 것.
+%
+%   bash _tools/tikz2svg.sh figures/src/a1-column-rule.tex figures/a1-column-rule.svg
+%
+% 기하는 _tools/a1_column_geo.awk 가 검증한 것과 같다:
+%   r = (1.2, 0.8) m, e 는 x_b 에서 -40 deg
+%   x e_y - y e_x = -1.3842,  원점에서 작용선까지의 수직거리 = 1.3842 m
+% 둘이 같다는 것이 이 그림의 요점이다.
+%
+% 화면 규약: x_b(선수) 위, y_b(우현) 오른쪽.  TikZ (X,Y) = (y_b, x_b).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{22}                 % 1 m = 22 mm
+\def\PXt{17.6}             % 추진기 TikZ x = 0.8 * S
+\def\PYt{26.4}             % 추진기 TikZ y = 1.2 * S
+\def\FXt{23.33}            % 수선의 발  = 1.0603 * S
+\def\FYt{19.58}            %            = 0.8899 * S
+
+% ---- 몸체 좌표계 -----------------------------------------------------------
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,16);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (16,0);
+\node[font=\small, anchor=east]  at (-1.2,15) {$x_b$};
+\node[font=\small, anchor=north] at (15,-1.2) {$y_b$};
+\fill[ink] (0,0) circle (0.7);
+\node[font=\small, anchor=north east] at (-0.8,-0.8) {$o_b$};
+
+% ---- 작용선 (양쪽으로 연장) ------------------------------------------------
+\draw[soft, line width=0.35pt, densely dashed]
+      ({\PXt+0.643*17}, {\PYt-0.766*17}) -- ({\PXt-0.643*23}, {\PYt+0.766*23});
+\node[note, anchor=west] at ({\PXt+0.643*17+1.5}, {\PYt-0.766*17-2.5}) {the line of action};
+
+% ---- 위치벡터 r ------------------------------------------------------------
+\draw[ink, line width=0.8pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+      (0,0) -- (\PXt,\PYt);
+\node[font=\small, anchor=south east] at ({0.55*\PXt}, {0.55*\PYt}) {$\mathbf{r}$};
+
+% ---- 모멘트 팔 : 원점에서 작용선에 내린 수선 -------------------------------
+\draw[accent, line width=0.8pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+      (0,0) -- (\FXt,\FYt);
+\fill[accent] (\FXt,\FYt) circle (0.55);
+% 직각 표시
+\draw[accent, line width=0.4pt]
+      ($(\FXt,\FYt)+(-1.643,-1.107)$) -- ($(\FXt,\FYt)+(-0.877,-2.873)$)
+   -- ($(\FXt,\FYt)+(0.766,-1.766)$);
+% 팔 라벨은 작도 아래로 빼고 지시선을 단다. 작용선 라벨과 겹치지 않게.
+\draw[accent, line width=0.3pt, densely dotted] (11.7,9.8) -- (10,-3.5);
+\node[font=\scriptsize, accent, anchor=north] at (10,-4)
+     {the moment arm, $1.3842$\,m};
+
+% ---- 추진기와 추력 ---------------------------------------------------------
+\fill[ink] ({\PXt-1.1},{\PYt-1.1}) rectangle ({\PXt+1.1},{\PYt+1.1});
+\node[note, anchor=west] at ({\PXt+2}, {\PYt+1}) {the thruster};
+\draw[accent!0!ink, line width=0.9pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (\PXt,\PYt) -- ({\PXt-0.643*22}, {\PYt+0.766*22});
+\node[font=\small, anchor=south east] at ({\PXt-0.643*22-0.5}, {\PYt+0.766*22})
+     {$T\mathbf{e}$};
+
+% ---- e 의 성분 -------------------------------------------------------------
+\draw[soft, line width=0.35pt, densely dotted]
+      (\PXt,\PYt) -- (\PXt, {\PYt+0.766*22});
+\draw[soft, line width=0.35pt, densely dotted]
+      (\PXt, {\PYt+0.766*22}) -- ({\PXt-0.643*22}, {\PYt+0.766*22});
+\node[font=\scriptsize, anchor=west] at ({\PXt+0.8}, {\PYt+0.766*11}) {$e_x$};
+\node[font=\scriptsize, anchor=south] at ({\PXt-0.643*11}, {\PYt+0.766*22+0.5}) {$e_y$};
+
+% ===================== 오른쪽 : 규칙 =======================================
+\begin{scope}[shift={(62,0)}]
+  \node[font=\small\bfseries, anchor=west] at (0, 50) {the rule};
+
+  \node[anchor=north west, align=left, text width=72mm, font=\small] at (0, 46) {%
+    one newton from a thruster at $(x,y)$ pointing along $\mathbf{e}$:};
+  \node[anchor=north, font=\normalsize] at (36, 39) {%
+    $\mathbf{b} = [\,e_x,\ \ e_y,\ \ x\,e_y - y\,e_x\,]^{\top}$};
+  \node[anchor=north west, align=left, text width=72mm, font=\scriptsize, soft] at (0, 31) {%
+    and that column depends on geometry alone.};
+
+  \node[anchor=north west, align=left, text width=72mm, font=\small] at (0, 25) {%
+    $n$ thrusters, $n$ columns:\quad
+    $\boldsymbol{\tau} = [\,X\ \ Y\ \ N\,]^{\top} = \mathbf{B}\mathbf{f}$};
+
+  \node[anchor=north west, align=left, text width=72mm, font=\scriptsize] at (0, 16) {%
+    \textbf{The check that makes the rule believable.}
+    With $x=1.2$\,m, $y=0.8$\,m and $\mathbf{e}$ $40^\circ$ to port of the bow,
+    $x e_y - y e_x = \mathbf{-1.3842}$, and the violet arm measures
+    $\mathbf{1.3842}$\,m. The third entry is not a new idea — it is the ordinary
+    \emph{force times perpendicular distance}, written so the sign comes out on
+    its own.\\[4pt]
+    \textbf{The base Otter, from the same rule.} Both propellers face forward, so
+    $\mathbf{e}=(1,0)$, and they sit at $x=0$, $y=\mp0.395$\,m, giving
+    $x e_y - y e_x = \pm 0.395$. Here $e_y = 0$ for both, so the middle row of
+    $\mathbf{B}$ is empty — and the Otter can never be pushed sideways.\\[4pt]
+    \textcolor{warn}{\textbf{$\mathbf{e}$ must be a unit vector.}} Entering $(2,0)$
+    instead of $(1,0)$ silently doubles that thruster's authority, and every rank
+    test still passes.};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

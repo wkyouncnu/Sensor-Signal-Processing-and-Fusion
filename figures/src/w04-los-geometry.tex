@@ -1,0 +1,112 @@
+% figures/w04-los-geometry.svg — LOS 법칙과 그 안의 기호가 사는 자리.
+%
+%   bash _tools/tikz2svg.sh figures/src/w04-los-geometry.tex figures/w04-los-geometry.svg
+%
+% 다리는 북에서 62 deg. 배는 다리 위 30 m 지점에서 우현으로 12 m 벗어나 있고,
+% 조준점은 수선의 발에서 다리를 따라 20 m 앞이다. 그러면
+%     atan(12/20) = 30.96 deg,  psi_d = 62 - 30.96 = 31.04 deg
+% 이고 그림에서 잰 각이 그것과 같아야 한다.
+%
+% 화면: 북 위, 동 오른쪽. 다리는 +x 에서 28 deg (= 90 - 62) 이므로
+% [rotate=28] 안에서 다리를 +x 로 두면 우현이 국소 -y 가 된다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{1.55}                % 1 m = 1.55 mm
+\def\XE{46.5}               % x_e = 30 m
+\def\YE{18.6}               % y_e = 12 m
+\def\DL{31.0}               % Delta = 20 m
+\def\LG{132}                % 다리 길이 85 m
+\def\RA{18.6}               % 수락반경 12 m
+
+% ---- NED 축 ---------------------------------------------------------------
+\begin{scope}[shift={(-6,66)}]
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,11);
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (11,0);
+  \node[font=\small, anchor=east]  at (-0.8,10) {$N$};
+  \node[font=\small, anchor=north] at (10,-0.8) {$E$};
+\end{scope}
+
+\begin{scope}[rotate=28]
+  % ---- 다리와 웨이포인트 ---------------------------------------------------
+  \draw[pathc, line width=0.9pt] (0,0) -- (\LG,0);
+  \draw[pathc, line width=0.5pt, densely dashed] (\LG,0) circle (\RA);
+  \filldraw[pathc, fill=white, line width=0.7pt] (0,0)   circle (1.1);
+  \filldraw[pathc, fill=white, line width=0.7pt] (\LG,0) circle (1.1);
+
+  % ---- x_e : wp_k 에서 수선의 발까지 --------------------------------------
+  \draw[alng, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\XE,0);
+
+  % ---- y_e : 수선의 발에서 배까지 (우현 = 국소 -y) -------------------------
+  \draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (\XE,0) -- (\XE,-\YE);
+  \draw[errc, line width=0.4pt] (\XE,-2.2) -- ({\XE+2.2},-2.2) -- ({\XE+2.2},0);
+
+  % ---- Delta : 수선의 발에서 조준점까지, 경로를 따라 -----------------------
+  \draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (\XE,0) -- ({\XE+\DL},0);
+  \fill[accent] ({\XE+\DL},0) circle (1.0);
+
+  % ---- 시선 : 배에서 조준점으로 -------------------------------------------
+  \draw[accent, line width=0.8pt, densely dashed, -{Stealth[length=4.5pt,width=3.4pt]}]
+        (\XE,-\YE) -- ({\XE+\DL},0);
+
+  % ---- 배 -----------------------------------------------------------------
+  % 선수는 psi_d 방향, 즉 국소 프레임에서 +30.96 deg
+  \begin{scope}[shift={(\XE,-\YE)}, rotate=30.96]
+    \fill[ink] (2.6,0) -- (-2.0,1.9) -- (-2.0,-1.9) -- cycle;
+  \end{scope}
+
+  % ---- 라벨 (회전을 되돌려 수평으로) --------------------------------------
+  \node[pathc, font=\small, anchor=north east] at (-1.5,-1.5) {waypoint $k$};
+  \node[pathc, font=\small, anchor=south west] at ({\LG+1.5},2.5) {$k+1$};
+  \node[pathc, font=\scriptsize, anchor=south]
+       at ({\LG}, {\RA+1.5}) {acceptance radius $R$};
+  \node[alng, font=\small, anchor=south] at ({0.5*\XE}, 1.5) {$x_e$};
+  \node[errc, font=\small, anchor=west]  at ({\XE+1.8}, {-0.6*\YE}) {$y_e$};
+  \node[accent, font=\small, anchor=south] at ({\XE+0.5*\DL}, 1.6) {$\Delta$};
+  \node[accent, font=\scriptsize, anchor=south west]
+       at ({\XE+\DL+1.5}, 1.5) {the aim point};
+  \node[ink, font=\scriptsize, anchor=north east]
+       at ({\XE-1.5}, {-\YE-1.5}) {the vessel};
+\end{scope}
+
+% ---- pi_p : 북에서 다리까지 -----------------------------------------------
+\draw[soft, line width=0.4pt, densely dashed] (0,0) -- (0,34);
+\draw[soft, line width=0.5pt] (0,26) arc (90:28:26);
+\node[soft, font=\small] at (7.5,29) {$\pi_p = 62^\circ$};
+
+% ---- psi_d : 배에서 북 기준 ------------------------------------------------
+% 배의 절대 위치 = rotate(28) 적용한 (XE, -YE)
+\def\VX{57.79}   % 46.5*cos28 + 18.6*sin28
+\def\VY{5.41}    % 46.5*sin28 - 18.6*cos28
+\draw[soft, line width=0.4pt, densely dashed] (\VX,\VY) -- (\VX,{\VY+30});
+\draw[accent, line width=0.5pt] ({\VX},{\VY+23}) arc (90:58.96:23);
+\node[accent, font=\small] at ({\VX+9},{\VY+26}) {$\psi_d$};
+
+% ===================== 오른쪽 : 법칙 =======================================
+\begin{scope}[shift={(150,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (0,72) {the law};
+  \node[anchor=north, font=\normalsize] at (36,66)
+       {$\psi_d = \pi_p - \arctan\!\left(\dfrac{y_e}{\Delta}\right)$};
+
+  \node[anchor=north west, align=left, text width=72mm, font=\scriptsize] at (0,48) {%
+    $\pi_p$ — line up with the path.\\
+    $-\arctan(y_e/\Delta)$ — and lean towards it.\\[5pt]
+    Here $y_e = 12$\,m and $\Delta = 20$\,m, so the correction is
+    $\arctan(12/20) = 30.96^\circ$ and
+    $\psi_d = 62^\circ - 30.96^\circ = 31.04^\circ$.\\[7pt]
+    \textbf{The correction is bounded by $90^\circ$.}\\
+    $y_e \to 0$: on the path, so $\psi_d \to \pi_p$ and the vessel steers along it.\\
+    $y_e \to \infty$: $\psi_d \to \pi_p - 90^\circ$ — head straight at the path,
+    and never away from it.\\[7pt]
+    $\Delta$ is measured \textbf{along the path} from the foot of the
+    perpendicular, not from the vessel. The distance from the vessel to the aim
+    point is $\sqrt{\Delta^2+y_e^2}$, which is larger.};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

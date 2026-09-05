@@ -69,7 +69,7 @@
 │                            port_xy.m · row_feed.m · lane_line.m · check_overlaps.m
 │                            ensure_base_vars.m
 │                            crosstrack_err.m · wp_switch.m · path_plot.m
-│                            verify_guidance.m                       (W04 유도)
+│                            verify_guidance.m · verify_alos.m        (W04 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · live_track.m · base_var.m
 │                            git_autopush.sh · svg2png.sh
@@ -183,6 +183,11 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
 10. **쓴 수식은 검증한다** — 차원 · 극한 · 부호 · 수치(MATLAB 으로 실제 계산) · 출처 대조.
    검증하지 않은 수식은 싣지 않는다. Nomoto 처럼 **이름 붙은 표준 모델을 빼먹지 않는다**.
    계수는 `verify_constants` 가 `otter.m` 과 대조한다 — 유한차분으로 `M(1,1)` 을 재지 않는다
+10-1. **유도한 자리에 문헌을 적는다 — 내가 직접 유도한 것이라도.** 절 끝의 References
+   만으로는 부족하다. 논문은 **DOI 까지**. "참고 구현이 없다" 는 **그 릴리스에 대한
+   진술**이므로, 쓰기 전에 디스크 전체를 찾고 릴리스 연도를 명시한다.
+   실제로 ALOS 를 "MSS 에 없다" 고 썼다가 최신판에 있는 것을 사용자가 알려 주었다
+   → `standing-orders.md` §7
 11. **`.md` 안의 LaTeX 은 Edit 도구로만 고친다.** `sed`·`awk`·`perl` 은 역슬래시를 저마다
    다르게 해석해서 수식을 조용히 부순다. 실제로 W01 전체를 한 번 망가뜨렸다
    → `standing-orders.md` §5-1. `\|` 는 노름 ‖·‖ 이므로 절댓값에는 `\lvert`·`\rvert` 를 쓴다
