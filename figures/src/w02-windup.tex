@@ -1,0 +1,133 @@
+% figures/w02-windup.svg — 와인드업이 왜 적분기 잘못이 아닌가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w02-windup.tex figures/w02-windup.svg
+%
+% (a) 포화하는 동안 루프가 끊긴다는 것을 블록선도로,
+% (b) 요구가 한계 밖으로 얼마나 나갔는지를 포화 특성 위에 실척으로.
+%
+% 주의: TeX 제어어에는 숫자를 못 쓴다. \def\Y0{} 은 \Y 에 인자 0 을 붙인 것이
+% 되어 조용히 틀린다 — 실제로 한 번 그랬다. 매크로 이름은 글자만 쓴다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===================== (a) the loop =========================================
+\begin{scope}
+  \node[font=\small\bfseries, anchor=west] at (-13, 17) {(a)\quad where the loop breaks};
+
+  \node[sum]                                (s1)  at (0,0) {};
+  \node[blk, right=8mm  of s1, yshift=8mm]  (kp)  {$K_p$};
+  \node[blk, right=8mm  of s1, yshift=-8mm] (ki)  {$K_i/s$};
+  \node[sum, right=40mm of s1]              (s2)  {};
+  \node[blk, right=16mm of s2]              (sat) {};
+  \node[blk, right=16mm of sat]             (pl)  {hull};
+
+  % 포화 글리프 — 상자 안에 글자를 또 넣지 않는다
+  \draw[wire] ([shift={(-5.5mm,-2.4mm)}]sat.center) -- ([shift={(-2mm,-2.4mm)}]sat.center)
+              -- ([shift={( 2mm, 2.4mm)}]sat.center) -- ([shift={( 5.5mm, 2.4mm)}]sat.center);
+
+  % 입력과 분기
+  \draw[sig] (-13,0) -- node[sname, above, pos=0.25] {$u_d$} (s1);
+  \coordinate (br) at ($(s1)+(4mm,0)$);
+  \draw[wire] (s1) -- (br);
+  \node[dot] at (br) {};
+  \draw[wire] (br) |- ($(kp.west)+(-3mm,0)$);
+  \draw[sig]  ($(kp.west)+(-3mm,0)$) -- (kp);
+  \draw[wire] (br) |- ($(ki.west)+(-3mm,0)$);
+  \draw[sig]  ($(ki.west)+(-3mm,0)$) -- (ki);
+  \node[sname, above right=0mm and -0.5mm of br] {$e$};
+
+  % 합류
+  \coordinate (jn) at ($(s2)+(-5mm,0)$);
+  \draw[wire] (kp) -| (jn);  \draw[wire] (ki) -| (jn);
+  \draw[sig]  (jn) -- (s2);
+
+  % 앞으로 가는 길
+  \draw[sig] (s2)  -- node[sname, above] {$X_{\mathrm{cmd}}$} (sat);
+  \draw[sig] (sat) -- node[sname, above, pos=0.28] {$X_{\mathrm{sat}}$} (pl);
+  \coordinate (out) at ($(pl.east)+(9mm,0)$);
+  \draw[wire] (pl) -- (out);
+  \draw[sig]  (out) -- ++(7mm,0) node[sname, above, pos=0.45] {$u$};
+
+  % 부호
+  \node[font=\scriptsize] at ($(s1)+(-2.8mm, 3.0mm)$) {$+$};
+  \node[font=\scriptsize] at ($(s1)+(-3.6mm,-3.2mm)$) {$-$};
+  \node[font=\scriptsize] at ($(s2)+(-3.0mm, 3.0mm)$) {$+$};
+  \node[font=\scriptsize] at ($(s2)+( 3.0mm, 3.0mm)$) {$+$};
+
+  % 되먹임
+  \node[dot] at (out) {};
+  \draw[wire] (out) |- (0,-22);
+  \draw[sig]  (0,-22) -- (s1);
+
+  % 루프가 끊기는 자리 — 작게. 크게 그리면 그림이 포스터가 된다
+  \coordinate (cut) at ($(sat.east)!0.80!(pl.west)$);
+  \draw[warn, line width=0.7pt] ($(cut)+(-1.5mm,-1.5mm)$) -- ($(cut)+(1.5mm,1.5mm)$);
+  \draw[warn, line width=0.7pt] ($(cut)+(-1.5mm, 1.5mm)$) -- ($(cut)+(1.5mm,-1.5mm)$);
+  \node[font=\scriptsize, warn, below=0.8mm of cut] {cut};
+
+  % 안티와인드업 — 진짜 구조대로: X_cmd 와 X_sat 의 차를 적분기로 되돌린다
+  \coordinate (tc) at ($(s2)!0.42!(sat.west)$);
+  \coordinate (ts) at ($(sat.east)!0.28!(pl.west)$);
+  \node[dot] at (tc) {};  \node[dot] at (ts) {};
+  \node[asum] (aw) at ($(tc)!0.5!(ts) + (0,-13mm)$) {};
+  \draw[awire] (tc) |- ($(aw.west)+(-4mm,0)$);
+  \draw[asig]  ($(aw.west)+(-4mm,0)$) -- (aw);
+  \draw[awire] (ts) |- ($(aw.east)+(4mm,0)$);
+  \draw[asig]  ($(aw.east)+(4mm,0)$) -- (aw);
+  \node[font=\scriptsize, accent] at ($(aw)+(-3.0mm,3.0mm)$) {$+$};
+  \node[font=\scriptsize, accent] at ($(aw)+( 3.0mm,3.0mm)$) {$-$};
+  \draw[awire] (aw) -- ++(0,-4mm) -| ($(ki.south)+(0,-4mm)$);
+  \draw[asig]  ($(ki.south)+(0,-4mm)$) -- (ki.south);
+  \node[anote, right=2mm of aw] {$X_{\mathrm{cmd}}-X_{\mathrm{sat}}$};
+\end{scope}
+
+% ===================== (b) the saturation characteristic ====================
+\begin{scope}[shift={(6,-70)}]
+  \node[font=\small\bfseries, anchor=west] at (-19, 36)
+       {(b)\quad how far outside the limit the demand went};
+
+  % 데이터 -> mm.  x: 0..3700 N -> 0..64 mm ,  y: -220..320 N -> 0..30 mm
+  \def\XS{0.01730}
+  \def\YS{0.05556}
+  \def\Yzero{12.22}          % y = 0 의 높이 = 220 * YS
+
+  \draw[axis] (-3,\Yzero) -- (66,\Yzero);
+  \draw[axis] (0,-1) -- (0,31);
+
+  % 포화 특성
+  \draw[ink, line width=0.8pt]
+        (-3, {\Yzero + (-133.42)*\YS}) -- ({-133.42*\XS}, {\Yzero + (-133.42)*\YS})
+     -- ({ 239.36*\XS}, {\Yzero + 239.36*\YS}) -- (64, {\Yzero + 239.36*\YS});
+  \draw[soft, line width=0.35pt, densely dotted]
+        (0, {\Yzero + 239.36*\YS}) -- (64, {\Yzero + 239.36*\YS});
+  \node[note, anchor=west] at (16, {\Yzero + 239.36*\YS + 4.8})
+       {$X_{\mathrm{sat}}\le 239.36$\,N \ \ (the flat part)};
+
+  % 측정된 최대 요구
+  \draw[accent, line width=0.5pt, densely dashed]
+        ({3480*\XS}, \Yzero) -- ({3480*\XS}, {\Yzero + 239.36*\YS});
+  \fill[accent] ({3480*\XS}, {\Yzero + 239.36*\YS}) circle (0.7mm);
+  \node[anote, anchor=east] at ({3480*\XS - 2}, {\Yzero + 239.36*\YS - 4.0})
+       {3480\,N asked for};
+  \node[anote, anchor=east] at ({3480*\XS - 2}, {\Yzero + 239.36*\YS - 7.4})
+       {239\,N delivered};
+
+  % 눈금
+  \foreach \v in {0, 1000, 2000, 3000} {
+    \draw[axis] ({\v*\XS}, \Yzero) -- ({\v*\XS}, \Yzero-1.2);
+    \node[tick, below=0.3mm] at ({\v*\XS}, \Yzero-1.2) {\v};
+  }
+  \node[font=\small, anchor=north] at (32, \Yzero-6) {$X_{\mathrm{cmd}}$\ \ [N]};
+  % y 눈금 — 한계 두 개만. 축에 눈금이 없으면 "실척" 이라는 말이 근거를 잃는다
+  \foreach \v/\lab in {0/0, 239.36/239, -133.42/{-133}} {
+    \draw[axis] (0, {\Yzero + \v*\YS}) -- (-1.3, {\Yzero + \v*\YS});
+    \node[tick, anchor=east] at (-1.8, {\Yzero + \v*\YS}) {\lab};
+  }
+  \node[font=\small, anchor=south, rotate=90] at (-11, 15) {$X_{\mathrm{sat}}$\ \ [N]};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

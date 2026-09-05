@@ -57,6 +57,8 @@
 │   └── A1_simulink/
 │
 ├── figures/                 개념도 SVG (w01-… … w11-…). 러너가 만든 PNG 는 여기 아니다
+│   └── src/                 그 SVG 의 TikZ 원본 (*.tex) + gnc-style.tex
+│                            `tikz2svg.sh` 이 여기서 ../*.svg 를 만든다
 ├── _templates/              week.md
 ├── _tools/                  md2pdf.sh · pdf-template.html · marked.min.js
 │                            mathjax-tex-svg.js · lab_fig.m · mss_path.m
@@ -70,7 +72,8 @@
 │                            verify_guidance.m                       (W04 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · live_track.m · base_var.m
-│                            git_autopush.sh · svg2png.sh · tex2svg.sh
+│                            git_autopush.sh · svg2png.sh
+│                            tex2svg.sh · tikz2svg.sh                (수식·그림 조판)
 │                            bdiag.sh                                (블록선도 프리미티브)
 │                            labels/                                 (그림 안 수식 배치목록)
 │                            w01_6dof_arcs.awk · w01_euler_geo.awk

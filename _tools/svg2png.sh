@@ -28,8 +28,12 @@ done
 [ -z "$CHROME" ] && { echo "Chrome or Edge not found"; exit 1; }
 
 #  The size comes from the SVG itself, so the PNG is 1:1 with the drawing.
-W=$(grep -o 'width="[0-9]*"' "$SVG" | head -1 | tr -dc '0-9')
-H=$(grep -o 'height="[0-9]*"' "$SVG" | head -1 | tr -dc '0-9')
+#  정수일 수도, 소수일 수도 있다 — dvisvgm 이 만든 SVG 는 소수를 쓴다.
+#  올림해서 창 크기로 삼는다. 잘리는 것보다 한 픽셀 남는 편이 낫다.
+W=$(grep -oE 'width="[0-9]+([.][0-9]+)?"' "$SVG" | head -1 |
+    grep -oE '[0-9]+([.][0-9]+)?' | awk '{printf "%d", int($1)+1}')
+H=$(grep -oE 'height="[0-9]+([.][0-9]+)?"' "$SVG" | head -1 |
+    grep -oE '[0-9]+([.][0-9]+)?' | awk '{printf "%d", int($1)+1}')
 : "${W:=900}"; : "${H:=470}"
 
 WIN_SVG=$(cygpath -w "$(realpath "$SVG")" 2>/dev/null || echo "$SVG")

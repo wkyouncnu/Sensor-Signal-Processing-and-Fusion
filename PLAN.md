@@ -193,7 +193,12 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 
 - MATLAB **R2024b** + Simulink (+ Stateflow: W07, Optimization Toolbox: W05·W11)
 - MSS 는 `10_연구_USV_MILS/Proj_SHI_USV_MILS/Tools/MSS` — `_tools/mss_path.m` 이 찾는다
-- PDF 는 Git Bash + Chrome 만 있으면 된다. **pandoc·LaTeX 없음** (이 PC 에 설치돼 있지 않다)
+- **문서 PDF 파이프라인은 Git Bash + Chrome 뿐이다. pandoc 없음** — `md2pdf.sh` 는
+  MathJax 를 브라우저에서 돌린다. 이건 안 바뀐다
+- **그림용으로만** TinyTeX 을 넣었다 (2026-09-05, 사용자 승인). `%APPDATA%\TinyTeX`,
+  TeX Live 2026 + `pgf`(TikZ) + `standalone` + `dvisvgm`.
+  `_tools/tikz2svg.sh` 이 `figures/src/*.tex` → `figures/*.svg` 로 바꾼다.
+  **문서 파이프라인은 이것을 쓰지 않는다** — 결과물은 그냥 SVG 라 Chrome 이 읽는다
 
 ## 7. 한 주차를 끝내기 전
 

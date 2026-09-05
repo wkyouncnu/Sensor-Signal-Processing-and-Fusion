@@ -1,0 +1,52 @@
+% gnc-style.tex — 이 볼트의 TikZ 그림이 공유하는 스타일.
+%
+% 저널 그림 규약을 스타일 하나로 굳혀 둔다. 그림마다 선 굵기나 화살촉을
+% 다시 정하지 않는다 — 그것이 그림이 제각각으로 보이는 원인이다.
+%
+% 쓰는 법:  \input{gnc-style}  (figures/src/ 안에서)
+
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, decorations.pathmorphing}
+
+% ---- 색 --------------------------------------------------------------------
+% 색은 강조 하나에만 쓴다. 나머지는 검정.
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{accent}{HTML}{7C3AED}
+\definecolor{warn}{HTML}{B91C1C}
+\definecolor{soft}{HTML}{666666}
+
+% ---- 선과 화살촉 -----------------------------------------------------------
+\tikzset{
+  % 신호선. 화살촉은 작고 뾰족한 것 하나뿐이다.
+  sig/.style   = {ink, line width=0.5pt, -{Stealth[length=4pt, width=3pt]}},
+  wire/.style  = {ink, line width=0.5pt},
+  % 강조 경로 — 파선으로 구분한다. 흑백 인쇄에서도 살아야 하기 때문이다.
+  asig/.style  = {accent, line width=0.5pt, densely dashed,
+                  -{Stealth[length=4pt, width=3pt]}},
+  awire/.style = {accent, line width=0.5pt, densely dashed},
+  % 블록. 흰 바탕, 직각, 검은 테두리.
+  blk/.style   = {draw=ink, line width=0.55pt, fill=white,
+                  minimum width=17mm, minimum height=8mm, inner sep=2pt, font=\small},
+  % 합산점
+  sum/.style   = {draw=ink, line width=0.55pt, fill=white, circle,
+                  inner sep=0pt, minimum size=4.6mm, font=\scriptsize},
+  asum/.style  = {draw=accent, line width=0.55pt, fill=white, circle,
+                  inner sep=0pt, minimum size=4.6mm, font=\scriptsize},
+  % 분기점
+  dot/.style   = {ink, fill=ink, circle, inner sep=0pt, minimum size=1.5mm},
+  % 신호 이름 — 선 위에 작게
+  sname/.style = {font=\small, inner sep=1.5pt},
+  % 그림 안의 짧은 설명. 그림 안의 글은 최소로 둔다
+  note/.style  = {font=\scriptsize, soft, inner sep=1.5pt},
+  anote/.style = {font=\scriptsize, accent, inner sep=1.5pt},
+  % 축
+  axis/.style  = {ink, line width=0.5pt},
+  tick/.style  = {font=\scriptsize, soft},
+}
+
+% 캡션 한 줄 — 그림 아래 가는 선과 함께
+\newcommand{\gnccaption}[2]{%
+  \node[anchor=north west, text width=#1, align=left, font=\scriptsize, ink]
+        at (current bounding box.south west) {\vspace{2pt}#2};}

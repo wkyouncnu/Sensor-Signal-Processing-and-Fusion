@@ -427,3 +427,33 @@ bash _tools/tex2svg.sh -p _tools/labels/w02-windup.txt      # 배치목록 통�
 
 실례: `figures/w02-windup.svg` 를 `_tools/w02_windup_fig.sh` 로 다시 그렸다.
 내용은 그대로인데 형식만 바꿔도 논문 그림에 가까워진다.
+
+## 2-8. 새 블록선도·도표는 TikZ 로 그린다
+
+2026-09-05, 사용자 승인으로 **TinyTeX 을 설치했다**(`%APPDATA%\TinyTeX`,
+TeX Live 2026 + `pgf` + `standalone` + `dvisvgm`). 그림 전용이며,
+**문서 PDF 파이프라인은 그대로 Chrome + MathJax 다.**
+
+```bash
+bash _tools/tikz2svg.sh figures/src/w02-windup.tex figures/w02-windup.svg
+```
+
+- 원본은 `figures/src/*.tex`, 스타일은 `figures/src/gnc-style.tex` 하나를 공유한다.
+  선 굵기·화살촉·상자 모양을 그림마다 다시 정하지 않는 것이 요점이다
+- 경로는 **`latex` → DVI → `dvisvgm --no-fonts`**. `pdflatex` 가 아니다 —
+  DVI 를 거쳐야 선과 글자가 전부 벡터 path 로 나온다
+- `tikz2svg.sh` 이 pt → px 로 바꾸고 흰 배경을 깔아 준다. `vault_check` §12 가
+  흰 배경을 요구하기 때문이다
+
+### TikZ 로 옮기면서 밟은 지뢰 넷
+
+| 증상 | 원인 | 고침 |
+|---|---|---|
+| `\def\Y0{...}` 이 조용히 틀린다 | **TeX 제어어에 숫자를 못 쓴다.** `\Y` 에 인자 `0` 을 붙인 꼴이 된다 | 매크로 이름은 글자만 — `\Yzero` |
+| `Dimension too large` | pgfmath 는 고정소수라 $10^6$ 에서 넘친다 | 로그 공간에서 계산한다. $\log(10^a+10^b) = \max(a,b) + \log(1+10^{-\lvert a-b\rvert})$ |
+| `Missing number` | `\PY{...}` 가 이미 `{}` 를 붙이는데 인자에도 `{}` 가 있어 이중이 됐다 | 헬퍼 매크로는 바깥 중괄호를 붙이지 않는다 |
+| `(\XW-1, y)` 가 안 먹는다 | TikZ 좌표에서 산술은 `{}` 안에서만 된다 | `({\XW-1}, y)` |
+
+> [!caution] `.tex` 원본에 `perl -pi -e` 를 쓰지 않는다
+> `.md` 의 LaTeX 과 같은 이유다(→ `standing-orders.md` §5-1). 이번에도 `\XW` 가
+> `XW` 로, `\hat\beta` 가 `hateta` 로, `\top` 이 탭으로 바뀌었다. **Edit 도구로 고친다.**

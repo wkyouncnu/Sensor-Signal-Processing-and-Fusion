@@ -1,0 +1,101 @@
+% figures/a1-four-layouts.svg — 계급은 산수가 아니라 그림이 정한다.
+%
+%   bash _tools/tikz2svg.sh figures/src/a1-four-layouts.tex figures/a1-four-layouts.svg
+%
+% 추진기 좌표는 _tools/otter_config.m 과 같은 수다:
+%   y_pont = 0.395,  l_f = 1.5 (선수 팔),  l_a = 1.0 (선미 팔)
+% 계급·열 수·영공간은 A1 C 절 러너가 찍은 값이다.
+%
+% 갑판 평면도: x_b(선수)를 오른쪽, y_b(우현)를 아래로 그린다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\SC{9}          % 1 m = 9 mm
+\def\YP{3.555}      % y_pont * SC = 0.395 * 9
+\def\HW{1.0}        % 폰툰 반폭 [mm]
+
+% ---- 선체 하나 -------------------------------------------------------------
+% #1 = 원점 x, #2 = 원점 y
+\newcommand{\hull}[2]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \fill[black!7] ({-1.15*\SC}, -\YP) rectangle ({1.65*\SC}, \YP);
+    \draw[ink, line width=0.45pt] ({-1.15*\SC}, {-\YP-\HW}) rectangle ({1.65*\SC}, {-\YP+\HW});
+    \draw[ink, line width=0.45pt] ({-1.15*\SC}, { \YP-\HW}) rectangle ({1.65*\SC}, { \YP+\HW});
+    \node[note, anchor=west] at ({1.65*\SC+1.5}, 0) {bow $\rightarrow$};
+  \end{scope}}
+
+% ---- 고정 추진기 : 앞으로만, 열 하나 ---------------------------------------
+\newcommand{\fixedthr}[3]{%   #1,#2 = 원점, #3 = "x/y" (m)
+  \begin{scope}[shift={(#1,#2)}]
+    \foreach \px/\py in {#3} {
+      \fill[ink] ({\px*\SC-0.9}, {\py*\SC-0.9}) rectangle ({\px*\SC+0.9}, {\py*\SC+0.9});
+      \draw[sig] ({\px*\SC+1.4}, {\py*\SC}) -- ({\px*\SC+6.5}, {\py*\SC});
+    }
+  \end{scope}}
+
+% ---- 터널 추진기 : 옆으로만 ------------------------------------------------
+\newcommand{\tunnelthr}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \foreach \px/\py in {#3} {
+      \fill[ink] ({\px*\SC-0.9}, {\py*\SC-0.9}) rectangle ({\px*\SC+0.9}, {\py*\SC+0.9});
+      \draw[sig] ({\px*\SC}, {\py*\SC+1.4}) -- ({\px*\SC}, {\py*\SC+6.0});
+      \draw[sig] ({\px*\SC}, {\py*\SC-1.4}) -- ({\px*\SC}, {\py*\SC-6.0});
+    }
+  \end{scope}}
+
+% ---- 틸팅 추진기 : 두 방향 = 두 열 -----------------------------------------
+\newcommand{\tiltthr}[3]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \foreach \px/\py in {#3} {
+      \draw[accent, line width=0.6pt, fill=white] ({\px*\SC}, {\py*\SC}) circle (1.2);
+      \draw[asig] ({\px*\SC+1.7}, {\py*\SC}) -- ({\px*\SC+6.5}, {\py*\SC});
+      \draw[asig] ({\px*\SC}, {\py*\SC-1.7}) -- ({\px*\SC}, {\py*\SC-6.0});
+    }
+  \end{scope}}
+
+% ---- 한 칸의 제목과 수치 ---------------------------------------------------
+% #1,#2 = 원점 ; #3 = 이름 ; #4 = 부제 ; #5 = 열 ; #6 = 계급 ; #7 = 영공간 ; #8 = 한 줄 평
+\newcommand{\panelhead}[8]{%
+  \node[font=\small\bfseries, anchor=west] at ({#1-1.15*\SC}, {#2+13}) {#3};
+  \node[note, anchor=west]                at ({#1-1.15*\SC}, {#2+9})  {#4};
+  \node[font=\scriptsize, anchor=west]    at ({#1-1.15*\SC}, {#2-11})
+       {columns \textbf{#5}\ \ $\cdot$\ \ rank \textbf{#6}\ \ $\cdot$\ \ null \textbf{#7}};
+  \node[font=\scriptsize, anchor=west]    at ({#1-1.15*\SC}, {#2-15}) {#8};}
+
+% ===================== 네 칸 ===============================================
+\def\CA{0}    \def\CB{78}
+\def\RA{0}    \def\RB{-42}
+
+\hull{\CA}{\RA}  \fixedthr{\CA}{\RA}{0/-0.395, 0/0.395}
+\panelhead{\CA}{\RA}{base}{two fixed propellers}{2}{2}{0}
+  {\textcolor{warn}{sway row empty — $Y$ is unreachable}}
+
+\hull{\CB}{\RA}  \tiltthr{\CB}{\RA}{-1.0/-0.395, -1.0/0.395}
+\panelhead{\CB}{\RA}{aft\_azimuth}{the same two, now steerable}{4}{3}{1}
+  {1-dimensional null space}
+
+\hull{\CA}{\RB}  \fixedthr{\CA}{\RB}{0/-0.395, 0/0.395}
+                 \tunnelthr{\CA}{\RB}{1.5/0}
+\panelhead{\CA}{\RB}{bow\_thruster}{two fixed $+$ a bow tunnel}{3}{3}{0}
+  {square: one solution, nothing to optimise}
+
+\hull{\CB}{\RB}  \tiltthr{\CB}{\RB}{1.5/-0.395, 1.5/0.395, -1.0/-0.395, -1.0/0.395}
+\panelhead{\CB}{\RB}{quad\_tilt}{four steerable}{8}{3}{5}
+  {5-dimensional null space}
+
+% ---- 범례와 결론 -----------------------------------------------------------
+\node[font=\scriptsize, ink, anchor=north west, align=left, text width=140mm]
+     at ({\CA-1.15*\SC}, {\RB-22}) {%
+  \textbf{Black square, one arrow} — a fixed thruster: one direction, one column.\quad
+  \textcolor{accent}{\textbf{Open circle, two arrows}} — a tilting thruster: two
+  directions, therefore \emph{two} columns.\\[2pt]
+  Thruster count runs $2,2,3,4$ while column count runs $2,4,3,8$ — the two do not
+  track each other. \texttt{aft\_azimuth} reaches rank 3 with the same two physical
+  machines as \texttt{base}: \textbf{the third degree of freedom is bought with servos,
+  not with thrusters.}};
+
+\end{tikzpicture}
+\end{document}
