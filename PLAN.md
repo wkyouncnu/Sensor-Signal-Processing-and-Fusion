@@ -125,9 +125,16 @@
    수와 대조했고, 낡은 주차 상호참조 14 건·수치 불일치 4 건·그림 설명 자기모순 1 건·
    표기 불일치 1 건을 고쳤다. 방법은 `standing-orders.md` §6, 기계 검사는
    `scripts/week_refs.sh` (= `vault_check.sh` §14)
-2. W05 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`.
+2. **문서를 논문 형태로** — 사용자 지시 2026-09-06.
+   `_tools/pdf-template.html` 을 저널 조판으로: 번호 붙은 그림 캡션(`Fig. 1.`),
+   번호 붙은 수식, 본문 세리프, 표 규칙. 그림·수식은 이미 벡터(TikZ · MathJax tex-svg)라
+   바꿀 것이 없다 → 바뀌는 것은 **문서 조판**이다
+3. **실습·설치 절에 실제 출력과 대처를 붙인다** — 사용자 지시 2026-09-06.
+   이 PC 의 WSL2 Ubuntu 22.04.5 + ROS 2 Humble + Gazebo Sim 7.9.0 + `~/vrx_ws` 에서
+   **실제로 돌려** 출력을 받아 온다. 지어내지 않는다 → `standing-orders.md` §8
+4. W05 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`.
    A1 이 선수 자료이고, W04 가 네 척 모두에 **같은 정사각 배분**을 쓴 것이 출발점이다
-3. 이후 W06~W11
+5. 이후 W06~W11
 
 ---
 
