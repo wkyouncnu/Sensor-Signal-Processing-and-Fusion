@@ -23,11 +23,19 @@ note()  { printf '  %-44s %s\n' "$1" "$2"; }
 head2() { printf '\n%s\n' "$1"; }
 
 # 검사 대상 MD — 템플릿·스킬 문서·규칙 원본은 제외
+#
+# 벤더링한 남의 코드(MSS 등)도 제외한다. 그 안의 README 는 우리가 쓴 글이 아니고,
+# 우리 문체 규칙(1·2인칭 금지)이나 PDF 짝 규칙을 적용할 대상이 아니다.
+# 실제로 MSS-master 가 lectures/ 안에 놓이자 그 세 README 가 12건의 허위 지적을
+# 냈다. 검사기가 남의 파일을 고치라고 말하기 시작하면 검사기를 못 믿게 된다.
+VENDOR='/MSS-master/|/MSS/|/node_modules/'
+
 mds() {
   find . -name '*.md' -type f \
     | grep -v '/\.claude/' \
     | grep -v '/_templates/' \
     | grep -v '/slprj/' \
+    | grep -vE "$VENDOR" \
     | grep -v '^\./CLAUDE\.md$' \
     | sort
 }
@@ -146,7 +154,7 @@ check_figs() {
         echo "     [낡음] $png  <  $(basename "$bld")"; stale=$((stale+1))
       fi
     done
-  done < <(find lectures \( -name 'build_*.m' -o -name '*_build_*.m' \) -type f 2>/dev/null | sort)
+  done < <(find lectures \( -name 'build_*.m' -o -name '*_build_*.m' \) -type f 2>/dev/null | grep -vE "$VENDOR" | sort)
   note "빌더보다 오래된 PNG" "$stale"
   [ $stale -gt 0 ] && echo "     -> 그 주차의 절 스크립트를 다시 돌린다 (WXX_C_… 부터)"
   FAIL=$((FAIL+stale))
@@ -157,14 +165,14 @@ check_figs() {
     while IFS= read -r png; do
       w=$(identify -format '%w' "$png" 2>/dev/null || echo 0)
       [ "$w" -gt 2000 ] && { echo "     [너무 넓음] $png  ${w}px"; wide=$((wide+1)); }
-    done < <(find lectures -path '*/img/*.png' ! -name '*_result*' -type f 2>/dev/null)
+    done < <(find lectures -path '*/img/*.png' ! -name '*_result*' -type f 2>/dev/null | grep -vE "$VENDOR")
   else
     # ImageMagick 이 없으면 PNG 헤더에서 직접 읽는다 (IHDR 의 첫 4바이트)
     while IFS= read -r png; do
       w=$(od -An -tu4 -j16 -N4 --endian=big "$png" 2>/dev/null | tr -d ' ')
       [ -z "$w" ] && continue
       [ "$w" -gt 2000 ] && { echo "     [너무 넓음] $png  ${w}px"; wide=$((wide+1)); }
-    done < <(find lectures -path '*/img/*.png' ! -name '*_result*' -type f 2>/dev/null)
+    done < <(find lectures -path '*/img/*.png' ! -name '*_result*' -type f 2>/dev/null | grep -vE "$VENDOR")
   fi
   note "폭 2000px 초과 블록도" "$wide"
   FAIL=$((FAIL+wide))
