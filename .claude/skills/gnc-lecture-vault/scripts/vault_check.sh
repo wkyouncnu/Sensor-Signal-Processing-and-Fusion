@@ -40,9 +40,17 @@ mds() {
     | sort
 }
 
-# 배포하는 문서만 (README 제외) — PDF 쌍과 문체 검사의 대상
+# 배포하는 문서 — PDF 쌍과 문체 검사의 대상
+#
+# 폴더 색인용 README 는 뺀다. 다만 **실습 문제지와 답안지는 학생이 받는 배포물**
+# 이므로 이름이 README.md 라도 뺄 수 없다: 사용자 지시 2026-09-08,
+# "숙제도 MD 파일만 있는데 PDF로도 변환해서 같은 폴더에 넣어줘".
+#   빠지는 것  lectures/README.md,  lectures/WXX_simulink/README.md
+#   들어가는 것 lectures/WXX_simulink/problems|solutions/README.md
 delivered() {
-  mds | grep -E '^\./lectures/' | grep -v '/README\.md$'
+  mds | grep -E '^\./lectures/' \
+      | grep -vE '^\./lectures/README\.md$' \
+      | grep -vE '^\./lectures/[^/]+/README\.md$'
 }
 
 # 실습이 딸린 문서 — 주차와 부록. 접두사는 파일명의 첫 '_' 앞부분 (W01, A1 ...)

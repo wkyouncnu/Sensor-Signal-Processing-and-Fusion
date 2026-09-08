@@ -580,6 +580,29 @@ MSS 새 판을 찾지 못하면 조용히 건너뛰고, 찾으면 한 스텝씩 
 | **무엇을 보고 성공을 판정하나** | "이 한 줄이 보이면 된 것" 을 한 문장으로. 버전 번호·경로처럼 **기계가 확인할 수 있는 것**으로 |
 | **틀어졌을 때** | 증상 → 원인 → 고침 세 칸. 실제로 겪은 것만 (`CLAUDE.md` §3 Troubleshooting 규칙과 같다) |
 
+### 8-0. 실습 문제지·답안지도 **PDF 로 같이 낸다**
+
+> 사용자 원문: **"숙제도 MD 파일만 있는데 PDF로도 변환해서 같은 폴더에 넣어줘"**
+> (2026-09-08)
+
+학생이 받는 것은 전부 PDF 가 함께 있어야 한다. 이름이 `README.md` 라도 **폴더 색인이
+아니라 배포물**이면 예외가 없다.
+
+```bash
+bash _tools/md2pdf.sh lectures/W01_simulink/problems/README.md \
+                      lectures/W01_simulink/solutions/README.md
+```
+
+`vault_check.sh` 의 `delivered()` 가 이것을 강제한다. 색인용 README 둘만 빼고
+(`lectures/README.md`, `lectures/WXX_simulink/README.md`), `problems/` 와
+`solutions/` 아래의 README 는 **PDF 쌍 검사와 문체 검사에 함께 걸린다.**
+
+- 그러니 문제지 본문도 영어 정식 어조다. 1·2인칭을 쓰지 않는다 — "Check work at
+  any time" 은 되고 "Check your work" 는 안 된다.
+- 파일 이름을 `README` 로 두는 이유는 강의 `.md` 가 그 이름으로 링크하고 있고,
+  폴더 이름(`problems/`, `solutions/`)이 이미 무엇인지 말해 주기 때문이다.
+  대신 **첫 줄 H1 이 제목 노릇을 한다** — PDF 만 따로 받아도 무엇인지 보인다.
+
 ### 8-1. 출력을 지어내지 않는다
 
 이것이 이 절의 핵심이다. 그럴듯한 터미널 출력을 상상해서 적는 것은 **틀린 문서를
