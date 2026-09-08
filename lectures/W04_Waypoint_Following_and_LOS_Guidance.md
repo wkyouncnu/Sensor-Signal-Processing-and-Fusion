@@ -80,13 +80,13 @@ After this week the learner should be able to:
 - The obvious first law is to point the bow at the next waypoint:
 
 $$
-\psi_d = \operatorname{atan2}\!\left(E_{k+1} - E,\; N_{k+1} - N\right)
+\psi_d = \operatorname{atan2}\!\left(y_{i+1}^n - E,\; x_{i+1}^n - N\right)
 $$
 
 | Symbol | Quantity | Unit / source |
 |---|---|---|
 | $N,\ E$ | present position of the vessel, NED | m — from the plant |
-| $N_{k+1},\ E_{k+1}$ | the waypoint being approached | m — `WP_N`, `WP_E` in `W04_vars.m` |
+| $x_{i+1}^n,\ y_{i+1}^n$ | the waypoint being approached | m — `WP_N`, `WP_E` in `W04_vars.m` |
 | $\psi_d$ | commanded heading | rad — into the Week 3 autopilot |
 
 - This law reaches every waypoint. It is nonetheless the wrong law, and the reason is worth stating precisely: **it regulates the distance to a point, and a point carries no information about the line it sits on.**
@@ -97,7 +97,7 @@ $$
 
 | Element | Meaning |
 |---|---|
-| dashed green, both panels | the planned path — the line the vessel was asked to follow, from $\mathbf{wp}_k$ to $\mathbf{wp}_{k+1}$ |
+| dashed green, both panels | the planned path — the line the vessel was asked to follow, from $\mathbf{p}_i^{\,n}$ to $\mathbf{p}_{i+1}^{\,n}$ |
 | left, red track | the track under `atan2`: a straight line from wherever the vessel happens to be to the waypoint |
 | right, blue track | the track under LOS: a curve that joins the path early and then runs along it |
 | orange ticks | the cross-track error at a comparable point of the leg — 10 m against under 0.5 m |
@@ -123,7 +123,7 @@ $$
 > | $\{b\}$ | subscript $b$ | the hull. Its $x$ axis runs from stern to bow |
 >
 > - Waypoints are points in $\{n\}$: $\mathbf{p}_i^{\,n} = [\,x_i^n\ \ y_i^n\,]^\top$. The index is $i$, and the active leg runs from $\mathbf{p}_i^{\,n}$ to $\mathbf{p}_{i+1}^{\,n}$.
-> - The vessel is at $\mathbf{p}^{\,n} = [\,x^n\ \ y^n\,]^\top$. In NED, $x$ **is** North and $y$ **is** East — the letters $N$ and $E$ are not used once a superscript is available.
+> - The vessel is at $\mathbf{p}^{\,n} = [\,x^n\ \ y^n\,]^\top$. In NED, $x$ **is** North and $y$ **is** East — the letters $x^n$ and $y^n$ are not used once a superscript is available.
 > - The two errors are resolved in $\{p\}$, so they are written $x_e^{\,p}$ and $y_e^{\,p}$. Writing them without the superscript is the single most common way of confusing a cross-track error with an East error, and the two differ by $\pi_p$.
 >
 > **The code cannot carry superscripts.** MATLAB identifiers have no place to put them, so `_tools/crosstrack_err.m` returns `x_e` and `y_e`, and the Simulink signals are named the same way. Every such identifier means the path-frame quantity. §4-10 sets the equations and the code side by side.
@@ -140,7 +140,7 @@ $$
 | $\pi_p$ | path-tangential angle, from North, positive towards East | rad — recomputed whenever $i$ changes |
 | $\mathbf{p}_i^{\,n}$ | the leg's origin, the waypoint most recently passed | m — `WP_N(k)`, `WP_E(k)` |
 | $d_i$ | leg length $\lVert \mathbf{p}_{i+1}^{\,n} - \mathbf{p}_i^{\,n} \rVert$ | m — 60, 60, 60, 84.85 m this week |
-| $N$ | number of waypoints | 5, giving 4 legs |
+| $x^n$ | number of waypoints | 5, giving 4 legs |
 
 - The two-argument `atan2` and not `atan`: the leg may point into any of the four quadrants, and only the two-argument form separates North-East from South-West. The single-argument form would fold the third quadrant onto the first and send the vessel backwards along its own path.
 - $\pi_p$ is constant on a leg. Every quantity downstream of it in this week — $x_e^{\,p}$, $y_e^{\,p}$, $\psi_d$ — changes continuously as the vessel moves, but $\pi_p$ changes only at a switch.
@@ -159,11 +159,11 @@ $$
 | Element | Meaning |
 |---|---|
 | grey axes, upper left | NED — the frame that does not move |
-| green line with arrow | the active leg, from $\mathbf{wp}_k$ towards $\mathbf{wp}_{k+1}$ |
+| green line with arrow | the active leg, from $\mathbf{p}_i^{\,n}$ towards $\mathbf{p}_{i+1}^{\,n}$ |
 | green dashed pair | $\hat{\mathbf{t}}$ along the leg and $\hat{\mathbf{n}}$ to starboard — the frame the leg defines |
-| grey arrow | the position error $\mathbf{p} - \mathbf{wp}_k$, expressed in NED |
-| orange | its component along $\hat{\mathbf{t}}$ — the along-track error $x_e$ |
-| red, with the right-angle mark | its component along $\hat{\mathbf{n}}$ — the cross-track error $y_e$ |
+| grey arrow | the position error $\mathbf{p} - \mathbf{p}_i^{\,n}$, expressed in NED |
+| orange | its component along $\hat{\mathbf{t}}$ — the along-track error $x_e^{\,p}$ |
+| red, with the right-angle mark | its component along $\hat{\mathbf{n}}$ — the cross-track error $y_e^{\,p}$ |
 | blue panel | the same statement as algebra |
 | amber panel | which of the two errors each part of the guidance system consumes |
 
@@ -179,7 +179,7 @@ $$
 
 $\hat{\mathbf{t}}$ is a unit vector at angle $\pi_p$ from North, which is the leg's direction by the definition of §4-2. $\hat{\mathbf{n}}$ is $\hat{\mathbf{t}}$ turned by $+90°$, which in a North-East frame points to **starboard** of the leg. The two are orthonormal, so the pair is a basis and the decomposition below is unique.
 
-The vessel at $\mathbf{p} = [N\ \ E]^\top$ has position error $\mathbf{p} - \mathbf{wp}_k$ relative to the leg's origin. Its components in the leg frame are its projections onto the two basis vectors:
+The vessel at $\mathbf{p} = [N\ \ E]^\top$ has position error $\mathbf{p} - \mathbf{p}_i^{\,n}$ relative to the leg's origin. Its components in the leg frame are its projections onto the two basis vectors:
 
 $$
 x_e^{\,p} = \hat{\mathbf{t}}^\top\big(\mathbf{p}^{\,n} - \mathbf{p}_i^{\,n}\big),
@@ -211,31 +211,20 @@ y_e^{\,p} &= -\big(x^n - x_i^n\big)\sin\pi_p + \big(y^n - y_i^n\big)\cos\pi_p
 \end{aligned}
 $$
 
-The same statement once more, in the older notation this section used before, so that the two can be read against each other:
-
-$$
-\begin{bmatrix} x_e \\[2pt] y_e \end{bmatrix}
-=
-\begin{bmatrix} \cos\pi_p & \sin\pi_p \\[2pt] -\sin\pi_p & \cos\pi_p \end{bmatrix}
-\begin{bmatrix} N - N_k \\[2pt] E - E_k \end{bmatrix}
-= \mathbf{R}(\pi_p)^\top\!\begin{bmatrix} N - N_k \\[2pt] E - E_k \end{bmatrix}
-\ }
-$$
-
 | Symbol | Quantity | Unit |
 |---|---|---|
-| $x_e$ | along-track error — how far **along** the leg the vessel has come | m |
-| $y_e$ | cross-track error — how far **to the side** of the leg it is | m |
-| $\mathbf{R}(\pi_p)$ | the planar rotation from the leg frame to NED | — |
-| $\mathbf{R}(\pi_p)^\top$ | its inverse, NED to leg frame, because $\mathbf{R}$ is orthogonal | — |
+| $x_e^{\,p}$ | along-track error — how far **along** the leg the vessel has come | m |
+| $y_e^{\,p}$ | cross-track error — how far **to the side** of the leg it is | m |
+| $\mathbf{R}_p^{\,n}(\pi_p)$ | the planar rotation from the path frame $\{p\}$ to NED $\{n\}$ | — |
+| $\mathbf{R}_p^{\,n}(\pi_p)^\top$ | its inverse, $\{n\}$ to $\{p\}$, because $\mathbf{R}$ is orthogonal | — |
 
 - Written out, the two rows are exactly the expressions printed in the figure and coded in `_tools/crosstrack_err.m`:
 
 $$
-x_e = \ \ \,(N - N_k)\cos\pi_p + (E - E_k)\sin\pi_p
+x_e^{\,p} = \ \ \,(N - x_i^n)\cos\pi_p + (E - y_i^n)\sin\pi_p
 $$
 $$
-y_e = -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p
+y_e^{\,p} = -(N - x_i^n)\sin\pi_p + (E - y_i^n)\cos\pi_p
 $$
 
 ### Verification of the derived pair
@@ -243,20 +232,20 @@ $$
 | Check | Result |
 |---|---|
 | **Dimension** | both rows are metres times a dimensionless cosine — metres, as required |
-| **Limit** $\mathbf{p} = \mathbf{wp}_k$ | $x_e = y_e = 0$ — at the leg's origin both errors vanish |
-| **Limit** $\mathbf{p} = \mathbf{wp}_{k+1}$ | $x_e = d_k$, $y_e = 0$ — at the far end the vessel has run the whole leg and is on it |
-| **Sign** | a point displaced by $+\varepsilon\hat{\mathbf{n}}$ gives $y_e = +\varepsilon$ — positive is to starboard |
-| **Orthogonality** | $x_e^2 + y_e^2 = \lVert\mathbf{p}-\mathbf{wp}_k\rVert^2$, since $\mathbf{R}^\top$ preserves length |
+| **Limit** $\mathbf{p} = \mathbf{p}_i^{\,n}$ | $x_e^{\,p} = y_e^{\,p} = 0$ — at the leg's origin both errors vanish |
+| **Limit** $\mathbf{p} = \mathbf{p}_{i+1}^{\,n}$ | $x_e^{\,p} = d_k$, $y_e^{\,p} = 0$ — at the far end the vessel has run the whole leg and is on it |
+| **Sign** | a point displaced by $+\varepsilon\hat{\mathbf{n}}$ gives $y_e^{\,p} = +\varepsilon$ — positive is to starboard |
+| **Orthogonality** | $x_e^2 + y_e^2 = \lVert\mathbf{p}-\mathbf{p}_i^{\,n}\rVert^2$, since $\mathbf{R}^\top$ preserves length |
 | **Source** | `_tools/verify_guidance.m` compares against MSS `crosstrackWpt.m` at eight test points; largest disagreement $0$, exactly |
 
 ### What each error is for
 
 | | consumed by | because |
 |---|---|---|
-| $x_e$ | the **switching** logic of §4-6 | it says how much of the leg has been run, so $d_k - x_e$ is how much is left |
-| $y_e$ | the **guidance law** of §4-4 and every law after it | it is the quantity that "follow the path" means to drive to zero |
+| $x_e^{\,p}$ | the **switching** logic of §4-6 | it says how much of the leg has been run, so $d_k - x_e^{\,p}$ is how much is left |
+| $y_e^{\,p}$ | the **guidance law** of §4-4 and every law after it | it is the quantity that "follow the path" means to drive to zero |
 
-- **The sign matters and is easy to get backwards.** $y_e > 0$ places the vessel to **starboard** of the leg, because $\{n\}$ is North-East-Down and a positive rotation carries North towards East. A positive $y_e$ must therefore be answered by turning to **port**, which is why every law in this week *subtracts* its correction from $\pi_p$. Getting this backwards produces a law that drives the vessel away from the path at a rate proportional to how far off it already is.
+- **The sign matters and is easy to get backwards.** $y_e^{\,p} > 0$ places the vessel to **starboard** of the leg, because $\{n\}$ is North-East-Down and a positive rotation carries North towards East. A positive $y_e^{\,p}$ must therefore be answered by turning to **port**, which is why every law in this week *subtracts* its correction from $\pi_p$. Getting this backwards produces a law that drives the vessel away from the path at a rate proportional to how far off it already is.
 
 > [!warning] Two forms are in circulation and only one of them is safe
 > MSS `crosstrack.m` obtains the same quantity by solving a $3\times3$ linear system whose coefficients contain $\tan\pi_p$. That is singular at $\pi_p = \pm 90°$ — a due-East or due-West leg, which is half the legs of any lawnmower survey pattern. The rotation form above contains no tangent and has no such point. MSS `crosstrackWpt.m` uses the rotation form, and this course follows it.
@@ -332,31 +321,31 @@ $$
 > **The substitution is not free, and this week measures its price.** §4-7 shows that using $\psi_d$ in a current leaves the vessel permanently $\Delta\tan\beta_c$ to one side of the path; §4-8 and §4-9 are two ways of paying it back.
 
 - Read the law as two terms with two jobs. $\pi_p$ says *line up with the path*. The arctan says *and lean towards it, by an amount that grows with how far off it the vessel is*.
-- The figure's own arithmetic is the smallest possible worked example: $y_e = 12$ m and $\Delta = 20$ m give a correction of $\arctan(12/20) = 30.96°$, so $\psi_d = 62° - 30.96° = 31.04°$. The vessel is to starboard, so it is commanded to port, and by less than $90°$.
+- The figure's own arithmetic is the smallest possible worked example: $y_e^{\,p} = 12$ m and $\Delta = 20$ m give a correction of $\arctan(12/20) = 30.96°$, so $\psi_d = 62° - 30.96° = 31.04°$. The vessel is to starboard, so it is commanded to port, and by less than $90°$.
 
 ### The limits, and why they are the right ones
 
 | Limit | Result | Interpretation |
 |---|---|---|
-| $y_e \to 0$ | $\psi_d \to \pi_p$ | on the path, steer along it; the correction vanishes **smoothly**, so there is no chatter and no limit cycle at convergence |
-| $y_e \to +\infty$ | $\psi_d \to \pi_p - 90°$ | far to starboard: head **straight at** the path, perpendicular to it |
-| $y_e \to -\infty$ | $\psi_d \to \pi_p + 90°$ | far to port: the mirror image |
-| $\Delta \to 0^+$ | $\psi_d \to \pi_p \mp 90°$ for every $y_e \ne 0$ | the law degenerates to bang-bang — full correction at any error, however small |
-| $\Delta \to \infty$ | $\psi_d \to \pi_p$ for every finite $y_e$ | the law stops correcting at all and becomes a heading hold |
+| $y_e^{\,p} \to 0$ | $\psi_d \to \pi_p$ | on the path, steer along it; the correction vanishes **smoothly**, so there is no chatter and no limit cycle at convergence |
+| $y_e^{\,p} \to +\infty$ | $\psi_d \to \pi_p - 90°$ | far to starboard: head **straight at** the path, perpendicular to it |
+| $y_e^{\,p} \to -\infty$ | $\psi_d \to \pi_p + 90°$ | far to port: the mirror image |
+| $\Delta \to 0^+$ | $\psi_d \to \pi_p \mp 90°$ for every $y_e^{\,p} \ne 0$ | the law degenerates to bang-bang — full correction at any error, however small |
+| $\Delta \to \infty$ | $\psi_d \to \pi_p$ for every finite $y_e^{\,p}$ | the law stops correcting at all and becomes a heading hold |
 
-- The two infinite limits are the reason the law is safe to use from any initial condition: because $\lvert\arctan(\cdot)\rvert < 90°$ strictly, **the commanded heading is never more than $90°$ off the path direction**. However far off the path the vessel starts, it is never commanded to turn away from it. Comparable laws built on $\psi_d = \pi_p - K y_e$ have no such bound and can command a full reversal.
+- The two infinite limits are the reason the law is safe to use from any initial condition: because $\lvert\arctan(\cdot)\rvert < 90°$ strictly, **the commanded heading is never more than $90°$ off the path direction**. However far off the path the vessel starts, it is never commanded to turn away from it. Comparable laws built on $\psi_d = \pi_p - K y_e^{\,p}$ have no such bound and can command a full reversal.
 - The two degenerate limits are the two ends of §4-5's trade, and section E measures both of them.
 
 > [!note] $\Delta$ is measured along the path, not from the vessel
-> The aim point sits $\Delta$ ahead of the **foot of the perpendicular**, not at distance $\Delta$ from the boat. The distance from the boat to the aim point is $\sqrt{\Delta^2 + y_e^2}$, which is larger and which depends on $y_e$. Placing the aim point at a fixed range from the vessel instead makes the correction depend on $y_e$ twice over and destroys the clean limits above.
+> The aim point sits $\Delta$ ahead of the **foot of the perpendicular**, not at distance $\Delta$ from the boat. The distance from the boat to the aim point is $\sqrt{\Delta^2 + y_e^2}$, which is larger and which depends on $y_e^{\,p}$. Placing the aim point at a fixed range from the vessel instead makes the correction depend on $y_e^{\,p}$ twice over and destroys the clean limits above.
 
 ### Verification of the LOS law
 
 | Check | How, and result |
 |---|---|
-| **Dimension** | $y_e/\Delta$ is m/m; $\arctan$ of it is rad; $\pi_p$ is rad — the sum is an angle |
+| **Dimension** | $y_e^{\,p}/\Delta$ is m/m; $\arctan$ of it is rad; $\pi_p$ is rad — the sum is an angle |
 | **Limits** | the five rows of the table above, all checked numerically in `_tools/verify_guidance.m` |
-| **Sign** | $y_e = +1$ m, $\Delta = 8$ m, $\pi_p = 0$ gives $\psi_d = -7.125°$ — starboard error, port command |
+| **Sign** | $y_e^{\,p} = +1$ m, $\Delta = 8$ m, $\pi_p = 0$ gives $\psi_d = -7.125°$ — starboard error, port command |
 | **Numeric** | against MSS `LOSchi.m` on eight configurations; largest disagreement $0$ |
 | **Source** | Fossen, *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed., §12.3.1 |
 
@@ -385,11 +374,11 @@ $$
 |---|---|---|
 | small | saturates almost immediately, approaching $90°$ | closes hard and **overshoots** — measured $0.939$ m of overshoot at $\Delta = 2$ m |
 | middling | proportional over the range of errors that occur | the intended regime |
-| large | gentle at every $y_e$ | **never arrives** — at $\Delta = 30$ m the vessel has not reached the first leg before it ends |
+| large | gentle at every $y_e^{\,p}$ | **never arrives** — at $\Delta = 30$ m the vessel has not reached the first leg before it ends |
 
 - Measured in section E on the same mission, autopilot and current:
 
-| $\Delta$ [m] | $\Delta/L$ | settling distance [m] | overshoot [m] | settled $\lvert y_e\rvert$ [m] |
+| $\Delta$ [m] | $\Delta/L$ | settling distance [m] | overshoot [m] | settled $\lvert y_e^{\,p}\rvert$ [m] |
 |---|---|---|---|---|
 | 2 | 1.0 | 12.82 | 0.939 | 0.0134 |
 | 4 | 2.0 | 20.06 | 0.630 | 0.0559 |
@@ -397,7 +386,7 @@ $$
 | 16 | 8.0 | never settles on leg 1 | 0.415 | 0.2796 |
 | 30 | 15.0 | never settles on leg 1 | $-0.679$ | 1.2871 |
 
-- The vessel starts $8$ m off the path in every run, and "settling distance" is how far North it had travelled when $\lvert y_e\rvert$ last left the $0.4$ m band. The two largest look-aheads never enter that band before the $60$ m leg ends, so **the table reports no settling distance for them** rather than quoting the leg length as though it were one.
+- The vessel starts $8$ m off the path in every run, and "settling distance" is how far North it had travelled when $\lvert y_e^{\,p}\rvert$ last left the $0.4$ m band. The two largest look-aheads never enter that band before the $60$ m leg ends, so **the table reports no settling distance for them** rather than quoting the leg length as though it were one.
 - Settling distance grows monotonically with $\Delta$ and overshoot falls monotonically with it: there is no value that is best at both, which is what makes this a trade rather than a tuning problem with an answer.
 - The last column is the third failure. At $\Delta = 30$ m the vessel is still $1.29$ m off the path at the end of the leg — **the law is no longer following the path, only leaning towards it.** A negative overshoot in that row means the same thing: the vessel never crossed the path at all.
 - The common rule of thumb is $\Delta$ between 2 and 5 hull lengths. The Otter is $2$ m long, so that range is $4$ to $10$ m. This course uses $\Delta = 8$ m — **and section E is the justification, with the rule of thumb only as a sanity check.**
@@ -415,34 +404,34 @@ $$
 
 | Element | Meaning |
 |---|---|
-| left panel, teal band | along-track: the band of positions where the **remaining** along-track distance $d_k - x_e$ is below $R$ |
-| right panel, amber circle | circle of acceptance: the disc where the **true distance** to $\mathbf{wp}_{k+1}$ is below $R$ |
-| black hull, both panels | the same vessel, at the same place relative to the leg, with $y_e = 2R$ |
+| left panel, teal band | along-track: the band of positions where the **remaining** along-track distance $d_k - x_e^{\,p}$ is below $R$ |
+| right panel, amber circle | circle of acceptance: the disc where the **true distance** to $\mathbf{p}_{i+1}^{\,n}$ is below $R$ |
+| black hull, both panels | the same vessel, at the same place relative to the leg, with $y_e^{\,p} = 2R$ |
 | verdict lines | the along-track test switches; the circle test does not |
 | grey code lines | the two tests as they are actually written |
 
 $$
-\text{along-track:}\quad d_k - x_e < R
+\text{along-track:}\quad d_k - x_e^{\,p} < R
 \qquad\qquad
-\text{circle of acceptance:}\quad \lVert \mathbf{p} - \mathbf{wp}_{k+1}\rVert < R
+\text{circle of acceptance:}\quad \lVert \mathbf{p} - \mathbf{p}_{i+1}^{\,n}\rVert < R
 $$
 
 | Symbol | Quantity | Unit / value |
 |---|---|---|
 | $d_k$ | length of the active leg | m — 60 m for legs 1–3 this week |
-| $x_e$ | along-track error of §4-3 | m |
-| $d_k - x_e$ | along-track distance **remaining** on the leg | m |
+| $x_e^{\,p}$ | along-track error of §4-3 | m |
+| $d_k - x_e^{\,p}$ | along-track distance **remaining** on the leg | m |
 | $R$ | switching radius | m — `R_switch`, $5$ m this week |
 
 ### Where the two criteria part company
 
-- **On the path they agree**, because $y_e = 0$ makes $\lVert\mathbf{p}-\mathbf{wp}_{k+1}\rVert = d_k - x_e$ exactly. Off it they do not, because
+- **On the path they agree**, because $y_e^{\,p} = 0$ makes $\lVert\mathbf{p}-\mathbf{p}_{i+1}^{\,n}\rVert = d_k - x_e^{\,p}$ exactly. Off it they do not, because
 
 $$
-\lVert \mathbf{p} - \mathbf{wp}_{k+1}\rVert = \sqrt{(d_k - x_e)^2 + y_e^2} \;\ge\; d_k - x_e
+\lVert \mathbf{p} - \mathbf{p}_{i+1}^{\,n}\rVert = \sqrt{(d_k - x_e^{\,p})^2 + y_e^2} \;\ge\; d_k - x_e^{\,p}
 $$
 
-- The true distance is never smaller than the along-track remainder, so **the circle test is always the stricter of the two**, and it is stricter by an amount that grows with $y_e$. The figure's vessel has $d_k - x_e < R$ but $y_e = 2R$, so its true distance is at least $2R$ and the circle test fails.
+- The true distance is never smaller than the along-track remainder, so **the circle test is always the stricter of the two**, and it is stricter by an amount that grows with $y_e^{\,p}$. The figure's vessel has $d_k - x_e^{\,p} < R$ but $y_e^{\,p} = 2R$, so its true distance is at least $2R$ and the circle test fails.
 - Section F puts numbers on the figure. A vessel $4.50$ m short of waypoint 2 along the leg and $10.0$ m to the side of it has a true distance of $10.97$ m: the along-track test passes at $4.50 < 5$, and the circle test fails by more than a factor of two.
 - The along-track test is the safer one for exactly this reason: it cannot be defeated by being far from the path. A vessel blown wide of a waypoint **never enters that waypoint's circle**, and a mission that waits for it waits for ever.
 - This course uses the along-track test by default (`sw_mode = 1`), and section F runs both so that the difference can be seen rather than argued.
@@ -472,12 +461,12 @@ Measured in section F on the same mission:
 - Corner cut grows with $R$ and switch times fall: a large $R$ turns early and rounds the corner, a small $R$ runs the leg to its end and turns sharply. The choice is a statement about whether the mission cares more about corner accuracy or about turn rate.
 
 > [!warning] A documentation slip in MSS, worth meeting once
-> The help text of `ILOSpsi.m` says that the next waypoint is taken when "the along-track distance $x_e$ is less than R_switch". The code tests `d - x_e < R_switch`, which is the distance **remaining**, not the distance travelled. The code is the sensible one and the sentence is wrong. This is precisely why the standing rule of this course is to check an equation against the **source**, not against the description of the source.
+> The help text of `ILOSpsi.m` says that the next waypoint is taken when "the along-track distance $x_e^{\,p}$ is less than R_switch". The code tests `d - x_e < R_switch`, which is the distance **remaining**, not the distance travelled. The code is the sensible one and the sentence is wrong. This is precisely why the standing rule of this course is to check an equation against the **source**, not against the description of the source.
 
 ### The end of the mission
 
-- On the last leg there is no $\mathbf{wp}_{k+2}$ to switch to, and the two implementations differ.
-- The **2021** MSS holds the final waypoint as *both* ends of the leg. Then $E_{k+1} - E_k = N_{k+1} - N_k = 0$, so $\pi_p = \operatorname{atan2}(0,0) = 0$ by the IEEE convention, and the vessel is silently commanded due North for ever.
+- On the last leg there is no $\mathbf{p}_{i+2}^{\,n}$ to switch to, and the two implementations differ.
+- The **2021** MSS holds the final waypoint as *both* ends of the leg. Then $y_{i+1}^n - y_i^n = x_{i+1}^n - x_i^n = 0$, so $\pi_p = \operatorname{atan2}(0,0) = 0$ by the IEEE convention, and the vessel is silently commanded due North for ever.
 - **Fossen fixed this in the 2023 release.** `ALOSpsi.m` extends the last leg along its own bearing instead:
 
 ```matlab
@@ -510,19 +499,19 @@ $$
 
 ### The cross-track error dynamics
 
-- Before the offset can be derived, the rate of change of $y_e$ is needed, and it is used again in §4-8 and §4-9.
+- Before the offset can be derived, the rate of change of $y_e^{\,p}$ is needed, and it is used again in §4-8 and §4-9.
 - The vessel's velocity over ground has magnitude $U$ and direction $\chi$, both measured in NED. Its component along $\hat{\mathbf{n}}$ — which is $\hat{\mathbf{t}}$ turned by $90°$, so the angle between the velocity and $\hat{\mathbf{n}}$ is $\chi - \pi_p - 90°$ — gives the rate at which the cross-track error grows:
 
 $$
-\boxed{\ \dot y_e = U\sin(\chi - \pi_p)\ }
+\boxed{\ \dot y_e^{\,p} = U\sin(\chi - \pi_p)\ }
 $$
 
 | Check | Result |
 |---|---|
 | **Dimension** | m/s on both sides |
-| **Limit** $\chi = \pi_p$ | $\dot y_e = 0$ — travelling along the path, the offset is frozen at whatever it is |
-| **Limit** $\chi = \pi_p + 90°$ | $\dot y_e = U$ — travelling straight to starboard, the offset grows at full speed |
-| **Sign** | $\chi > \pi_p$ turns the velocity towards starboard and increases $y_e$, consistent with §4-3 |
+| **Limit** $\chi = \pi_p$ | $\dot y_e^{\,p} = 0$ — travelling along the path, the offset is frozen at whatever it is |
+| **Limit** $\chi = \pi_p + 90°$ | $\dot y_e^{\,p} = U$ — travelling straight to starboard, the offset grows at full speed |
+| **Sign** | $\chi > \pi_p$ turns the velocity towards starboard and increases $y_e^{\,p}$, consistent with §4-3 |
 
 - Note what this equation contains: $U$ and $\chi$, both **over ground**. The current has already been absorbed into them, which is why no current term appears explicitly.
 
@@ -531,25 +520,25 @@ $$
 In steady state on a straight leg the cross-track error has stopped changing, which by the equation above requires the **course** to lie along the path:
 
 $$
-\dot y_e = 0 \quad\Longrightarrow\quad \sin(\chi - \pi_p) = 0 \quad\Longrightarrow\quad \chi = \pi_p
+\dot y_e^{\,p} = 0 \quad\Longrightarrow\quad \sin(\chi - \pi_p) = 0 \quad\Longrightarrow\quad \chi = \pi_p
 $$
 
 The autopilot has by then delivered its command, $\psi = \psi_d$, and $\psi_d$ is the LOS law of §4-4. Substituting both:
 
 $$
-\pi_p \;=\; \chi \;=\; \psi + \beta_c \;=\; \psi_d + \beta_c \;=\; \pi_p - \arctan\!\left(\frac{y_e}{\Delta}\right) + \beta_c
+\pi_p \;=\; \chi \;=\; \psi + \beta_c \;=\; \psi_d + \beta_c \;=\; \pi_p - \arctan\!\left(\frac{y_e^{\,p}}{\Delta}\right) + \beta_c
 $$
 
 The $\pi_p$ cancels from both sides — which is the point, because it means the result does not depend on which leg the vessel is on:
 
 $$
-\arctan\!\left(\frac{y_e}{\Delta}\right) = \beta_c
+\arctan\!\left(\frac{y_e^{\,p}}{\Delta}\right) = \beta_c
 $$
 
 and therefore
 
 $$
-\boxed{\ y_e^{ss} = \Delta\,\tan\beta_c\ }
+\boxed{\ y_{e,ss}^{\,p} = \Delta\,\tan\beta_c\ }
 $$
 
 | Reading | |
@@ -563,7 +552,7 @@ $$
 
 Section G sweeps the current speed with everything else held fixed and compares the measured settled offset against the prediction:
 
-| $V_c$ [m/s] | $\beta_c$ [deg] | measured $y_e$ [m] | $\Delta\tan\beta_c$ [m] | difference [m] |
+| $V_c$ [m/s] | $\beta_c$ [deg] | measured $y_e^{\,p}$ [m] | $\Delta\tan\beta_c$ [m] | difference [m] |
 |---|---|---|---|---|
 | 0.0 | $-0.10$ | $-0.014$ | $-0.013$ | 0.001 |
 | 0.1 | 5.10 | 0.713 | 0.714 | 0.001 |
@@ -598,9 +587,9 @@ Section G sweeps the current speed with everything else held fixed and compares 
 
 - **Meaning.** One vessel, one path, one current, three guidance laws. The question each panel answers is: *where does the bow end up pointing, and is the vessel on the path?*
 - **The one thing that is the same in all three.** The bow is tilted upstream by $15.7°$ in every panel. **That tilt is not optional** — it is the only way to travel along a path while water pushes sideways, and any law that works must produce it. Comparing the three laws is comparing *how they pay for the same tilt*.
-- **Panel 1, and why LOS is stuck.** LOS has exactly one way to tilt the bow: the $\arctan(y_e/\Delta)$ term. Using it to cancel the drift means it is no longer available to close the gap, so the vessel ends up parallel to the path and $2.25$ m beside it. **The law is not short of authority; it is short of terms.**
+- **Panel 1, and why LOS is stuck.** LOS has exactly one way to tilt the bow: the $\arctan(y_e^{\,p}/\Delta)$ term. Using it to cancel the drift means it is no longer available to close the gap, so the vessel ends up parallel to the path and $2.25$ m beside it. **The law is not short of authority; it is short of terms.**
 - **Panel 2, the trick ILOS plays.** The integrator adds a second quantity inside the same arctan. Once that quantity has grown to $\kappa y_{int} = 2.25$ m, the law is being told there is a $2.25$ m error even though the vessel is exactly on the path — so it keeps the bow tilted while the real error sits at zero. **The integrator is a lie the law tells itself, and the lie is exactly the size of the truth it replaced.**
-- **Panel 3, what ALOS does instead.** ALOS adds a term *outside* the arctan: it subtracts an estimate of the drift angle directly from the command. The bow tilts by $\hat\beta$, and the arctan term is handed back its original job of closing $y_e$. **Nothing is invented; the disturbance is measured and removed.**
+- **Panel 3, what ALOS does instead.** ALOS adds a term *outside* the arctan: it subtracts an estimate of the drift angle directly from the command. The bow tilts by $\hat\beta$, and the arctan term is handed back its original job of closing $y_e^{\,p}$. **Nothing is invented; the disturbance is measured and removed.**
 - **What separates the two.** Both end with the same picture — on the path, bow upstream — and the state each carries is what differs. ILOS carries a number with no meaning ($7.52$, in seconds); ALOS carries the crab angle itself ($15.91°$ against a true $15.88°$). **Only one of them can be checked against a measurement.**
 
 > [!tip] If only one sentence from this week is remembered
@@ -617,18 +606,18 @@ Section G sweeps the current speed with everything else held fixed and compares 
 | Element | Meaning |
 |---|---|
 | left column | the law itself, with the term that distinguishes it printed in violet |
-| middle column | the same law as a signal path: $y_e$ enters, the arctan acts, $\pi_p$ is added, $\psi_d$ leaves |
+| middle column | the same law as a signal path: $y_e^{\,p}$ enters, the arctan acts, $\pi_p$ is added, $\psi_d$ leaves |
 | violet arrow | where the extra state is injected — **into the arctan block** for ILOS, **into the summing junction** for ALOS |
 | right column | what that state physically is, and the settled error it produces |
 
 **What the figure says**
 
-- **Meaning.** Three laws, one skeleton. Every row has the same $y_e$, the same arctan, the same $\pi_p$. Only the violet arrow moves.
+- **Meaning.** Three laws, one skeleton. Every row has the same $y_e^{\,p}$, the same arctan, the same $\pi_p$. Only the violet arrow moves.
 - **The trend, in numbers.** Settled cross-track error falls from $2.253$ m (no state) to $0.008$ m and $-0.004$ m (one state each) — **a factor of roughly 300**, from adding a single scalar.
 - **The principle, and it is the whole section in one line.** ILOS injects **inside** the arctan; ALOS injects **outside** it. Everything else follows:
-  - A term inside the arctan is added to $y_e$ before the nonlinearity sees it, so the law **cannot distinguish it from real cross-track error**. ILOS therefore behaves as though the vessel were $2.25$ m further out than it is.
+  - A term inside the arctan is added to $y_e^{\,p}$ before the nonlinearity sees it, so the law **cannot distinguish it from real cross-track error**. ILOS therefore behaves as though the vessel were $2.25$ m further out than it is.
   - A term outside the arctan is added to $\pi_p$'s side of the sum, so the law **cannot distinguish it from a rotated path**. ALOS therefore behaves as though it were following a line tilted by the drift it has estimated.
-- **Why this explains the unit puzzle of §4-8-3.** A quantity added to $y_e$ must be a length, which is why $\kappa y_{int}$ is in metres and $\kappa$ carries the odd unit m/s. A quantity added to an angle must be an angle, which is why $\hat\beta$ is simply in radians. **The units are not a convention; they are forced by where the term enters.**
+- **Why this explains the unit puzzle of §4-8-3.** A quantity added to $y_e^{\,p}$ must be a length, which is why $\kappa y_{int}$ is in metres and $\kappa$ carries the odd unit m/s. A quantity added to an angle must be an angle, which is why $\hat\beta$ is simply in radians. **The units are not a convention; they are forced by where the term enters.**
 - **What separates the two in practice.** Nothing in accuracy on this mission. The difference is in the right-hand column: ILOS's state is a number, ALOS's state is the crab angle.
 
 ## 4-8. ILOS — integral line of sight, derived
@@ -654,7 +643,7 @@ Plain LOS is not badly tuned, and it is not badly implemented. It is doing exact
 
 - **The measurement.** Section 4-7 ran plain LOS in a $0.3$ m/s beam current. The vessel settled **$2.253$ m to one side of the path** and stayed there for the rest of the run. It did not oscillate and it did not drift further; it simply held station beside the line it was asked to follow.
 - **The reason more gain cannot help.** At that steady state the heading error is **already zero**. The autopilot is holding $\psi$ on $\psi_d$ to the last decimal. There is no error left anywhere in the loop for a larger gain to act on, so raising $K_p$ or $K_d$ in the autopilot changes nothing at all.
-- **What is actually missing.** To travel along a line while water pushes the hull sideways, the bow must be tilted **upstream** by the crab angle $\beta_c$. Plain LOS has exactly one term that can tilt the bow, namely $\arctan(y_e/\Delta)$, and once that term is spent producing the tilt it is no longer available to close the remaining gap. **The law is not short of authority; it is short of terms.**
+- **What is actually missing.** To travel along a line while water pushes the hull sideways, the bow must be tilted **upstream** by the crab angle $\beta_c$. Plain LOS has exactly one term that can tilt the bow, namely $\arctan(y_e^{\,p}/\Delta)$, and once that term is spent producing the tilt it is no longer available to close the remaining gap. **The law is not short of authority; it is short of terms.**
 
 The classical fix for a steady offset is an integrator, and the classical failure of that fix is windup. The law of this section does both at once: it puts the integrator **inside the arctan**, which turns out to make the anti-windup part of the law rather than something bolted on afterwards.
 
@@ -669,28 +658,28 @@ That is the whole of it. The arctan is left untouched and is still the only thin
 Børhaug, Pavlov and Pettersen (2008) replace the LOS argument by a proportional-plus-integral combination:
 
 $$
-\boxed{\ \psi_d = \pi_p - \arctan\!\big(K_p\,y_e + K_i\,y_{int}\big),
+\boxed{\ \psi_d = \pi_p - \arctan\!\big(K_p\,y_e^{\,p} + K_i\,y_{int}\big),
 \qquad K_p = \frac{1}{\Delta},\quad K_i = \kappa K_p\ }
 $$
 
 $$
-\boxed{\ \dot y_{int} = \frac{\Delta\, y_e}{\Delta^2 + \big(y_e + \kappa\,y_{int}\big)^2}\ }
+\boxed{\ \dot y_{int} = \frac{\Delta\, y_e^{\,p}}{\Delta^2 + \big(y_e^{\,p} + \kappa\,y_{int}\big)^2}\ }
 $$
 
-- **Where $K_p = 1/\Delta$ comes from.** It is not a new gain. The plain LOS law of §4-4 is $\psi_d = \pi_p - \arctan(y_e/\Delta)$, and writing $y_e/\Delta$ as $K_p y_e$ merely names the coefficient. The proportional gain of *every* LOS law in this week is $1/\Delta$, in units of $\text{m}^{-1}$, and §4-5's trade is therefore a statement about a proportional gain.
+- **Where $K_p = 1/\Delta$ comes from.** It is not a new gain. The plain LOS law of §4-4 is $\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$, and writing $y_e^{\,p}/\Delta$ as $K_p y_e^{\,p}$ merely names the coefficient. The proportional gain of *every* LOS law in this week is $1/\Delta$, in units of $\text{m}^{-1}$, and §4-5's trade is therefore a statement about a proportional gain.
 - **Where $K_i = \kappa K_p$ comes from.** Writing the integral gain as a multiple of the proportional gain makes $\kappa$ the single tuning number, and it makes the whole argument of the arctan collapse to
 
 $$
-K_p y_e + K_i y_{int} = \frac{y_e + \kappa\,y_{int}}{\Delta}
+K_p y_e^{\,p} + K_i y_{int} = \frac{y_e^{\,p} + \kappa\,y_{int}}{\Delta}
 $$
 
-which is the same $y_e/\Delta$ as before with $y_e$ replaced by $y_e + \kappa y_{int}$. **The integral term acts as a fictitious extra cross-track error**, and that is the cleanest way to hold the law in mind. Write
+which is the same $y_e^{\,p}/\Delta$ as before with $y_e^{\,p}$ replaced by $y_e^{\,p} + \kappa y_{int}$. **The integral term acts as a fictitious extra cross-track error**, and that is the cleanest way to hold the law in mind. Write
 
 $$
-a \;\triangleq\; y_e + \kappa\,y_{int}, \qquad D \;\triangleq\; \sqrt{\Delta^2 + a^2}
+a \;\triangleq\; y_e^{\,p} + \kappa\,y_{int}, \qquad D \;\triangleq\; \sqrt{\Delta^2 + a^2}
 $$
 
-so that the law is $\psi_d = \pi_p - \arctan(a/\Delta)$ and the update is $\dot y_{int} = \Delta y_e/D^2$.
+so that the law is $\psi_d = \pi_p - \arctan(a/\Delta)$ and the update is $\dot y_{int} = \Delta y_e^{\,p}/D^2$.
 
 ### 4-8-3. Every parameter, with its unit
 
@@ -701,19 +690,19 @@ so that the law is $\psi_d = \pi_p - \arctan(a/\Delta)$ and the update is $\dot 
 | $\kappa$ | integral gain constant | **m/s** | §4-8-7; $0.3$ m/s, from the sweep of section H |
 | $K_i$ | integral gain, $\kappa/\Delta$ | $\text{s}^{-1}$ | **not free** — fixed by $\Delta$ and $\kappa$ |
 | $y_{int}$ | integral state | **s** | a state of the guidance block |
-| $a$ | $y_e + \kappa y_{int}$ | m | the effective cross-track error |
-| $D$ | $\sqrt{\Delta^2 + a^2}$ | m | distance from vessel to aim point, with $a$ in place of $y_e$ |
+| $a$ | $y_e^{\,p} + \kappa y_{int}$ | m | the effective cross-track error |
+| $D$ | $\sqrt{\Delta^2 + a^2}$ | m | distance from vessel to aim point, with $a$ in place of $y_e^{\,p}$ |
 
 > [!warning] The units of $\kappa$ and $y_{int}$ are not what most readers assume
-> $\dot y_{int} = \Delta y_e/(\Delta^2+a^2)$ has metres times metres over metres squared, so **$\dot y_{int}$ is dimensionless** and $y_{int}$ carries the unit of **seconds**. For $\kappa y_{int}$ to be a length, $\kappa$ must therefore be a **speed**, in m/s.
-> The course-angle sibling `ILOSchi.m` normalises differently — $\dot y_{int} = U y_e / \sqrt{\Delta^2 + a^2}$, which is $(\text{m/s})\cdot\text{m}/\text{m} = \text{m/s}$ — so there $y_{int}$ is a **length** and $\kappa$ is **dimensionless**. The same symbol $\kappa$ means two different physical quantities in two files of the same toolbox. A value of $\kappa$ carried from one to the other is not merely mistuned, it is dimensionally wrong. §4-8-6 explains why the two normalisations exist.
+> $\dot y_{int} = \Delta y_e^{\,p}/(\Delta^2+a^2)$ has metres times metres over metres squared, so **$\dot y_{int}$ is dimensionless** and $y_{int}$ carries the unit of **seconds**. For $\kappa y_{int}$ to be a length, $\kappa$ must therefore be a **speed**, in m/s.
+> The course-angle sibling `ILOSchi.m` normalises differently — $\dot y_{int} = U y_e^{\,p} / \sqrt{\Delta^2 + a^2}$, which is $(\text{m/s})\cdot\text{m}/\text{m} = \text{m/s}$ — so there $y_{int}$ is a **length** and $\kappa$ is **dimensionless**. The same symbol $\kappa$ means two different physical quantities in two files of the same toolbox. A value of $\kappa$ carried from one to the other is not merely mistuned, it is dimensionally wrong. §4-8-6 explains why the two normalisations exist.
 
 ### 4-8-4. Why the denominator has that form — the anti-windup is in the law
 
-- Compare the update with a plain integrator, $\dot y_{int} = y_e$. The ILOS update is that plain integrator multiplied by a scaling factor:
+- Compare the update with a plain integrator, $\dot y_{int} = y_e^{\,p}$. The ILOS update is that plain integrator multiplied by a scaling factor:
 
 $$
-\dot y_{int} = \underbrace{y_e}_{\text{plain integral}} \times \underbrace{\frac{\Delta}{\Delta^2 + a^2}}_{\text{the scaling}}
+\dot y_{int} = \underbrace{y_e^{\,p}}_{\text{plain integral}} \times \underbrace{\frac{\Delta}{\Delta^2 + a^2}}_{\text{the scaling}}
 $$
 
 - The scaling depends on $a$, and $a$ is **exactly the argument of the arctan in the law**. That is the whole design: the integrator is throttled by how saturated the guidance law is.
@@ -735,11 +724,11 @@ Computed for $\Delta = 8$ m:
 | 20.00 | 0.00031 | 0.0025 |
 
 - **This is the textbook definition of anti-windup**, and it arrives without a saturation block, without a clamp, and without a back-calculation gain. Week 2 §F built anti-windup by hand for the surge integrator, with a limiter and a feedback path; here the same effect is a property of the equation.
-- The rate is also bounded. With $y_{int}$ following $y_e$ in sign, as it does in operation,
+- The rate is also bounded. With $y_{int}$ following $y_e^{\,p}$ in sign, as it does in operation,
 
 $$
-\max_{y_e}\ \frac{\Delta\,y_e}{\Delta^2 + y_e^2} = \frac{1}{2}
-\quad\text{at}\quad y_e = \Delta
+\max_{y_e^{\,p}}\ \frac{\Delta\,y_e^{\,p}}{\Delta^2 + y_e^2} = \frac{1}{2}
+\quad\text{at}\quad y_e^{\,p} = \Delta
 $$
 
 verified numerically as $0.500000$. The integral state can never run away faster than half a second per second, whatever the cross-track error.
@@ -749,20 +738,20 @@ verified numerically as $0.500000$. The integral state can never run away faster
 - Set both derivatives to zero. The integrator condition comes first and it is decisive:
 
 $$
-\dot y_{int} = \frac{\Delta\,y_e}{D^2} = 0
+\dot y_{int} = \frac{\Delta\,y_e^{\,p}}{D^2} = 0
 \quad\Longrightarrow\quad
-y_e = 0
+y_e^{\,p} = 0
 $$
 
 because $\Delta > 0$ and $D^2 \ge \Delta^2 > 0$, so the fraction vanishes only through its numerator. **The integrator has no equilibrium other than zero cross-track error.** This one line is the entire reason for adding it, and it holds regardless of $\kappa$, $\Delta$, the current, or the vessel.
 
-- Now the position condition. From §4-7, $\dot y_e = 0$ requires $\chi = \pi_p$, and $\chi = \psi_d + \beta_c$ once the autopilot has converged:
+- Now the position condition. From §4-7, $\dot y_e^{\,p} = 0$ requires $\chi = \pi_p$, and $\chi = \psi_d + \beta_c$ once the autopilot has converged:
 
 $$
-\pi_p = \pi_p - \arctan\!\left(\frac{y_e + \kappa y_{int}}{\Delta}\right) + \beta_c
+\pi_p = \pi_p - \arctan\!\left(\frac{y_e^{\,p} + \kappa y_{int}}{\Delta}\right) + \beta_c
 $$
 
-With $y_e = 0$ from the first condition,
+With $y_e^{\,p} = 0$ from the first condition,
 
 $$
 \arctan\!\left(\frac{\kappa\,y_{int}^{eq}}{\Delta}\right) = \beta_c
@@ -776,16 +765,16 @@ $$
 |---|---|
 | $\Delta = 8$ m, $\kappa = 0.3$ m/s, $\beta_c = 15.74°$ | $y_{int}^{eq} = 7.5158$ s |
 | $\kappa y_{int}^{eq}$ against $\Delta\tan\beta_c$ | $2.254726$ m against $2.254726$ m — difference exactly $0$ |
-| both derivatives evaluated at the equilibrium | $\dot y_e = 0$, $\dot y_{int} = 0$, to machine zero |
-| integrating the pair for $400$ s from $y_e = 5$ m, $y_{int} = 0$ | $y_e \to 1.05\times10^{-9}$ m, $y_{int} \to 7.5158$ s — the predicted value |
-| measured on the full model, section G | $y_e = 0.008$ m against LOS's $2.253$ m |
+| both derivatives evaluated at the equilibrium | $\dot y_e^{\,p} = 0$, $\dot y_{int} = 0$, to machine zero |
+| integrating the pair for $400$ s from $y_e^{\,p} = 5$ m, $y_{int} = 0$ | $y_e^{\,p} \to 1.05\times10^{-9}$ m, $y_{int} \to 7.5158$ s — the predicted value |
+| measured on the full model, section G | $y_e^{\,p} = 0.008$ m against LOS's $2.253$ m |
 
 ### 4-8-5a. Watching the integrator fill
 
 - The equilibrium above says *where* the integrator ends. This table says *how it gets there*, and it is the clearest way to see what the law is doing. It integrates the error dynamics of §4-8-6 directly, with no autopilot in the loop, so it is the idealised picture rather than the full model.
 - Printed by `W04_G_current_and_integral.m`, at the end of its output.
 
-| $t$ [s] | $y_e$ [m] | $y_{int}$ [s] | $\kappa y_{int}$ [m] | bow tilt [deg] |
+| $t$ [s] | $y_e^{\,p}$ [m] | $y_{int}$ [s] | $\kappa y_{int}$ [m] | bow tilt [deg] |
 |---|---|---|---|---|
 | 0 | 0.000 | 0.000 | 0.000 | 0.00 |
 | 10 | 1.622 | 1.289 | 0.387 | 14.09 |
@@ -799,42 +788,42 @@ $$
 
 | What to notice | Why it happens |
 |---|---|
-| $y_e$ **grows first**, to $1.62$ m at $t = 10$ s | at $t = 0$ the integrator is empty, so the law is plain LOS and the current pushes the vessel off the path exactly as §4-7 says it must |
+| $y_e^{\,p}$ **grows first**, to $1.62$ m at $t = 10$ s | at $t = 0$ the integrator is empty, so the law is plain LOS and the current pushes the vessel off the path exactly as §4-7 says it must |
 | $\kappa y_{int}$ climbs towards $2.255$ | the fourth column is the phantom error of the figure, filling up |
 | bow tilt **overshoots** to $17.59°$ at $t = 25$ s | the integrator does not know when to stop; it overshoots and comes back, which is why §4-8-8's sweep has an interior minimum |
 | the last column settles on $15.74°$ | which is $\beta_c$ — **the tilt the vessel needed all along**, now supplied by the integrator instead of by a standing error |
 | $\kappa y_{int} \to 2.255$ m | the same $\Delta\tan\beta_c$ that plain LOS carried as a *real* offset, now carried as a *phantom* one |
 
-- **The last two rows are the whole idea.** The vessel is on the path, $y_e = 0.000$, and the bow is still tilted $15.74°$ upstream. Plain LOS could only produce that tilt by being $2.255$ m off the path. ILOS produces it from a state instead.
+- **The last two rows are the whole idea.** The vessel is on the path, $y_e^{\,p} = 0.000$, and the bow is still tilted $15.74°$ upstream. Plain LOS could only produce that tilt by being $2.255$ m off the path. ILOS produces it from a state instead.
 
 ### 4-8-6. Stability — and why there are two normalisations
 
-- To argue stability, put the closed loop into error coordinates. Let $\tilde y = y_{int} - y_{int}^{eq}$ be the integrator's error, and assume for the argument that the autopilot is fast enough that $\psi = \psi_d$ and that $\beta_c$ is constant. Starting from §4-7's $\dot y_e = U\sin(\chi - \pi_p)$ with $\chi - \pi_p = \beta_c - \arctan(a/\Delta)$:
+- To argue stability, put the closed loop into error coordinates. Let $\tilde y = y_{int} - y_{int}^{eq}$ be the integrator's error, and assume for the argument that the autopilot is fast enough that $\psi = \psi_d$ and that $\beta_c$ is constant. Starting from §4-7's $\dot y_e^{\,p} = U\sin(\chi - \pi_p)$ with $\chi - \pi_p = \beta_c - \arctan(a/\Delta)$:
 
 $$
-\dot y_e = U\sin\!\left(\beta_c - \arctan\frac{a}{\Delta}\right)
+\dot y_e^{\,p} = U\sin\!\left(\beta_c - \arctan\frac{a}{\Delta}\right)
 $$
 
 Expand the sine of a difference, and use $\cos(\arctan(a/\Delta)) = \Delta/D$ and $\sin(\arctan(a/\Delta)) = a/D$:
 
 $$
-\dot y_e = U\left[\sin\beta_c\cdot\frac{\Delta}{D} - \cos\beta_c\cdot\frac{a}{D}\right]
+\dot y_e^{\,p} = U\left[\sin\beta_c\cdot\frac{\Delta}{D} - \cos\beta_c\cdot\frac{a}{D}\right]
         = \frac{U}{D}\Big[\Delta\sin\beta_c - a\cos\beta_c\Big]
 $$
 
-Substitute $a = y_e + \kappa y_{int} = y_e + \kappa\tilde y + \Delta\tan\beta_c$, using the equilibrium value from §4-8-5:
+Substitute $a = y_e^{\,p} + \kappa y_{int} = y_e^{\,p} + \kappa\tilde y + \Delta\tan\beta_c$, using the equilibrium value from §4-8-5:
 
 $$
-\Delta\sin\beta_c - \big(y_e + \kappa\tilde y + \Delta\tan\beta_c\big)\cos\beta_c
-= \underbrace{\Delta\sin\beta_c - \Delta\tan\beta_c\cos\beta_c}_{=\ 0} - (y_e + \kappa\tilde y)\cos\beta_c
+\Delta\sin\beta_c - \big(y_e^{\,p} + \kappa\tilde y + \Delta\tan\beta_c\big)\cos\beta_c
+= \underbrace{\Delta\sin\beta_c - \Delta\tan\beta_c\cos\beta_c}_{=\ 0} - (y_e^{\,p} + \kappa\tilde y)\cos\beta_c
 $$
 
 The bracketed pair cancels identically, because $\tan\beta_c\cos\beta_c = \sin\beta_c$. **The current disappears from the error dynamics**, which is the formal statement of what the integrator achieved:
 
 $$
-\boxed{\ \dot y_e = -\,\frac{U\cos\beta_c}{D}\,\big(y_e + \kappa\tilde y\big)\ },
+\boxed{\ \dot y_e^{\,p} = -\,\frac{U\cos\beta_c}{D}\,\big(y_e^{\,p} + \kappa\tilde y\big)\ },
 \qquad
-\dot{\tilde y} = \frac{\Delta\,y_e}{D^2}
+\dot{\tilde y} = \frac{\Delta\,y_e^{\,p}}{D^2}
 $$
 
 | Verification | Result |
@@ -843,7 +832,7 @@ $$
 
 #### Choosing the Lyapunov function
 
-- The state is $(y_e, \tilde y)$ and both should go to zero, so the natural candidate is a weighted sum of squares:
+- The state is $(y_e^{\,p}, \tilde y)$ and both should go to zero, so the natural candidate is a weighted sum of squares:
 
 $$
 V = \tfrac{1}{2}y_e^2 + \tfrac{c}{2}\tilde y^2, \qquad c > 0
@@ -852,22 +841,22 @@ $$
 - $V$ is positive definite and radially unbounded for any $c > 0$. The weight $c$ is not decoration: it is the **one free quantity**, and the entire argument turns on whether a constant $c$ exists that removes the indefinite cross term. Differentiating along the trajectories, with nothing omitted:
 
 $$
-\dot V = y_e\dot y_e + c\,\tilde y\,\dot{\tilde y}
+\dot V = y_e^{\,p}\dot y_e^{\,p} + c\,\tilde y\,\dot{\tilde y}
 $$
 
 $$
-\dot V = y_e\left[-\frac{U\cos\beta_c}{D}(y_e + \kappa\tilde y)\right] + c\,\tilde y\left[\frac{\Delta y_e}{D^2}\right]
+\dot V = y_e^{\,p}\left[-\frac{U\cos\beta_c}{D}(y_e^{\,p} + \kappa\tilde y)\right] + c\,\tilde y\left[\frac{\Delta y_e^{\,p}}{D^2}\right]
 $$
 
 $$
 \dot V = -\frac{U\cos\beta_c}{D}\,y_e^2
-\;\underbrace{-\;\frac{U\kappa\cos\beta_c}{D}\,y_e\tilde y \;+\; \frac{c\,\Delta}{D^2}\,y_e\tilde y}_{\text{the cross term}}
+\;\underbrace{-\;\frac{U\kappa\cos\beta_c}{D}\,y_e^{\,p}\tilde y \;+\; \frac{c\,\Delta}{D^2}\,y_e^{\,p}\tilde y}_{\text{the cross term}}
 $$
 
-- The first term is what is wanted: negative whenever $y_e \ne 0$, provided $\cos\beta_c > 0$. The cross term has no definite sign and must be made to vanish. Collecting it,
+- The first term is what is wanted: negative whenever $y_e^{\,p} \ne 0$, provided $\cos\beta_c > 0$. The cross term has no definite sign and must be made to vanish. Collecting it,
 
 $$
-y_e\tilde y\left[\frac{c\Delta}{D^2} - \frac{U\kappa\cos\beta_c}{D}\right] = 0
+y_e^{\,p}\tilde y\left[\frac{c\Delta}{D^2} - \frac{U\kappa\cos\beta_c}{D}\right] = 0
 \quad\Longleftrightarrow\quad
 c = \frac{U\kappa\,D\cos\beta_c}{\Delta}
 $$
@@ -876,10 +865,10 @@ $$
 
 #### The course form closes where the heading form does not
 
-- Repeat the calculation with the normalisation of `ILOSchi.m`, $\dot{\tilde y} = U y_e / D$. Only the second term of $\dot V$ changes:
+- Repeat the calculation with the normalisation of `ILOSchi.m`, $\dot{\tilde y} = U y_e^{\,p} / D$. Only the second term of $\dot V$ changes:
 
 $$
-\dot V = -\frac{U\cos\beta_c}{D}y_e^2 - \frac{U\kappa\cos\beta_c}{D}y_e\tilde y + c\,\frac{U}{D}y_e\tilde y
+\dot V = -\frac{U\cos\beta_c}{D}y_e^2 - \frac{U\kappa\cos\beta_c}{D}y_e^{\,p}\tilde y + c\,\frac{U}{D}y_e^{\,p}\tilde y
 $$
 
 Now both cross terms carry the same $1/D$, and the choice
@@ -899,10 +888,10 @@ $$
 | $\dot V$ against $-U\cos\beta_c\,y_e^2/D$, course form | agreement to $1.1\times10^{-14}$ over $10^4$ random states |
 | $\dot V \le 0$ over all $10^4$ samples | true |
 
-- $\dot V \le 0$ gives stability and boundedness. It is only negative *semi*definite — $\dot V = 0$ on the whole line $y_e = 0$ — so LaSalle's invariance principle supplies the rest: on that line $\dot y_e = -U\cos\beta_c\,\kappa\tilde y/D$, which is non-zero unless $\tilde y = 0$, so the largest invariant set inside $\dot V = 0$ is the single point $(0,0)$, and the equilibrium is asymptotically stable.
+- $\dot V \le 0$ gives stability and boundedness. It is only negative *semi*definite — $\dot V = 0$ on the whole line $y_e^{\,p} = 0$ — so LaSalle's invariance principle supplies the rest: on that line $\dot y_e^{\,p} = -U\cos\beta_c\,\kappa\tilde y/D$, which is non-zero unless $\tilde y = 0$, so the largest invariant set inside $\dot V = 0$ is the single point $(0,0)$, and the equilibrium is asymptotically stable.
 
 > [!note] What this does and does not settle
-> The clean cancellation above is for the **course** form. The heading form of `ILOSpsi.m` differs from it only by the positive state-dependent factor $\Delta/(U D)$ multiplying the integrator, so it has the **same equilibrium** and the **same sign of integration** — §4-8-5 is untouched, and the numerical integration of §4-8-5 confirms convergence. What it does not have is this one-line quadratic proof. Børhaug, Pavlov and Pettersen (2008) prove the heading case by a cascade argument instead, and their result is uniform global asymptotic stability of the $(y_e,y_{int})$ subsystem under a bound on $\kappa$.
+> The clean cancellation above is for the **course** form. The heading form of `ILOSpsi.m` differs from it only by the positive state-dependent factor $\Delta/(U D)$ multiplying the integrator, so it has the **same equilibrium** and the **same sign of integration** — §4-8-5 is untouched, and the numerical integration of §4-8-5 confirms convergence. What it does not have is this one-line quadratic proof. Børhaug, Pavlov and Pettersen (2008) prove the heading case by a cascade argument instead, and their result is uniform global asymptotic stability of the $(y_e^{\,p},y_{int})$ subsystem under a bound on $\kappa$.
 > The two normalisations in MSS are therefore not an inconsistency. They are two laws for two different autopilots, and each is normalised so that *its own* stability argument closes.
 
 ### 4-8-7. The assumptions, and what breaks without them
@@ -914,14 +903,14 @@ $$
 | $\lvert\beta_c\rvert < 90°$ | $\cos\beta_c > 0$, the sign of both the leading term and the weight $c$ | the vessel is moving backwards relative to its heading; the law's sign inverts |
 | $U > 0$ | $\dot V < 0$ | at rest there is no guidance at all — the law commands a heading but nothing moves along the path |
 | $\Delta > 0$ | $D \ge \Delta > 0$, and $K_p = 1/\Delta$ | division by zero |
-| straight leg, $\pi_p$ constant | $\dot y_e = U\sin(\chi-\pi_p)$ | on a curved path an extra curvature term appears; Lekkas and Fossen (2014) carry it |
+| straight leg, $\pi_p$ constant | $\dot y_e^{\,p} = U\sin(\chi-\pi_p)$ | on a curved path an extra curvature term appears; Lekkas and Fossen (2014) carry it |
 
 ### 4-8-8. Choosing $\kappa$
 
 - $\kappa$ sets how fast the integrator fills. From §4-8-5 the state must reach $\Delta\tan\beta_c/\kappa$, and from §4-8-4 it fills at up to $1/2$ per second, so the time to converge scales roughly as $\Delta\tan\beta_c/(2\kappa)\cdot 2 = \Delta\tan\beta_c/\kappa$ — **a larger $\kappa$ needs a smaller final state and therefore converges sooner**, at the cost of a larger contribution per unit of $y_{int}$ and hence more overshoot.
 - Section H measures it on the full model rather than arguing it. Mean absolute cross-track error over the final $100$ s:
 
-| $\kappa$ [m/s] | $K_i$ [$\text{s}^{-1}$] | settled $\lvert y_e\rvert$ [m] | peak $\lvert y_e\rvert$ [m] | settling time [s] |
+| $\kappa$ [m/s] | $K_i$ [$\text{s}^{-1}$] | settled $\lvert y_e^{\,p}\rvert$ [m] | peak $\lvert y_e^{\,p}\rvert$ [m] | settling time [s] |
 |---|---|---|---|---|
 | 0.02 | 0.0025 | 1.3425 | 3.6388 | never |
 | 0.05 | 0.0063 | 0.6742 | 3.4835 | never |
@@ -937,7 +926,7 @@ $$
 
 > [!important] How this section was written, and how it was checked
 > The MSS release vendored for this course is the **2021** one, which contains `ILOSpsi.m` and `ILOSchi.m` but no `ALOSpsi.m` — adaptive LOS entered MSS in 2023. The derivation below was therefore carried out **from first principles**, without reading an implementation.
-> It has since been checked against the official one. `_tools/verify_alos.m` drives Fossen's `ALOSpsi.m` (MSS 2023+) and the equations of §4-9-2 side by side for 400 steps on this week's mission: **the largest disagreement in $\psi_d$ and in $y_e$ is exactly zero.** The law derived here is the published law, to the letter.
+> It has since been checked against the official one. `_tools/verify_alos.m` drives Fossen's `ALOSpsi.m` (MSS 2023+) and the equations of §4-9-2 side by side for 400 steps on this week's mission: **the largest disagreement in $\psi_d$ and in $y_e^{\,p}$ is exactly zero.** The law derived here is the published law, to the letter.
 >
 > **Source.** T. I. Fossen (2023). *An Adaptive Line-of-sight (ALOS) Guidance Law for Path Following of Aircraft and Marine Craft.* IEEE Transactions on Control Systems Technology **31**(6), 2887–2894. [doi:10.1109/TCST.2023.3259819](https://doi.org/10.1109/TCST.2023.3259819) — cited in the header of `ALOSpsi.m` itself.
 
@@ -970,11 +959,11 @@ The contrast with §4-8 is exactly one word: ILOS adds its extra term **inside**
 ### 4-9-2. The law
 
 $$
-\boxed{\ \psi_d = \pi_p - \hat\beta - \arctan\!\left(\frac{y_e}{\Delta}\right)\ }
+\boxed{\ \psi_d = \pi_p - \hat\beta - \arctan\!\left(\frac{y_e^{\,p}}{\Delta}\right)\ }
 $$
 
 $$
-\boxed{\ \dot{\hat\beta} = \gamma\,\frac{\Delta\,y_e}{\sqrt{\Delta^2 + y_e^2}}\ }
+\boxed{\ \dot{\hat\beta} = \gamma\,\frac{\Delta\,y_e^{\,p}}{\sqrt{\Delta^2 + y_e^2}}\ }
 $$
 
 | Source | Where |
@@ -998,28 +987,28 @@ $$
 | $\gamma$ | adaptation gain | **rad/(m·s)** | §4-9-8; $0.005$, from the sweep of section H. `ALOSpsi.m` suggests $\gamma_h \approx 0.001$ and $\Delta_h = 5$–$20$ m as typical; the sweep of section H picks a faster gain for this hull and mission |
 | $U$ | speed over ground | m/s | $\approx 1.31$ m/s for the Otter at this thrust |
 
-- **The unit of $\gamma$ is worth checking**, because it is the one number a reader is likely to carry across from another vehicle. $\dot{\hat\beta}$ is rad/s. The fraction $\Delta y_e/\sqrt{\Delta^2+y_e^2}$ has metres times metres over metres, so it is a **length**. For the product to be rad/s, $\gamma$ must be $\text{rad}/(\text{m}\cdot\text{s})$. It is not dimensionless, and a value tuned on a vehicle of a different size is not transferable without rescaling.
+- **The unit of $\gamma$ is worth checking**, because it is the one number a reader is likely to carry across from another vehicle. $\dot{\hat\beta}$ is rad/s. The fraction $\Delta y_e^{\,p}/\sqrt{\Delta^2+y_e^2}$ has metres times metres over metres, so it is a **length**. For the product to be rad/s, $\gamma$ must be $\text{rad}/(\text{m}\cdot\text{s})$. It is not dimensionless, and a value tuned on a vehicle of a different size is not transferable without rescaling.
 
 ### 4-9-4. The error dynamics
 
 - Start from §4-7, unchanged:
 
 $$
-\dot y_e = U\sin(\chi - \pi_p), \qquad \chi = \psi + \beta
+\dot y_e^{\,p} = U\sin(\chi - \pi_p), \qquad \chi = \psi + \beta
 $$
 
 - Assume the autopilot has converged, $\psi = \psi_d$, and substitute the ALOS law:
 
 $$
 \chi - \pi_p = \psi_d + \beta - \pi_p
-= \left[\pi_p - \hat\beta - \arctan\frac{y_e}{\Delta}\right] + \beta - \pi_p
-= \tilde\beta - \arctan\frac{y_e}{\Delta}
+= \left[\pi_p - \hat\beta - \arctan\frac{y_e^{\,p}}{\Delta}\right] + \beta - \pi_p
+= \tilde\beta - \arctan\frac{y_e^{\,p}}{\Delta}
 $$
 
 using $\tilde\beta = \beta - \hat\beta$. The path direction has cancelled, and the cross-track dynamics reduce to
 
 $$
-\boxed{\ \dot y_e = U\sin\!\left(\tilde\beta - \arctan\frac{y_e}{\Delta}\right)\ }
+\boxed{\ \dot y_e^{\,p} = U\sin\!\left(\tilde\beta - \arctan\frac{y_e^{\,p}}{\Delta}\right)\ }
 $$
 
 - **Read this before going on.** If the estimate were perfect, $\tilde\beta = 0$ and this is the plain LOS convergence of §4-4 with no offset at all. The whole problem has been reduced to driving one scalar, $\tilde\beta$, to zero.
@@ -1033,7 +1022,7 @@ which is the equation that lets the adaptation law enter the Lyapunov derivative
 
 ### 4-9-5. The Lyapunov function, and why its weight is what it is
 
-- Two quantities must go to zero and they have different units — $y_e$ in metres, $\tilde\beta$ in radians. A Lyapunov function has to add them, so it must carry a weight that reconciles the units, and the weight is not free once the cancellation is demanded.
+- Two quantities must go to zero and they have different units — $y_e^{\,p}$ in metres, $\tilde\beta$ in radians. A Lyapunov function has to add them, so it must carry a weight that reconciles the units, and the weight is not free once the cancellation is demanded.
 
 $$
 V = \tfrac{1}{2}y_e^2 + \frac{U}{2\gamma}\,\tilde\beta^2
@@ -1044,38 +1033,38 @@ $$
 | $\tfrac12 y_e^2$ | $\text{m}^2$ | the quantity actually being regulated |
 | $\frac{U}{2\gamma}\tilde\beta^2$ | $\dfrac{\text{m/s}}{\text{rad}/(\text{m}\,\text{s})}\text{rad}^2 = \text{m}^2$ | the $1/\gamma$ is what makes $\gamma$ cancel out of $\dot V$; the $U$ is what makes the two cross terms carry the same factor and so become cancellable at all |
 
-- $V$ is positive definite in $(y_e,\tilde\beta)$ and radially unbounded, for any $\gamma > 0$ and $U > 0$.
+- $V$ is positive definite in $(y_e^{\,p},\tilde\beta)$ and radially unbounded, for any $\gamma > 0$ and $U > 0$.
 
 - Differentiate, treating $U$ as constant:
 
 $$
-\dot V = y_e\,\dot y_e + \frac{U}{\gamma}\,\tilde\beta\,\dot{\tilde\beta}
-       = y_e\,U\sin\!\left(\tilde\beta - \arctan\frac{y_e}{\Delta}\right) - \frac{U}{\gamma}\,\tilde\beta\,\dot{\hat\beta}
+\dot V = y_e^{\,p}\,\dot y_e^{\,p} + \frac{U}{\gamma}\,\tilde\beta\,\dot{\tilde\beta}
+       = y_e^{\,p}\,U\sin\!\left(\tilde\beta - \arctan\frac{y_e^{\,p}}{\Delta}\right) - \frac{U}{\gamma}\,\tilde\beta\,\dot{\hat\beta}
 $$
 
-- Expand the sine of a difference. Writing $b = \arctan(y_e/\Delta)$, the right triangle of §4-4 gives
+- Expand the sine of a difference. Writing $b = \arctan(y_e^{\,p}/\Delta)$, the right triangle of §4-4 gives
 
 $$
 \cos b = \frac{\Delta}{\sqrt{\Delta^2 + y_e^2}},
 \qquad
-\sin b = \frac{y_e}{\sqrt{\Delta^2 + y_e^2}}
+\sin b = \frac{y_e^{\,p}}{\sqrt{\Delta^2 + y_e^2}}
 $$
 
 so that
 
 $$
 \sin(\tilde\beta - b) = \sin\tilde\beta\cos b - \cos\tilde\beta\sin b
-= \frac{\Delta\sin\tilde\beta - y_e\cos\tilde\beta}{\sqrt{\Delta^2 + y_e^2}}
+= \frac{\Delta\sin\tilde\beta - y_e^{\,p}\cos\tilde\beta}{\sqrt{\Delta^2 + y_e^2}}
 $$
 
 and therefore, with every step written out,
 
 $$
-\dot V = U\,y_e\,\frac{\Delta\sin\tilde\beta - y_e\cos\tilde\beta}{\sqrt{\Delta^2+y_e^2}} - \frac{U}{\gamma}\tilde\beta\,\dot{\hat\beta}
+\dot V = U\,y_e^{\,p}\,\frac{\Delta\sin\tilde\beta - y_e^{\,p}\cos\tilde\beta}{\sqrt{\Delta^2+y_e^2}} - \frac{U}{\gamma}\tilde\beta\,\dot{\hat\beta}
 $$
 
 $$
-\dot V = \underbrace{\frac{U\,\Delta\,y_e\sin\tilde\beta}{\sqrt{\Delta^2+y_e^2}} - \frac{U}{\gamma}\tilde\beta\,\dot{\hat\beta}}_{\text{indefinite — must be dealt with}}
+\dot V = \underbrace{\frac{U\,\Delta\,y_e^{\,p}\sin\tilde\beta}{\sqrt{\Delta^2+y_e^2}} - \frac{U}{\gamma}\tilde\beta\,\dot{\hat\beta}}_{\text{indefinite — must be dealt with}}
 \;\underbrace{-\;\frac{U\,y_e^2\cos\tilde\beta}{\sqrt{\Delta^2+y_e^2}}}_{\text{negative for }\lvert\tilde\beta\rvert<90°}
 $$
 
@@ -1085,22 +1074,22 @@ $$
 - Replace $\sin\tilde\beta$ by $\tilde\beta$ for the moment, so that the two terms of the first group share the factor $\tilde\beta$:
 
 $$
-\tilde\beta\left[\frac{U\Delta y_e}{\sqrt{\Delta^2+y_e^2}} - \frac{U}{\gamma}\dot{\hat\beta}\right] = 0
+\tilde\beta\left[\frac{U\Delta y_e^{\,p}}{\sqrt{\Delta^2+y_e^2}} - \frac{U}{\gamma}\dot{\hat\beta}\right] = 0
 $$
 
 - This must hold for **every** value of $\tilde\beta$, because $\tilde\beta$ is unknown — that is the entire premise of adaptive control. A condition that must hold for all $\tilde\beta$ forces the bracket itself to be zero, and the bracket contains only known quantities:
 
 $$
-\frac{U}{\gamma}\dot{\hat\beta} = \frac{U\,\Delta\,y_e}{\sqrt{\Delta^2+y_e^2}}
+\frac{U}{\gamma}\dot{\hat\beta} = \frac{U\,\Delta\,y_e^{\,p}}{\sqrt{\Delta^2+y_e^2}}
 \quad\Longrightarrow\quad
-\boxed{\ \dot{\hat\beta} = \gamma\,\frac{\Delta\,y_e}{\sqrt{\Delta^2+y_e^2}}\ }
+\boxed{\ \dot{\hat\beta} = \gamma\,\frac{\Delta\,y_e^{\,p}}{\sqrt{\Delta^2+y_e^2}}\ }
 $$
 
 - **Note what the $U$ did.** It cancelled. The adaptation law does not contain the speed, so it does not need a speed measurement — and this is why the Lyapunov weight had to carry $U$ rather than being a bare $1/(2\gamma)$. Choosing the weight was the same act as choosing not to need a speedometer.
 - Substituting back, what survives is
 
 $$
-\dot V = \frac{U\Delta y_e\big(\sin\tilde\beta - \tilde\beta\big)}{\sqrt{\Delta^2+y_e^2}} \;-\; \frac{U\,y_e^2\cos\tilde\beta}{\sqrt{\Delta^2+y_e^2}}
+\dot V = \frac{U\Delta y_e^{\,p}\big(\sin\tilde\beta - \tilde\beta\big)}{\sqrt{\Delta^2+y_e^2}} \;-\; \frac{U\,y_e^2\cos\tilde\beta}{\sqrt{\Delta^2+y_e^2}}
 $$
 
 | Term | Sign | Size |
@@ -1108,7 +1097,7 @@ $$
 | second | negative for $\lvert\tilde\beta\rvert < 90°$ | order $y_e^2$ |
 | first | either sign | order $\tilde\beta^3/6$, since $\sin\tilde\beta - \tilde\beta = -\tilde\beta^3/6 + O(\tilde\beta^5)$ |
 
-- The first term is **third order** in the estimation error while the second is second order in $y_e$, so for small enough $\tilde\beta$ the negative term dominates and $\dot V < 0$. This is why the result is **uniform semiglobal exponential stability** and not a global one: the region of attraction is a ball whose size depends on how large an initial crab-angle error is admitted, and it does not extend to $\lvert\tilde\beta\rvert \ge 90°$.
+- The first term is **third order** in the estimation error while the second is second order in $y_e^{\,p}$, so for small enough $\tilde\beta$ the negative term dominates and $\dot V < 0$. This is why the result is **uniform semiglobal exponential stability** and not a global one: the region of attraction is a ball whose size depends on how large an initial crab-angle error is admitted, and it does not extend to $\lvert\tilde\beta\rvert \ge 90°$.
 - The linear-in-$\tilde\beta$ step above is the only approximation in the derivation, and it is the reason for the word *semiglobal*. Fossen's own treatment reaches the same law and the same USGES conclusion.
 
 #### Verification
@@ -1116,12 +1105,12 @@ $$
 | Check | How | Result |
 |---|---|---|
 | **Dimension** | $\gamma\cdot[\text{m}]$ must be rad/s | $\gamma$ in rad/(m·s), as tabulated |
-| **Sign** | $y_e > 0$ (starboard) must raise $\hat\beta$, since a starboard offset under an unmodelled current means $\beta$ was underestimated | $\dot{\hat\beta} > 0$ for $y_e > 0$ — correct |
-| **Limit** $y_e \to 0$ | adaptation must stop when on the path | $\dot{\hat\beta} \to 0$ |
-| **Limit** $y_e \to \infty$ | the rate must not run away | $\dot{\hat\beta} \to \gamma\Delta$, bounded — a built-in rate limit, as in §4-8-4 |
+| **Sign** | $y_e^{\,p} > 0$ (starboard) must raise $\hat\beta$, since a starboard offset under an unmodelled current means $\beta$ was underestimated | $\dot{\hat\beta} > 0$ for $y_e^{\,p} > 0$ — correct |
+| **Limit** $y_e^{\,p} \to 0$ | adaptation must stop when on the path | $\dot{\hat\beta} \to 0$ |
+| **Limit** $y_e^{\,p} \to \infty$ | the rate must not run away | $\dot{\hat\beta} \to \gamma\Delta$, bounded — a built-in rate limit, as in §4-8-4 |
 | **Numeric** | measured in section G: does $\hat\beta$ converge to the true crab angle? | $\hat\beta = 15.91°$ against a true $\beta_c = 15.88°$ — an error of $0.04°$ |
 | **Numeric** | settled cross-track error under current, section G | $-0.004$ m, against LOS's $2.253$ m |
-| **Source** | `_tools/verify_alos.m` drives this derivation and Fossen's `ALOSpsi.m` (MSS 2023+) for 400 steps | largest disagreement in $\psi_d$ and $y_e$: **exactly zero** |
+| **Source** | `_tools/verify_alos.m` drives this derivation and Fossen's `ALOSpsi.m` (MSS 2023+) for 400 steps | largest disagreement in $\psi_d$ and $y_e^{\,p}$: **exactly zero** |
 
 - The estimate converging to the true crab angle to within $0.04°$ is the strongest available evidence that the law is right, since nothing in the law was ever told what the current was.
 
@@ -1129,7 +1118,7 @@ $$
 
 - The same idealised integration as §4-8-5a, run with the ALOS law instead, and printed by the same script. Compare the two tables column by column: they are doing the same job with different bookkeeping.
 
-| $t$ [s] | $y_e$ [m] | $\hat\beta$ [deg] |
+| $t$ [s] | $y_e^{\,p}$ [m] | $\hat\beta$ [deg] |
 |---|---|---|
 | 0 | 0.000 | 0.00 |
 | 10 | 1.602 | 3.01 |
@@ -1141,10 +1130,10 @@ $$
 
 | What to notice | Why it happens |
 |---|---|
-| $y_e$ grows to $1.60$ m first | with $\hat\beta = 0$ the law *is* plain LOS, so the vessel drifts off exactly as in §4-7 |
-| $\hat\beta$ climbs **monotonically**, with no overshoot | the update $\dot{\hat\beta} = \gamma\Delta y_e/\sqrt{\Delta^2+y_e^2}$ has the same sign as $y_e$, and $y_e$ never changes sign here |
+| $y_e^{\,p}$ grows to $1.60$ m first | with $\hat\beta = 0$ the law *is* plain LOS, so the vessel drifts off exactly as in §4-7 |
+| $\hat\beta$ climbs **monotonically**, with no overshoot | the update $\dot{\hat\beta} = \gamma\Delta y_e^{\,p}/\sqrt{\Delta^2+y_e^2}$ has the same sign as $y_e^{\,p}$, and $y_e^{\,p}$ never changes sign here |
 | $\hat\beta \to 15.74°$ | which is $\beta_c$ exactly. **The law was never told the current speed or direction, and it recovered the drift angle to two decimals** |
-| $y_e \to 0.000$ | once the estimate is right, $\tilde\beta = 0$ and §4-9-4 reduces to plain LOS with no disturbance left |
+| $y_e^{\,p} \to 0.000$ | once the estimate is right, $\tilde\beta = 0$ and §4-9-4 reduces to plain LOS with no disturbance left |
 
 > [!tip] The one difference a beginner should take from the two tables
 > ILOS's state ends at $7.516$ — **seven and a half what?** Seconds, as §4-8-3 shows, and the number means nothing on its own.
@@ -1158,12 +1147,12 @@ $$
 | $\dot\beta = 0$ — constant current | $\dot{\tilde\beta} = -\dot{\hat\beta}$, §4-9-4 | a time-varying current leaves a term $\frac{U}{\gamma}\tilde\beta\dot\beta$ in $\dot V$ with no sign; the estimate lags and $V$ need not decrease |
 | $\lvert\tilde\beta\rvert$ small | the linearisation of $\sin\tilde\beta$, §4-9-6 | the cubic term can dominate; this is what makes the result semiglobal rather than global |
 | $\lvert\tilde\beta\rvert < 90°$ | $\cos\tilde\beta > 0$ | the leading negative term changes sign |
-| $\psi = \psi_d$ — no autopilot lag | $\chi - \pi_p = \tilde\beta - \arctan(y_e/\Delta)$ | **this one is violated in every real system**, including this week's, and the consequence is visible below |
+| $\psi = \psi_d$ — no autopilot lag | $\chi - \pi_p = \tilde\beta - \arctan(y_e^{\,p}/\Delta)$ | **this one is violated in every real system**, including this week's, and the consequence is visible below |
 | $U > 0$ and roughly constant | $V$'s weight, and the differentiation of $V$ | a decelerating vessel adds a $\dot U$ term to $\dot V$ |
 
 > [!warning] $V(t)$ measured on the real model is not monotone, and it should not be expected to be
 > Section H computes $V$ from the logged states of the full model. It **rises** from $5.80$ to $12.94$ over the first $17.5$ s, then falls to $0.5588$ — a net reduction by a factor of $23.2$, but with only $62.2$ % of samples decreasing.
-> The derivation above assumes $\psi = \psi_d$ instantly. The real vessel has a heading autopilot with finite bandwidth, so during the initial turn $\chi - \pi_p$ is set by where the bow actually is rather than by where the guidance law asked it to be, and the equation $\dot y_e = U\sin(\tilde\beta - \arctan(y_e/\Delta))$ — on which the whole $\dot V \le 0$ argument rests — does not yet describe the system.
+> The derivation above assumes $\psi = \psi_d$ instantly. The real vessel has a heading autopilot with finite bandwidth, so during the initial turn $\chi - \pi_p$ is set by where the bow actually is rather than by where the guidance law asked it to be, and the equation $\dot y_e^{\,p} = U\sin(\tilde\beta - \arctan(y_e^{\,p}/\Delta))$ — on which the whole $\dot V \le 0$ argument rests — does not yet describe the system.
 > This is not a defect in the derivation and not a bug in the model. It is the price of the cascade assumption, and quoting a monotone $V$ from a simulation that does not produce one would be the actual error. The correct claim is the one the cascade literature makes: the guidance subsystem is USGES, the autopilot is exponentially stable, and the cascade of the two is stable — but $V$ of the *guidance* subsystem alone is not a Lyapunov function for the *whole* system.
 
 ### 4-9-8. Choosing $\gamma$
@@ -1171,7 +1160,7 @@ $$
 - $\gamma$ sets how fast the estimate moves. Too small and the vessel spends the leg still learning; too large and the estimate chases the transient rather than the current, which couples the estimator into the autopilot's own dynamics.
 - Section H measures it, mean absolute cross-track error over the final $100$ s:
 
-| $\gamma$ [rad/(m·s)] | settled $\lvert y_e\rvert$ [m] | $\hat\beta$ [deg] | true crab [deg] |
+| $\gamma$ [rad/(m·s)] | settled $\lvert y_e^{\,p}\rvert$ [m] | $\hat\beta$ [deg] | true crab [deg] |
 |---|---|---|---|
 | 0.0005 | 0.9353 | 9.31 | 15.75 |
 | 0.0010 | 0.4303 | 12.81 | 15.68 |
@@ -1192,8 +1181,8 @@ $$
 | tuning number | $\kappa$, in m/s | $\gamma$, in rad/(m·s) |
 | removes the current by | accumulating until the offset it contributes matches the one the current caused | measuring the effect and cancelling the cause |
 | stability | UGAS for the course form, by a quadratic $V$; cascade argument for the heading form | USGES — semiglobal, limited by $\lvert\tilde\beta\rvert < 90°$ |
-| anti-windup | built into the denominator, §4-8-4 | built into the bounded $\Delta y_e/\sqrt{\Delta^2+y_e^2}$ |
-| measured settled $y_e$, section G | $0.008$ m | $-0.004$ m |
+| anti-windup | built into the denominator, §4-8-4 | built into the bounded $\Delta y_e^{\,p}/\sqrt{\Delta^2+y_e^2}$ |
+| measured settled $y_e^{\,p}$, section G | $0.008$ m | $-0.004$ m |
 | diagnostic value | none — the state says nothing about the sea | the state **is** the crab angle, usable by other subsystems |
 | reference implementation available | yes, MSS `ILOSpsi.m` | no, in the 2021 release used here |
 
@@ -1207,24 +1196,24 @@ $$
 
 | Equation | MATLAB, as the block runs it |
 |---|---|
-| $\pi_p = \operatorname{atan2}(E_{k+1}-E_k,\ N_{k+1}-N_k)$ | `pi_p = atan2(En - Ek, Nn - Nk);` |
-| $x_e = \ \ \,(N-N_k)\cos\pi_p + (E-E_k)\sin\pi_p$ | `x_e =  dN*cos(pi_p) + dE*sin(pi_p);` |
-| $y_e = -(N-N_k)\sin\pi_p + (E-E_k)\cos\pi_p$ | `y_e = -dN*sin(pi_p) + dE*cos(pi_p);` |
-| $d_k = \lVert\mathbf{wp}_{k+1}-\mathbf{wp}_k\rVert$ | `d = sqrt((Nn-Nk)^2 + (En-Ek)^2);` |
-| $d_k - x_e < R$ | `hit = (d - x_e) < R_switch;` |
-| $\lVert\mathbf{p}-\mathbf{wp}_{k+1}\rVert < R$ | `hit = sqrt((N-Nn)^2 + (E-En)^2) < R_switch;` |
+| $\pi_p = \operatorname{atan2}(y_{i+1}^n-y_i^n,\ x_{i+1}^n-x_i^n)$ | `pi_p = atan2(En - Ek, Nn - Nk);` |
+| $x_e^{\,p} = \ \ \,(N-x_i^n)\cos\pi_p + (E-y_i^n)\sin\pi_p$ | `x_e =  dN*cos(pi_p) + dE*sin(pi_p);` |
+| $y_e^{\,p} = -(N-x_i^n)\sin\pi_p + (E-y_i^n)\cos\pi_p$ | `y_e = -dN*sin(pi_p) + dE*cos(pi_p);` |
+| $d_k = \lVert\mathbf{p}_{i+1}^{\,n}-\mathbf{p}_i^{\,n}\rVert$ | `d = sqrt((Nn-Nk)^2 + (En-Ek)^2);` |
+| $d_k - x_e^{\,p} < R$ | `hit = (d - x_e) < R_switch;` |
+| $\lVert\mathbf{p}-\mathbf{p}_{i+1}^{\,n}\rVert < R$ | `hit = sqrt((N-Nn)^2 + (E-En)^2) < R_switch;` |
 | stop the index at $n-1$, §4-6 | `if hit && k < n-1, k = k + 1; end` |
 
 ### The four bodies
 
 | Law | Equation | MATLAB |
 |---|---|---|
-| atan2 | $\psi_d = \operatorname{atan2}(E_{k+1}-E,\ N_{k+1}-N)$ | `psi_d = atan2(En - E, Nn - N);` |
-| LOS | $\psi_d = \pi_p - \arctan(y_e/\Delta)$ | `psi_d = pi_p - atan(y_e / Delta);` |
-| ILOS | $\psi_d = \pi_p - \arctan(K_p y_e + K_i y_{int})$ | `psi_d = pi_p - atan(Kp*y_e + Ki*y_int);` |
-| | $\dot y_{int} = \dfrac{\Delta y_e}{\Delta^2 + (y_e+\kappa y_{int})^2}$ | `y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);` |
-| ALOS | $\psi_d = \pi_p - \hat\beta - \arctan(y_e/\Delta)$ | `psi_d = pi_p - b_hat - atan(y_e / Delta);` |
-| | $\dot{\hat\beta} = \gamma\dfrac{\Delta y_e}{\sqrt{\Delta^2+y_e^2}}$ | `b_hat = b_hat + h * gamma * Delta * y_e / sqrt(Delta^2 + y_e^2);` |
+| atan2 | $\psi_d = \operatorname{atan2}(y_{i+1}^n-E,\ x_{i+1}^n-N)$ | `psi_d = atan2(En - E, Nn - N);` |
+| LOS | $\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$ | `psi_d = pi_p - atan(y_e / Delta);` |
+| ILOS | $\psi_d = \pi_p - \arctan(K_p y_e^{\,p} + K_i y_{int})$ | `psi_d = pi_p - atan(Kp*y_e + Ki*y_int);` |
+| | $\dot y_{int} = \dfrac{\Delta y_e^{\,p}}{\Delta^2 + (y_e^{\,p}+\kappa y_{int})^2}$ | `y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);` |
+| ALOS | $\psi_d = \pi_p - \hat\beta - \arctan(y_e^{\,p}/\Delta)$ | `psi_d = pi_p - b_hat - atan(y_e / Delta);` |
+| | $\dot{\hat\beta} = \gamma\dfrac{\Delta y_e^{\,p}}{\sqrt{\Delta^2+y_e^2}}$ | `b_hat = b_hat + h * gamma * Delta * y_e / sqrt(Delta^2 + y_e^2);` |
 
 - The two update lines are **forward Euler**, `state = state + h * derivative`, exactly as MSS integrates its own integral state. The step $h$ arrives in the parameter vector rather than being hard-coded, so changing the block's rate changes the integration consistently.
 
@@ -1257,7 +1246,7 @@ $$
 | **Model predictive path following** | optimise the future track over a horizon subject to the actuator limits of Week 5 | handles input saturation and obstacles *inside* the guidance layer | an optimisation every step; no closed-form law to verify by hand | Faulwasser and Findeisen (2016), *IEEE TAC* 61(4), 1026–1039 |
 | **ALOS in 3-D** | estimate both the sideslip and the angle of attack, for a vehicle that can dive | underwater path following with the same structure as §4-9 | two adaptive states, and a coupled stability argument | Fossen and Aguiar (2024), *Ocean Engineering* |
 
-- The common thread is that **every one of them still consumes $y_e$ and produces a course or heading command**. The interface built this week does not change; only the box between the two does. That is the practical value of keeping guidance and control in separate layers.
+- The common thread is that **every one of them still consumes $y_e^{\,p}$ and produces a course or heading command**. The interface built this week does not change; only the box between the two does. That is the practical value of keeping guidance and control in separate layers.
 
 > [!note] What this week deliberately leaves out
 > Obstacle avoidance, collision regulations, and any form of replanning. Those change the *waypoint list*, which is a layer above guidance, not a change to the guidance law. Week 7 introduces the state machine that owns that layer.
@@ -1318,7 +1307,7 @@ Expected output:
 
 | Element | Meaning |
 |---|---|
-| violet, **Guidance bank** | four rows, one per law. Takes the state $x$ and produces $\psi_d$, $y_e$, the waypoint index, and the auxiliary state |
+| violet, **Guidance bank** | four rows, one per law. Takes the state $x$ and produces $\psi_d$, $y_e^{\,p}$, the waypoint index, and the auxiliary state |
 | blue, **Autopilot bank** | four identical copies of the Week 3 P–D law. Nothing here is retuned between rows |
 | amber, **Allocation bank** | four copies of the square allocation of Appendix A1, turning $\tau_N$ into propeller speeds |
 | green, **Plant bank** | four Otter hulls, identical, sharing one ocean current |
@@ -1361,7 +1350,7 @@ Expected output:
 
 | Column | How it is measured |
 |---|---|
-| `atan2 |y_e|`, `LOS |y_e|` | mean $\lvert y_e\rvert$ over **the last third of each leg**, so the number describes steady tracking and not the turn onto the leg |
+| `atan2 |y_e|`, `LOS |y_e|` | mean $\lvert y_e^{\,p}\rvert$ over **the last third of each leg**, so the number describes steady tracking and not the turn onto the leg |
 | `atan2 max` | the worst excursion anywhere on that leg |
 | leg 1 | both laws read exactly zero: the vessel starts on the path, already pointing along it, so there is nothing to correct and the ratio would be $0/0$ |
 
@@ -1404,19 +1393,19 @@ Expected output:
 
 | Quantity | Interval it is measured over |
 |---|---|
-| `settled |y_e|` | mean $\lvert y_e\rvert$ over the **last quarter** of the run, $375$ to $500$ s — the same window `W04_plot.m` prints on every track figure |
+| `settled |y_e|` | mean $\lvert y_e^{\,p}\rvert$ over the **last quarter** of the run, $375$ to $500$ s — the same window `W04_plot.m` prints on every track figure |
 | `max |y_e|` | the whole run, so it is dominated by the corner transients and is nearly identical for both laws |
 | `RMS |y_e|` | $t > 80$ s, that is, after the first corner |
 
-- The first number is a check on the **logging**, not on the law: $\psi_d$ is recomputed here from the logged $y_e$ using the equation of §4-4, and compared with the logged $\psi_d$. Agreement to $0.000\text{e}{+}00$ confirms that the signal named `y_e` in the log really is the one the block used.
+- The first number is a check on the **logging**, not on the law: $\psi_d$ is recomputed here from the logged $y_e^{\,p}$ using the equation of §4-4, and compared with the logged $\psi_d$. Agreement to $0.000\text{e}{+}00$ confirms that the signal named `y_e` in the log really is the one the block used.
 
 ![The LOS law taken apart](W04_simulink/img/W04_result_los.png)
 
 **What the figure says**
 
-- **The meaning.** The three panels take the law $\psi_d = \pi_p - \arctan(y_e/\Delta)$ apart into its two terms and then show what the pair achieves.
+- **The meaning.** The three panels take the law $\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$ apart into its two terms and then show what the pair achieves.
 - **Panel 1, the trend.** $\pi_p$ is a **staircase**: $0°$, then $90°$, then $180°$, then $45°$, changing only at the three switching instants near $72$, $147$ and $222$ s and constant in between. This is the geometry of the mission and it contains no feedback whatever.
-- **Panel 2, the principle.** Two curves are drawn: the correction the law *prescribes*, $-\arctan(y_e/\Delta)$, and the correction actually applied, $\psi_d - \pi_p$. **They lie exactly on top of each other** — agreement to $0.0\text{e}{+}00$ degrees — which is the law verified graphically rather than argued. The correction is zero on the straight parts, dips to about $-33°$ at each of the first two corners and reaches $+23°$ at the $135°$ corner, and **never approaches the $\pm90°$ bound** drawn in red. That bound is the guarantee of §4-4: the vessel can be told to head straight at the path but never away from it.
+- **Panel 2, the principle.** Two curves are drawn: the correction the law *prescribes*, $-\arctan(y_e^{\,p}/\Delta)$, and the correction actually applied, $\psi_d - \pi_p$. **They lie exactly on top of each other** — agreement to $0.0\text{e}{+}00$ degrees — which is the law verified graphically rather than argued. The correction is zero on the straight parts, dips to about $-33°$ at each of the first two corners and reaches $+23°$ at the $135°$ corner, and **never approaches the $\pm90°$ bound** drawn in red. That bound is the guarantee of §4-4: the vessel can be told to head straight at the path but never away from it.
 - **Panel 3, the difference between the algorithms.** Zoomed to $\pm1.5$ m, the same corner transients are visible for both laws — they start from the same place and take a comparable excursion — but LOS returns to the line and stays there while `atan2` does not. Settled over the last quarter of the run, that is $0.016$ m against $1.175$ m, a factor of **seventy-four**.
 - **Why the panels stop at 300 s** while the settled numbers are measured over $375$–$500$ s: the last quarter of the run is where `atan2` is in the limit cycle of section C, which would compress everything else into a band. The comparison of settled values belongs here; the picture of the limit cycle belongs to section C.
 
@@ -1446,7 +1435,7 @@ Expected output:
 
 | Column | Definition |
 |---|---|
-| `settle [m]` | how far **North** the vessel had travelled when $\lvert y_e\rvert$ last left the $0.4$ m band. A distance rather than a time, because the speed is identical in every run and distance is what a chart shows |
+| `settle [m]` | how far **North** the vessel had travelled when $\lvert y_e^{\,p}\rvert$ last left the $0.4$ m band. A distance rather than a time, because the speed is identical in every run and distance is what a chart shows |
 | `not on leg 1` | the vessel never entered the band before the $60$ m leg ended. There is no settling distance, and the table says so rather than quoting the leg length as though it were one |
 | `overshoot [m]` | the furthest the vessel went **past** the path. A negative value means it never crossed |
 | `max |psi_d'|` | the largest rate of change of the command, in deg/s — how hard the guidance law is working the autopilot |
@@ -1457,7 +1446,7 @@ Expected output:
 
 - **The meaning.** Left: five approaches to the same path from the same $8$ m offset, one per $\Delta$. Right: the two costs plotted against $\Delta$, on twin axes.
 - **The trend, with numbers.** On the left, $\Delta = 2$ m (blue) turns almost perpendicular to the path, reaches it by $N \approx 13$ m and **crosses it**, swinging $0.94$ m to the far side before recovering. $\Delta = 30$ m (green) leans so gently that at the end of the $60$ m leg it is still $1.29$ m out and has never crossed. Between them the curves fan out monotonically.
-- **The principle.** All five vessels obey the identical law and differ only in one length. The arctan converts the *ratio* $y_e/\Delta$ into an angle, so a small $\Delta$ saturates that ratio at once — the command sits near $90°$ for most of the approach, which is why `max |psi_d'|` is $14.64$ deg/s at $\Delta = 2$ and $0.27$ deg/s at $\Delta = 30$, a factor of fifty.
+- **The principle.** All five vessels obey the identical law and differ only in one length. The arctan converts the *ratio* $y_e^{\,p}/\Delta$ into an angle, so a small $\Delta$ saturates that ratio at once — the command sits near $90°$ for most of the approach, which is why `max |psi_d'|` is $14.64$ deg/s at $\Delta = 2$ and $0.27$ deg/s at $\Delta = 30$, a factor of fifty.
 - **The difference between the situations.** The right panel shows the trade is **not symmetric**. Overshoot falls quickly and then flattens: going from $\Delta = 2$ to $4$ buys $0.31$ m of it, but going from $8$ to $16$ buys only $0.06$ m. Settling distance, by contrast, grows without limit — $12.82$, $20.06$, $35.82$ m and then off the end of the leg entirely. **Past about $\Delta = 8$ m there is nothing left to buy and a great deal still to pay.**
 - **The two red crosses** are drawn above the dashed line marking the end of leg 1, which is where "no settling distance" honestly belongs: those two runs did not fail to be measured, they failed to settle.
 - **Note the axes on the left panel are not to the same scale.** The leg is $60$ m long and the whole story happens within $9$ m of East. Drawn to a true aspect ratio, all five tracks collapse onto the path line and the figure shows nothing.
@@ -1494,14 +1483,14 @@ Expected output:
 |---|---|
 | `corner cut [m]` | the **closest** the vessel came to waypoint 2. A large $R$ turns early and misses the corner by more |
 | `switch times [s]` | when each of the three switches occurred |
-| `settled |y_e|` | mean $\lvert y_e\rvert$ over the last quarter of the run |
+| `settled |y_e|` | mean $\lvert y_e^{\,p}\rvert$ over the last quarter of the run |
 
 ![Switching radius](W04_simulink/img/W04_result_switching.png)
 
 **What the figure says**
 
 - **The meaning.** Left: the first $90°$ corner, with the four tracks and the four **switching thresholds** drawn as horizontal dotted lines. Right: the active waypoint index against time, for the same four runs.
-- **The thresholds are lines, not circles.** Leg 1 runs due North along $E = 0$, so the along-track test $d_k - x_e < R$ is the half-plane $N > 60 - R$, whose boundary is horizontal. This is the distinction §4-6 makes, drawn on the data: had circles been drawn here, the figure would contradict the page that precedes it.
+- **The thresholds are lines, not circles.** Leg 1 runs due North along $E = 0$, so the along-track test $d_k - x_e^{\,p} < R$ is the half-plane $N > 60 - R$, whose boundary is horizontal. This is the distinction §4-6 makes, drawn on the data: had circles been drawn here, the figure would contradict the page that precedes it.
 - **The trend, with numbers.** Each track leaves the leg exactly where its own dotted line crosses it, and the corner cut follows: $0.44$ m at $R = 2$, then $2.26$, $7.02$ and $9.62$ m. The $R = 25$ track (purple) begins turning at $N = 35$ m, fully $25$ m before the waypoint, and passes almost $10$ m from it.
 - **The principle.** $R$ does not tune accuracy. It decides **how early the vessel gives up on the current leg**, and the corner cut is the direct consequence.
 - **The right panel** makes the same statement in time: all four staircases have the same three steps, shifted earlier as $R$ grows — $[76\ 154\ 232]$ s at $R = 2$ against $[46\ 111\ 176]$ s at $R = 25$. Cutting the corners saves $56$ s over the mission.
@@ -1545,7 +1534,7 @@ Expected output:
 
 | Row | What it confirms |
 |---|---|
-| `LOS 2.253` | the §4-7 prediction $y_e^{ss} = \Delta\tan\beta_c$, to $0.0012$ m |
+| `LOS 2.253` | the §4-7 prediction $y_{e,ss}^{\,p} = \Delta\tan\beta_c$, to $0.0012$ m |
 | `ILOS 0.008` with `aux 7.519` | the §4-8-5 equilibrium: $y_{int}^{eq} = \Delta\tan\beta_c/\kappa = 7.5158$ s predicted, $7.519$ s measured |
 | `ALOS -0.004` with `aux 0.278` | $0.278$ rad is $15.91°$, against a true crab angle of $15.88°$ |
 | the sweep | the prediction holds at every current speed, to at most $0.002$ m |
@@ -1625,12 +1614,12 @@ Expected output:
 
 | Step | What was done | How it was verified |
 |---|---|---|
-| §4-2, §4-3 | derived $\pi_p$ and the pair $(x_e, y_e)$ from one rotation | compared against MSS `crosstrackWpt.m` at eight test points; largest disagreement $0$ |
+| §4-2, §4-3 | derived $\pi_p$ and the pair $(x_e^{\,p}, y_e^{\,p})$ from one rotation | compared against MSS `crosstrackWpt.m` at eight test points; largest disagreement $0$ |
 | §4-4 | derived the LOS law from the aim-point geometry | five limits checked numerically; compared against MSS `LOSchi.m`; recomputed from the log in section D, agreement $0.0\text{e}{+}00$ deg |
 | §4-5 | fixed $\Delta = 8$ m | five-point sweep, section E: settling distance and overshoot move in opposite directions and $8$ m is where the second stops improving |
 | §4-6 | established the two switching criteria and $R < \min_k d_k$ | section F evaluates both tests on one position — $4.50$ m passes, $10.97$ m fails; four-point sweep of $R$ |
-| §4-7 | derived $\dot y_e = U\sin(\chi-\pi_p)$ and $y_e^{ss} = \Delta\tan\beta_c$ | six-point current sweep, section G; worst disagreement $0.002$ m on a $4.1$ m offset |
-| §4-8 | derived ILOS, its units, its built-in anti-windup and its equilibrium | $y_{int}^{eq} = \Delta\tan\beta_c/\kappa$ predicted $7.5158$ s, measured $7.519$ s; closed form of $\dot y_e$ checked to $6.7\times10^{-16}$ over $10^4$ states |
+| §4-7 | derived $\dot y_e^{\,p} = U\sin(\chi-\pi_p)$ and $y_{e,ss}^{\,p} = \Delta\tan\beta_c$ | six-point current sweep, section G; worst disagreement $0.002$ m on a $4.1$ m offset |
+| §4-8 | derived ILOS, its units, its built-in anti-windup and its equilibrium | $y_{int}^{eq} = \Delta\tan\beta_c/\kappa$ predicted $7.5158$ s, measured $7.519$ s; closed form of $\dot y_e^{\,p}$ checked to $6.7\times10^{-16}$ over $10^4$ states |
 | §4-8-6 | showed the course normalisation admits a constant-weight Lyapunov function and the heading one does not | $\dot V$ matches $-U\cos\beta_c y_e^2/D$ to $1.1\times10^{-14}$; the heading form leaves a residual of rms $2.94$ |
 | §4-9 | derived ALOS and showed the adaptation law is forced | $\hat\beta = 15.91°$ against a true $15.88°$, with nothing in the law told what the current was; and the derived law checked against Fossen's `ALOSpsi.m` over 400 steps — **disagreement exactly zero** |
 | §4-10 | put every equation beside the line of MATLAB that implements it | the code shown is generated by `guidance_code(law)`, so it cannot drift from the model |
@@ -1646,15 +1635,15 @@ Expected output:
 - [ ] Section F prints $4.50 < 5$ passing the along-track test while $10.97$ fails the circle test.
 - [ ] Section G reproduces $\Delta\tan\beta_c = 2.2545$ m against a measured $2.2533$ m.
 - [ ] Section H shows the ILOS settled error with a minimum at $\kappa = 0.3$ and the ALOS estimate landing on the true crab angle at $\gamma = 0.005$.
-- [ ] The learner can state, without looking, which of $x_e$ and $y_e$ the switching logic uses and why.
+- [ ] The learner can state, without looking, which of $x_e^{\,p}$ and $y_e^{\,p}$ the switching logic uses and why.
 - [ ] The learner can explain why $V(t)$ in section H is not monotone.
 
 ## Assignment 4
 
 ### ① Requirements
 
-1. **Add a fifth row to the guidance bank** implementing the *course-angle* ILOS of MSS `ILOSchi.m`, that is, with the normalisation $\dot y_{int} = U y_e / \sqrt{\Delta^2 + (y_e + \kappa y_{int})^2}$ and the command applied to $\chi$ rather than $\psi$. Note that $\kappa$ is now **dimensionless**, so the value $0.3$ from this week must not be carried across unchanged; state the correct scaling and justify it.
-2. **Sweep the current direction** $\beta_c \in \{0°, 45°, 90°, 135°, 180°\}$ at a fixed $V_c = 0.3$ m/s, for LOS, ILOS and ALOS. Report the settled $\lvert y_e\rvert$ for each of the fifteen combinations in one table.
+1. **Add a fifth row to the guidance bank** implementing the *course-angle* ILOS of MSS `ILOSchi.m`, that is, with the normalisation $\dot y_{int} = U y_e^{\,p} / \sqrt{\Delta^2 + (y_e^{\,p} + \kappa y_{int})^2}$ and the command applied to $\chi$ rather than $\psi$. Note that $\kappa$ is now **dimensionless**, so the value $0.3$ from this week must not be carried across unchanged; state the correct scaling and justify it.
+2. **Sweep the current direction** $\beta_c \in \{0°, 45°, 90°, 135°, 180°\}$ at a fixed $V_c = 0.3$ m/s, for LOS, ILOS and ALOS. Report the settled $\lvert y_e^{\,p}\rvert$ for each of the fifteen combinations in one table.
 3. **Change the mission** so that one leg is shorter than $R_{switch}$ and show what `wp_switch.m` does. Do not remove the check; demonstrate it firing.
 
 ### ② Verification (required — an unverified result scores zero)
@@ -1663,7 +1652,7 @@ Each of the following must be reported as a number produced by a script, not as 
 
 | Claim | Required evidence |
 |---|---|
-| the fifth row implements the course law | its $\psi_d$ recomputed from the logged $y_e$ and $y_{int}$, agreeing to better than $10^{-9}$ deg |
+| the fifth row implements the course law | its $\psi_d$ recomputed from the logged $y_e^{\,p}$ and $y_{int}$, agreeing to better than $10^{-9}$ deg |
 | the rescaled $\kappa$ is right | a dimensional argument in the report **and** an equilibrium check: $\kappa y_{int}^{eq}$ against $\Delta\tan\beta_c$ |
 | the current sweep | for the LOS rows, each measured offset against $\Delta\tan\beta_c$ computed from the *measured* $\beta_c$ of that run |
 | the short-leg case | the error text, and an explanation of which inequality was violated |
@@ -1712,7 +1701,7 @@ Only problems actually encountered while building this week.
 | MSS `ALOSpsi.m` (2023+) | not in the vendored release; `_tools/verify_alos.m` locates a newer copy on this machine and checks §4-9 against it |
 
 > [!note] A correction worth recording
-> An earlier draft of this week stated that ALOS had **no reference implementation to check against**, because the vendored MSS is the 2021 release. That was wrong: `ALOSpsi.m` exists in MSS 2023 and later, and a copy is present on this machine. The derivation of §4-9 was written before that copy was found and turned out to match it **exactly** — `_tools/verify_alos.m` reports zero disagreement in both $\psi_d$ and $y_e$ over 400 steps.
+> An earlier draft of this week stated that ALOS had **no reference implementation to check against**, because the vendored MSS is the 2021 release. That was wrong: `ALOSpsi.m` exists in MSS 2023 and later, and a copy is present on this machine. The derivation of §4-9 was written before that copy was found and turned out to match it **exactly** — `_tools/verify_alos.m` reports zero disagreement in both $\psi_d$ and $y_e^{\,p}$ over 400 steps.
 > The error was not in the derivation but in the claim that no source existed. **"There is no implementation" is a statement about one release on one day, and it has to be checked before it is written.**
 
 ## Next Week

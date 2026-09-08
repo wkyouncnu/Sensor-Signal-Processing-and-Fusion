@@ -52,7 +52,10 @@
 \node[font=\small, anchor=east]        at (-3.0,1.0)    {$\mathbf{p}_{i}^{n}$};
 %  p_i 의 오른쪽 아래에 둔다. 왼쪽에 두면 그림 왼쪽 끝에 딱 붙어 잘려 보인다.
 \node[note, anchor=north west]         at (2.5,-2.0)    {$[\,x_i^n,\ y_i^n\,]^{\!\top}$};
-\node[font=\small, anchor=south east]  at (117.0,101.5) {$\mathbf{p}_{i+1}^{n}$};
+\node[font=\small, anchor=south east]  at (117.0,104.5) {$\mathbf{p}_{i+1}^{n}$};
+%  두 웨이포인트 모두 성분을 적는다. 하나만 적으면 다른 하나가 무엇인지
+%  독자가 유추해야 한다 — 사용자 지적 2026-09-08.
+\node[note, anchor=north west]         at (110.0,100.0) {$[\,x_{i+1}^n,\ y_{i+1}^n\,]^{\!\top}$};
 
 % ---- 선박을 지나는 북쪽 점선, 그리고 pi_p ------------------------------
 \draw[aux] \Ves -- \Xntop;

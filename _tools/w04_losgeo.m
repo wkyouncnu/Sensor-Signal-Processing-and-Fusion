@@ -136,8 +136,10 @@ end
 mb = 0.5*((90-psi) + (90-chi));
 fprintf(fid, '\\def\\ArcTopBeta{(%.3f,%.3f)}\n', ...
         SC*ves(2) + 14*cosd(90-psi), SC*ves(1) + 14*sind(90-psi));
+%  psi 와 chi 는 8 도밖에 안 벌어져 있어서, 그 가운데 방향으로 이름표를 내밀면
+%  x_b 화살표 위에 얹힌다. 호 **바깥쪽 오른쪽**으로 빼서 잘리지 않게 한다.
 fprintf(fid, '\\def\\LabBeta{(%.3f,%.3f)}\n', ...
-        SC*ves(2) + 18.5*cosd(mb), SC*ves(1) + 18.5*sind(mb));
+        SC*ves(2) + 17.5*cosd(mb) + 3.4, SC*ves(1) + 17.5*sind(mb) - 1.2);
 
 %  조준점의 각 호: 경로와 LOS 를 조준점에서 **뒤로** 본 구간. 그 가운데를
 %  가리키는 화살표의 끝점도 함께 낸다.

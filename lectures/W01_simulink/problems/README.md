@@ -65,6 +65,16 @@ Write the number down before pressing Run.
 | sway velocity $v$ | exactly $0$ |
 | yaw rate $r$ | exactly $0$ |
 
+**What a correct model produces**
+
+![Problem 1, expected result](img/W01_P1_expected.png)
+
+| Reading the figure | |
+|---|---|
+| left | $u$ rises with one time constant and settles on the dashed line at $1.0286$ m/s. It does not overshoot: there is no loop, so nothing can |
+| right | the track is a straight line due north, and every hull silhouette on it points the same way |
+| the check | if the track bends at all, the two Constant entries are not equal |
+
 **The point.** Two propellers, equal shaft speeds. The yaw moment is $N = y_p\,(T_{left} - T_{right})$, so equal speeds produce no turn at all, and the run is a test of surge alone. The command is a **2-vector**: `otter.m` expects $n = [n_L\ ;\ n_R]$, and a scalar is accepted by the Constant block and rejected by the plant.
 
 ---
@@ -103,6 +113,18 @@ Nothing ever goes astern. At $n_0 = 60$ and $\delta n = 3.5$ the slower propelle
 
 **Getting the sign backwards is visible immediately**: the heading change comes out $+70$ deg where the checker wants $-70$ deg.
 
+**What a correct model produces**
+
+![Problem 2, expected result](img/W01_P2_expected.png)
+
+| Reading the figure | |
+|---|---|
+| $u$ | barely moves. The turns cost about $0.007$ m/s of speed and nothing else |
+| $v$ | rises to $+0.126$ in the first turn and falls to $-0.126$ in the second. **The sign change is the point of the problem** |
+| $r$ | two flat plateaus of opposite sign, one per turn, with the transient at each phase boundary |
+| $\psi$ | a ramp down to $-70$ deg, a hold, then a ramp back. A ramp UP first means the sign is reversed |
+| track | the S-shape, with the hull drawn along it so the heading is visible where the track alone would not show it |
+
 > [!warning] The Reshape block is not decoration
 > A MATLAB Function block whose output is written `n = [nL; nR]` produces a $2\times1$ **matrix** signal. The plant does not care. The log does: one matrix input makes the whole To Workspace record three-dimensional, and the checker then finds one column where it expects twelve.
 
@@ -138,6 +160,16 @@ $$
 | ground speed | $1.1091$ m/s |
 | track direction from North | $21.804$ deg |
 | drift, track minus heading | $25.809$ deg |
+
+**What a correct model produces**
+
+![Problem 3, expected result](img/W01_P3_expected.png)
+
+| Reading the figure | |
+|---|---|
+| left | the hull silhouettes point **north** while the track leans **east**. The dashed red line is the straight track from start to finish, at $21.8°$ |
+| right | $\psi$ drifts about $-4°$ over the run, with no yaw command anywhere in the model |
+| the check | if the hull silhouettes lean over with the track, $\psi$ is being drawn from the wrong state — the heading is index 12, not the direction of travel |
 
 **The point.** A current is a **velocity, not a force**. Every hydrodynamic term is computed from $\boldsymbol\nu_r$, the velocity through the water, so the forces on the hull do not change. The position integrates $\boldsymbol\nu$, so the vessel is carried along by the water. That single asymmetry is why a current moves a vessel without pushing it.
 
