@@ -6,9 +6,23 @@
 %  One command, held for the whole run: both propellers at n0, no steering.
 %  Only the water changes. Whatever the track does, the vessel was never told
 %  to do it.
-%  Produces img/W01_result_current.png and img/W01_result_current_rose.png
+%
+%  Produces img/W01_result_current.png
+%
+%  SIMPLIFIED 2026-09-08, at the lecturer's request.
+%
+%  This section used to run sixteen simulations — four named cases and a
+%  twelve-point sweep of the current direction — and draw a three-panel
+%  figure plus a polar "drift rose". It made one point, and made it four
+%  times over. The point is:
+%
+%      the command never changes, and the track changes anyway.
+%
+%  Four runs and one picture say that. `W01_cur_plot.m` still holds the
+%  three-panel and rose drawings and nothing calls it; it is kept so they can
+%  be brought back without rewriting them.
 
-clear V CASES R M i o y k f BET sw Ri sp ax COL dpsi
+clear V CASES R M i o y f COL
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)),'_tools'), here);
 mss_path();
@@ -25,99 +39,46 @@ CASES = { 'still water',      0.0,   0
 
 fprintf('\n  W01 section E — what an ocean current does to an open loop\n');
 fprintf('\n  command: both propellers at n0 = %g rad/s, no steering, %g s\n', V.n0, V.T_final);
-fprintf('  current: V_c = %g m/s\n\n', V.V_c);
-fprintf('    %-18s %9s %9s %9s %9s %10s %10s\n', ...
-        'current', 'u [m/s]', 'u_r', 'v [m/s]', 'v_r', 'psi [deg]', 'track [deg]');
-fprintf('    %s\n', repmat('-', 1, 84));
+fprintf('  the command is the SAME in all four runs. Only the water changes.\n\n');
+fprintf('    %-18s %14s %14s %14s\n', ...
+        'current', 'ground speed', 'track [deg]', 'heading [deg]');
+fprintf('    %s\n', repmat('-', 1, 62));
 
 R = cell(size(CASES,1),1);
-M = zeros(size(CASES,1), 6);
+M = zeros(size(CASES,1), 3);
 for i = 1:size(CASES,1)
     o = run_sim('W01_current', V, 'V_c', CASES{i,2}, 'beta_c', deg2rad(CASES{i,3}));
     y = W01_read(o);
-    R{i}        = o;
-    R{i}.V_c    = CASES{i,2};      % carried so the track plot can draw the
-    R{i}.beta_c = CASES{i,3};      % current as arrows rather than words
-    k = y.t >= 0.8*V.T_final;                        % settled fifth of the run
-    M(i,:) = [mean(y.u(k)) mean(y.u_r(k)) mean(y.v(k)) mean(y.v_r(k)) ...
-              mean(y.psi(k)) trackangle(y)];
-    fprintf('    %-18s %9.4f %9.4f %9.4f %9.4f %10.3f %10.3f\n', CASES{i,1}, M(i,:));
+    R{i} = y;
+    k = y.t >= 0.8*V.T_final;                       % settled fifth of the run
+    M(i,:) = [ hypot(mean(diff(y.N(k))), mean(diff(y.E(k))))/V.h, ...
+               atan2d(y.E(end) - y.E(1), y.N(end) - y.N(1)), ...
+               mean(y.psi(k)) ];
+    fprintf('    %-18s %14.4f %14.2f %14.2f\n', CASES{i,1}, M(i,:));
 end
 
-fprintf(['\n    STILL WATER. The track runs due north, %0.3f deg from it. Y is\n' ...
-         '    structurally zero and nothing turns the vessel, so nothing can.\n'], ...
-         abs(M(1,6)));
-fprintf(['\n    FOLLOWING and HEAD. The heading stays at %.2f and %.2f deg and the\n' ...
-         '    track stays straight, but the ground speed changes: %.4f against\n' ...
-         '    %.4f m/s. Look at u_r - through the WATER the vessel settles at\n' ...
-         '    %.4f and %.4f m/s, within %.4f m/s of each other. The hull cannot\n' ...
-         '    tell the two runs apart; only the ground can.\n'], ...
-         M(2,5), M(4,5), M(2,1), M(4,1), M(2,2), M(4,2), abs(M(2,2)-M(4,2)));
-fprintf(['\n    BEAM. The track leaves the heading by %.2f deg. Nothing pushed the\n' ...
-         '    vessel sideways: v_r = %.4f m/s is the water moving past the hull,\n' ...
-         '    and eta_dot = J(eta) nu carries the vessel with it.\n'], ...
-         M(3,6)-M(3,5), M(3,4));
+fprintf(['\n    Same shaft speed, same thrust, no steering — and four different\n' ...
+         '    answers. A following current adds %.2f m/s over the ground and a\n' ...
+         '    head current takes the same amount away. The beam current is the\n' ...
+         '    one to look at: it carries the vessel %.1f deg off its own heading\n' ...
+         '    without any sideways force acting on the hull.\n'], ...
+        V.V_c, M(3,2) - M(3,3));
 
-dpsi = M(3,5) - M(1,5);
-fprintf(['\n    And the beam case TURNS: psi drifts %.2f deg over the run with no\n' ...
-         '    yaw command at all. Cross-flow drag acts on v_r, and its line of\n' ...
-         '    action is not through the origin, so it makes a yaw moment. The\n' ...
-         '    vessel weathervanes into the flow.\n'], dpsi);
-
-%% ---- sweeping the current direction ------------------------------------
-BET = 0:30:330;
-sw  = zeros(numel(BET), 3);
-fprintf('\n  sweeping the current direction at V_c = %g m/s\n\n', V.V_c);
-fprintf('    %10s %12s %12s %12s\n', 'beta_c [deg]', 'ground speed', 'drift [deg]', 'psi [deg]');
-fprintf('    %s\n', repmat('-', 1, 52));
-for i = 1:numel(BET)
-    Ri = W01_read(run_sim('W01_current', V, 'V_c', V.V_c, 'beta_c', deg2rad(BET(i))));
-    k  = Ri.t >= 0.8*V.T_final;
-    sp = hypot(mean(diff(Ri.N(k))), mean(diff(Ri.E(k)))) / V.h;
-    sw(i,:) = [sp, trackangle(Ri) - mean(Ri.psi(k)), mean(Ri.psi(k))];
-    fprintf('    %10g %12.4f %12.3f %12.3f\n', BET(i), sw(i,:));
+%% ---- one picture: four tracks -----------------------------------------
+%  The tracks alone are the whole section. The hull is drawn along each so
+%  that the beam case shows what a track on its own cannot: the bow still
+%  points north while the vessel travels north-east.
+f   = lab_fig('W01 E  four currents', 620, 560);
+COL = [0.35 0.35 0.35; 0 0.45 0.74; 0.85 0.33 0.10; 0.49 0.18 0.56];
+hold on; grid on; axis equal
+for i = 1:numel(R)
+    plot(R{i}.E, R{i}.N, 'LineWidth', 1.6, 'Color', COL(i,:));
 end
-fprintf(['\n    Ground speed is largest with the current astern and smallest with\n' ...
-         '    it ahead, and the drift angle is largest on the beam. The vessel\n' ...
-         '    is doing the same thing in every one of these runs.\n']);
-
-%% ---- figure 1: the four tracks, and what the hull felt -----------------
-f = W01_cur_plot(R, CASES(:,1)', V, ...
-    'W01 E — one command, four currents: the track the vessel was never given');
+track_ships(cellfun(@(y) [y.N y.E y.psi], R, 'UniformOutput', false), COL, 'Marks', 6);
+xlabel('East  [m]'); ylabel('North  [m]');
+legend(CASES(:,1), 'Location','northwest');
+title({'one command, four currents', ...
+       'the vessel was never told to go anywhere but north'});
 exportgraphics(f, fullfile(here,'img','W01_result_current.png'), 'Resolution', 150);
 
-%% ---- figure 2: the sweep, as a compass ---------------------------------
-COL = [0 0.45 0.74; 0.85 0.33 0.10];
-f = lab_fig('W01 E  current direction', 1000, 430);
-
-subplot(1,2,1);
-polarplot(deg2rad([BET BET(1)]), [sw(:,1); sw(1,1)], 'o-', ...
-          'Color', COL(1,:), 'MarkerFaceColor', COL(1,:));
-%  MATLAB puts 0 deg to the right and counts counter-clockwise. NED counts
-%  CLOCKWISE FROM NORTH, so without these two lines the polar plot is not a
-%  compass and every direction on it is wrong but plausible.
-ax = gca;
-ax.ThetaZeroLocation = 'top';
-ax.ThetaDir          = 'clockwise';
-title({'ground speed against current direction', ...
-       sprintf('north up, east right (V_c = %g m/s)', V.V_c)});
-
-subplot(1,2,2);
-plot(BET, sw(:,2), 'o-', 'Color', COL(2,:), 'MarkerFaceColor', COL(2,:));
-yline(0,'k:'); grid on;
-xlabel('\beta_c  current direction [deg from north]');
-ylabel('drift = track - heading [deg]');
-xlim([0 330]);
-title({'drift angle against current direction', 'zero when the current is fore-and-aft'});
-
-sgtitle('W01 E — the same command in twelve different currents', 'FontWeight','bold');
-exportgraphics(f, fullfile(here,'img','W01_result_current_rose.png'), 'Resolution', 150);
-
-fprintf('\n  figures -> img/W01_result_current.png, img/W01_result_current_rose.png\n\n');
-
-
-% =========================================================================
-function a = trackangle(y)
-%TRACKANGLE  Direction of the straight line from start to finish [deg from north].
-a = atan2d(y.E(end) - y.E(1), y.N(end) - y.N(1));
-end
+fprintf('\n  figure -> img/W01_result_current.png\n\n');

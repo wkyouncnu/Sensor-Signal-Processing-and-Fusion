@@ -1041,12 +1041,12 @@ Expected output:
 | C | `W01_C_terminal_speed.m` | C | `img/W01_result_speed.png` |
 | D | `W01_D_the_manoeuvre.m` | D | `img/W01_result_states.png`, `img/W01_result_track.png` |
 | E | `W01_E_build_current.m` | E | `W01_current.slx` and `img/W01_current.png` |
-| E | `W01_E_current_run.m` | E | `img/W01_result_current.png`, `img/W01_result_current_rose.png` |
+| E | `W01_E_current_run.m` | E | `img/W01_result_current.png` |
 
 - Each laboratory section is one script. Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
 - Sections C, D and E build the model they need if it is missing, so any one of them can be run first.
 - The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_cur_plot.m`, `W01_animate.m`, `W01c_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
-- `W01_frames.m` is not called by anything. It drew a four-panel figure that repeated §1-4 with the same numbers, and that figure was withdrawn; the file is kept so it can be brought back without rewriting it.
+- `W01_frames.m` and `W01_cur_plot.m` are not called by anything. They drew two figures that were withdrawn for repeating what the surrounding text already said; the files are kept so the figures can be brought back without rewriting them.
 - The laboratory of the second hour lives in `W01_simulink/problems/` and `solutions/`, and is separate from these.
 
 ### Step 3 — restore a model if it is broken
@@ -1313,7 +1313,7 @@ W01_E_current_run
 ```
 
 > [!note] To produce every figure in this section
-> `W01_E_build_current.m` writes `img/W01_current.png` at the end of the build. `W01_E_current_run.m` runs `W01_current.slx` sixteen times — four named cases and a twelve-point sweep — prints both tables below, and writes `img/W01_result_current.png` and `img/W01_result_current_rose.png`.
+> `W01_E_build_current.m` writes `img/W01_current.png` at the end of the build. `W01_E_current_run.m` runs `W01_current.slx` **four times** — one per current — prints the table below, and writes `img/W01_result_current.png`.
 
 ![The current model](W01_simulink/img/W01_current.png)
 
@@ -1328,77 +1328,26 @@ W01_E_current_run
 
 - The `Ocean current` stage exists only so that the relative velocity — the quantity every force in the model is evaluated at — can be plotted instead of remaining a hidden intermediate.
 
-### Measured, over the settled last fifth of each run
+### What the four runs give
 
-| Current | $u$ ground | $u_r$ water | $v$ ground | $v_r$ water | $\psi$ [deg] | track [deg] |
-|---|---|---|---|---|---|---|
-| still water | $1.0286$ | $1.0286$ | $0.0000$ | $0.0000$ | $0.000$ | $0.000$ |
-| following, $\beta_c = 0°$ | $1.5286$ | $1.0286$ | $0.0000$ | $0.0000$ | $0.000$ | $0.000$ |
-| beam, $\beta_c = 90°$ | $0.9937$ | $1.0287$ | $0.4926$ | $-0.0062$ | $-4.005$ | $21.804$ |
-| head, $\beta_c = 180°$ | $0.5286$ | $1.0286$ | $-0.0000$ | $-0.0000$ | $-0.000$ | $-0.000$ |
+| Current | ground speed [m/s] | track [deg] | heading [deg] |
+|---|---|---|---|
+| still water | $1.0286$ | $0.00$ | $0.00$ |
+| following, $\beta_c = 0°$ | $1.5286$ | $0.00$ | $0.00$ |
+| beam, $\beta_c = 90°$ | $1.1091$ | $21.80$ | $-4.00$ |
+| head, $\beta_c = 180°$ | $0.5286$ | $-0.00$ | $-0.00$ |
 
 ![One command, four currents](W01_simulink/img/W01_result_current.png)
 
-**Reading the figure**
-
-| Element | Meaning |
-|---|---|
-| left panel | the four tracks. Three run due north; the hull is drawn along each, and the **spacing between hulls** is the ground speed |
-| left panel, orange | the beam case — the only track that leaves the meridian, while its bow still points north |
-| top right | $u_r$, speed through the water. All four curves lie on top of each other |
-| bottom right | $u$, speed over the ground. The same hull, four different answers |
-| thin arrows | the current, drawn along each track so the direction can be read off the picture |
-
 **What the figure says**
 
-- **Meaning.** Four runs of one unchanged command. The left panel is where each ended up; the right column is the same four runs measured two different ways — against the water, and against the ground.
-- **Trend, in numbers.** The two right-hand panels are the heart of it. Through the water, **all four curves lie on top of one another** at $1.0286$ m/s and stay there. Over the ground they fan out into four separate lines: $1.5286$ with the current astern, $1.0286$ in still water, $0.9937$ on the beam and $0.5286$ with it ahead. On the left, the three fore-and-aft cases run due north and only their hull spacing differs — closest together for the head current, furthest apart for the following one — while the beam case leaves the meridian entirely and ends about 48 m to the east.
-- **Principle.** `otter.m` evaluates every hydrodynamic term at $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ but integrates the position with $\boldsymbol{\nu}$. **Forces feel the water; the track is over the ground.** Two velocities, two jobs, and every effect in this figure follows from the split.
-- **What separates the four cases.** Nothing about the vessel, and nothing about the command. Only $\beta_c$ changed. The hull is in an identical state in all four runs — same shaft speed, same thrust, same relative velocity — and it nevertheless ends up in four different places.
-- **What changes with the situation.** The orange hulls still point **north** the whole way while travelling north-east. That is the same heading-is-not-course lesson as section D, arriving from a completely different cause: in section D the gap came from the vessel rotating, here it comes from the water moving, and no measurement taken on board can tell them apart.
+- **One command, four answers.** The shaft speeds are identical in all four runs and nothing steers. Every difference in the picture was produced by the water.
+- **Fore-and-aft currents change only the speed.** Three tracks run due north; they differ in how far the vessel got, which is why the hull silhouettes are spaced differently along them. A following current adds exactly $V_c = 0.5$ m/s to the ground speed and a head current takes the same amount away.
+- **A beam current changes the direction.** The orange track leaves the meridian and ends about $50$ m to the east — **while its bow still points north.** The track and the heading differ by $25.8°$, and no force pushed the hull sideways.
+- **Why that happens** is §1-13 in one line: `otter.m` computes every force from $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$, the velocity through the water, but integrates the position with $\boldsymbol{\nu}$, the velocity over the ground. **Forces feel the water; the track is over the ground.**
 
-### Three observations
-
-**① Fore-and-aft current changes the ground speed by exactly $\pm V_c$.**
-
-$$
-1.0286 + 0.5 = 1.5286,
-\qquad
-1.0286 - 0.5 = 0.5286
-$$
-
-- Both are exact to four decimals. And $u_r$ is $1.0286$ m/s in **both** runs and in still water — identical to four decimals. The hull cannot tell the three runs apart; only the ground can.
-
-**② A beam current moves the vessel sideways with no sideways force.**
-
-- $Y = 0$ still holds — nothing changed in the actuator. The vessel nevertheless makes $v = 0.4926$ m/s over the ground while $v_r = -0.0062$ m/s through the water. The water is doing the moving.
-- The track leaves the heading by $21.80 - (-4.01) = 25.81°$.
-
-**③ The beam current also turns the vessel, with nothing commanded.**
-
-- Heading drifts to $\psi = -4.005°$ over the run. Cross-flow drag acts on the non-zero $v_r$ and its line of action does not pass through the origin, so it produces a yaw moment. The vessel weathervanes into the flow.
-
-![Sweeping the current direction](W01_simulink/img/W01_result_current_rose.png)
-
-**Reading the figure**
-
-| Element | Meaning |
-|---|---|
-| left, polar | ground speed against $\beta_c$, drawn as a compass — **north up, east right, clockwise**, matching NED |
-| right | drift angle against $\beta_c$: zero when the current is fore-and-aft, largest near the beam |
-
-- The sweep is antisymmetric about $\beta_c = 180°$, as it must be for a hull symmetric about its centreline. Maximum drift is $\pm 27.96°$ at $\beta_c = 120°$ and $240°$.
-
-**What the figure says**
-
-- **Meaning.** The four named cases of the previous figure, extended to twelve directions $30°$ apart. The polar panel asks *how fast*, the Cartesian panel asks *how far off course*.
-- **Trend, in numbers.** The polar plot is an egg, not a circle: widest at the top, $1.5286$ m/s with the current astern, narrowest at the bottom, $0.5286$ m/s with it ahead, and $1.1091$ m/s on either beam. The ratio between best and worst is $2.9$, from a current worth half the vessel's own speed. The drift curve crosses zero exactly twice — at $\beta_c = 0°$ and $180°$ — and peaks at $\pm 27.96°$, not on the beam but past it, at $120°$ and $240°$.
-- **Principle.** Ground velocity is the vector sum of the vessel's velocity through the water and the current itself. That sum is largest when the two are parallel, smallest when opposed, and turns the resultant furthest when the current has both a large sideways component and a retarding one — which is why the drift maximum sits past the beam rather than on it.
-- **What separates the two panels.** Speed and direction are damaged by different currents. A head current costs the most speed and produces **no drift at all**; a quartering current from $120°$ costs moderate speed and produces the worst drift. **A vessel can be slowed without being pushed off course, and pushed off course without being much slowed.**
-- **What changes with the situation.** The whole picture scales with $V_c / u$. At $V_c = 0.5$ m/s against a vessel doing $1.03$ m/s the drift reaches $28°$; a slower vessel or a stronger current makes it worse, and a current stronger than the vessel drives the **narrow end** of the egg — the head-current case at $\beta_c = 180°$, drawn at the bottom — through zero, so the vessel makes sternway while still commanded ahead. This is the problem Week 4's line-of-sight guidance exists to solve, and the reason it needs an integral term.
-
-> [!note] The vessel is doing the same thing in all twelve runs
-> Same command, same thrust, same speed through the water. Everything different in the polar plot is the water, not the vessel. That is worth stating out loud before Week 4 asks a guidance law to cope with it.
+> [!note] This is the problem Week 4 exists to solve
+> A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 4 §4-7 measures the resulting path error and §4-8 and §4-9 remove it.
 
 ## Week Summary
 
