@@ -1,14 +1,31 @@
-function add_measurement(mdl, pos, tag, extra)
+function add_measurement(mdl, pos, tag, extra, opts)
 %ADD_MEASUREMENT  The last stage of the chain: selectors, logging, live view.
 %
 %   add_measurement(mdl, pos, tag)
 %   add_measurement(mdl, pos, tag, {'u_d','X_cmd'})
+%   add_measurement(mdl, pos, tag, {'n'}, struct('dash',true))
 %
 %     mdl    model name
 %     pos    [x1 y1 x2 y2], normally gnc_chain('measurement')
 %     tag    week tag, e.g. 'W01'. Names the logged variable and the live-view
 %            function <tag>_animate
 %     extra  cell array of extra inport names to log after the vessel states
+%     opts   optional struct
+%              .dash      false (default) — the live view receives
+%                         (N, E, psi, t, en) and draws the track alone.
+%                         true — it receives (u, v, r, N, E, psi, t, en) and
+%                         draws the track AND the six states in one window,
+%                         through _tools/live_dash.m
+%              .weekName  name of the scope carrying the extra signals.
+%                         Default '<tag>  this week'. Give it something the
+%                         reader can act on, e.g. 'input  n  [rad/s]'
+%
+%   WHY .dash IS OPT-IN AND NOT THE DEFAULT
+%
+%   Turning it on changes the Animate block's signature, so every week that
+%   uses it must have its <tag>_animate wrapper widened to match on the same
+%   day. Weeks migrate one at a time and each one is rebuilt and run before
+%   the next; a flag makes that safe, a silent change of default does not.
 %
 %   THE LOGGING CONTRACT
 %
@@ -54,6 +71,19 @@ function add_measurement(mdl, pos, tag, extra)
 %   rad2deg gain, because that is what live_track documents as its input.
 
 if nargin < 4 || isempty(extra), extra = {}; end
+if nargin < 5, opts = struct(); end
+if ~isfield(opts,'dash'),     opts.dash     = false;                    end
+if ~isfield(opts,'weekName'), opts.weekName = [tag '  this week'];      end
+
+%  The live view's inputs. The dashboard needs the three velocities as well,
+%  so the port list — and therefore the block's height and every lane that
+%  reaches it — is derived from this one cell array rather than written twice.
+if opts.dash
+    anmIn = {'u','v','r','N','E','psi'};
+else
+    anmIn = {'N','E','psi'};
+end
+nAnm = numel(anmIn) + 2;                       % + clock + enable
 
 sub = add_subsys(mdl, 'Measurements', pos, [{'x'} extra], {}, gnc_colour('measurement'));
 
@@ -76,27 +106,34 @@ add_block('simulink/Signal Routing/Mux', [sub '/vel'], ...
 %  It is placed BELOW the log ladder, whose height grows with the number of
 %  logged channels. A fixed y would be overrun by any week that logs more than
 %  eight, and the two blocks would be drawn on top of each other.
+%  55 px per port keeps each name legible under its own row, so the height
+%  follows the port count instead of being a fixed 260.
 yA = 90 + 52*nlog + 80;
 add_block('simulink/User-Defined Functions/MATLAB Function', [sub '/Animate'], ...
-          'Position',[420 yA 540 yA+260]);
+          'Position',[420 yA 540 yA+55*nAnm]);
+sig = strjoin(anmIn, ', ');
 set_mlfcn([sub '/Animate'], { ...
-'function ok = Animate(N, E, psi, t, en)'
+sprintf('function ok = Animate(%s, t, en)', sig)
 '%#codegen'
-'% Live view of the hull, its heading and its track while the model runs.'
+'% Live view of the vessel while the model runs.'
 '%'
 '% A MATLAB Function block cannot plot, so the drawing function is declared'
 '% extrinsic: Simulink calls plain MATLAB rather than generating code for it.'
 '% Set animate = 0 in the setup script to switch the live view off.'
+'%'
+'% psi arrives in RADIANS and r in rad/s - the units otter.m works in. The'
+'% wrapper converts them for display, in one place, so no two figures in the'
+'% course can disagree about what a degree is.'
 sprintf('coder.extrinsic(''%s_animate'');', tag)
 'ok = 1;'
 'if en > 0.5'
-sprintf('    %s_animate(N, E, psi, t);', tag)
+sprintf('    %s_animate(%s, t);', tag, sig)
 'end'
 'end'});
 
 logy = arrayfun(@(k) port_xy(sub,'log','Inport',k), 1:nlog, 'UniformOutput', false);
 logy = cellfun(@(p) p(2), logy);                       % row of each log channel
-anmy = arrayfun(@(k) port_xy(sub,'Animate','Inport',k), 1:5, 'UniformOutput', false);
+anmy = arrayfun(@(k) port_xy(sub,'Animate','Inport',k), 1:nAnm, 'UniformOutput', false);
 anmy = cellfun(@(p) p(2), anmy);                       % row of each live-view input
 
 %% ---- one state out of the twelve ---------------------------------------
@@ -161,10 +198,10 @@ if ~isempty(extra)
         lane_line(sub, extra{i}, 1, 'week', i, 100 + 8*i);
     end
     yw = port_xy(sub, 'week', 'Outport', 1);
-    add_block('simulink/Sinks/Scope', [sub '/' tag '  this week'], ...
+    add_block('simulink/Sinks/Scope', [sub '/' opts.weekName], ...
               'Position',[220 yw(2)-15 250 yw(2)+15]);
-    add_line(sub, 'week/1', [tag '  this week/1']);
-    set_param([sub '/' tag '  this week'], 'Open', 'on');
+    add_line(sub, 'week/1', [opts.weekName '/1']);
+    set_param([sub '/' opts.weekName], 'Open', 'on');
 end
 
 %% ---- the live view ------------------------------------------------------
@@ -172,19 +209,26 @@ end
 %  feed, so only the three state feeds need a lane.
 %  At x = 300 rather than 200: the corridor left of that belongs to the
 %  week's own scope, which shares these rows.
+kClock = nAnm - 1;   kEnable = nAnm;
 add_block('simulink/Sources/Digital Clock', [sub '/clock'], ...
-          'SampleTime','h', 'Position',[300 anmy(4)-15 350 anmy(4)+15]);
+          'SampleTime','h', 'Position',[300 anmy(kClock)-15 350 anmy(kClock)+15]);
 add_block('simulink/Sources/Constant', [sub '/live view'], ...
-          'Value','animate', 'Position',[298 anmy(5)-15 353 anmy(5)+15]);
+          'Value','animate', 'Position',[298 anmy(kEnable)-15 353 anmy(kEnable)+15]);
 ya = port_xy(sub, 'Animate', 'Outport', 1);
 add_block('simulink/Sinks/Terminator', [sub '/anim end'], ...
           'Position',[600 ya(2)-10 620 ya(2)+10]);
 
-lane_line(sub, 'N',   1, 'Animate', 1, 360);
-lane_line(sub, 'E',   1, 'Animate', 2, 372);
-lane_line(sub, 'psi', 1, 'Animate', 3, 258);
-add_line(sub, 'clock/1',     'Animate/4');
-add_line(sub, 'live view/1', 'Animate/5');
+%  One vertical lane per state feed, all of them in the corridor between the
+%  selectors (x = 250) and the live-view block (x = 420). The three lanes at
+%  265..295 belong to the velocity Mux and 258 to psi, so the dashboard's
+%  extra feeds take 384, 396 and 408 and no two signals share a run.
+%  _tools/check_overlaps.m is the check that this is still true.
+LANE = struct('psi',258, 'N',360, 'E',372, 'u',384, 'v',396, 'r',408);
+for k = 1:numel(anmIn)
+    lane_line(sub, anmIn{k}, 1, 'Animate', k, LANE.(anmIn{k}));
+end
+add_line(sub, 'clock/1',     sprintf('Animate/%d', kClock));
+add_line(sub, 'live view/1', sprintf('Animate/%d', kEnable));
 add_line(sub, 'Animate/1',   'anim end/1');
 
 %% ---- open the scope with the model -------------------------------------

@@ -7,6 +7,16 @@ slprj/
 *.mex*
 codegen/
 
+# MSS 툴박스 사본. 파일은 지우지 않는다 — 올리지만 않는다.
+# CLAUDE.md §7 이 "올라가지 않는 것" 에 MSS 120 MB 를 명시했고,
+# git_autopush.sh 는 `git add -A` 라서 여기 적지 않으면 통째로 올라간다.
+# 코드는 이것을 참조하지 않는다. 경로는 _tools/mss_path.m 이 찾는다.
+lectures/MSS-master/
+MSS-master/
+
+# 실습 폴더를 통째로 압축한 배포본. 원본이 저장소에 있으므로 중복이다.
+lectures/*_simulink.zip
+
 # Editor and OS leftovers
 ~$*
 .DS_Store

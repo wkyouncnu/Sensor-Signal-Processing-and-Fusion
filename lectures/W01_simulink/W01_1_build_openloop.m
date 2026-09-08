@@ -102,23 +102,54 @@ set_mlfcn([cmd '/schedule'], { ...
 'end'
 'n = [nL; nR];'}, 'n', '[2 1]');
 
+%  A MATLAB Function block whose output is written n = [nL; nR] produces a
+%  2-by-1 MATRIX signal, not a 2-element vector. The plant does not care, but
+%  the log does: a Mux fed one matrix input makes its whole output a matrix,
+%  and To Workspace then stores [8 x 1 x nT] instead of the [nT x 8] that the
+%  logging contract in add_measurement promises. One Reshape keeps the promise.
+add_block('simulink/Math Operations/Reshape', [cmd '/as vector'], ...
+          'OutputDimensionality','1-D array', 'Position',[380 78 420 122]);
+
 add_line(cmd, 'Clock/1', 'schedule/1', 'autorouting','smart');
 for i = 1:numel(K)
     add_line(cmd, [K{i} '/1'], sprintf('schedule/%d', i+1), 'autorouting','smart');
 end
-add_line(cmd, 'schedule/1', 'n/1', 'autorouting','smart');
+add_line(cmd, 'schedule/1',  'as vector/1', 'autorouting','smart');
+add_line(cmd, 'as vector/1', 'n/1',         'autorouting','smart');
 
 %% ---- 5. plant ----------------------------------------------------------
 add_otter_plant(m, 'Otter USV', P.plant, cfg);
 set_param([m '/Otter USV'], 'BackgroundColor', gnc_colour('plant'));
 
 %% ---- 6. measurement ----------------------------------------------------
-add_measurement(m, P.measurement, 'W01');
+%  Two things beyond the course-wide contract, both asked for by the lecturer:
+%
+%  .dash      the live view becomes ONE window holding the North-East track
+%             with the hull drawn on it AND the six states u, v, r, x, y, psi
+%             against time, in m, m/s, deg and deg/s, with psi wrapped to
+%             (-180, 180]. It is drawn from inside the model by a MATLAB
+%             Function block, not by a script run afterwards.
+%
+%  the input  n is branched into Measurements so it is logged and scoped
+%             beside the states it produced. A model whose input is not on
+%             screen cannot be read: the turns in u, v and r mean nothing
+%             until the two shaft speeds that caused them are visible.
+%
+%  That leaves TWO scopes, which is the whole set: one for the input and one
+%  for the velocities. Position and heading are in the dashboard window, so a
+%  third scope would only repeat it.
+%  A Simulink block name cannot contain a forward slash, so the scope's unit
+%  is spelled out rather than written [rad/s].
+add_measurement(m, P.measurement, 'W01', {'n'}, ...
+                struct('dash', true, 'weekName', 'input  n  (rad per s)'));
 
 %% ---- wiring ------------------------------------------------------------
 L = @(a,b) add_line(m, a, b, 'autorouting','smart');
 L('Manoeuvre command/1', 'Otter USV/1');
 L('Otter USV/1',         'Measurements/1');
+%  The command is branched, not re-generated: the scope must show the very
+%  signal the plant received, not a second copy of it that could drift.
+L('Manoeuvre command/1', 'Measurements/2');
 
 %% ---- what the model is for ---------------------------------------------
 %  Simulink annotations do not wrap at the Position width, so the text is

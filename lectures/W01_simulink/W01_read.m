@@ -32,10 +32,32 @@ y.t   = o.t;
 y.beta = atan2d(y.v, y.u);       % crab angle  beta = atan2(v, u)  [deg]
 y.chi  = y.psi + y.beta;         % course over ground              [deg]
 
-if size(o.y, 2) >= 10
-    y.u_c = o.y(:,7);            % current, surge component in {b}   [m/s]
-    y.v_c = o.y(:,8);            % current, sway  component in {b}   [m/s]
-    y.u_r = o.y(:,9);            % relative surge, u - u_c           [m/s]
-    y.v_r = o.y(:,10);           % relative sway,  v - v_c           [m/s]
+%  The heading is read straight from the log, which does not wrap it: otter.m
+%  integrates psi and a vessel that turns twice reaches 720 deg. Every figure
+%  that shows psi as a compass bearing wraps it, and does so with this one
+%  expression so that no two of them disagree at the boundary.
+%
+%      psi_wrapped = mod(psi + 180, 360) - 180      ->  (-180, 180]
+%
+%  Exactly 180 deg maps to -180 deg. That is the only point where the two
+%  forms differ, and it is why the unwrapped y.psi is kept as well: a turn
+%  rate computed by differencing the WRAPPED angle has a spurious 360 deg
+%  jump in it, so anything differentiated must use y.psi and not y.psi_w.
+y.psi_w = mod(y.psi + 180, 360) - 180;             % heading, wrapped [deg]
+
+%  The two shaft speeds, present whenever the model logged its own input.
+%  The open-loop model logs 8 columns, the current model 12; in both the
+%  command occupies 7 and 8, so the test is on the columns being there at
+%  all and not on the total width.
+if size(o.y, 2) >= 8
+    y.nL = o.y(:,7);             % port propeller command           [rad/s]
+    y.nR = o.y(:,8);             % starboard propeller command      [rad/s]
+end
+
+if size(o.y, 2) >= 12
+    y.u_c = o.y(:,9);            % current, surge component in {b}   [m/s]
+    y.v_c = o.y(:,10);           % current, sway  component in {b}   [m/s]
+    y.u_r = o.y(:,11);           % relative surge, u - u_c           [m/s]
+    y.v_r = o.y(:,12);           % relative sway,  v - v_c           [m/s]
 end
 end

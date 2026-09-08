@@ -140,15 +140,23 @@ add_otter_plant(m, 'Otter USV', P.plant, cfg);
 set_param([m '/Otter USV'], 'BackgroundColor', gnc_colour('plant'));
 
 %% ---- 4. measurement ----------------------------------------------------
-%  log = [u v r N E psi | u_c v_c u_r v_r]
-add_measurement(m, P.measurement, 'W01c', {'cur'});
+%  log = [u v r N E psi | nL nR | u_c v_c u_r v_r]
+%
+%  The command occupies columns 7 and 8 here exactly as it does in the
+%  open-loop model, so W01_read.m can name the two shaft speeds the same way
+%  in both. Putting the current's four columns after them, rather than at 7,
+%  is the only reason the reader does not need to know which model produced
+%  the log.
+add_measurement(m, P.measurement, 'W01c', {'n','cur'}, ...
+                struct('weekName', 'input n  and  current'));
 
 %% ---- wiring ------------------------------------------------------------
 L = @(a,b) add_line(m, a, b, 'autorouting','smart');
 L('Speed command/1', 'Otter USV/1');
 L('Otter USV/1',     'Measurements/1');
+L('Speed command/1', 'Measurements/2');
 L('Otter USV/1',     'Ocean current/1');
-L('Ocean current/1', 'Measurements/2');
+L('Ocean current/1', 'Measurements/3');
 
 %% ---- what the model is for ---------------------------------------------
 note(m, [40 330 860 700], strjoin({ ...
