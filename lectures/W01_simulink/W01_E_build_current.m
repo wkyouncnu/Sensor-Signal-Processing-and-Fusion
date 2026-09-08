@@ -148,7 +148,7 @@ set_param([m '/Otter USV'], 'BackgroundColor', gnc_colour('plant'));
 %  is the only reason the reader does not need to know which model produced
 %  the log.
 add_measurement(m, P.measurement, 'W01c', {'n','cur'}, ...
-                struct('weekName', 'input n  and  current'));
+                struct('dash', true, 'weekName', 'input n  and  current'));
 
 %% ---- wiring ------------------------------------------------------------
 L = @(a,b) add_line(m, a, b, 'autorouting','smart');

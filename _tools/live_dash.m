@@ -46,7 +46,7 @@ function live_dash(u, v, r, N, E, psi, t, o)
 %
 %   See also LIVE_TRACK, DRAW_SHIP, W01_ANIMATE.
 
-persistent fig axT axS hTrail hHull hHead hLine hInfo D tLast tPrev Lship tag
+persistent fig axT axS hTrail hHull hHead hRef hLine hInfo D tLast tPrev Lship tag
 
 %% ---- 기본값 -------------------------------------------------------------
 if ~isfield(o,'tag'),   o.tag   = 'GNC';                      end
@@ -55,6 +55,7 @@ if ~isfield(o,'title'), o.title = 'track';                    end
 if ~isfield(o,'lim'),   o.lim   = [-50 50 -50 50];            end
 if ~isfield(o,'every'), o.every = 0.5;                        end
 if ~isfield(o,'wp'),    o.wp    = [];                         end
+if ~isfield(o,'psi_d'), o.psi_d = [];                         end
 
 %  화면에 쓸 단위로 여기서 한 번만 바꾼다.
 r_deg   = r * 180/pi;                            % [deg/s]
@@ -89,6 +90,9 @@ if newRun
     plot(axT, 0, 0, 'ks', 'MarkerFaceColor','w', 'MarkerSize',9, 'LineWidth',1.2);
 
     hTrail = plot(axT, nan, nan, '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
+    %  요구 선수각. 실선(선수)이 파선(명령) 위로 올라앉는 것을 보는 것이
+    %  W03·W04 의 전부다. o.psi_d 를 주지 않는 주차에서는 그냥 비어 있다.
+    hRef   = plot(axT, nan, nan, '--', 'Color',[0.35 0.35 0.35], 'LineWidth',1.4);
     hHull  = patch('Parent',axT, 'XData',nan, 'YData',nan, ...
                    'FaceColor',[0.85 0.33 0.10], 'FaceAlpha',0.85, ...
                    'EdgeColor',[0.35 0.12 0.03], 'LineWidth',1.0);
@@ -140,9 +144,19 @@ set(hTrail, 'XData', D.E, 'YData', D.N);
 set(hHull, 'XData', xh, 'YData', yh);
 set(hHead, 'XData', xd, 'YData', yd);
 
-set(hInfo, 'String', sprintf(['%s        t = %6.1f s        u = %5.2f m/s' ...
-                              '        \\psi = %6.1f\\circ'], ...
-                             o.title, t, u, psi_deg));
+if isempty(o.psi_d)
+    set(hRef, 'XData', nan, 'YData', nan);
+else
+    %  선수 지시선(1.6 Lship)보다 확실히 길게. 짧으면 선체에 묻혀서
+    %  "실선이 파선 위로 올라앉는" 것이 안 보인다 — 그게 W03 의 전부인데.
+    set(hRef, 'XData', [E, E + 3.6*Lship*sin(o.psi_d)], ...
+              'YData', [N, N + 3.6*Lship*cos(o.psi_d)]);
+end
+
+%  두 줄로 나눈다. 한 줄로 이으면 W04 처럼 제목이 긴 주차에서 가운데 정렬된
+%  글이 축 밖으로 나가 첫 글자가 잘린다 ("W04" 가 "04" 로 보였다).
+set(hInfo, 'String', {o.title, ...
+     sprintf('t = %.1f s     u = %.2f m/s     \\psi = %.1f\\circ', t, u, psi_deg)});
 
 F = {'u','v','r','N','E','psi'};
 for k = 1:6

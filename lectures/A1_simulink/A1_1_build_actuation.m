@@ -107,7 +107,8 @@ add_otter_plant(m, 'Otter USV', P.plant, cfg);
 set_param([m '/Otter USV'], 'BackgroundColor', gnc_colour('plant'));
 
 %% ---- 4. measurement ----------------------------------------------------
-add_measurement(m, P.measurement, 'A1', {'tau'});
+add_measurement(m, P.measurement, 'A1', {'tau'}, ...
+                struct('dash', true, 'weekName', 'A1  demanded tau'));
 
 %% ---- wiring ------------------------------------------------------------
 L = @(x,y) add_line(m, x, y, 'autorouting','smart');

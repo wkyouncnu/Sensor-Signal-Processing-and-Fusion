@@ -216,7 +216,8 @@ set_param([m '/Otter USV'], 'BackgroundColor', gnc_colour('plant'));
 %% =====================================================================
 %  5. Measurements
 %  =====================================================================
-add_measurement(m, P.measurement, 'W03', {'psi_d','tau_N','n1','n2'});
+add_measurement(m, P.measurement, 'W03', {'psi_d','tau_N','n1','n2'}, ...
+                struct('dash', true, 'weekName', 'W03  command and moment'));
 
 %% ---- wiring ------------------------------------------------------------
 L = @(x,y) add_line(m, x, y, 'autorouting','smart');

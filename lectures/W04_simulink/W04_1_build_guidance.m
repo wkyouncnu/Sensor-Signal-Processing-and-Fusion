@@ -353,7 +353,8 @@ lane_line(p, 'Otter 1', 1, 'x1', 1, 640);
 %  The first six columns are the FIRST vessel's, by the course-wide contract.
 %  `trk` is all four state vectors, because the figures of this week draw four
 %  tracks and the contract's six columns describe only one vessel.
-add_measurement(m, P.measurement, 'W04', {'psi_d','y_e','wp','aux','trk'});
+add_measurement(m, P.measurement, 'W04', {'psi_d','y_e','wp','aux','trk'}, ...
+                struct('dash', true, 'weekName', 'W04  guidance signals'));
 
 %% ---- wiring, top level -------------------------------------------------
 L = @(x,y) add_line(m, x, y, 'autorouting','smart');
