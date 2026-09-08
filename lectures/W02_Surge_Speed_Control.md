@@ -1119,6 +1119,28 @@ W02_I_pseudo_derivative_run
 
 ---
 
+## In-class laboratory — close the speed loop by hand
+
+The second hour of the Week 2 session is spent building, in Simulink, the loop this lecture built from a script. Three problems, one hour, with a checker that compares the result against the numbers measured above.
+
+```matlab
+cd lectures/W02_simulink/problems
+W02_P1_start                 % creates W02_P1.slx — hull and thrust map only
+W02_check(1)                 % run this whenever, as often as needed
+```
+
+| | Problem | Time | The number it must reproduce |
+|---|---|---|---|
+| 1 | The open loop — a constant force in, a log out | 20 min | $u_{ss} = K_u X$ exactly: $0.6447$, $1.2894$, $2.5788$ m/s |
+| 2 | Proportional control — and the error that never closes | 20 min | $0.8448$ m/s at $K_p = 100$, against $u_d = 1.5$ |
+| 3 | Add the integrator — and find what it cost | 20 min | error $\to 0$, and overshoot **appears** |
+
+- The full problem sheet is [`W02_simulink/problems/README.md`](W02_simulink/problems/README.md), and reference answers are in [`W02_simulink/solutions/`](W02_simulink/solutions/README.md).
+- The problem sheet carries **the result graphs a correct model produces**, so a plot can be compared against a plot and not only against a number.
+- The hull and the thrust map are provided. Everything between the reference and the plant is built by hand.
+
+---
+
 ## Assignment 2
 
 - **Due**: before the Week 3 session
