@@ -4,7 +4,7 @@
 %
 % 같은 배, 같은 자리. 남은 along-track 거리는 R 보다 작고(전환), 참 거리는
 % R 의 두 배가 넘는다(대기). section F 가 이 숫자를 찍는다:
-%   d - x_e = 4.50 m < R = 5,  |P - wp| = 10.97 m > R
+%   d - x_e^{\,p} = 4.50 m < R = 5,  |P - wp| = 10.97 m > R
 \documentclass[border=5pt]{standalone}
 \input{gnc-style}
 
@@ -14,8 +14,8 @@
 \def\SC{1.5}       % 1 m = 1.5 mm
 \def\LEG{78}       % 다리 52 m
 \def\RR{7.5}       % R = 5 m
-\def\YV{15}        % y_e = 10 m  (= 2R)
-\def\XV{71.25}     % d - x_e = 4.5 m  ->  x = 52 - 4.5 = 47.5 m
+\def\YV{15}        % y_e^{\,p} = 10 m  (= 2R)
+\def\XV{71.25}     % d - x_e^{\,p} = 4.5 m  ->  x = 52 - 4.5 = 47.5 m
 
 % ===================== (a) along-track =====================================
 \begin{scope}
@@ -26,16 +26,16 @@
   \fill[pathc, opacity=0.10] ({\LEG-\RR},-24) rectangle ({\LEG+4},14);
   \draw[pathc, line width=0.4pt, densely dashed] ({\LEG-\RR},-24) -- ({\LEG-\RR},14);
   \node[pathc, font=\scriptsize, anchor=south east] at ({\LEG-\RR-1},9)
-       {the band $d-x_e < R$};
+       {the band $d-x_e^{\,p} < R$};
 
   \draw[pathc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\LEG,0);
   \filldraw[pathc, fill=white, line width=0.7pt] (0,0)     circle (1.1);
   \filldraw[pathc, fill=white, line width=0.7pt] (\LEG,0)  circle (1.1);
-  \node[pathc, font=\scriptsize, anchor=north] at (0,-2)    {$\mathbf{wp}_k$};
-  \node[pathc, font=\scriptsize, anchor=south] at (\LEG,2)  {$\mathbf{wp}_{k+1}$};
+  \node[pathc, font=\scriptsize, anchor=north] at (0,-2)    {$\mathbf{p}_i^{\,n}$};
+  \node[pathc, font=\scriptsize, anchor=south] at (\LEG,2)  {$\mathbf{p}_{i+1}^{\,n}$};
 
   \draw[errc, line width=0.8pt] (\XV,0) -- (\XV,-\YV);
-  \node[errc, font=\scriptsize, anchor=west] at ({\XV+1.5},{-0.6*\YV}) {$y_e = 2R$};
+  \node[errc, font=\scriptsize, anchor=west] at ({\XV+1.5},{-0.6*\YV}) {$y_e^{\,p} = 2R$};
   \fill[ink] (\XV,{-\YV-1}) -- ({\XV-2.4},{-\YV-6}) -- ({\XV+2.4},{-\YV-6}) -- cycle;
 
   \node[pathc, font=\small\bfseries, anchor=north] at (\XV,{-\YV-8}) {SWITCHES};
@@ -59,13 +59,13 @@
   \draw[pathc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\LEG,0);
   \filldraw[pathc, fill=white, line width=0.7pt] (0,0)     circle (1.1);
   \filldraw[pathc, fill=white, line width=0.7pt] (\LEG,0)  circle (1.1);
-  \node[pathc, font=\scriptsize, anchor=north] at (0,-2)   {$\mathbf{wp}_k$};
-  \node[pathc, font=\scriptsize, anchor=south] at (\LEG,2) {$\mathbf{wp}_{k+1}$};
+  \node[pathc, font=\scriptsize, anchor=north] at (0,-2)   {$\mathbf{p}_i^{\,n}$};
+  \node[pathc, font=\scriptsize, anchor=south] at (\LEG,2) {$\mathbf{p}_{i+1}^{\,n}$};
 
   % 참 거리 — 이것이 판정하는 양이다
   \draw[warn, line width=0.7pt, densely dotted] (\XV,-\YV) -- (\LEG,0);
   \node[warn, font=\scriptsize, anchor=north west] at ({\XV+6},{-\YV+5})
-       {$\lVert\mathbf{p}-\mathbf{wp}_{k+1}\rVert = 10.97$\,m};
+       {$\lVert\mathbf{p}-\mathbf{p}_{i+1}^{\,n}\rVert = 10.97$\,m};
 
   \draw[errc, line width=0.8pt] (\XV,0) -- (\XV,-\YV);
   \fill[ink] (\XV,{-\YV-1}) -- ({\XV-2.4},{-\YV-6}) -- ({\XV+2.4},{-\YV-6}) -- cycle;
@@ -80,11 +80,11 @@
 % ---- 아래 한 줄 -------------------------------------------------------------
 \draw[soft, line width=0.3pt] (0,-46) -- (172,-46);
 \node[anchor=north west, align=left, text width=172mm, font=\scriptsize] at (0,-48) {%
-  On the path the two agree exactly, because $y_e=0$ makes
-  $\lVert\mathbf{p}-\mathbf{wp}_{k+1}\rVert = d-x_e$. Off it they do not:
-  $\lVert\mathbf{p}-\mathbf{wp}_{k+1}\rVert = \sqrt{(d-x_e)^2+y_e^2} \ge d-x_e$,
+  On the path the two agree exactly, because $y_e^{\,p}=0$ makes
+  $\lVert\mathbf{p}-\mathbf{p}_{i+1}^{\,n}\rVert = d-x_e^{\,p}$. Off it they do not:
+  $\lVert\mathbf{p}-\mathbf{p}_{i+1}^{\,n}\rVert = \sqrt{(d-x_e^{\,p})^2+y_e^2} \ge d-x_e^{\,p}$,
   so \textbf{the circle test is always the stricter of the two}, by an amount that
-  grows with $y_e$. Section F evaluates both on one position: the along-track
+  grows with $y_e^{\,p}$. Section F evaluates both on one position: the along-track
   remainder is $4.50$\,m and passes; the true distance is $10.97$\,m and fails.
   The one hard limit is $R < \min_k d_k$ — otherwise a leg is already ``reached''
   before the vessel has travelled any of it.};

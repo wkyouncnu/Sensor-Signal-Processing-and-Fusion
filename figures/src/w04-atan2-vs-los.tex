@@ -18,20 +18,20 @@
 % ===================== (a) atan2 ===========================================
 \begin{scope}
   \node[font=\small\bfseries, anchor=west] at (0,22) {(a)\quad atan2 — aim at the waypoint};
-  \node[note, anchor=west] at (0,17.5) {$\psi_d = \mathrm{atan2}(E_{k+1}-E,\ N_{k+1}-N)$};
+  \node[note, anchor=west] at (0,17.5) {$\psi_d = \mathrm{atan2}(y_{i+1}^n-E,\ x_{i+1}^n-N)$};
 
   \draw[pathc, line width=0.7pt, densely dashed] (0,0) -- (\XE,0);
   \filldraw[pathc, fill=white, line width=0.6pt] (0,0)   circle (0.9);
   \filldraw[pathc, fill=white, line width=0.6pt] (\XE,0) circle (0.9);
-  \node[pathc, font=\scriptsize, anchor=south] at (0,1.4)   {$\mathbf{wp}_k$};
-  \node[pathc, font=\scriptsize, anchor=south] at (\XE,1.4) {$\mathbf{wp}_{k+1}$};
+  \node[pathc, font=\scriptsize, anchor=south] at (0,1.4)   {$\mathbf{p}_i^{\,n}$};
+  \node[pathc, font=\scriptsize, anchor=south] at (\XE,1.4) {$\mathbf{p}_{i+1}^{\,n}$};
 
   \draw[warn, line width=0.9pt] plot coordinates{\ATANtrack};
   \node[warn, font=\scriptsize, anchor=north west] at (6,-8) {the track};
 
   % x = 40 m 에서의 오차 — 직선이므로 정확히 10.8 m
   \draw[errc, line width=0.7pt] (24,0) -- (24,-6.48);
-  \node[errc, font=\scriptsize, anchor=west] at (25,-3.4) {$y_e = 10.8$\,m here};
+  \node[errc, font=\scriptsize, anchor=west] at (25,-3.4) {$y_e^{\,p} = 10.8$\,m here};
 
   \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,-13) {%
     The law regulates the distance to a \textbf{point}. The line that point sits
@@ -42,19 +42,19 @@
 % ===================== (b) LOS =============================================
 \begin{scope}[shift={(76,0)}]
   \node[font=\small\bfseries, anchor=west] at (0,22) {(b)\quad LOS — aim $\Delta$ ahead on the path};
-  \node[note, anchor=west] at (0,17.5) {$\psi_d = \pi_p - \arctan(y_e/\Delta)$,\ \ $\Delta = 8$\,m};
+  \node[note, anchor=west] at (0,17.5) {$\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$,\ \ $\Delta = 8$\,m};
 
   \draw[pathc, line width=0.7pt, densely dashed] (0,0) -- (\XE,0);
   \filldraw[pathc, fill=white, line width=0.6pt] (0,0)   circle (0.9);
   \filldraw[pathc, fill=white, line width=0.6pt] (\XE,0) circle (0.9);
-  \node[pathc, font=\scriptsize, anchor=south] at (0,1.4)   {$\mathbf{wp}_k$};
-  \node[pathc, font=\scriptsize, anchor=south] at (\XE,1.4) {$\mathbf{wp}_{k+1}$};
+  \node[pathc, font=\scriptsize, anchor=south] at (0,1.4)   {$\mathbf{p}_i^{\,n}$};
+  \node[pathc, font=\scriptsize, anchor=south] at (\XE,1.4) {$\mathbf{p}_{i+1}^{\,n}$};
 
   \draw[accent, line width=0.9pt] plot coordinates{\LOStrack};
   \node[accent, font=\scriptsize, anchor=north west] at (6,-8) {the track};
 
   \draw[errc, line width=0.7pt] (24,0) -- (24,-0.07);
-  \node[errc, font=\scriptsize, anchor=west] at (25,-3.4) {$y_e = 0.11$\,m here};
+  \node[errc, font=\scriptsize, anchor=west] at (25,-3.4) {$y_e^{\,p} = 0.11$\,m here};
 
   \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,-13) {%
     The law regulates the distance to the \textbf{line}. The aim point moves along
@@ -68,7 +68,7 @@
   Both vessels start 18\,m off the path and both reach the waypoint. Only one
   travels along the line to it. The tracks are not sketched: the LOS curve is the
   guidance law integrated along the path,
-  $\mathrm{d}y_e/\mathrm{d}s = -y_e/\sqrt{\Delta^2+y_e^2}$, by
+  $\mathrm{d}y_e^{\,p}/\mathrm{d}s = -y_e^{\,p}/\sqrt{\Delta^2+y_e^2}$, by
   \texttt{\_tools/w04\_track\_curves.awk}. Measured on the four-leg mission of
   section C: atan2 holds the path to $0.547$\,m and LOS to $0.060$\,m.};
 

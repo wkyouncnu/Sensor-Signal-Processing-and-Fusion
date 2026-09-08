@@ -10,8 +10,8 @@
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
-\def\XE{51.2}      % x_e = 32 m at 1.6 mm/m
-\def\YE{22.4}      % y_e = 14 m
+\def\XE{51.2}      % x_e^{\,p} = 32 m at 1.6 mm/m
+\def\YE{22.4}      % y_e^{\,p} = 14 m
 \def\LG{104}       % 다리 65 m
 
 % ---- NED --------------------------------------------------------------------
@@ -49,10 +49,10 @@
   \fill[ink] ({\XE+3.6},{-\YE+1.9}) -- ({\XE-3.4},{-\YE+2.6})
           -- ({\XE-1.4},{-\YE-3.4}) -- cycle;
 
-  \node[pathc, font=\small, anchor=north east] at (-1.5,-1.5) {$\mathbf{wp}_k$};
-  \node[pathc, font=\small, anchor=north west] at ({\LG-16},-2) {$\mathbf{wp}_{k+1}$};
-  \node[alng, font=\small, anchor=south]  at ({0.5*\XE},1.5) {$x_e$};
-  \node[errc, font=\small, anchor=west]   at ({\XE+2},{-0.55*\YE}) {$y_e$};
+  \node[pathc, font=\small, anchor=north east] at (-1.5,-1.5) {$\mathbf{p}_i^{\,n}$};
+  \node[pathc, font=\small, anchor=north west] at ({\LG-16},-2) {$\mathbf{p}_{i+1}^{\,n}$};
+  \node[alng, font=\small, anchor=south]  at ({0.5*\XE},1.5) {$x_e^{\,p}$};
+  \node[errc, font=\small, anchor=west]   at ({\XE+2},{-0.55*\YE}) {$y_e^{\,p}$};
   \node[ink, font=\scriptsize, anchor=north east] at ({0.62*\XE},{-0.62*\YE-3.5})
        {the position error};
   \node[ink, font=\scriptsize, anchor=north] at ({\XE+2},{-\YE-4}) {the vessel};
@@ -70,21 +70,21 @@
   \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,48) {%
     The leg gives the frame its direction:};
   \node[anchor=north west, font=\small] at (0,41)
-       {$\pi_p = \mathrm{atan2}(E_{k+1}-E_k,\ N_{k+1}-N_k)$};
+       {$\pi_p = \mathrm{atan2}(y_{i+1}^n-y_i^n,\ x_{i+1}^n-x_i^n)$};
   \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,34) {%
     and the error, written in that frame, is};
   \node[anchor=north west, font=\small] at (0,27)
-       {$\begin{bmatrix} x_e \\ y_e \end{bmatrix}
-         = \mathbf{R}(\pi_p)^{\!\top}
-           \begin{bmatrix} N-N_k \\ E-E_k \end{bmatrix}$};
+       {$\begin{bmatrix} x_e^{\,p} \\ y_e^{\,p} \end{bmatrix}
+         = \mathbf{R}_p^{\,n}(\pi_p)^{\!\top}
+           \begin{bmatrix} x^n-x_i^n \\ y^n-y_i^n \end{bmatrix}$};
 
   \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,6) {%
-    $x_e$ — how far \textbf{along} the leg the vessel has come.
+    $x_e^{\,p}$ — how far \textbf{along} the leg the vessel has come.
     The switching test of §4-6 uses it.\\[3pt]
-    $y_e$ — how far \textbf{to the side}. The guidance law drives this one to
+    $y_e^{\,p}$ — how far \textbf{to the side}. The guidance law drives this one to
     zero.\\[6pt]
     Both are projections of the same vector onto the same orthonormal pair, so
-    $x_e^2 + y_e^2 = \lVert\mathbf{p}-\mathbf{wp}_k\rVert^2$ — a rotation
+    $x_e^2 + y_e^2 = \lVert\mathbf{p}-\mathbf{p}_i^{\,n}\rVert^2$ — a rotation
     preserves length, and that is the cheapest check on the whole construction.};
 \end{scope}
 

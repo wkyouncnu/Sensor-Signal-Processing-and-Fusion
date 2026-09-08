@@ -2,9 +2,9 @@
 %
 %   bash _tools/tikz2svg.sh figures/src/w04-lookahead.tex figures/w04-lookahead.svg
 %
-% 하나의 y_e 에 Delta 셋. 각도는 arctan(y_e/Delta) 로 계산한 값이고,
+% 하나의 y_e^{\,p} 에 Delta 셋. 각도는 arctan(y_e^{\,p}/Delta) 로 계산한 값이고,
 % 그림에서 잰 각과 같아야 한다.
-%   y_e = 12 m :  Delta = 6  -> 63.43 deg
+%   y_e^{\,p} = 12 m :  Delta = 6  -> 63.43 deg
 %                 Delta = 15 -> 38.66 deg
 %                 Delta = 33 -> 19.98 deg
 \documentclass[border=5pt]{standalone}
@@ -14,7 +14,7 @@
 \begin{tikzpicture}[x=1mm, y=1mm]
 
 \def\SC{1.35}        % 1 m = 1.35 mm
-\def\YE{16.2}        % y_e = 12 m
+\def\YE{16.2}        % y_e^{\,p} = 12 m
 \def\DA{8.1}         % Delta = 6 m
 \def\DB{20.25}       % Delta = 15 m
 \def\DC{44.55}       % Delta = 33 m
@@ -34,7 +34,7 @@
 % ---- 수선의 발과 배 ---------------------------------------------------------
 \draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,-\YE);
 \draw[errc, line width=0.4pt] (0,-2.4) -- (2.4,-2.4) -- (2.4,0);
-\node[errc, font=\small, anchor=east] at (-1.5,{-0.55*\YE}) {$y_e$};
+\node[errc, font=\small, anchor=east] at (-1.5,{-0.55*\YE}) {$y_e^{\,p}$};
 \fill[ink] (0,{-\YE-1.0}) -- (-2.6,{-\YE-6.2}) -- (2.6,{-\YE-6.2}) -- cycle;
 \node[note, anchor=north] at (0,{-\YE-8}) {the vessel};
 \node[note, anchor=south east] at (-1.5,1.5) {foot of the perpendicular};
@@ -57,7 +57,7 @@
 \begin{scope}[shift={(96,0)}]
   \node[font=\small\bfseries, anchor=north west] at (0,28) {the trade};
   \node[anchor=north west, align=left, text width=76mm, font=\scriptsize] at (0,23) {%
-    One and the same $y_e$. Only $\Delta$ has changed, and the command has changed
+    One and the same $y_e^{\,p}$. Only $\Delta$ has changed, and the command has changed
     by a factor of three.\\[5pt]
     \textcolor{warn}{\textbf{$\Delta$ too small}} — the arctan saturates almost at
     once, the vessel turns nearly perpendicular to the path and arrives with speed

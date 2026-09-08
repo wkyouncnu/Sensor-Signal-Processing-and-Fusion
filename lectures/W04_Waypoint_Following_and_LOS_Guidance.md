@@ -56,7 +56,7 @@ After this week the learner should be able to:
 
 | From | What is needed here |
 |---|---|
-| Week 1 §1-3 | $\boldsymbol{\eta} = [N\ E\ \psi]^\top$, $\boldsymbol{\nu} = [u\ v\ r]^\top$, and the rotation $\mathbf{R}(\psi)$ |
+| Week 1 §1-3 | $\boldsymbol{\eta} = [x^n\ y^n\ \psi]^\top$, $\boldsymbol{\nu} = [u\ v\ r]^\top$, and the rotation $\mathbf{R}(\psi)$ |
 | Week 1 §1-4 | body velocity is not the rate of change of position — the same rotation reappears in §4-3 |
 | Week 1 §1-9 | the ocean current enters as a velocity, so the vessel's speed **through the water** differs from its speed over ground |
 | Week 3 §3-4 | the crab angle and the course $\chi = \psi + \beta_c$. **Weeks 1 and 3 write this angle $\beta$; this week writes $\beta_c$**, following Fossen, because §4-9 needs $\beta$ free for the estimated quantity. The two symbols mean the same thing: $\operatorname{atan2}(v,u)$ |
@@ -80,12 +80,12 @@ After this week the learner should be able to:
 - The obvious first law is to point the bow at the next waypoint:
 
 $$
-\psi_d = \operatorname{atan2}\!\left(y_{i+1}^n - E,\; x_{i+1}^n - N\right)
+\psi_d = \operatorname{atan2}\!\left(y_{i+1}^n - y^n,\; x_{i+1}^n - x^n\right)
 $$
 
 | Symbol | Quantity | Unit / source |
 |---|---|---|
-| $N,\ E$ | present position of the vessel, NED | m — from the plant |
+| $x^n,\ y^n$ | present position of the vessel, in $\{n\}$. In NED, $x$ **is** North and $y$ **is** East | m — from the plant |
 | $x_{i+1}^n,\ y_{i+1}^n$ | the waypoint being approached | m — `WP_N`, `WP_E` in `W04_vars.m` |
 | $\psi_d$ | commanded heading | rad — into the Week 3 autopilot |
 
@@ -179,7 +179,7 @@ $$
 
 $\hat{\mathbf{t}}$ is a unit vector at angle $\pi_p$ from North, which is the leg's direction by the definition of §4-2. $\hat{\mathbf{n}}$ is $\hat{\mathbf{t}}$ turned by $+90°$, which in a North-East frame points to **starboard** of the leg. The two are orthonormal, so the pair is a basis and the decomposition below is unique.
 
-The vessel at $\mathbf{p} = [N\ \ E]^\top$ has position error $\mathbf{p} - \mathbf{p}_i^{\,n}$ relative to the leg's origin. Its components in the leg frame are its projections onto the two basis vectors:
+The vessel at $\mathbf{p}^{\,n} = [\,x^n\ \ y^n\,]^\top$ has position error $\mathbf{p}^{\,n} - \mathbf{p}_i^{\,n}$ relative to the leg's origin. Its components in the leg frame are its projections onto the two basis vectors:
 
 $$
 x_e^{\,p} = \hat{\mathbf{t}}^\top\big(\mathbf{p}^{\,n} - \mathbf{p}_i^{\,n}\big),
@@ -1197,8 +1197,8 @@ $$
 | Equation | MATLAB, as the block runs it |
 |---|---|
 | $\pi_p = \operatorname{atan2}(y_{i+1}^n-y_i^n,\ x_{i+1}^n-x_i^n)$ | `pi_p = atan2(En - Ek, Nn - Nk);` |
-| $x_e^{\,p} = \ \ \,(N-x_i^n)\cos\pi_p + (E-y_i^n)\sin\pi_p$ | `x_e =  dN*cos(pi_p) + dE*sin(pi_p);` |
-| $y_e^{\,p} = -(N-x_i^n)\sin\pi_p + (E-y_i^n)\cos\pi_p$ | `y_e = -dN*sin(pi_p) + dE*cos(pi_p);` |
+| $x_e^{\,p} = \ \ \,(x^n-x_i^n)\cos\pi_p + (y^n-y_i^n)\sin\pi_p$ | `x_e =  dN*cos(pi_p) + dE*sin(pi_p);` |
+| $y_e^{\,p} = -(x^n-x_i^n)\sin\pi_p + (y^n-y_i^n)\cos\pi_p$ | `y_e = -dN*sin(pi_p) + dE*cos(pi_p);` |
 | $d_k = \lVert\mathbf{p}_{i+1}^{\,n}-\mathbf{p}_i^{\,n}\rVert$ | `d = sqrt((Nn-Nk)^2 + (En-Ek)^2);` |
 | $d_k - x_e^{\,p} < R$ | `hit = (d - x_e) < R_switch;` |
 | $\lVert\mathbf{p}-\mathbf{p}_{i+1}^{\,n}\rVert < R$ | `hit = sqrt((N-Nn)^2 + (E-En)^2) < R_switch;` |
@@ -1208,7 +1208,7 @@ $$
 
 | Law | Equation | MATLAB |
 |---|---|---|
-| atan2 | $\psi_d = \operatorname{atan2}(y_{i+1}^n-E,\ x_{i+1}^n-N)$ | `psi_d = atan2(En - E, Nn - N);` |
+| atan2 | $\psi_d = \operatorname{atan2}(y_{i+1}^n-y^n,\ x_{i+1}^n-x^n)$ | `psi_d = atan2(En - E, Nn - N);` |
 | LOS | $\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$ | `psi_d = pi_p - atan(y_e / Delta);` |
 | ILOS | $\psi_d = \pi_p - \arctan(K_p y_e^{\,p} + K_i y_{int})$ | `psi_d = pi_p - atan(Kp*y_e + Ki*y_int);` |
 | | $\dot y_{int} = \dfrac{\Delta y_e^{\,p}}{\Delta^2 + (y_e^{\,p}+\kappa y_{int})^2}$ | `y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);` |
@@ -1445,7 +1445,7 @@ Expected output:
 **What the figure says**
 
 - **The meaning.** Left: five approaches to the same path from the same $8$ m offset, one per $\Delta$. Right: the two costs plotted against $\Delta$, on twin axes.
-- **The trend, with numbers.** On the left, $\Delta = 2$ m (blue) turns almost perpendicular to the path, reaches it by $N \approx 13$ m and **crosses it**, swinging $0.94$ m to the far side before recovering. $\Delta = 30$ m (green) leans so gently that at the end of the $60$ m leg it is still $1.29$ m out and has never crossed. Between them the curves fan out monotonically.
+- **The trend, with numbers.** On the left, $\Delta = 2$ m (blue) turns almost perpendicular to the path, reaches it by $x^n \approx 13$ m and **crosses it**, swinging $0.94$ m to the far side before recovering. $\Delta = 30$ m (green) leans so gently that at the end of the $60$ m leg it is still $1.29$ m out and has never crossed. Between them the curves fan out monotonically.
 - **The principle.** All five vessels obey the identical law and differ only in one length. The arctan converts the *ratio* $y_e^{\,p}/\Delta$ into an angle, so a small $\Delta$ saturates that ratio at once — the command sits near $90°$ for most of the approach, which is why `max |psi_d'|` is $14.64$ deg/s at $\Delta = 2$ and $0.27$ deg/s at $\Delta = 30$, a factor of fifty.
 - **The difference between the situations.** The right panel shows the trade is **not symmetric**. Overshoot falls quickly and then flattens: going from $\Delta = 2$ to $4$ buys $0.31$ m of it, but going from $8$ to $16$ buys only $0.06$ m. Settling distance, by contrast, grows without limit — $12.82$, $20.06$, $35.82$ m and then off the end of the leg entirely. **Past about $\Delta = 8$ m there is nothing left to buy and a great deal still to pay.**
 - **The two red crosses** are drawn above the dashed line marking the end of leg 1, which is where "no settling distance" honestly belongs: those two runs did not fail to be measured, they failed to settle.
@@ -1491,7 +1491,7 @@ Expected output:
 
 - **The meaning.** Left: the first $90°$ corner, with the four tracks and the four **switching thresholds** drawn as horizontal dotted lines. Right: the active waypoint index against time, for the same four runs.
 - **The thresholds are lines, not circles.** Leg 1 runs due North along $E = 0$, so the along-track test $d_k - x_e^{\,p} < R$ is the half-plane $N > 60 - R$, whose boundary is horizontal. This is the distinction §4-6 makes, drawn on the data: had circles been drawn here, the figure would contradict the page that precedes it.
-- **The trend, with numbers.** Each track leaves the leg exactly where its own dotted line crosses it, and the corner cut follows: $0.44$ m at $R = 2$, then $2.26$, $7.02$ and $9.62$ m. The $R = 25$ track (purple) begins turning at $N = 35$ m, fully $25$ m before the waypoint, and passes almost $10$ m from it.
+- **The trend, with numbers.** Each track leaves the leg exactly where its own dotted line crosses it, and the corner cut follows: $0.44$ m at $R = 2$, then $2.26$, $7.02$ and $9.62$ m. The $R = 25$ track (purple) begins turning at $x^n = 35$ m, fully $25$ m before the waypoint, and passes almost $10$ m from it.
 - **The principle.** $R$ does not tune accuracy. It decides **how early the vessel gives up on the current leg**, and the corner cut is the direct consequence.
 - **The right panel** makes the same statement in time: all four staircases have the same three steps, shifted earlier as $R$ grows — $[76\ 154\ 232]$ s at $R = 2$ against $[46\ 111\ 176]$ s at $R = 25$. Cutting the corners saves $56$ s over the mission.
 - **The difference between the situations.** The last column of the table barely moves: $0.004$ to $0.019$ m. **$R$ costs almost nothing in straight-line accuracy** — it is paid for entirely at the corners. A survey that needs each line held to its end wants a small $R$; a transit that only needs to pass near the waypoints wants a large one. Neither is wrong.

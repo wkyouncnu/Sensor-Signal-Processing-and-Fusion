@@ -13,7 +13,7 @@
 % 침로가 경로와 나란하면 chi = pi_p 이고 chi = psi + beta 이므로 psi = pi_p - beta:
 % 선수는 경로 방향에서 **반시계로** beta 만큼 돌아간다. NED 에서 양의 각은
 % 시계방향이므로, 화면에서 경로를 오른쪽(동쪽)으로 그리면 선수는 **위로** 든다.
-% 한편 y_e = +Delta tan(beta) 는 경로 방향의 **우현** 쪽, 곧 화면 아래쪽이다.
+% 한편 y_e^{\,p} = +Delta tan(beta) 는 경로 방향의 **우현** 쪽, 곧 화면 아래쪽이다.
 % 그래서 LOS 선체는 경로 아래에 있고 선수는 위를 향한다 — 조류를 거슬러.
 % 조류는 우현으로 밀므로 화면에서 아래로 그린다.
 %
@@ -74,7 +74,7 @@
     \draw[cur] (\x,20) -- (\x,13);}
   \node[note, flow, anchor=west] at (2,23) {the current, $V_c = 0.3$\,m/s};
 
-  % 선체 : 경로 아래 y_e = +2.25 m
+  % 선체 : 경로 아래 y_e^{\,p} = +2.25 m
   \hull{20}{-\OFF}
   \draw[bow] (20,-\OFF) -- ++({26*cos(\BE)},{26*sin(\BE)});
   % 오른쪽에는 2.25 m 표시가 있다. 이름표는 화살촉 위쪽·왼쪽으로 붙인다
@@ -100,7 +100,7 @@
     \draw[cur] (\x,20) -- (\x,13);}
   \node[note, flow, anchor=west] at (2,23) {the current, $V_c = 0.3$\,m/s};
 
-  % 선체 : 경로 위, y_e = 0
+  % 선체 : 경로 위, y_e^{\,p} = 0
   \hull{20}{0}
   \draw[bow] (20,0) -- ++({26*cos(\BE)},{26*sin(\BE)});
   \node[note, ink, anchor=south west] at ({20+26*cos(\BE)},{26*sin(\BE)}) {bow, $\psi$};
@@ -145,15 +145,15 @@
 \\[1.5mm]
 
 \ft{The bow \emph{is} tilted upstream by $15.74^\circ$. But that tilt is the
-    $\arctan(y_e/\Delta)$ term, and it is entirely used up cancelling the drift.
-    Nothing is left to close $y_e$. The vessel runs \textbf{parallel} to the
+    $\arctan(y_e^{\,p}/\Delta)$ term, and it is entirely used up cancelling the drift.
+    Nothing is left to close $y_e^{\,p}$. The vessel runs \textbf{parallel} to the
     path, $2.25$\,m to the side of it, for ever.}
-& \ft{The law reads $y_e + \kappa y_{int}$, not $y_e$. The integrator fills until
+& \ft{The law reads $y_e^{\,p} + \kappa y_{int}$, not $y_e^{\,p}$. The integrator fills until
       its phantom error equals the old $2.25$\,m offset, and only then can the
       \textbf{real} error be zero. It never learns what a current is; it only
       knows the error must vanish.}
 & \ft{The estimate enters \textbf{outside} the arctan, so the arctan term is
-      handed back the job it was designed for — closing $y_e$. Nothing is
+      handed back the job it was designed for — closing $y_e^{\,p}$. Nothing is
       invented: the disturbance is estimated and removed.}
 \\
 \end{tabular}\\[3.5mm]

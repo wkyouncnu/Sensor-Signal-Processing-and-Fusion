@@ -24,6 +24,9 @@
 \input{gnc-style}
 \input{w04-los-geometry-geo}
 
+%  색은 \tikzset 보다 먼저 정의해야 한다 — 스타일이 곧바로 쓴다.
+\definecolor{knownc}{HTML}{1D4ED8}
+
 \tikzset{
   pathline/.style = {ink, line width=0.9pt},
   aux/.style      = {soft, line width=0.35pt, densely dashed},
@@ -34,6 +37,19 @@
   bodyline/.style = {ink, line width=0.8pt, -{Stealth[length=4.2pt,width=3.0pt]}},
   ang/.style      = {soft, line width=0.5pt},
   rmark/.style    = {soft, line width=0.4pt},
+  %  강의 슬라이드처럼 **식을 그림 안에 크게** 둔다. 상자에 넣어야 그림의
+  %  선들과 섞이지 않는다. 색은 그 식이 무엇인지에 따라 다르다:
+  %    known  이미 아는 값        knownc 파랑
+  %    want   구하려는 값         accent 보라
+  %    limit  극한에서 되는 것    pathc  청록
+  known/.style = {draw=knownc, line width=0.6pt, fill=white, inner sep=3.2pt,
+                  rounded corners=1pt, font=\small},
+  want/.style  = {draw=accent, line width=0.9pt, fill=white, inner sep=3.4pt,
+                  rounded corners=1pt, font=\small},
+  limit/.style = {draw=pathc, line width=0.6pt, fill=white, inner sep=3.2pt,
+                  rounded corners=1pt, font=\small},
+  capt/.style  = {font=\scriptsize\bfseries, warn},
+  lead/.style  = {soft, line width=0.35pt, -{Stealth[length=3.4pt,width=2.4pt]}},
 }
 
 \begin{document}
@@ -55,7 +71,8 @@
 \node[font=\small, anchor=south east]  at (117.0,104.5) {$\mathbf{p}_{i+1}^{n}$};
 %  두 웨이포인트 모두 성분을 적는다. 하나만 적으면 다른 하나가 무엇인지
 %  독자가 유추해야 한다 — 사용자 지적 2026-09-08.
-\node[note, anchor=north west]         at (110.0,100.0) {$[\,x_{i+1}^n,\ y_{i+1}^n\,]^{\!\top}$};
+%  경로선 **아래** 오른쪽에 둔다. 선 위에 두면 글자가 선에 물린다.
+\node[note, anchor=north west]         at (119.5,96.0)  {$[\,x_{i+1}^n,\ y_{i+1}^n\,]^{\!\top}$};
 
 % ---- 선박을 지나는 북쪽 점선, 그리고 pi_p ------------------------------
 \draw[aux] \Ves -- \Xntop;
@@ -76,6 +93,9 @@
 \draw[alngline] \Foot -- \Aim;
 \fill[accent] \Aim circle (1.4pt);
 \node[alng, font=\small, anchor=south east] at \LabDelta {$\Delta$};
+%  Delta 가 무엇인지 말로도 짚어 준다 — 슬라이드의 "look-ahead distance".
+\node[capt,anchor=east] at (44.0,74.0) {look-ahead distance};
+\draw[lead] (45.0,73.4) -- (57.0,60.0);
 
 % ---- LOS 벡터 ------------------------------------------------------------
 \draw[losline] \Ves -- \Aim;
@@ -115,12 +135,43 @@
 
 \node[note, anchor=north east] at (51.0,8.0) {$(x^n,\ y^n)$};
 
-% ===================== 아래 : 법칙과 수치 ================================
-\draw[soft, line width=0.3pt] (-6,-26) -- (140,-26);
+% ===================== 그림 안의 식 ======================================
+%  강의 슬라이드의 배치를 따른다: 아는 값은 파란 상자, 구하려는 값은 보라
+%  상자, 극한에서 성립하는 것은 청록 상자. 상자마다 무엇인지 한 낱말로 적는다.
 
-\node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (-6,-30) {%
-  {\small\bfseries The line-of-sight law}\\[4pt]
-  \hspace*{4mm}$\chi_d = \pi_p - \tan^{-1}\!\Big(\dfrac{y_e^{p}}{\Delta}\Big)$\\[7pt]
+%  경로 접선각 — 두 웨이포인트에서 바로 나온다
+\node[known, anchor=north west] at (-6,-32)
+     {$\pi_p = \operatorname{atan2}\!\big(y_{i+1}^n - y_i^n,\ x_{i+1}^n - x_i^n\big)$};
+\node[capt,anchor=north west] at (-6,-40.5) {Known};
+
+%  cross-track 오차 — 위치와 경로에서 바로 나온다
+\node[known, anchor=north west] at (-6,-48)
+     {$y_e^{p} = -\big(x^n - x_i^n\big)\sin\pi_p + \big(y^n - y_i^n\big)\cos\pi_p$};
+\node[capt,anchor=north west] at (-6,-56.5) {Known};
+
+%  웨이포인트 둘
+\node[known, anchor=north west] at (-6,-64)
+     {$\mathbf{p}_i^{n} = [\,x_i^n,\ y_i^n\,]^{\!\top}$,\quad
+       $\mathbf{p}_{i+1}^{n} = [\,x_{i+1}^n,\ y_{i+1}^n\,]^{\!\top}$};
+\node[capt,anchor=north west] at (-6,-72.5) {Known};
+
+%  구하려는 것
+\node[want, anchor=north west] at (76,-32)
+     {$\chi_d = \pi_p - \tan^{-1}\!\big(K_p\,y_e^{p}\big),
+       \qquad K_p = \dfrac{1}{\Delta}$};
+\node[capt,anchor=north west] at (76,-46) {Want to compute};
+
+%  극한에서 성립하는 것
+\node[limit, anchor=north west] at (76,-56)
+     {$y_e^{p} \to 0, \qquad \chi_d \to \pi_p$};
+\node[anchor=north west, align=left, text width=64mm, font=\scriptsize, soft] at (76,-65)
+     {On the path the correction vanishes and the vessel steers straight along
+      the leg. That is the whole objective, written as a limit.};
+
+% ===================== 아래 : 법칙과 수치 ================================
+\draw[soft, line width=0.3pt] (-6,-80) -- (146,-80);
+
+\node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (-6,-84) {%
   \textbf{Two terms, and that is all.} $\pi_p$ lines the vessel up \emph{with}
   the path; $-\tan^{-1}(y_e^{p}/\Delta)$ leans it \emph{towards} the path.
   Nothing else appears, which is exactly why §4-7 can say what the law cannot
@@ -133,7 +184,7 @@
   perpendicular and not from the vessel. The vessel's own distance to the aim
   point is $\sqrt{\Delta^2+(y_e^{p})^2}$, which is larger.};
 
-\node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (72,-30) {%
+\node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (76,-84) {%
   {\small\bfseries Notation, and the numbers drawn here}\\[4pt]
   Waypoints are $\mathbf{p}_i^{n} = [\,x_i^n,\ y_i^n\,]^{\!\top}$, resolved in
   $\{n\}$. The two errors carry the superscript $p$ because they are resolved
