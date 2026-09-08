@@ -270,13 +270,52 @@ check_weeks() {
   return 0
 }
 
+# ── 15. 강의자료가 부르는 스크립트가 실재하는가 ──────────────────────────
+#
+# 사용자 지시 2026-09-08: "강의 자료 pdf와 해당 예제 코드가 잘 매칭이 되는지 보고".
+# 문서가 `W01_C_terminal_speed` 라고 적었는데 그런 파일이 없으면, 학생은 첫 줄에서
+# 막히고 그 다음부터 문서를 믿지 않는다. 말로 두지 않고 기계로 거른다
+# → standing-orders.md §9-6
+check_code() {
+  head2 "15. 강의자료가 부르는 스크립트가 실재하는가"
+  local miss=0 f tag name
+  while IFS= read -r f; do
+    tag="$(basename "$f" | cut -d_ -f1)"           # W01, A1 ...
+    # 백틱 안만 보면 ```matlab 블록 안의 이름을 통째로 놓친다 — 실제로 W01 에서
+    # 두 개밖에 못 잡았다. 파일 전체에서 그 주차의 접두사를 가진 토큰을 모은다.
+    # .m 스크립트든 .slx 모델이든 폴더든, 무엇으로든 실재하면 통과다.
+    while IFS= read -r name; do
+      [ -z "$name" ] && continue
+      case "$name" in *_) continue ;; esac      # 산문에서 잘린 조각 (W02_C_ 등)
+      #  .m 이든 .slx 든 img/ 의 .png 든 폴더든, 무엇으로든 실재하면 통과다.
+      #  WXX_P1 처럼 학생이 WXX_P1_start 로 만들어 내는 모델도 통과시킨다 —
+      #  저장소에 없는 것이 정상이기 때문이다.
+      if   find lectures -name "${name}.m"       -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
+      elif find lectures -name "${name}.slx"     -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
+      elif find lectures -name "${name}.png"     -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
+      elif find lectures -name "${name}_start.m" -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
+      elif find lectures -name "${name}"         -type d 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
+      elif find _tools   -name "${name}.m"       -type f 2>/dev/null | grep -q . ; then :
+      else
+        echo "     [없는 스크립트] $(basename "$f")  ->  $name"
+        miss=$((miss+1))
+      fi
+    done < <(grep -oE "\b${tag}_[A-Za-z0-9_]+\b" "$f" \
+             | sed 's/\.$//' | sort -u)
+  done < <(labdocs)
+  note "문서가 부르는데 없는 스크립트" "$miss"
+  FAIL=$((FAIL+miss))
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
   --style) check_style ;;
   --links) check_links ;;
   --figs)  check_figs ;;
-  *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks ;;
+  --code)  check_code ;;
+  *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks; check_code ;;
 esac
 
 echo
