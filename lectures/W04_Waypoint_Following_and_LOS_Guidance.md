@@ -273,48 +273,63 @@ $$
 | Element | Meaning |
 |---|---|
 | grey axes, upper left | NED, so that every angle in the figure is measured from North |
-| green line, hollow circles | the active leg, from waypoint $k$ to waypoint $k+1$ |
-| green dashed circle | the acceptance radius $R$ around $\mathbf{wp}_{k+1}$, used in §4-6 |
-| grey arc, $\pi_p = 62°$ | the leg's direction from North |
-| orange | $x_e$, from $\mathbf{wp}_k$ to the foot of the perpendicular |
-| red, with right-angle mark | $y_e$, from the foot out to the vessel — the perpendicular distance to the path |
-| blue solid | $\Delta$, laid off **along the path** from the foot of the perpendicular |
-| blue filled circle | the aim point, at the far end of $\Delta$ |
-| blue dashed with arrow | the line of sight from the vessel to the aim point; its direction from North is $\psi_d$ |
-| blue arc at the vessel | $\psi_d$ itself, showing that it is measured from North and not from the leg |
-| blue panel | the law, and the arithmetic of this particular figure |
-| amber panel | the limits, worked below |
+| black line, filled circles | the active leg, from $\mathbf{p}_i^{\,n}$ to $\mathbf{p}_{i+1}^{\,n}$ |
+| grey dashed vertical, $x_n$ | North through the vessel — the reference every angle is measured from |
+| grey arc, $\pi_p$ | the leg's direction from North |
+| amber, from $\mathbf{p}_i^{\,n}$ | $x_e^{\,p}$, the along-track error, out to the foot of the perpendicular |
+| red, with right-angle mark | $y_e^{\,p}$, the cross-track error — the perpendicular distance to the path |
+| amber, beyond the foot | $\Delta$, laid off **along the path** from the foot of the perpendicular |
+| violet filled circle | the aim point, at the far end of $\Delta$ |
+| violet arrow, "LOS vector" | the line of sight from the vessel to the aim point |
+| grey arc at the aim point | $\tan^{-1}(y_e^{p}/\Delta)$ — the correction, between the path and the line of sight |
+| three arcs at the hull | $\psi$ where the bow points, $\chi$ where the vessel goes, $\chi_d$ where the law says to go |
+| violet arc at the hull | $\beta_c$, the crab angle between $\psi$ and $\chi$ |
+| grey dashed, lower right | the right-angle construction that makes $\Delta$ and $y_e^{p}$ the two legs of one triangle |
+
+> [!note] This figure follows Fossen's own
+> The layout and every symbol are those of Fossen's TTK 4190 lecture notes and of the *Handbook*, 2nd ed. (2021), §12.3, so that this course and the standard reference can be read against each other without translation. The geometry is computed by `_tools/w04_losgeo.m`, which checks that the perpendicular really is perpendicular and that the drawn line of sight really is at $\chi_d$ before it emits a single coordinate.
 
 ### The derivation
 
-Let $F$ be the foot of the perpendicular from the vessel to the leg, and let the **aim point** $A$ lie a further distance $\Delta$ along the leg. Work in the leg frame of §4-3, where the vessel sits at $(x_e,\ y_e)$ and, by construction, $F$ sits at $(x_e,\ 0)$ and $A$ at $(x_e + \Delta,\ 0)$.
+Let $F$ be the foot of the perpendicular from the vessel to the leg, and let the **aim point** $A$ lie a further distance $\Delta$ along the leg. Work in the path frame $\{p\}$ of §4-3, where the vessel sits at $(x_e^{\,p},\ y_e^{\,p})$ and, by construction, $F$ sits at $(x_e^{\,p},\ 0)$ and $A$ at $(x_e^{\,p} + \Delta,\ 0)$.
 
-The vector from the vessel to the aim point, **in the leg frame**, is therefore
-
-$$
-A - P = \begin{bmatrix} (x_e + \Delta) - x_e \\[2pt] 0 - y_e \end{bmatrix}
-      = \begin{bmatrix} \Delta \\[2pt] -y_e \end{bmatrix}
-$$
-
-Its direction, measured from the leg's own $\hat{\mathbf{t}}$ axis, is
+The vector from the vessel to the aim point, **in $\{p\}$**, is therefore
 
 $$
-\operatorname{atan2}(-y_e,\ \Delta) = -\arctan\!\left(\frac{y_e}{\Delta}\right)
+A - P = \begin{bmatrix} (x_e^{\,p} + \Delta) - x_e^{\,p} \\[2pt] 0 - y_e^{\,p} \end{bmatrix}
+      = \begin{bmatrix} \Delta \\[2pt] -y_e^{\,p} \end{bmatrix}
 $$
 
-where the two-argument form collapses to the one-argument form because $\Delta > 0$ always, so the vector never leaves the right half-plane of the leg frame. The leg frame is itself rotated by $\pi_p$ from North. Adding the two angles converts the direction into NED and gives the law:
+Its direction, measured from the path's own $\hat{\mathbf{t}}$ axis, is
 
 $$
-\boxed{\ \psi_d = \pi_p - \arctan\!\left(\frac{y_e}{\Delta}\right)\ }
+\operatorname{atan2}\big(-y_e^{\,p},\ \Delta\big) = -\tan^{-1}\!\left(\frac{y_e^{\,p}}{\Delta}\right)
+$$
+
+where the two-argument form collapses to the one-argument form because $\Delta > 0$ always, so the vector never leaves the right half-plane of $\{p\}$. The path frame is itself rotated by $\pi_p$ from North. Adding the two angles converts the direction into $\{n\}$ and gives the law:
+
+$$
+\boxed{\ \chi_d = \pi_p - \tan^{-1}\!\left(\frac{y_e^{\,p}}{\Delta}\right),
+\qquad K_p = \frac{1}{\Delta}\ }
 $$
 
 | Symbol | Quantity | Unit | Value and origin |
 |---|---|---|---|
 | $\pi_p$ | path-tangential angle | rad | §4-2, from the two waypoints |
-| $y_e$ | cross-track error | m | §4-3, from the rotation |
+| $y_e^{\,p}$ | cross-track error, resolved in $\{p\}$ | m | §4-3, from the rotation |
 | $\Delta$ | look-ahead distance, measured **along the path** | m | $8$ m — chosen in §4-5, justified by the sweep of section E |
-| $y_e/\Delta$ | argument of the arctan | — | dimensionless, as the argument of a trigonometric function must be |
-| $\psi_d$ | commanded heading | rad | into the Week 3 autopilot |
+| $K_p$ | proportional gain, $1/\Delta$ | $\text{m}^{-1}$ | **not free** — fixed by $\Delta$. §4-8 names it, and it is the same number |
+| $y_e^{\,p}/\Delta$ | argument of the arctan | — | dimensionless, as the argument of a trigonometric function must be |
+| $\chi_d$ | commanded **course** | rad | what the law produces |
+| $\psi_d$ | commanded **heading** | rad | what this course sends to the Week 3 autopilot |
+
+> [!important] The law commands a course; this course commands a heading
+> Fossen writes the law with $\chi_d$ on the left, because the line of sight is the direction the vessel should **travel** in. What Week 3 built is a **heading** autopilot, so from here on this course writes
+>
+> $$\psi_d = \pi_p - \tan^{-1}\!\left(\frac{y_e^{\,p}}{\Delta}\right)$$
+>
+> — the same expression, with $\psi_d$ in place of $\chi_d$. The substitution is exact when the crab angle $\beta_c$ is zero, and MSS ships both variants for the same reason: `LOSchi.m` commands $\chi_d$ and `LOSpsi.m` commands $\psi_d$.
+> **The substitution is not free, and this week measures its price.** §4-7 shows that using $\psi_d$ in a current leaves the vessel permanently $\Delta\tan\beta_c$ to one side of the path; §4-8 and §4-9 are two ways of paying it back.
 
 - Read the law as two terms with two jobs. $\pi_p$ says *line up with the path*. The arctan says *and lean towards it, by an amount that grows with how far off it the vessel is*.
 - The figure's own arithmetic is the smallest possible worked example: $y_e = 12$ m and $\Delta = 20$ m give a correction of $\arctan(12/20) = 30.96°$, so $\psi_d = 62° - 30.96° = 31.04°$. The vessel is to starboard, so it is commanded to port, and by less than $90°$.
