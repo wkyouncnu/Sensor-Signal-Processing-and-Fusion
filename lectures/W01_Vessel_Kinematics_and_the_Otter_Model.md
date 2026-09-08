@@ -1006,6 +1006,10 @@ end
 
 - So the current is one number and one angle, entering at one place, and everything else in this section is a consequence of the two lines that subtract it.
 
+---
+
+# Part 2 · Laboratory
+
 ## A. Setting up and running (15 min)
 
 ### Step 1 — open the working folder
@@ -1293,6 +1297,10 @@ W01_E_current_run
 
 > [!note] This is the problem Week 4 exists to solve
 > A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 4 §4-7 measures the resulting path error and §4-8 and §4-9 remove it.
+
+---
+
+# Summary
 
 ## Week Summary
 

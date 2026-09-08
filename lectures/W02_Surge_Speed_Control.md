@@ -712,15 +712,12 @@ Designed for $\zeta = 0.7$, $\omega_n = 1.5$ rad/s, giving $K_p = 102.00$ and $K
 | right panel, crosses | the two closed-loop poles, placed by the design |
 | right panel, circle | the PI zero at $s = -K_i/K_p$, which the design never mentioned |
 
-- The second and third rows of the table agree to $1\%$. The first row disagrees with both by $75\%$. The zero, not the plant, is the source of the discrepancy.
-
 **What the figure says**
 
-- **Meaning.** The left panel compares the real plant against the linear model it was designed with. The right panel shows what that model actually contains — and the circle is the part the design procedure never asked about.
-- **Trend, in numbers.** Both curves in the left panel rise, overshoot to about $1.62$ m/s, and settle on $1.5$ m/s with no residual error at all: the integral term closed the gap that section D could not. The measured overshoot is $8.15\%$ and the linear model gives $8.07\%$ — agreement to a tenth of a point. **The textbook figure for $\zeta = 0.7$ is $4.6\%$, and it is wrong here by a factor of nearly two.**
-- **Principle.** $\zeta$ and $\omega_n$ describe the **poles**. A PI controller does not only place poles; it also places a zero at $s = -K_i/K_p = -1.886$, and a zero close to the poles raises overshoot. The right panel makes the proximity visible: the zero sits at $-1.886$ while the poles sit at $-1.050 \pm 1.071j$, barely further out than the poles themselves.
-- **Why the two left-hand curves agree and the textbook does not.** The dashed model includes the zero, so it matches the plant. The $4.6\%$ figure comes from a formula derived for a system with **no zero at all**. The damping ratio was designed correctly; the prediction made from it was not. Diagnosing the discrepancy as a plant modelling error would have been the wrong conclusion, and the pole-zero map is what rules it out.
-- **What changes with the situation.** Moving the zero further left — a smaller $K_i/K_p$ — makes the textbook figure accurate again, at the cost of a slower recovery from a load change. Section G shows a second way of shifting responsibility for the derivative term, and Week 8's reference model is the general remedy: shape the setpoint instead of arguing with the closed-loop zeros.
+- **The point.** The integral term closes the gap section D could not — the residual error is $-2.1\times10^{-12}$ m/s. But the overshoot comes out $8.15\%$ where the textbook formula for $\zeta = 0.7$ predicts $4.60\%$, **wrong by nearly a factor of two**. The linear model that *includes the PI zero* gives $8.07\%$, so the plant is not what disagrees.
+- **Principle.** $\zeta$ and $\omega_n$ describe the **poles**. A PI controller also places a zero at $s = -K_i/K_p = -1.886$, and a zero this close to the poles at $-1.050 \pm 1.071\mathrm{j}$ raises overshoot. The $4.60\%$ figure comes from a formula derived for a system with **no zero at all**.
+- The damping ratio was designed correctly; the prediction made from it was not. Diagnosing this as a plant modelling error would have been the wrong conclusion, and the pole–zero map on the right is what rules it out.
+- Moving the zero further left — a smaller $K_i/K_p$ — makes the textbook figure accurate again, at the cost of a slower recovery from a load change. Week 8's reference model is the general remedy: shape the setpoint instead of arguing with the closed-loop zeros.
 
 ### Derivative
 
@@ -742,16 +739,12 @@ $K_p$ and $K_i$ held at the values above:
 | left panel | four step responses; overshoot grows monotonically with $K_d$ |
 | right panel | the damping ratio $\zeta$ computed from the effective mass $M_{11} + K_d$, falling as $K_d$ rises |
 
-- $K_d = 150$ N per m/s² makes an $85.5$ kg vessel behave like a $235.5$ kg one, and $\zeta$ falls from $0.700$ to $0.422$. Prediction and measurement agree to within $1.1$ percentage points across the whole sweep.
-- The correct conclusion is not that derivative action is useless. It is that a term must be substituted into the equation of motion before its effect is assumed.
-
 **What the figure says**
 
-- **Meaning.** $K_p$ and $K_i$ are held at the values designed in the previous figure, and only $K_d$ changes. The left panel is the consequence; the right panel is the reason.
-- **Trend, in numbers.** Overshoot **rises** with derivative gain — $8.15\%$, $11.48\%$, $16.88\%$, $25.50\%$ — and the $K_d = 150$ response develops a visible second swing that the $K_d = 0$ response does not have. The right panel falls in step, $\zeta$ dropping from $0.700$ to $0.422$. The two panels are the same statement told twice.
-- **Principle.** Substituting the control law into the surge equation gives $(M_{11} + K_d)\dot u + \lvert X_u\rvert u = \ldots$ — the derivative gain lands **beside the mass**, not beside the damping. Adding $K_d = 150$ therefore does not damp the vessel; it makes it **heavier**, from $85.5$ to $235.5$ kg, and a heavier vessel with the same damping is less damped.
-- **How this differs from Week 3.** The identical term, in an identical PID controller, reduces overshoot on the heading axis and increases it here. The difference is not the controller and not the tuning: on a **velocity** loop the derivative of the controlled variable is an acceleration, and acceleration multiplies mass. On an **angle** loop it is a rate, and rate multiplies damping. **The term did not change; the axis did.**
-- **What changes with the situation.** Nothing about this can be tuned away, so the practical answer on a speed loop is $K_d = 0$, which is what the rest of this week uses. Section I revisits the derivative term on a plant where it is genuinely wanted, and shows what taking it honestly costs.
+- **The point.** Derivative action makes this loop **worse**. Overshoot rises with $K_d$ — $8.15\%$, $11.48\%$, $16.88\%$, $25.50\%$ — while $\zeta$ falls from $0.700$ to $0.422$, and prediction tracks measurement to within $1.1$ points across the whole sweep.
+- **Principle.** Substituting the control law into the surge equation gives $(M_{11} + K_d)\dot u + \lvert X_u\rvert u = \ldots$: the derivative gain lands **beside the mass**, not beside the damping. $K_d = 150$ does not damp the vessel, it makes it **heavier**, from $85.5$ to $235.5$ kg — and a heavier vessel with the same damping is less damped.
+- **How this differs from Week 3.** The identical term in an identical PID controller reduces overshoot on the heading axis and increases it here. On a **velocity** loop the derivative of the controlled variable is an acceleration, which multiplies mass; on an **angle** loop it is a rate, which multiplies damping. **The term did not change; the axis did.**
+- The conclusion is not that derivative action is useless, but that a term must be substituted into the equation of motion before its effect is assumed. Nothing here can be tuned away, so the practical answer on a speed loop is $K_d = 0$ — what the rest of this week uses. Section I revisits the term on a plant that wants one.
 
 ## F. Windup (25 min)
 
