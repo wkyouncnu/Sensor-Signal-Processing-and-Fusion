@@ -116,6 +116,16 @@ A reader short of time can go 1-1 → 1-3 → 1-4 → 1-9 and still follow the l
 > $$\boldsymbol{\eta} = \begin{bmatrix} x & y & z & \phi & \theta & \psi \end{bmatrix}^{\!\top} \text{ in } \{n\}, \qquad \boldsymbol{\nu} = \begin{bmatrix} u & v & w & p & q & r \end{bmatrix}^{\!\top} \text{ in } \{b\}$$
 > The whole of §1-2 to §1-5 exists to connect these two vectors. Nothing in those sections involves a mass or a force — it is geometry only, which is what the word **kinematics** means.
 
+> [!note] Two names for the same two numbers — and when each is used
+> In NED, **$x$ is North and $y$ is East**. Both spellings appear in the literature and in this course:
+>
+> | Written | Used where | Why |
+> |---|---|---|
+> | $N$, $E$ | Weeks 1 to 3, in prose and in figures | reads naturally, and only one frame is in play |
+> | $x^n$, $y^n$ | Week 4 onward | three frames appear in one equation, so **every symbol has to carry its frame** |
+>
+> They are the same quantities, and $\boldsymbol{\eta}$ above is written the second way already. Week 4 §4-2 explains the superscripts where they first become necessary; the code writes neither, because a MATLAB identifier has nowhere to put a superscript.
+
 ### NED and ENU — the other convention
 
 - Not everyone uses NED. Most robotics software — ROS, Gazebo, and the VRX simulator this course reaches at the end — uses **ENU**: $x$ East, $y$ North, $z$ **Up**.
