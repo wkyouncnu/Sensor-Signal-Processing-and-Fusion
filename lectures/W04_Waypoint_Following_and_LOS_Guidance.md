@@ -1638,6 +1638,29 @@ Expected output:
 - [ ] The learner can state, without looking, which of $x_e^{\,p}$ and $y_e^{\,p}$ the switching logic uses and why.
 - [ ] The learner can explain why $V(t)$ in section H is not monotone.
 
+## In-class laboratory — build the guidance layer by hand
+
+The second hour of the Week 4 session is spent building the guidance block in Simulink. A complete Week 3 vessel is provided with one input left dangling: the commanded heading.
+
+```matlab
+cd lectures/W04_simulink/problems
+W04_P1_start                 % creates W04_P1.slx — a Week 3 vessel, no guidance
+W04_check(1)                 % run this whenever, as often as needed
+```
+
+| | Problem | Time | The number it must reproduce |
+|---|---|---|---|
+| 1 | The LOS law on leg 1 | 25 min | $\pi_p = 0$ exactly; $y_e^{\,p}$ from $18$ m to $0$; $\psi_d \to \pi_p$ |
+| 2 | atan2 against LOS, same vessel | 20 min | worst $\lvert y_e^{\,p}\rvert$: $0.09$ m against $3.78$ m |
+| 3 | A current, and the offset that stays | 15 min | settled $y_e^{\,p} = \Delta\tan\beta_c$, heading error $0$ |
+
+- The full problem sheet is [`W04_simulink/problems/README.md`](W04_simulink/problems/README.md), and reference answers are in [`W04_simulink/solutions/`](W04_simulink/solutions/README.md).
+- The problem sheet carries **the result graphs a correct model produces**.
+- **Nothing inside the Week 3 autopilot changes.** That is the practical content of "guidance and control are separate layers", and the laboratory model makes the seam visible.
+- Problem 3 ends where §4-8 begins: a vessel holding its commanded heading perfectly and still $3.3$ m from where it was asked to be.
+
+---
+
 ## Assignment 4
 
 ### ① Requirements
