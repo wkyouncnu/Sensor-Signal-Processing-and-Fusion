@@ -593,6 +593,28 @@ $$
 
 ---
 
+## In-class laboratory — build the heading autopilot by hand
+
+The second hour of the Week 3 session is spent building, in Simulink, the loop this lecture built from a script.
+
+```matlab
+cd lectures/W03_simulink/problems
+W03_P1_start                 % creates W03_P1.slx — hull and allocation only
+W03_check(1)                 % run this whenever, as often as needed
+```
+
+| | Problem | Time | The number it must reproduce |
+|---|---|---|---|
+| 1 | Proportional only — and the error that is **already** zero | 20 min | steady error $0$ at $K_p = 30$, $100$, $300$; overshoot $0.24$ %, $1.53$ % |
+| 2 | Derivative action — feed back $r$, not $\mathrm{d}e/\mathrm{d}t$ | 20 min | overshoot $11.74 \to 4.10 \to 0$ % as $K_d = 0 \to 25 \to 74.9$ |
+| 3 | The wrap — $170° \to -170°$ with `ssa` and without | 20 min | $+20°$ against $-340°$ |
+
+- The full problem sheet is [`W03_simulink/problems/README.md`](W03_simulink/problems/README.md), and reference answers are in [`W03_simulink/solutions/`](W03_simulink/solutions/README.md).
+- The problem sheet carries **the result graphs a correct model produces**, so a plot can be compared against a plot and not only against a number.
+- Problem 1 is deliberately the same question Week 2 asked and got the opposite answer to. The difference is $\psi = \int r$, and nothing else.
+
+---
+
 ## Assignment 3
 
 - **Due**: before the Week 4 session
