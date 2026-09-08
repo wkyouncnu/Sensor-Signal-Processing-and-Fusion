@@ -126,6 +126,9 @@ Sections 4-10 and 4-11 then set the equations against the code, and point at wha
 
 ## 4-2. The path is a straight leg between two waypoints
 
+- A mission is a list of waypoints. The path is what runs **between** them, and this section reduces the active leg to the single number every later section uses: its direction.
+- One notational matter has to be settled first, because three different frames appear in the same equation from here on.
+
 > [!important] The notation of this week, and why every symbol carries a superscript
 > From here on this week uses the notation of Fossen's TTK 4190 lecture notes and of the *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. (2021), §12.3. It is worth one paragraph, because the superscripts are not decoration.
 >
@@ -812,6 +815,14 @@ $$
 
 ### 4-8-6. Stability — and why there are two normalisations
 
+This is the longest derivation of the week, so it is worth knowing where it lands before starting.
+
+| | | |
+|---|---|---|
+| 1 | **The current is eliminated, exactly.** Substituting the equilibrium of §4-8-5 makes $\beta_c$ cancel out of the error dynamics algebraically — not approximately | below |
+| 2 | **A Lyapunov function is chosen, and its weight is forced.** The cross term has to vanish, and that requirement picks the weight; nothing is guessed | *Choosing the Lyapunov function* |
+| 3 | **The course form closes; the heading form does not.** That is why MSS ships two normalisations, and it is not an inconsistency | *The course form closes…* |
+
 - To argue stability, put the closed loop into error coordinates. Let $\tilde y = y_{int} - y_{int}^{eq}$ be the integrator's error, and assume for the argument that the autopilot is fast enough that $\psi = \psi_d$ and that $\beta_c$ is constant. Starting from §4-7's $\dot y_e^{\,p} = U\sin(\chi - \pi_p)$ with $\chi - \pi_p = \beta_c - \arctan(a/\Delta)$:
 
 $$
@@ -1297,6 +1308,24 @@ Expected output:
     current         0.00 m/s at 0 deg
     simulation      500 s at h = 0.02 s
 ```
+
+### The files of this week, in the order the sections use them
+
+| Order | File | Section | What it produces |
+|---|---|---|---|
+| 0 | `W04_0_setup.m` | A | the base workspace. **The only file to edit this week** |
+| 1 | `W04_1_build_guidance.m` | B | `W04_guidance.slx` and its block diagram |
+| C | `W04_C_aim_at_the_waypoint.m` | C | `img/W04_result_atan2.png` |
+| D | `W04_D_line_of_sight.m` | D | `img/W04_result_los.png` |
+| E | `W04_E_lookahead_distance.m` | E | `img/W04_result_lookahead.png` |
+| F | `W04_F_waypoint_switching.m` | F | `img/W04_result_switching.png` |
+| G | `W04_G_current_and_integral.m` | G | `img/W04_result_current.png` |
+| H | `W04_H_adaptive_and_stability.m` | H | `img/W04_result_stability.png` |
+
+- **One script per section.** Running a section leaves exactly the numbers and figures that section discusses.
+- Every section script builds the model if it is missing, so any one of them can be run first.
+- The remaining files — `W04_vars.m`, `W04_read.m`, `W04_plot.m`, `W04_animate.m` — are called **by** the section scripts and by the model. They are never run by hand.
+- The laboratory of the second hour lives in `W04_simulink/problems/` and `solutions/`, and is separate from these.
 
 | Line | What to check, and why |
 |---|---|

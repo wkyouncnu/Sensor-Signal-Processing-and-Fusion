@@ -1035,6 +1035,8 @@ Expected output:
 
 - Each laboratory section is one script. Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
 - Sections C, D and E build the model they need if it is missing, so any one of them can be run first.
+- The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_frames.m`, `W01_animate.m`, `W01c_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
+- The laboratory of the second hour lives in `W01_simulink/problems/` and `solutions/`, and is separate from these.
 
 ### Step 3 — restore a model if it is broken
 

@@ -383,6 +383,8 @@ Expected output:
 
 - Each laboratory section is one script. Running a section leaves exactly the numbers and the one figure that section discusses, so a class can work through the week a page at a time.
 - Sections C to F build the model themselves if it is missing, so any one of them can be run first.
+- The remaining files — `W03_vars.m`, `W03_read.m`, `W03_plot.m`, `W03_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
+- The laboratory of the second hour lives in `W03_simulink/problems/` and `solutions/`, and is separate from these.
 
 ## B. Reading the model (10 min)
 

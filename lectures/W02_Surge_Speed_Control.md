@@ -82,6 +82,9 @@ Seven sections, answering three questions. Each answer creates the next question
 
 ## 2-1. The plant, reduced to two numbers
 
+- Before a controller can be designed, the thing being controlled has to be written down. This section starts from the same 6-DOF equation as Week 1 and ends with **two numbers** — a gain and a time constant — that between them describe everything the surge axis does.
+- Those two numbers are what the rest of the week argues with. Once the plant is $K_u$ and $\tau_u$, every steady-state claim in §2-2 and §2-3 is arithmetic rather than simulation.
+
 ### Where the surge equation comes from
 
 - The controller of this week acts on one scalar equation. That equation is not an assumption — it is the first row of the 3-DOF model of §1-7, and this section derives it so that the terms thrown away can be named and later reclaimed.
@@ -501,7 +504,7 @@ W02_0_setup
 Expected output:
 
 ```
-  W03 setup complete
+  W02 setup complete
     plant           tau_u = 1.1025 s,  K_u = 0.012894 (m/s)/N
     actuator        X in [-133.42, 239.36] N  ->  u_ss in [-1.7203, 3.0864] m/s
     controller      Kp = 102, Ki = 192.38, Kd = 0, Nf = 20
@@ -512,6 +515,26 @@ Expected output:
 ```
 
 - To restore a model that has been broken: `W02_1_build_surge_control`.
+
+### The files of this week, in the order the sections use them
+
+Opening the folder shows about fifteen files. Only the ones in this table are ever run by hand.
+
+| Order | File | Section | What it produces |
+|---|---|---|---|
+| 0 | `W02_0_setup.m` | A | the base workspace. **The only file to edit this week** |
+| 1 | `W02_1_build_surge_control.m` | B | `W02_surge_control.slx` and its block diagram |
+| C | `W02_C_identify_plant.m` | C | `img/W02_result_openloop.png` |
+| D | `W02_D_proportional_only.m` | D | `img/W02_result_P.png` |
+| E | `W02_E_integral_and_derivative.m` | E | `img/W02_result_PI.png`, `img/W02_result_D.png` |
+| F | `W02_F_windup.m` | F | `img/W02_result_windup.png` |
+| G | `W02_G_block_vs_handbuilt.m` | G | `img/W02_result_block.png` |
+| H | `W02_H_build_antiwindup.m` then `W02_H_antiwindup_run.m` | H | `img/W02_result_aw_principle.png`, `img/W02_result_aw_Kb.png` |
+| I | `W02_I_build_pseudo_derivative.m` then `W02_I_pseudo_derivative_run.m` | I | `img/W02_result_pd.png`, `img/W02_result_pd_N.png` |
+
+- **One script per section.** Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
+- Sections H and I have a **build** script and a **run** script, because each adds a model of its own. Run the build once, then the run script as often as needed.
+- The remaining files — `W02_vars.m`, `W02_cols.m`, `W02_plot.m`, `W02_aw_plot.m`, `W02_pd_plot.m`, `W02_animate.m` — are called **by** the section scripts and by the model. They are never run by hand.
 
 ## B. Reading the model (15 min)
 

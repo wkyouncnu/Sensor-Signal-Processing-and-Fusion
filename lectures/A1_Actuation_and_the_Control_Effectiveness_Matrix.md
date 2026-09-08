@@ -419,6 +419,7 @@ Expected output:
 
 - Each section is one script. Running a section leaves exactly the numbers and the one figure that section discusses, so a class can work through the appendix a page at a time.
 - Sections C to F call `A1_1_build_actuation` themselves if the model is missing, so any one of them can be run first.
+- The remaining files — `A1_vars.m`, `A1_read.m`, `A1_plot.m`, `A1_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
 
 ## B. Reading the model (15 min)
 
