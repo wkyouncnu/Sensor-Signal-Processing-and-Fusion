@@ -1,0 +1,90 @@
+% figures/w03-ssa.svg — 각의 뺄셈은 각이 아니다. ssa 가 무엇을 고치는가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w03-ssa.tex figures/w03-ssa.svg
+%
+% 이 파일은 손으로 쓰지 않는다 — _tools/w03_ssa.m 이 계산해서 낸다.
+% 그 스크립트가 각·호의 방향·톱니 구간을 전부 assert 로 확인한 뒤에 쓴다.
+%
+% 회전 방향의 근거 (CLAUDE.md 4 규칙 6-2):
+%   화면각 = 90 - 나침반각 이므로 나침반각이 커지면 화면각이 작아진다.
+%   따라서 psi 가 커지는 것(우현)은 화면에서 시계방향이다.
+%   raw = -340 -> 좌현이므로 화면 반시계, ssa = +20 -> 우현이므로 화면 시계.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=north west] at (-34,56)
+     {Two headings $20^\circ$ apart, and the error that says $-340^\circ$};
+\node[anchor=north west, align=left, text width=150mm, font=\scriptsize, soft] at (-34,50) {%
+  Subtracting one angle from another is arithmetic, not geometry. The answer is
+  right as a number and wrong as an error, and the vessel turns the long way round.};
+
+% ================= 왼쪽 — 나침반 =================
+% 두 방위 사이의 쐐기. 화면 -80 에서 -100 까지 (시계방향 20 deg)
+\fill[accent, opacity=0.13] (0,0) -- (-80.00:26.00) arc (-80.00:-100.00:26.00) -- cycle;
+\draw[soft, line width=0.4pt] (0,0) circle (26.00);
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,32.00);
+\node[font=\scriptsize, anchor=south] at (0,32.40) {North};
+\draw[soft, line width=0.4pt] (0.00,26.00) -- (0.00,27.80);
+\node[tick] at (30.20,0.00) {E};
+\draw[soft, line width=0.4pt] (26.00,0.00) -- (27.80,0.00);
+\draw[soft, line width=0.4pt] (0.00,-26.00) -- (0.00,-27.80);
+\node[tick] at (-30.20,-0.00) {W};
+\draw[soft, line width=0.4pt] (-26.00,-0.00) -- (-27.80,-0.00);
+
+% 긴 호: 화면 -80 -> +260, 반시계 (좌현 340 deg)
+\draw[soft, line width=1.5pt, -{Stealth[length=5pt,width=3.8pt]}]
+      (-80.00:16.12) arc (-80.00:260.00:16.12);
+\node[note, anchor=east, align=right] at (-3.00,16.12)
+     {$\psi_d-\psi = -340^\circ$,\\ the long way};
+
+% 짧은 호: 화면 -80 -> -100, 시계 (우현 20 deg)
+\draw[accent, line width=1.6pt, -{Stealth[length=5pt,width=3.8pt]}]
+      (-80.00:23.40) arc (-80.00:-100.00:23.40);
+
+% 두 방위
+\draw[ink, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- (-80.00:26.00);
+\node[ink, font=\scriptsize, anchor=west] at (-80.00:29.00)
+     {$\psi = +170^\circ$};
+\draw[ink, line width=1.0pt, densely dashed, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- (260.00:26.00);
+\node[ink, font=\scriptsize, anchor=east] at (260.00:29.00)
+     {$\psi_d = -170^\circ$};
+\node[anote, anchor=north, align=center, text width=62mm] at (0,-35.50)
+     {$\mathrm{ssa}(-340^\circ) = +20^\circ$ — the short way,\\ and the shaded wedge is how wide $20^\circ$ really is};
+
+% ================= 오른쪽 — ssa 는 톱니다 =================
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (55.30,0) -- (122.70,0);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (88.00,-19.30) -- (88.00,20.30);
+\node[font=\scriptsize, anchor=west]  at (123.70,0) {$a$};
+\node[font=\scriptsize, anchor=south] at (88.00,20.80) {$\mathrm{ssa}(a)$};
+\draw[soft, line width=0.4pt] (68.20,-1.2) -- (68.20,1.2);
+\node[tick, anchor=north] at (68.20,-1.6) {$-360$};
+\draw[soft, line width=0.4pt] (78.10,-1.2) -- (78.10,1.2);
+\node[tick, anchor=north] at (78.10,-1.6) {$-180$};
+\draw[soft, line width=0.4pt] (97.90,-1.2) -- (97.90,1.2);
+\node[tick, anchor=north] at (97.90,-1.6) {$180$};
+\draw[soft, line width=0.4pt] (107.80,-1.2) -- (107.80,1.2);
+\node[tick, anchor=north] at (107.80,-1.6) {$360$};
+\draw[soft, line width=0.4pt] (86.80,-15.30) -- (89.20,-15.30);
+\node[tick, anchor=east] at (86.20,-15.30) {$-180$};
+\draw[soft, line width=0.4pt] (86.80,15.30) -- (89.20,15.30);
+\node[tick, anchor=east] at (86.20,15.30) {$180$};
+\draw[ink, line width=0.9pt] (58.30,-15.30) -- (78.10,15.30);
+\draw[ink, line width=0.9pt] (78.10,-15.30) -- (97.90,15.30);
+\draw[ink, line width=0.9pt] (97.90,-15.30) -- (117.70,15.30);
+
+% 예제:  a = -340  ->  20
+\draw[accent, line width=0.5pt, densely dashed] (69.30,0.00) -- (69.30,1.70) -- (88.00,1.70);
+\fill[accent] (69.30,1.70) circle (0.9);
+\node[anote, anchor=south west] at (70.50,2.30) {$-340 \mapsto +20$};
+\node[note, anchor=north, text width=52mm, align=center] at (88.00,-21.30)
+     {Every value is mapped into $(-180^\circ,\,180^\circ]$, and on the
+      middle segment $\mathrm{ssa}(a)=a$ leaves it alone. The jumps sit at
+      $\pm180^\circ$, which is why the \emph{error} is wrapped, never the heading.};
+
+\end{tikzpicture}
+\end{document}

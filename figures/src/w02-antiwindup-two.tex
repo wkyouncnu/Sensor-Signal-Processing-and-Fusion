@@ -1,0 +1,144 @@
+% figures/w02-antiwindup-two.svg — 두 안티와인드업이 적분기 입력에서 갈라진다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w02-antiwindup-two.tex figures/w02-antiwindup-two.svg
+%
+% 두 방식은 루프의 나머지가 전부 같다. 다른 것은 **적분기 앞에서 무엇이 일어나는가**
+% 하나뿐이므로, 그 자리만 나란히 놓고 나머지는 같은 모양으로 그린다.
+% 전체 루프(포화 뒤가 왜 끊기는가)는 w02-windup.svg 가 이미 그렸다 — 여기서
+% 선체와 바깥 되먹임을 다시 그리지 않는 이유다.
+%
+% 폭: 두 판 합쳐 약 172 mm. A4 본문 폭 186 mm 안에 들어간다 (CLAUDE.md 4 규칙 6-0).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+% 이 그림에서만 쓰는 좁은 블록 — 두 판을 나란히 놓아야 하므로 기본 17mm 은 넓다
+\tikzset{
+  nblk/.style = {draw=ink, line width=0.55pt, fill=white,
+                 minimum width=11mm, minimum height=7.5mm, inner sep=1.5pt, font=\small},
+  ablk/.style = {draw=accent, line width=0.7pt, fill=white,
+                 minimum width=13mm, minimum height=8.5mm, inner sep=1.5pt,
+                 font=\small, text=accent},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=north west] at (-12,34)
+     {Two anti-windup schemes, and the one place they differ};
+\node[anchor=north west, align=left, text width=172mm, font=\scriptsize, soft] at (-12,28) {%
+  Everything outside the violet block is identical, including the excess
+  $\varepsilon = X_{\text{cmd}} - X_{\text{sat}}$ that both schemes measure. The schemes
+  disagree only about what to do with it at the integrator's input.};
+
+% =======================================================================
+% 두 판을 같은 매크로로 그린다. \PX 가 판의 원점.
+% =======================================================================
+
+% ---------- (a) clamping ----------------------------------------------
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, anchor=west, text=ink] at (-10,14) {(a)\quad clamping};
+  \node[note, anchor=west, text width=76mm] at (-10,10)
+       {switch the integrator \emph{off} while it would wind further in};
+
+  \node[nblk] (kp)  at (8,4)    {$K_p$};
+  \node[nblk] (ki)  at (8,-8)   {$K_i$};
+  \node[ablk] (gate) at (26,-8) {};
+  \node[nblk] (int) at (44,-8)  {$1/s$};
+  \node[sum]  (s2)  at (58,0)   {};
+  \node[nblk] (sat) at (70,0)   {};
+
+  % 스위치 글리프 — 열린 접점
+  \draw[accent, line width=0.6pt] ([shift={(-4mm,0)}]gate.center) -- ([shift={(-1.6mm,0)}]gate.center);
+  \draw[accent, line width=0.6pt] ([shift={( 1.6mm,0)}]gate.center) -- ([shift={( 4mm,0)}]gate.center);
+  \draw[accent, line width=0.7pt] ([shift={(-1.6mm,0)}]gate.center) -- ([shift={( 1.3mm,2.3mm)}]gate.center);
+  \fill[accent] ([shift={(-1.6mm,0)}]gate.center) circle (0.42);
+  \fill[accent] ([shift={( 1.6mm,0)}]gate.center) circle (0.42);
+
+  % 포화 글리프
+  \draw[wire] ([shift={(-4.5mm,-2.1mm)}]sat.center) -- ([shift={(-1.7mm,-2.1mm)}]sat.center)
+              -- ([shift={( 1.7mm, 2.1mm)}]sat.center) -- ([shift={( 4.5mm, 2.1mm)}]sat.center);
+
+  % 배선
+  \coordinate (br) at (-2,-2);
+  \draw[sig] (-10,-2) -- node[sname, above, pos=0.15] {$e$} (br);
+  \node[dot] at (br) {};
+  \draw[wire] (br) |- (kp.west);   \draw[wire] (br) |- (ki.west);
+  \draw[sig]  (ki) -- (gate);
+  \draw[sig]  (gate) -- (int);
+  \draw[wire] (kp) -| (s2);
+  \draw[wire] (int) -| (s2);
+  %  X_cmd 는 선 위에 두지 않는다 — 합산점과 포화 블록 사이가 9mm 라 이름표가
+  %  반드시 한쪽에 걸린다. 내려가는 탭 선 옆의 빈 곳에 붙인다.
+  \draw[sig]  (s2) -- (sat);
+  \draw[sig]  (sat) -- (81,0);
+  \node[sname, anchor=west] at (81,0) {$X_{\text{sat}}$};
+
+  % epsilon 을 재는 곳. 탭은 X_cmd 이름표와 겹치지 않게 오른쪽으로 물린다.
+  \coordinate (ta) at (66,0);   \coordinate (tb) at (78,0);
+  \node[dot] at (ta) {};  \node[dot] at (tb) {};
+  \node[asum] (ep) at (72,-20) {};
+  \node[anote, anchor=north] at (72,-23.5) {$\varepsilon$};
+  \draw[awire] (ta) |- (ep);
+  \draw[awire] (tb) |- (ep);
+  \node[anote, anchor=east] at (69.4,-17.6) {$+$};
+  \node[anote, anchor=west] at (74.6,-17.6) {$-$};
+  \node[sname, anchor=east] at (65.2,-11) {$X_{\text{cmd}}$};
+
+  % 게이트로 가는 논리
+  \draw[asig] (ep) -| (26,-14.5);
+  \node[anote, anchor=north, align=center, text width=54mm] at (26,-24)
+       {open when $\varepsilon \neq 0$ \textbf{and} $\operatorname{sign}(e)=\operatorname{sign}(\varepsilon)$,\\
+        so that $\dot I = 0$ — the memory is frozen};
+\end{scope}
+
+% ---------- (b) back-calculation --------------------------------------
+\begin{scope}[shift={(104,0)}]
+  \node[font=\small\bfseries, anchor=west, text=ink] at (-10,14) {(b)\quad back-calculation};
+  \node[note, anchor=west, text width=76mm] at (-10,10)
+       {feed the excess \emph{back} so the integrator is pulled to the limit};
+
+  \node[nblk] (kp)  at (8,4)    {$K_p$};
+  \node[nblk] (ki)  at (8,-8)   {$K_i$};
+  \node[asum] (bs)  at (26,-8)  {};
+  \node[nblk] (int) at (44,-8)  {$1/s$};
+  \node[sum]  (s2)  at (58,0)   {};
+  \node[nblk] (sat) at (70,0)   {};
+  \node[ablk] (kaw) at (26,-20) {$K_{\text{aw}}$};
+
+  \draw[wire] ([shift={(-4.5mm,-2.1mm)}]sat.center) -- ([shift={(-1.7mm,-2.1mm)}]sat.center)
+              -- ([shift={( 1.7mm, 2.1mm)}]sat.center) -- ([shift={( 4.5mm, 2.1mm)}]sat.center);
+
+  \coordinate (br) at (-2,-2);
+  \draw[sig] (-10,-2) -- node[sname, above, pos=0.15] {$e$} (br);
+  \node[dot] at (br) {};
+  \draw[wire] (br) |- (kp.west);   \draw[wire] (br) |- (ki.west);
+  \draw[sig]  (ki) -- (bs);
+  \draw[sig]  (bs) -- (int);
+  \draw[wire] (kp) -| (s2);
+  \draw[wire] (int) -| (s2);
+  %  X_cmd 는 선 위에 두지 않는다 — (a) 판과 같은 이유다.
+  \draw[sig]  (s2) -- (sat);
+  \draw[sig]  (sat) -- (81,0);
+  \node[sname, anchor=west] at (81,0) {$X_{\text{sat}}$};
+
+  \coordinate (ta) at (66,0);   \coordinate (tb) at (78,0);
+  \node[dot] at (ta) {};  \node[dot] at (tb) {};
+  \node[asum] (ep) at (72,-20) {};
+  \node[anote, anchor=north] at (72,-23.5) {$\varepsilon$};
+  \draw[awire] (ta) |- (ep);
+  \draw[awire] (tb) |- (ep);
+  \node[anote, anchor=east] at (69.4,-17.6) {$+$};
+  \node[anote, anchor=west] at (74.6,-17.6) {$-$};
+  \node[sname, anchor=east] at (65.2,-11) {$X_{\text{cmd}}$};
+
+  % epsilon -> Kaw -> 적분기 입력의 뺄셈
+  \draw[asig] (ep) -- (kaw);
+  \draw[asig] (kaw) -- (bs);
+  \node[anote, anchor=east] at (24.6,-11.5) {$-$};
+  \node[anote, anchor=north, align=center, text width=54mm] at (26,-26)
+       {$\dot I = K_i e - K_{\text{aw}}\varepsilon$, a continuous pull\\
+        towards the value that makes $X_{\text{cmd}} = X_{\text{sat}}$};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

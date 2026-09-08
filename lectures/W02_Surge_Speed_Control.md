@@ -255,8 +255,21 @@ $$
 - The derivative is taken on the **measurement**, not on the error:
 
 $$
-X = K_p e + K_i\!\int\! e\,\mathrm{d}t - K_d\,\frac{N s}{s + N}\,u .
+X = K_p e + K_i\!\int\! e\,\mathrm{d}t \;\underbrace{-}_{\text{not a typo}}\; K_d\,\frac{N s}{s + N}\,u .
 $$
+
+> [!important] Why that third sign is a minus while the other two are plus
+> The textbook PID is written $X = K_p e + K_i\!\int\! e\,\mathrm{d}t + K_d\,\dot e$ — three plus signs. The minus appears here because the last term is no longer built from $e$. Substituting $e = u_d - u$ into the derivative,
+>
+> $$\dot e = \dot u_d - \dot u ,$$
+>
+> and on a setpoint that is held constant between steps $\dot u_d = 0$, which leaves
+>
+> $$K_d\,\dot e = -K_d\,\dot u .$$
+>
+> So the minus **is** the plus of the textbook form, rewritten in terms of the measurement. Nothing about the controller changed; only which signal is differentiated. Writing $+K_d\dot u$ instead would apply damping with the wrong sign and drive the loop unstable, so the sign is worth checking rather than copying.
+>
+> The two forms differ in exactly one respect: at the instant of a setpoint step, $\dot u_d$ is an impulse, and the textbook form passes it to the actuator. That is the derivative kick the next row of the table refers to.
 
 - Two reasons, and only the second is about this week.
 
@@ -375,6 +388,30 @@ $$
 
 ## 2-6. Windup is a saturation problem
 
+### Why anti-windup is needed, before any equation
+
+The integrator of §2-4 is a **memory of past error**. Every second the vessel runs slow, the integrator remembers it, and that memory is what eventually removes the offset a proportional term cannot. This is the whole reason the term exists, and it works because the memory is always *acted upon*: the integrator asks for more force, the force arrives, the error shrinks, and the memory stops growing.
+
+Windup is what happens when that last sentence stops being true. Follow one run:
+
+Section F runs exactly this on the Otter, commanding $u_d = 3.5$ m/s when $u_{\max} = 3.0864$ m/s, and every number below is measured there:
+
+| Time | What is commanded | What the vessel does | What the integrator does |
+|---|---|---|---|
+| $t = 5$ s | $3.5$ m/s — the propellers **cannot** reach it | accelerates to $3.09$ m/s and stays there | the error never reaches zero, so the memory **keeps growing** |
+| $5$ to $40$ s | the same impossible speed | nothing further — it is already flat out | climbs to $3438$ N, against a largest *deliverable* force of $239$ N |
+| $t = 40$ s | $1.5$ m/s — now reachable | still flat out, and now wrongly so | begins to unwind, from $14.4$ times the useful value |
+| $40$ to $54$ s | the same reachable speed | **holds $3.09$ m/s for another ten seconds**, then overshoots | every stored newton must be integrated away before the demand re-enters the attainable set |
+
+- The vessel spends **fourteen seconds ignoring a command it could have obeyed at once** — a $13.98$ s recovery against $3.40$ s with clamping — and nothing is broken. Every block did exactly what it was built to do.
+- The trouble is that between $t = 5$ and $t = 40$ s the integrator was recording an error it had no power to remove. Its memory is a record of a negotiation the actuator had already lost, and on any measure that matters it is **remembering something that never happened**.
+- Anti-windup is therefore not a repair to the integrator. It is a way of **telling the integrator that the loop is open**, so that it stops recording while its recording cannot mean anything. That is the single idea, and everything below is two ways of saying it in equations.
+
+> [!note] Why this cannot be tuned away
+> Lowering $K_i$ makes the integrator wind up more slowly, and also makes it remove the offset more slowly — the two are the same coefficient. No value of $K_i$ separates them, because the problem is not the size of the gain but the fact that the loop is open while the gain is applied. A structural fault needs a structural fix, which is why a *scheme* is added rather than a number changed.
+
+### The saturation that causes it
+
 - The attainable set of §A1-6 caps the surge force at $X_{\max} = 24.4g = 239.364$ N. Combined with $X_u = -24.4g/U_{\max}$ this produces an exact and rather elegant limit:
 
 $$
@@ -426,12 +463,41 @@ $$
 - Everything goes wrong at the third equation. $\dot I$ is written in terms of $e$, and $e$ is the error of a loop that is **no longer closed**. Both remedies do the same thing: they make $\dot I$ depend on the saturation as well.
 
 $$
-\boxed{\ \dot I = K_i e \;-\; \underbrace{f\!\left(X_{\text{cmd}} - X_{\text{sat}}\right)}_{\text{zero whenever the actuator is following}}\ }
+\boxed{\ \dot I = K_i e \;-\; \underbrace{f\!\left(\,\overbrace{X_{\text{cmd}} - X_{\text{sat}}}^{\textstyle \varepsilon},\ e\,\right)}_{\text{zero whenever the actuator is following}}\ }
 $$
 
-- The bracketed term vanishes whenever $X_{\text{cmd}} = X_{\text{sat}}$, so **an unsaturated loop is unaffected by any anti-windup scheme**. That is the property both schemes must have, and it is what makes them safe to switch on permanently.
+> [!important] What $f$ is, and why it is written as a letter
+> $f$ is **not a specific function.** It is a placeholder for "whatever the anti-windup scheme subtracts", and the equation above is the *shape* both schemes share rather than either one of them. Writing it this way makes the shared requirement visible before the two schemes disagree about how to meet it.
+>
+> The one requirement is $f(0, e) = 0$: **no excess, no correction.** Since $\varepsilon \equiv X_{\text{cmd}} - X_{\text{sat}}$ is identically zero whenever the actuator is following its command, this guarantees that an unsaturated loop is untouched by any scheme meeting it — which is what makes anti-windup safe to leave switched on permanently, with nothing to schedule.
+>
+> The two remedies below are two choices of $f$, and the table names them:
+>
+> | Scheme | $f(\varepsilon, e)$ | $f(0,e)$ |
+> |---|---|---|
+> | back-calculation | $K_{\text{aw}}\,\varepsilon$ — proportional to the excess | $0$ ✓ |
+> | clamping | $K_i e$ when $\varepsilon \neq 0$ **and** $\operatorname{sign}(e) = \operatorname{sign}(\varepsilon)$; otherwise $0$ | $0$ ✓ |
+>
+> Clamping's $f$ needs $e$ as well as $\varepsilon$, which is why $f$ carries two arguments. Subtracting exactly $K_i e$ leaves $\dot I = 0$: that is what "freeze the integrator" means algebraically. Back-calculation's $f$ ignores $e$ entirely and depends only on how far outside the limit the demand went.
 
 ### Two remedies
+
+![Clamping and back-calculation, side by side](../figures/w02-antiwindup-two.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| everything in black | identical in both schemes — the same $K_p$, the same $K_i$, the same integrator, the same saturation |
+| violet dashed path | the excess $\varepsilon = X_{\text{cmd}} - X_{\text{sat}}$, measured the same way on both sides |
+| (a) violet block | a switch that **opens**, cutting the integrator's input to zero |
+| (b) violet block | a gain $K_{\text{aw}}$ whose output is **subtracted** from the integrator's input |
+
+Both schemes tap the same two points — just before the saturation and just after it — and subtract them. When the actuator is following its command those two points carry the same signal, so $\varepsilon = 0$ and neither violet block does anything at all. That is the shared property, and it is visible as the fact that the violet ink only ever *adds* to the black diagram.
+
+Where they part is a single block. Clamping opens a switch, so the integrator stops dead and keeps whatever it was holding. Back-calculation subtracts a number proportional to the excess, so the integrator keeps moving but is pulled steadily toward the value that would make the demand equal the limit. **One stops the memory; the other steers it.**
+
+That difference is why raising $K_{\text{aw}}$ never turns back-calculation into clamping: a switch and a pull are not two settings of one thing.
 
 **Clamping**, or conditional integration — freeze the integrator while the actuator is saturated *and* the error would drive it further in:
 
@@ -707,17 +773,27 @@ Designed for $\zeta = 0.7$, $\omega_n = 1.5$ rad/s, giving $K_p = 102.00$ and $K
 
 | Element | Meaning |
 |---|---|
-| left panel, solid | the twelve-state plant |
-| left panel, dashed | the linear model **with the PI zero included** |
-| right panel, crosses | the two closed-loop poles, placed by the design |
-| right panel, circle | the PI zero at $s = -K_i/K_p$, which the design never mentioned |
+| left panel, blue solid | the twelve-state vessel |
+| left panel, orange dashed | a simple linear model of the same loop |
+| right panel, orange dashed | that same linear model again |
+| right panel, green solid | the same loop with the PI zero removed and nothing else changed |
 
 **What the figure says**
 
-- **The point.** The integral term closes the gap section D could not — the residual error is $-2.1\times10^{-12}$ m/s. But the overshoot comes out $8.15\%$ where the textbook formula for $\zeta = 0.7$ predicts $4.60\%$, **wrong by nearly a factor of two**. The linear model that *includes the PI zero* gives $8.07\%$, so the plant is not what disagrees.
-- **Principle.** $\zeta$ and $\omega_n$ describe the **poles**. A PI controller also places a zero at $s = -K_i/K_p = -1.886$, and a zero this close to the poles at $-1.050 \pm 1.071\mathrm{j}$ raises overshoot. The $4.60\%$ figure comes from a formula derived for a system with **no zero at all**.
-- The damping ratio was designed correctly; the prediction made from it was not. Diagnosing this as a plant modelling error would have been the wrong conclusion, and the pole–zero map on the right is what rules it out.
-- Moving the zero further left — a smaller $K_i/K_p$ — makes the textbook figure accurate again, at the cost of a slower recovery from a load change. Week 8's reference model is the general remedy: shape the setpoint instead of arguing with the closed-loop zeros.
+The integral term works. The speed settles exactly on $1.5$ m/s, with a residual error of $-2.1\times10^{-12}$ m/s — the offset that section D could not remove is gone.
+
+The surprise is the overshoot. The design asked for $\zeta = 0.7$, and the standard formula says a system with $\zeta = 0.7$ overshoots $4.60\%$. The vessel overshoots $8.15\%$ — nearly double.
+
+The left panel rules out the obvious suspect. If the vessel were more complicated than the design assumed, the blue and orange curves would separate. They do not: a simple linear model of the loop lands within $0.1$ points of the twelve-state vessel. **The vessel is behaving exactly as the linear model says it should.** So the error is in the prediction, not in the plant.
+
+The right panel shows where the prediction went wrong. Both curves there have **identical poles** — same $\zeta$, same $\omega_n$. The only difference is that the orange one contains the zero a PI controller unavoidably creates at $s = -K_i/K_p$, and the green one does not. That single difference moves the overshoot from $4.60\%$ to $8.07\%$.
+
+So $\zeta$ and $\omega_n$ describe only the **poles**, and a PI controller places a **zero** as well — one nobody asked for and the design procedure never mentions. The $4.60\%$ formula was derived for a system with no zero at all, so it was never going to apply here.
+
+The damping ratio was designed correctly. The prediction made from it was not.
+
+> [!tip] What to do about it
+> Pushing the zero further from the poles — a smaller $K_i/K_p$ — makes the textbook figure accurate again, and costs a slower recovery from a load change. Week 8's reference model is the general remedy: shape the setpoint rather than argue with the closed-loop zeros.
 
 ### Derivative
 

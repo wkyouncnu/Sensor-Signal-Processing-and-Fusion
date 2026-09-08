@@ -94,18 +94,24 @@ $$
 
 $$
 \underbrace{(m x_g - N_{\dot v})\,\dot v}_{\text{sway-yaw coupling}}
-+ (I_z - N_{\dot r})\,\dot r
++ \underbrace{(I_z - N_{\dot r})\,\dot r}_{\textstyle =\ M_{66}\,\dot r\ \text{— this one survives}}
 + \underbrace{m x_g u r + (X_{\dot u} - Y_{\dot v})\,u v}_{\text{Coriolis}}
 = N + N_r r + N_v v
 $$
 
+- The middle term is the only one that reaches the scalar plant, and it reaches it **unchanged**: its coefficient is by definition the $(6,6)$ entry of $\mathbf{M} = \mathbf{M}_{RB} + \mathbf{M}_A$. The callout below works the number through.
 - Three terms stand between this and the scalar plant. Unlike §2-1, **none of them is identically zero**, and each is dropped for a stated reason:
 
 | Term | Why it is dropped | When it bites |
 |---|---|---|
 | $(m x_g - N_{\dot v})\dot v$ | sway acceleration is small once the turn has settled | during the first seconds of a turn |
 | $(X_{\dot u} - Y_{\dot v})\,u v$ | proportional to $uv$; $v$ is a few per cent of $u$ | at speed, in a hard turn |
-| $N_v v$ | the Otter has no linear sway damping, $Y_v = 0$ | never, for this hull |
+| $N_v v$ | $N_v = 0$: `otter.m` applies linear damping **one axis at a time** (lines 160, 161, 165), so the damping matrix has no off-diagonal entries at all | never, for this hull — but it returns for any hull whose damping is cross-coupled |
+
+> [!note] $N_v = 0$ is a statement about the damping *matrix*
+> The three damping lines of `otter.m` are $X_h = X_u u_r$, $Y_h = Y_v v_r$ and $N_h = N_r(1 + 10\lvert r\rvert)r$: each axis is damped by its own velocity and nothing crosses between them. So $N_v$ — the yaw moment produced by a sway velocity — is absent by construction, and would remain absent even on a hull that damped sway strongly.
+>
+> In the release this course runs, sway happens to carry no linear damping either: line 137 is `Yv = 0`, and what resists sideways motion is the quadratic cross-flow drag of §1-12. **That second fact is release-specific** — the 2024 recalibration of `otter.m` replaced it with $Y_v = -M_{22}/T_{\text{sway}}$. $N_v = 0$ holds in both, because the reason for it is the structure of the damping and not the value of any one coefficient.
 
 - Dropping them, writing $M_{66}$ for the $(6,6)$ entry of $\mathbf{M}$ and substituting $r = \dot\psi$ from the kinematics:
 
@@ -119,8 +125,22 @@ $$
 > [!warning] This reduction is an approximation, and Week 1 already measured the error
 > In §2-1 the dropped terms were exactly zero and the reduction was exact. Here they are not. Week 1 measured $v = \pm 0.1264$ m/s in a turn — real sway, produced by the very Coriolis coupling dropped above. The linear model below is therefore a **design model**, and §3-5 shows where the vessel stops obeying it.
 
-> [!caution] $M_{66}$ is not $I_z - N_{\dot r}$
-> The textbook symbol suggests it is, and for a vessel whose origin sits at its centre of gravity it would be. The Otter's does not: `otter.m` places the body origin on the waterline and carries $x_g = 0.153$ m, so building $\mathbf{M}_{RB}$ transfers the inertia from CG to CO and $M_{66}$ picks up rigid-body terms beyond $I_z$. Week 1 §1-12 works the number through. Take $M_{66} = 42.65$ kg·m² from the model, not from the symbol.
+> [!important] $M_{66}$ **is** $I_z - N_{\dot r}$ — provided $I_z$ is taken about the body origin
+> The substitution above is exact, not a relabelling: the coefficient of $\dot r$ in the yaw row *is* the $(6,6)$ entry of $\mathbf{M} = \mathbf{M}_{RB} + \mathbf{M}_A$. The one thing that must not be misread is **which point $I_z$ refers to**. It is the yaw inertia about the origin of $\{b\}$, not about the centre of gravity, and for this hull the two differ by $12\%$.
+>
+> `otter.m` builds it in four steps, and each one can be checked against the source (line numbers are those of the MSS 2021 release this course runs):
+>
+> | Step | `otter.m` | Value |
+> |---|---|---|
+> | hull alone, about CG | `Ig_CG = m*diag([R44^2, R55^2, R66^2])` | $13.7500$ kg·m² |
+> | hull **and payload**, about CG | `Ig = Ig_CG - m*Smtrx(rg)^2 - mp*Smtrx(rp)^2` | $15.1021$ kg·m² |
+> | shifted to CO — this is $I_z$ | `MRB = H'*MRB_CG*H`, line 109 | $16.9779$ kg·m² |
+> | added mass, $-N_{\dot r}$ | `Nrdot = -1.7*Ig(3,3)`, line 103 | $25.6736$ kg·m² |
+> | $M_{66} = I_z - N_{\dot r}$ | `M = MRB + MA`, line 109 | $\mathbf{42.6515}$ kg·m² |
+>
+> The third step is the parallel-axis theorem and nothing more: $15.1021 + m_{\text{tot}}x_g^2 = 15.1021 + 80 \times 0.153125^2 = 16.9779$ kg·m², with $x_g = 0.153$ m from §1-12. The same shift is what puts $m x_g = 12.25$ kg·m into the sway–yaw coupling term at the head of this row, so the two are one consequence, not two.
+>
+> Added mass contributes only through $-N_{\dot r}$ because `otter.m` builds $\mathbf{M}_A$ as a **diagonal** matrix. That is also why the Coriolis group above carries no $-Y_{\dot r}\,u r$ term: $Y_{\dot r} = 0$ for this hull, and a vessel whose added mass is not diagonal would keep it.
 
 $$
 M_{66}\,\ddot\psi = \tau_N + N_r\,\dot\psi .
@@ -319,6 +339,23 @@ $$
 $$
 
 - Applied to the example, $\operatorname{ssa}(-340°) = +20°$, and the vessel turns the short way.
+
+![The wrap: two headings 20° apart, and the error that says −340°](../figures/w03-ssa.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left, solid arrow | the heading the vessel actually has, $\psi = +170°$ |
+| left, dashed arrow | the heading commanded, $\psi_d = -170°$ |
+| left, shaded wedge | the true separation of the two — $20°$, and no wider than it looks |
+| left, grey arc | what the plain subtraction asks for: $340°$ to port, nearly a full circle |
+| left, violet arc | what $\operatorname{ssa}$ asks for: $20°$ to starboard |
+| right | $\operatorname{ssa}$ as a function. A sawtooth of period $360°$, identity on the middle segment, jumping at $\pm180°$ |
+
+- Both arcs **end at the same place.** That is the point: the two commands are geometrically identical and operationally opposite. One turns the vessel through $340°$ of ocean, the other through $20°$.
+- The wedge is drawn because a reader who is told "the headings are $20°$ apart" while looking at two arrows near due south needs to see that $20°$ is genuinely narrow. The grey arc sweeping around the whole compass is the same information told the other way.
+- The right-hand panel says why the wrap must be applied to a **difference** and not to a state. $\operatorname{ssa}$ is discontinuous at $\pm180°$, and $\psi$ passes through $180°$ routinely on a mission. Wrapping $\psi$ would inject a $360°$ step into a signal that is differentiated; wrapping $\psi_d - \psi$ injects nothing, because the error is small whenever the loop is working.
 
 > [!warning] Wrap the error, not the heading
 > $\psi$ itself is left unwrapped throughout this course, exactly as `otter.m` produces it. Wrapping the state would put a $360°$ jump into a signal that is differentiated and plotted. The wrap belongs at the **one place an angle is subtracted from an angle**, which is inside the `heading error` block and nowhere else.

@@ -52,7 +52,21 @@ fprintf('    Steady-state error at t = %g s: %.3e m/s.\n', RI.t(end), V.u_d1 - R
 %  step() and pzmap() replace the axes if called without outputs, and every
 %  later xlabel/title then applies to an axes ARRAY and errors. Take their data
 %  and draw it, so the panel stays one axes.
-[y_lin, t_lin] = step(Tcl*V.u_d1, RI.t(end));
+[y_lin, t_lin] = step(Tcl*V.u_d1, RI.t(end) - V.t_up);
+
+%  step() starts its step at t = 0; the Simulink run applies the setpoint at
+%  t = t_up = 5 s. Plotting them on the same axes without shifting draws the
+%  linear model FIVE SECONDS EARLY, and the two curves then look like different
+%  responses when they are in fact the same one.  (Reported by the lecturer,
+%  2026-09-08 — "왜 선형 모델 결과가 왼쪽에 있는거야?")
+%
+%  The TABLE was never affected: stepinfo() measures overshoot and settling
+%  from the step instant, so both are time-shift invariant. Only the picture
+%  was wrong, which is the more dangerous of the two — a reader trusts a
+%  picture without checking it against a number.
+t_lin = t_lin + V.t_up;
+t_lin = [0; t_lin];                 % hold the initial value before the step
+y_lin = [0; y_lin];
 
 f = lab_fig('W02 E  PI', 950, 400);
 subplot(1,2,1); hold on;
@@ -63,16 +77,34 @@ xlabel('time [s]'); ylabel('u  [m/s]'); legend('Location','southeast');
 title({sprintf('overshoot %.1f %% measured', Mp), ...
        sprintf('%.1f %% from the poles alone — that leaves the zero out', Mp_pole)});
 
+%  RIGHT PANEL, replaced 2026-09-08 at the lecturer's request.
+%
+%  It used to be a pole-zero map in the s-plane. That asks the reader to
+%  translate "a circle at -1.886, crosses at -1.050 +- 1.071j" into "the
+%  response overshoots more", which is a step this course has not taught yet
+%  and does not need here. ("폴 제로 극 좌표계 그림이 왜 있는거야? 너무 어려워")
+%
+%  The same claim is now made in the time domain, where the section already
+%  speaks: run the SAME poles twice, once with the PI zero and once without,
+%  and let the two curves show what the zero costs. Nothing is asserted that
+%  the picture does not display.
+%
+%  Tnz: same denominator as Tcl, no numerator zero, DC gain 1.
+Tnz = tf(real(prod(-pcl)), real(poly(pcl)));
+[y_nz, t_nz] = step(Tnz*V.u_d1, RI.t(end) - V.t_up);
+t_nz = [0; t_nz + V.t_up];   y_nz = [0; y_nz];
+
 subplot(1,2,2); hold on;
-plot(real(pcl), imag(pcl), 'x', 'MarkerSize', 11, 'LineWidth', 1.6, ...
-     'DisplayName', 'closed-loop poles');
-plot(-V.Ki_d/V.Kp_d, 0, 'o', 'MarkerSize', 9, 'LineWidth', 1.6, ...
-     'DisplayName', 'the PI zero');
-xline(0, 'k:', 'HandleVisibility','off'); yline(0, 'k:', 'HandleVisibility','off');
-grid on; legend('Location','best');
-xlabel('Re'); ylabel('Im');
-title({'poles AND the zero', sprintf('zero at %.3f, poles at %.3f \\pm %.3fj', ...
-       -V.Ki_d/V.Kp_d, real(pcl(1)), abs(imag(pcl(1))))});
+yline(V.u_d1, 'k:', 'DisplayName','setpoint');
+plot(t_lin, y_lin, '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.4, ...
+     'DisplayName', sprintf('with the PI zero  (%.1f %%)', S.Overshoot));
+plot(t_nz,  y_nz,  '-',  'Color',[0.47 0.67 0.19], 'LineWidth',1.4, ...
+     'DisplayName', sprintf('same poles, no zero  (%.1f %%)', Mp_pole));
+grid on; legend('Location','southeast');
+xlabel('time [s]'); ylabel('u  [m/s]');
+title({'what the zero costs', ...
+       sprintf('identical poles; overshoot %.1f %% against %.1f %%', ...
+               S.Overshoot, Mp_pole)});
 sgtitle('W02 E — integral action, and the zero nobody placed', 'FontWeight','bold');
 exportgraphics(f, fullfile(here,'img','W02_result_PI.png'), 'Resolution', 150);
 
