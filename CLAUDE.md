@@ -113,8 +113,21 @@ lectures/WXX_simulink/
 ├── WXX_plot.m             StopFcn 과 절 스크립트가 함께 부르는 플로팅 함수
 ├── WXX_animate.m          Animate 블록이 매 스텝 부르는 실시간 그리기
 ├── WXX_*.slx
-└── img/                   블록도 PNG + 결과 그래프 PNG
+├── img/                   블록도 PNG + 결과 그래프 PNG
+├── problems/              수업 2교시 실습 — 학생이 직접 만든다
+│   ├── README.md          문제지. 문제마다 **강의에서 잰 수치**가 합격선이다
+│   ├── WXX_P1_start.m     플랜트 하나만 든 시작 모델을 만든다
+│   └── WXX_check.m        학생 모델을 돌려 강의 수치와 대조, PASS/FAIL 출력
+└── solutions/             모범답안. 무엇을 만드는지가 아니라 **왜 그렇게**를 적는다
+    ├── README.md          실제로 돌린 PASS 출력 그대로
+    └── WXX_S*_….m
 ```
+
+> [!important] 실습 문제는 **채점 가능**해야 한다
+> 문제마다 강의 절 스크립트가 **실제로 잰 수치**를 합격선으로 둔다. 그래야 도면이
+> 달라도 물리가 같은지 기계가 판정한다 — "정답 도면" 이 하나가 아니어야 학생이
+> 스스로 만든다. 체커는 강의와 **같은 정의**로 재야 한다. 실제로 track 각을
+> `gradient` 로 재서 강의의 시종점 정의와 0.56° 어긋나 오답 처리된 적이 있다.
 
 > [!important] `.m` 과 `.slx` 이름이 겹치면 안 된다
 > `W02_H_antiwindup.m` 과 `W02_H_antiwindup.slx` 가 함께 있으면 MATLAB 이 **모델을 열고**

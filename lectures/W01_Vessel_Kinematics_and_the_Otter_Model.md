@@ -1430,6 +1430,28 @@ $$
 
 ---
 
+## In-class laboratory — build the open loop by hand
+
+The second hour of the Week 1 session is spent building, in Simulink, the model this lecture built from a script. Three problems, one hour, with a checker that compares the result against the numbers measured above.
+
+```matlab
+cd lectures/W01_simulink/problems
+W01_P1_start                 % creates W01_P1.slx — the hull, and nothing else
+W01_check(1)                 % run this whenever, as often as needed
+```
+
+| | Problem | Time | The number it must reproduce |
+|---|---|---|---|
+| 1 | The open loop — a constant command into the hull, a log coming out | 25 min | terminal $u = 1.0286$ m/s, and $v = r = 0$ |
+| 2 | The manoeuvre — replace the constant by a schedule of time | 20 min | port turn $r = -2.2942$ deg/s, heading change $-70.2$ deg |
+| 3 | The current — work out why **nothing** needs to be added | 15 min | drift $25.809$ deg, ground speed $1.1091$ m/s |
+
+- The full problem sheet is [`W01_simulink/problems/README.md`](W01_simulink/problems/README.md), and reference answers are in [`W01_simulink/solutions/`](W01_simulink/solutions/README.md).
+- The hull is provided because integrating `otter.m` is not the subject of this week. Everything else — the command, the wiring, the logging — is built by hand.
+- **There is no single correct diagram.** The checker tests the physics. A model that reproduces the measured numbers is doing what the lecture's model does, whatever it looks like on the canvas.
+
+---
+
 ## Assignment 1
 
 - **Due**: before the Week 2 session
