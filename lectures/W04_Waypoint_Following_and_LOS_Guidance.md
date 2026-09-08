@@ -1408,6 +1408,17 @@ Expected output:
 
 ![atan2 against LOS](W04_simulink/img/W04_result_atan2.png)
 
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left, dashed grey line | the planned path — the thing the vessel is supposed to be on |
+| left, numbered open circles | the waypoints, in mission order |
+| left, dotted circles | the switching parameter $R$ drawn around each waypoint |
+| left, hull outlines | the vessel drawn along its own track, so its **heading** is visible where a bare line would hide it |
+| left, orange / blue tracks | `atan2` and LOS, run from the same start with the same autopilot |
+| right | $y_e^{\,p}$, the perpendicular distance from the path, one curve per law; zero is the path itself |
+
 **What the figure says**
 
 Two vessels, identical in every respect except the guidance law, running the same four-leg mission in still water. The left panel is where they went; the right is how far each was from the line it was supposed to be on.
@@ -1458,6 +1469,16 @@ Expected output:
 
 ![The LOS law taken apart](W04_simulink/img/W04_result_los.png)
 
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| panel 1 | $\pi_p$, the direction of the current leg — the first term of the law, and pure geometry |
+| panel 2, solid | $-\arctan(y_e^{\,p}/\Delta)$, the correction the law **prescribes** |
+| panel 2, dashed | $\psi_d - \pi_p$, the correction the model **applied**; the two should coincide |
+| panel 2, red dotted | the $\pm90°$ bound the arctan can never cross |
+| panel 3 | $y_e^{\,p}$ for `atan2` and LOS, zoomed to $\pm1.5$ m |
+
 **What the figure says**
 
 The three panels take the law $\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$ apart into its two terms and then show what the pair achieves together.
@@ -1504,6 +1525,16 @@ Expected output:
 | `max |psi_d'|` | the largest rate of change of the command, in deg/s — how hard the guidance law is working the autopilot |
 
 ![The look-ahead trade](W04_simulink/img/W04_result_lookahead.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left, five tracks | the same approach to leg 1 from the same $8$ m offset, one curve per $\Delta$ |
+| left, horizontal axis | East. **Not to the same scale as North** — the leg is $60$ m long and everything happens within $9$ m |
+| right, left axis | settling distance: how far along the leg before the vessel stays within $0.4$ m of it |
+| right, right axis | overshoot: how far past the path it swung on the way in |
+| right, red crosses | runs that never settled inside the leg, drawn above the dashed end-of-leg line |
 
 **What the figure says**
 
@@ -1552,6 +1583,15 @@ Expected output:
 | `settled |y_e|` | mean $\lvert y_e^{\,p}\rvert$ over the last quarter of the run |
 
 ![Switching radius](W04_simulink/img/W04_result_switching.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left | the first $90°$ corner only, at four values of $R$, drawn to equal axes |
+| left, horizontal dotted lines | the **switching thresholds**. They are lines and not circles because the test is $d_k - x_e^{\,p} < R$ along the leg — §4-6 |
+| left, four tracks | colours matched to the right panel |
+| right | which waypoint each vessel was steering to, against time — a staircase with one step per switch |
 
 **What the figure says**
 
@@ -1609,6 +1649,17 @@ Expected output:
 | the sweep | the prediction holds at every current speed, to at most $0.002$ m |
 
 ![Current, ILOS and ALOS](W04_simulink/img/W04_result_current.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left | the tracks of all four laws, with the path, waypoints and hull outlines as before |
+| left, small arrows | the ocean current, $0.30$ m/s from the East |
+| middle | $y_e^{\,p}$ for each law against time |
+| middle, dashed grey | $\Delta\tan\beta_c = 2.25$ m — **predicted in §4-7 before the run**, not fitted to it |
+| right, dashed black | the true crab angle, computed from the log as $\operatorname{atan2}(v,u)$ |
+| right, solid | $\hat\beta$, what the ALOS vessel believes that angle to be |
 
 **What the figure says**
 
@@ -1669,6 +1720,15 @@ Expected output:
 - A `NaN` in the settling column means the run never met the settling criterion inside the leg. For the small gains that is because the state was **still moving**, not because anything diverged.
 
 ![Gains and the Lyapunov function](W04_simulink/img/W04_result_stability.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| left, five coloured curves | $\hat\beta$ for five values of the adaptation gain $\gamma$ |
+| left, dashed black | the true crab angle — what all five are trying to estimate |
+| right | $V = \tfrac12 y_e^2 + \tfrac{U}{2\gamma}\tilde\beta^2$, the Lyapunov function of §4-9-5, over leg 1 only |
+| right, open marker | the peak of $V$, at $t = 17.5$ s |
 
 **What the figure says**
 

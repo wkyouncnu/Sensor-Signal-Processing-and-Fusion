@@ -1301,6 +1301,15 @@ W01_E_current_run
 
 ![One command, four currents](W01_simulink/img/W01_result_current.png)
 
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| four tracks | the same command — both propellers at $n_0$, no steering — in four different currents |
+| grey, blue, purple | still water, following and head current. All three run **due north** and lie on top of one another; they differ only in how far the vessel got in $150$ s |
+| orange | the beam current, the only one that leaves the meridian |
+| hull outlines | the vessel drawn along each track. On the orange track the bow still points **north** while the track leans east |
+
 **What the figure says**
 
 - **One command, four answers.** The shaft speeds are identical in all four runs and nothing steers. Every difference in the picture was produced by the water.

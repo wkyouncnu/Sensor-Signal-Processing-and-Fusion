@@ -308,6 +308,35 @@ check_code() {
   return 0
 }
 
+check_legend() {
+  head2 "16. 그림마다 범례 표가 붙어 있는가"
+  # CLAUDE.md §4 규칙 5: 「그림마다 뒤에 reading the figure 표를 붙인다」.
+  #
+  # 왜 기계로 세는가. 2026-09-08 에 눈으로 훑어서는 못 찾다가, 그림 수와 표 수를
+  # 세어 보고서야 W04 의 **결과 그래프 여섯 장 전부**에 범례 표가 없다는 것을
+  # 찾았다. 학생은 키 없는 그림을 여섯 장 보고 있었다. 사람이 놓치는 종류의
+  # 누락이므로 검사기로 내린다 → standing-orders.md §0-0
+  #
+  # 판정: 그림 줄 뒤 12줄 안에 표 머리말이 있으면 통과. 머리말은 두 가지를
+  # 인정한다 — "**Reading the figure**" 와, 개념도가 쓰는 "| In the figure |".
+  local miss=0 f
+  while IFS= read -r f; do
+    while IFS= read -r ln; do
+      local n img
+      n="${ln%%:*}"; img="${ln#*:}"
+      if ! sed -n "$((n+1)),$((n+12))p" "$f" \
+           | grep -qE '^\*\*Reading the figure\*\*|^\| *In the figure *\|'; then
+        printf '     [범례 표 없음] %s:%s  %s\n' "${f#./}" "$n" \
+               "$(printf '%s' "$img" | sed -E 's/.*\]\(([^)]*)\).*/\1/')"
+        miss=$((miss+1))
+      fi
+    done < <(grep -n '^!\[' "$f")
+  done < <(labdocs)
+  note "범례 표가 없는 그림" "$miss"
+  FAIL=$((FAIL+miss))
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
@@ -315,7 +344,8 @@ case "$MODE" in
   --links) check_links ;;
   --figs)  check_figs ;;
   --code)  check_code ;;
-  *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks; check_code ;;
+  *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks; check_code
+           check_legend ;;
 esac
 
 echo

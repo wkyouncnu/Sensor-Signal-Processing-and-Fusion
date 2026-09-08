@@ -993,7 +993,7 @@ In the left panel, with $K_d = 0$, the two traces are **one curve**. The largest
 
 In the right panel, with $K_d = 60$, they part company. The hand-built path peaks at $1.76$ m/s and the block at $1.68$ — overshoots of $16.88\%$ against $11.54\%$ — before converging again on the same $1.5$ m/s.
 
-The cause is one design choice, not a defect in either. The library block differentiates its **input**, which here is the error. The hand-built path differentiates the **measurement**. A step in $u_d$ therefore passes straight through the block's derivative and produces a kick, while a measurement never steps, so the hand-built path sees nothing. **Both are correct implementations of a PID controller — which tells you that "a PID controller" is not a specific enough phrase to distinguish them.**
+The cause is one design choice, not a defect in either. The library block differentiates its **input**, which here is the error. The hand-built path differentiates the **measurement**. A step in $u_d$ therefore passes straight through the block's derivative and produces a kick, while a measurement never steps, so the hand-built path sees nothing. **Both are correct implementations of a PID controller, which settles the more useful point: "a PID controller" is not a specific enough phrase to distinguish them.**
 
 The gap appears only at a setpoint change and vanishes in steady state. A loop that mostly rejects disturbances will never notice it; a loop that mostly follows commands will notice a great deal. Simulink's two-degree-of-freedom PID block exists to weight the two paths separately, and is the general answer to the question this figure raises.
 
