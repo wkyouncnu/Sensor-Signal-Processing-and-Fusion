@@ -138,11 +138,15 @@ $$
 
 **What the figure says**
 
-- **Meaning.** The first two entries of the column are just the force resolved into the body axes, and need no picture. The third entry is the one worth drawing, and the figure shows what it is.
-- **The trend, in numbers.** With $x = 1.2$ m, $y = 0.8$ m and $\mathbf{e}$ pointing $40°$ to port of the bow, the rule gives $x e_y - y e_x = -1.3842$. The violet perpendicular, measured on the same drawing, is $1.3842$ m. **The two agree exactly**, which is the point of the figure.
-- **The principle.** $x e_y - y e_x$ is the $z$ component of $\mathbf{r} \times \mathbf{e}$, and the magnitude of a cross product with a unit vector *is* the perpendicular distance to the line of action. So the third entry is nothing more exotic than the schoolroom "force times perpendicular distance" — written in a form that produces the **sign** automatically instead of leaving it to be argued about, which is where hand derivations of $\mathbf{B}$ usually go wrong.
-- **What changes from thruster to thruster.** Only $\mathbf{r}$ and $\mathbf{e}$. No hydrodynamics, no calibration, no measured data enters the matrix anywhere — which is why $\mathbf{B}$ can be written down before the vessel exists.
-- **The special case that produces the Otter.** Set $\mathbf{e} = (1,0)$ and $x = 0$: the arm collapses to $-y$, and the two propellers at $y = \mp 0.395$ m give $\pm 0.395$. The middle entry $e_y$ is zero for both, and **that empty row is the whole of §A1-3.**
+The first two entries of the column are just the thrust resolved into the body axes and need no picture. The third entry is the one worth drawing.
+
+That entry is $x e_y - y e_x$, and the claim is that it *is* the moment arm — the perpendicular distance from the origin to the thruster's line of action. The figure checks that claim rather than asserting it. With $x = 1.2$ m, $y = 0.8$ m and $\mathbf{e}$ pointing $40°$ to port of the bow, the formula gives $-1.3842$. The violet perpendicular, measured on the same drawing, is $1.3842$ m. **They agree exactly.**
+
+The reason is that $x e_y - y e_x$ is the $z$ component of $\mathbf{r} \times \mathbf{e}$, and the magnitude of a cross product with a *unit* vector is precisely the perpendicular distance to the line. So the third entry is nothing more exotic than "force times perpendicular distance" from school — written in a form that produces the **sign** automatically instead of leaving it to be argued about. Arguing about that sign is where hand derivations of $\mathbf{B}$ usually go wrong.
+
+Notice what does *not* appear anywhere in this. Only $\mathbf{r}$ and $\mathbf{e}$ change from thruster to thruster: no hydrodynamics, no calibration, no measured data. That is why $\mathbf{B}$ can be written down before the vessel exists.
+
+Setting $\mathbf{e} = (1,0)$ and $x = 0$ collapses the arm to $-y$, and the Otter's two propellers at $y = \mp 0.395$ m give $\pm 0.395$. The middle entry $e_y$ is zero for both — and **that empty row is the whole of §A1-3.**
 - For $n$ thrusters the contributions add, because forces add:
 
 $$
@@ -276,11 +280,15 @@ $$
 
 **What the figure says**
 
-- **Meaning.** Four actuator layouts on one hull, drawn to the same scale from the coordinates in `otter_config.m`. The question each panel answers is: how many independent things can this arrangement ask the vessel to do?
-- **The trend, in numbers.** Thruster count goes $2, 2, 3, 4$ and column count goes $2, 4, 3, 8$ — **the two do not track each other**, because a tilting machine contributes two columns and a fixed one contributes one. Rank goes $2, 3, 3, 3$: every layout but the first can produce all three planar generalised forces.
-- **The principle, visible in the first panel.** Both `base` arrows point the same way — along $x_b$. No sum of two parallel vectors has a component across the hull, so $Y$ is unreachable **for reasons of geometry, not of size**. A bigger propeller does not help; a differently pointed one does.
-- **What separates `aft_azimuth` from `base`.** The same two machines, moved aft and made steerable. That single change takes the rank from 2 to 3, which is the strongest argument in this appendix: **actuation authority is a property of directions, not of thrust.**
-- **What separates the last two.** `bow_thruster` is square — three columns, rank 3 — so the allocation has exactly one answer and there is nothing to choose. `quad_tilt` has eight columns for three demands, so it has a five-dimensional set of answers and something must decide between them. That decision is Week 5.
+Four actuator layouts on one hull, drawn to the same scale from the coordinates in `otter_config.m`. Each panel answers one question: how many independent things can this arrangement ask the vessel to do?
+
+The counts are worth reading carefully, because two of them do not track each other. Thruster count goes $2, 2, 3, 4$ while column count goes $2, 4, 3, 8$ — a **tilting** machine contributes two columns and a fixed one contributes one. Rank goes $2, 3, 3, 3$, so every layout except the first can produce all three planar forces.
+
+The first panel shows why it is the exception. Both `base` arrows point the same way, along $x_b$. No sum of two parallel vectors has a component across the hull, so sway is unreachable **for reasons of geometry, not of size.** A bigger propeller does not help. A differently pointed one does.
+
+That is exactly what the second panel is: the same two machines, moved aft and made steerable. Nothing was added, and the rank goes from 2 to 3. **Actuation authority is a property of directions, not of thrust** — the strongest claim in this appendix, and one panel apart from the one that contradicts it.
+
+The last two panels separate for a different reason. `bow_thruster` is square, three columns for three demands, so the allocation has exactly one answer and there is nothing to choose. `quad_tilt` has eight columns for three demands, so its answers form a five-dimensional set and **something has to decide between them**. That decision is what Week 5 is for.
 
 - Two observations follow immediately, and both matter later.
   - `aft_azimuth` reaches rank 3 with **the same two physical machines** as `base`. The third degree of freedom is bought with servos, not with thrusters.
@@ -503,11 +511,15 @@ Measured over a $121 \times 121$ grid of the shaft-speed box:
 
 **What the figure says**
 
-- **Meaning.** The left panel is the actuator on its own: one propeller, shaft speed in and thrust out. The centre panel is every generalised force the two propellers can produce between them. The right panel is the same set of forces seen end-on, along the axis the hull cannot use.
-- **Trend, in numbers.** The propeller curve is flat near the origin and steepens away from it, because $T = k\,n\lvert n\rvert$ is quadratic: doubling the shaft speed from $50$ to $100$ rad/s multiplies the thrust by four, from $27.70$ N to $110.80$ N. The two halves of the curve are not mirror images — at the two saturation limits one propeller gives $+119.68$ N ahead but only $-66.71$ N astern, in the ratio $k_{\text{pos}}/k_{\text{neg}} = 1.7192$. The centre panel is exactly twice that: $239.36$ N ahead against $-133.42$ N astern, a ratio of $1.7941$.
-- **Principle.** The set is the image of the square $[n_{\min}, n_{\max}]^2$ under the thrust curve and then under $\mathbf{B}$. **A square goes in and a diamond comes out**, because $\mathbf{B}$ maps two shaft speeds onto two useful axes at $45°$ to them: $X$ is the sum of the thrusts and $N$ is $y_p$ times their difference. The corners of the diamond are the four saturated corners of the square.
-- **Where the difference between the panels comes from.** The centre panel has area; the right panel has none. That is not a plotting choice. The middle row of $\mathbf{B}$ is exactly zero, so **the sway coordinate of every attainable point is exactly zero**, and the attainable set is a flat sheet in $(X, Y, N)$ space rather than a solid. Every controller written in the rest of this course must choose its demand from inside this sheet.
-- **What changes with the situation.** The diamond is fixed for this hull: it does not grow when the controller is tuned harder, and it does not depend on speed or heading. It changes only when the actuator changes — which is exactly what the three hull variants later in the course do, and the area printed here, $27\,446$ N²·m, is the number they are compared against.
+Three views of the same limit. The left panel is one propeller on its own, shaft speed in and thrust out. The centre panel is every generalised force the two propellers can produce between them. The right panel is that same set seen end-on, along the axis the hull cannot use.
+
+The left curve is flat near the origin and steepens away from it because thrust is quadratic in shaft speed: doubling from $50$ to $100$ rad/s multiplies thrust by four, $27.70$ to $110.80$ N. It is also **not symmetric**. At the two saturation limits one propeller gives $+119.68$ N ahead but only $-66.71$ N astern, a ratio of $k_{\text{pos}}/k_{\text{neg}} = 1.7192$. Astern is simply weaker, and the centre panel inherits that lopsidedness exactly: $239.36$ N ahead against $-133.42$ N astern.
+
+The centre panel is a **diamond**, and its shape is not decoration. A square goes in — every combination of the two shaft speeds between their limits — and a diamond comes out, because $\mathbf{B}$ maps those two speeds onto axes at $45°$ to them: $X$ is the *sum* of the thrusts and $N$ is $y_p$ times their *difference*. The four corners of the diamond are the four saturated corners of the square.
+
+Now compare the centre and right panels. The centre one has area; the right one has none — it is a line. That is not a plotting choice. The middle row of $\mathbf{B}$ is exactly zero, so **the sway coordinate of every attainable point is exactly zero**, and the attainable set is a flat sheet in $(X, Y, N)$ space rather than a solid body. Every controller written in the rest of this course must choose its demand from inside that sheet.
+
+The diamond is fixed for this hull. It does not grow when a controller is tuned harder, and it does not depend on speed or heading. It changes only when the *actuator* changes — which is precisely what the three hull variants later in the course do, and the area printed here, $27\,446$ N²·m, is the number they are measured against.
 
 ## E. The command that actually turns (20 min)
 
@@ -550,11 +562,25 @@ Three commands are applied to the same hull for 60 s each.
 
 **What the figure says**
 
-- **Meaning.** The top row is what the command asks the water for; the bottom row is what the vessel does about it. The three colours are three commands applied to one unchanged hull, so every difference between the curves is a difference between the commands and nothing else.
-- **Trend, in numbers.** All six panels are flat after the first few seconds: a constant shaft speed is a constant force, and the vessel reaches a steady state. The blue command, both propellers ahead, produces $79.776$ N of surge and no moment at all, and the vessel settles at $1.0286$ m/s in a straight line. The orange command, $[60, -60]$, produces $24.921$ N·m of moment — but also **$16.686$ N of surge force that nobody asked for**, and the vessel creeps forward at $0.1932$ m/s while it turns. The green command, $[60, -78.67]$, produces $31.512$ N·m and a surge force of $-7\times10^{-15}$ N, which is zero to machine precision.
-- **Principle.** $X = k_{\text{pos}} n_1^2 + k_{\text{neg}} n_2\lvert n_2\rvert$. Setting $n_2 = -n_1$ cancels the two shaft speeds, not the two thrusts, because the propeller is not equally effective in reverse. The cancellation that matters is $k_{\text{pos}} n_1^2 = k_{\text{neg}} n_2^2$, which gives $n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}} = -78.6701$ rad/s.
-- **How the two turning commands differ.** The corrected command runs its reverse propeller $31\%$ faster, so its *reverse* thrust is larger and the *difference* of the two thrusts — which is the moment — grows by $26.4\%$. **Removing the unwanted force made the wanted moment bigger, not smaller.** The middle panel of the top row stays on zero for all three: no shaft speed produces sway, which is section D's diamond seen one command at a time.
-- **What changes with the situation.** The bottom-right panel is where the difference becomes visible as a distance. The orange vessel spirals away and ends $1.9376$ m from where it started; the green vessel turns under itself and ends $0.0435$ m away, still on the start marker. The green track is smaller than the hull that traces it, which is what "turning on the spot" means in metres.
+The top row is what each command asks the water for; the bottom row is what the vessel does about it. Three commands, one unchanged hull — so every difference between the curves was caused by the command and nothing else.
+
+The obvious way to turn on the spot is to run one propeller ahead and the other astern at the same speed. The orange command does exactly that, $[60, -60]$, and it does turn — $24.921$ N·m of moment. But it also produces **$16.686$ N of surge force that nobody asked for**, and the vessel creeps forward at $0.1932$ m/s while turning.
+
+The reason is the asymmetry of §A1-5. Surge force is
+
+$$X = k_{\text{pos}}\,n_1^2 + k_{\text{neg}}\,n_2\lvert n_2\rvert ,$$
+
+and setting $n_2 = -n_1$ cancels the two **shaft speeds**, not the two **thrusts**. A propeller is not equally effective in reverse. What has to cancel is $k_{\text{pos}} n_1^2 = k_{\text{neg}} n_2^2$, which gives
+
+$$n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}} = -78.6701\ \text{rad/s} .$$
+
+The green command uses that value, and its surge force comes out $-7\times10^{-15}$ N — zero to machine precision.
+
+Here is the part worth pausing on. The corrected command runs its reverse propeller $31\%$ faster, so its reverse *thrust* is larger, and the *difference* of the two thrusts — which is the moment — grows by $26.4\%$, to $31.512$ N·m. **Removing the unwanted force made the wanted moment bigger, not smaller.** Getting the arithmetic right cost nothing and gained a quarter more turning authority.
+
+The bottom-right panel turns all of this into a distance. The orange vessel spirals away and finishes $1.9376$ m from where it began; the green one turns under itself and finishes $0.0435$ m away, still sitting on the start marker. The green track is smaller than the hull that draws it, which is what "turning on the spot" means measured in metres.
+
+The middle panel of the top row stays on zero for all three commands. No shaft speed produces sway — section D's flat diamond, seen one command at a time.
 
 > [!note] Why the corrected creep is not exactly zero either
 > The green vessel still settles at $u = 0.0062$ m/s. See the callout below: a rotating vessel has Coriolis terms that a stationary one does not, and those terms do not vanish when $X$ does.
@@ -594,10 +620,15 @@ The table probes the plant at rest, where $\mathbf{C}(\boldsymbol{\nu})$ and the
 
 **What the figure says**
 
-- **The point of the section.** The sway row of $\mathbf{B}$ is empty, and the vessel sways anyway. A pure yaw moment produces $-1.3046\times10^{-3}$ m/s² of sway per newton-metre, through the mass matrix and not through any force. **An empty row in $\mathbf{B}$ and an empty column in $\mathbf{M}^{-1}$ are different statements, and only the first one is true here.**
-- **Principle.** The two blocks of zeros are port–starboard symmetry: the Otter is a symmetric catamaran, so longitudinal and lateral motions do not mix. Within the lateral group the coupling is $M_{2,6} = 12.25$ kg·m, non-zero because the payload sits $0.153$ m forward of the origin of $\{b\}$. The entries that read $10^{-18}$ are arithmetic noise, not physics.
-- The two curves in the right panel leave the origin together, agreeing to $0.01\%$, because at $t = 0$ nothing acts but $\mathbf{M}^{-1}\boldsymbol{\tau}$. They part after roughly $0.15$ s, when $r$ has grown enough for the Coriolis and cross-flow terms to oppose the sway. The dashed line keeps going because it is arithmetic with no physics in it after the first instant.
-- The sway velocity reaches only $-0.015$ m/s and turns back. The coupling gives a **transient** sideways motion at the start of a turn, not a means of translating sideways — anything needing sustained sway still needs a thruster that can produce it.
+The sway row of $\mathbf{B}$ is empty — and the vessel sways anyway. A pure yaw moment produces $-1.3046\times10^{-3}$ m/s² of sway per newton-metre, with no sway force anywhere in the problem.
+
+The sway arrives through the **mass matrix** rather than through any force. **An empty row in $\mathbf{B}$ and an empty column in $\mathbf{M}^{-1}$ are different statements, and only the first is true here.**
+
+The two blocks of zeros in the table are port–starboard symmetry: the Otter is a symmetric catamaran, so longitudinal motions and lateral motions do not mix. Inside the lateral group they do mix, through $M_{2,6} = 12.25$ kg·m, which is non-zero only because the payload sits $0.153$ m forward of the origin of $\{b\}$. The entries reading $10^{-18}$ are arithmetic noise, not physics.
+
+In the right panel the two curves leave the origin together, agreeing to $0.01\%$, because at $t = 0$ the vessel is at rest and nothing acts but $\mathbf{M}^{-1}\boldsymbol{\tau}$. They separate after about $0.15$ s, once $r$ has grown enough for the Coriolis and cross-flow terms to start opposing the sway. The dashed line keeps climbing because it is arithmetic with no physics in it after that first instant.
+
+Read the size honestly: sway reaches $-0.015$ m/s and then turns back. This coupling gives a **transient** sideways motion at the start of a turn, not a way of translating sideways. Anything needing sustained sway still needs a thruster that can produce it.
 
 > [!note] Two effective inertias, used in later weeks
 > The same probe gives $1/(\mathbf{M}^{-1})_{11} = 76.71$ kg against the matrix entry $M_{11} = 85.50$ kg, and $1/(\mathbf{M}^{-1})_{66} = 41.00$ kg·m² against $M_{66} = 42.65$ kg·m². The pairs differ by $10\%$ and $4\%$ because the probe leaves heave, pitch and sway free while the matrix entry does not. Weeks 2 and 3 use the matrix entries and state the discrepancy rather than hiding it.

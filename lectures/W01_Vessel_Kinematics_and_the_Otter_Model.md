@@ -1182,11 +1182,17 @@ Measured, over four commands:
 
 **What the figure says**
 
-- **Meaning.** The left panel is the actuator alone: shaft speed in, thrust out, one propeller. The right panel is the whole open loop reduced to one number per command — how fast the vessel ends up going.
-- **Trend, in numbers.** The propeller curve is flat near the origin and steepens away from it, because $T = k\,n\lvert n\rvert$ is quadratic. The right panel inherits that shape exactly: doubling the shaft speed from 20 to 40 rad/s multiplies the speed by four, $0.1143 \to 0.4572$ m/s, and doubling again to 80 rad/s multiplies it by four once more, to $1.8287$ m/s. **The curve through the markers is a parabola, not a line.**
-- **Principle.** Two different laws meet at the steady state. Thrust is quadratic in shaft speed; damping is linear in surge velocity. Setting them equal, $2k_{\text{pos}}n\lvert n\rvert = \lvert X_u\rvert u$, gives $u \propto n^2$ — so **doubling the propeller speed does not double the boat speed, it quadruples it**.
-- **Why the dashed line and the markers coincide.** The prediction was made from a single scalar equation and the measurement comes from a twelve-state nonlinear model, and they agree to four decimals. That is a statement about the *plant*, not about the method: surge damping in `otter.m` really is linear when nothing else is moving. Week 3 repeats the exercise on the yaw axis, where the same procedure is only approximate, and the difference between the two weeks is a property of the vessel.
-- **What changes with the situation.** Nothing here depends on the controller, because there is none. These four points are the ceiling every later week works underneath: no surge controller can ask for a speed the propellers cannot produce.
+The left panel is the propeller on its own — shaft speed in, thrust out. The right panel is the whole vessel reduced to one number per command: how fast it ends up going.
+
+Both curves bend the same way, and that is the finding. Doubling the shaft speed from $20$ to $40$ rad/s does not double the boat speed, it **quadruples** it, $0.1143 \to 0.4572$ m/s. Doubling again to $80$ rad/s quadruples it once more, to $1.8287$ m/s. The line through the markers is a parabola.
+
+The reason is that two different laws meet at the steady state. Thrust grows with the *square* of shaft speed, $T = k\,n\lvert n\rvert$, while damping grows only in proportion to speed. Setting them equal,
+
+$$2k_{\text{pos}}\,n\lvert n\rvert = \lvert X_u\rvert\,u \qquad\Longrightarrow\qquad u \propto n^2 .$$
+
+The dashed prediction and the measured markers agree to four decimal places, and that agreement is worth pausing on. The prediction came from one scalar equation; the measurement came from a twelve-state nonlinear model. They match because **surge damping in `otter.m` really is linear** when nothing else is moving — a fact about this vessel, not about the method. Week 3 runs the same exercise on the yaw axis and gets only an approximation, and the difference between the two weeks is a property of the hull.
+
+Nothing here involves a controller, because there is none yet. These four points are the ceiling every later week works underneath: no speed controller can ask for a speed the propellers cannot produce.
 
 ## D. One manoeuvre: straight, port, straight, starboard, straight (30 min)
 
@@ -1244,10 +1250,17 @@ W01_D_the_manoeuvre
 
 **What the figure says**
 
-- **The point of the section.** The left panel answers *where did it go*, the right panel *where was it pointing while it went there*. The two answers differ by $7.05°$ throughout each turn, and that gap is why the hull is drawn on the track rather than a bare line.
-- $\chi = \psi + \beta$ with $\beta = \operatorname{atan2}(v, u) = \operatorname{atan2}(0.1264,\ 1.0218) = +7.05°$. A turning vessel has $v \neq 0$, so it moves at an angle to its own centreline. **Heading is not course, and the difference is not an error.**
-- The turn is nearly free: surge falls from $1.0286$ to $1.0218$ m/s, $0.7\%$. Because $n\lvert n\rvert$ is convex, what the slowed propeller loses the other more than makes up — this is why a differential turn is the cheap way to steer a twin-screw craft.
-- Raising `dn` in `W01_0_setup.m` widens the gap, because $\beta$ scales with turn rate. Week 3 §3-4 has to steer around it, and Week 4's line-of-sight guidance is where it is finally paid for.
+The left panel answers *where did it go*. The right panel answers *where was it pointing while it went there*. Those turn out to be two different questions.
+
+During each turn the two answers differ by $7.05°$. The vessel points one way and travels another, and the gap has a name:
+
+$$\chi = \psi + \beta, \qquad \beta = \operatorname{atan2}(v, u) = \operatorname{atan2}(0.1264,\ 1.0218) = +7.05° .$$
+
+A turning vessel always has some sideways velocity $v$, so it always moves at an angle to its own centreline. **Heading is not course, and the difference is not an error** — it is the crab angle, and it is the reason the hull outline is drawn along the track instead of a bare line. A bare line cannot show which way the bow was pointing.
+
+The turn itself is nearly free. Surge falls from $1.0286$ to $1.0218$ m/s — seven tenths of one per cent. Because $n\lvert n\rvert$ curves upward, the propeller that speeds up gains more than the slowed one loses, so the total thrust barely changes. That is why a differential turn is the cheap way to steer a twin-screw craft, and why reversing a propeller is kept for manoeuvring at rest.
+
+Raising `dn` in `W01_0_setup.m` widens the crab angle, because $\beta$ grows with turn rate. Week 3 §3-4 has to steer around it, and Week 4's line-of-sight guidance is where it finally has to be paid for.
 
 > [!important] The sway force is zero and the sway velocity is not
 > $\max\lvert Y\rvert = 0.0 \times 10^{0}$ N over every command in the manoeuvre — not small, but **structurally** zero, because both propellers face forward and $\mathbf{B}$ of §1-5 has no sway row. The vessel sways anyway, at $\pm 0.1264$ m/s, and $v$ **changes sign** between the two turns. That sway is the Coriolis term of §1-7 acting while the hull rotates, not a force. Reporting $Y \approx 0$ and $Y = 0$ as the same observation loses the entire content of §1-5.

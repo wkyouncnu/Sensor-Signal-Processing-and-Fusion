@@ -573,11 +573,17 @@ $K_d = 0$, step to $60°$:
 
 **What the figure says**
 
-- **Meaning.** The left panel is what the vessel did; the right panel is what the controller had to ask for to make it do that. Reading them together is what separates this week from the last.
-- **Trend, in numbers.** All three headings converge on $60°$ and stay there. Raising $K_p$ from 30 to 300 cuts the 2 % settling time from $12.24$ to $3.46$ s and buys that speed with moment: the peak demand rises from $31.4$ to $314.2$ N·m, a factor of exactly ten, because at the instant of the step $\tau_N = K_p\,\psi_d$ and nothing else. Overshoot grows too, from $-0.01\%$ to $1.53\%$, but stays small because the hull's own damping is large.
-- **Principle.** $\psi = \int r$, so the plant contains a free integrator and the loop is **type 1**. The final-value theorem then gives zero steady-state error for a step at any finite gain. **Nothing was tuned to achieve this, and no integral term was added.**
-- **Why the right panel is the proof.** In steady state $\tau_N$ returns to **zero** in all three runs. A vessel that has stopped turning needs no moment to keep its heading, so the controller can be at its setpoint and demanding nothing at the same time. Week 2 could not do this: holding a speed needs a permanent force, that force can only come from a non-zero error, and the error therefore never vanished.
-- **What changes with the situation.** Raising $K_p$ trades peak actuator demand for speed and never touches the steady state. That is a different bargain from Week 2, where raising the gain bought accuracy the loop could not otherwise have. The limit here is the actuator, and section D adds the term that lets $K_p$ rise without the response ringing.
+The left panel is what the vessel did. The right panel is what the controller had to ask for to make it do that. Reading them together is what separates this week from the last.
+
+Look at the left panel first. All three headings reach $60°$ and stay there — **with no integral term anywhere in the controller.** Week 2 needed one and still had to work for it. Here a plain proportional gain lands exactly on the setpoint, and it does so at $K_p = 30$, $100$ and $300$ alike.
+
+The reason is in the plant, not the controller. Heading is the integral of yaw rate, $\psi = \int r$, so the vessel *already contains* an integrator. The loop is type 1, and a type 1 loop has zero steady-state error to a step at any finite gain. **Nothing was tuned to achieve this.**
+
+The right panel is where that becomes visible rather than merely asserted. In steady state the demanded moment $\tau_N$ returns to **zero** in all three runs. A vessel that has stopped turning needs no moment to hold its heading, so the controller can sit exactly on its setpoint while asking for nothing at all. Week 2 could never do that: holding a speed needs a permanent force, a permanent force needs a non-zero error, and so the error never vanished.
+
+What raising $K_p$ does buy is speed, and it is paid for in actuator demand. From $K_p = 30$ to $300$ the settling time falls from $12.24$ to $3.46$ s while the peak moment rises from $31.4$ to $314.2$ N·m — a factor of exactly ten, because at the instant of the step $\tau_N = K_p\psi_d$ and nothing else has happened yet. Overshoot grows too, from $-0.01\%$ to $1.53\%$, but stays small because the hull's own damping is doing most of the work.
+
+So the bargain is different from Week 2's. There, gain bought accuracy the loop could not otherwise have. Here accuracy is free and gain buys only speed, until the actuator runs out. Section D adds the term that lets $K_p$ rise further without the response starting to ring.
 
 ## D. Derivative action (20 min)
 
@@ -612,11 +618,21 @@ $K_p = 100$ held, and a deliberately **small** step of $5°$:
 
 **What the figure says**
 
-- **Meaning.** The left panel shows the same $5°$ command answered by four controllers that differ in one number. The right panel puts the design formula and the simulation side by side, so the reader can see where the paper agrees with the vessel and where it does not.
-- **Trend, in numbers.** Overshoot falls from $11.74\%$ at $K_d = 0$ to zero at $K_d = 74.9$, and beyond that nothing more is bought: $K_d = 150$ also overshoots nothing but takes $7.52$ s to settle instead of $4.14$. **The best settling time in the table is at $K_d = 25$, which still overshoots $4.1\%$** — the fastest gain and the smoothest gain are not the same gain.
-- **Principle.** Substituting the control law into the equation of motion gives $M_{66}\ddot\psi + (\lvert N_r\rvert + K_d)\dot\psi + K_p\psi = K_p\psi_d$. The derivative gain lands **beside the damping**. In Week 2 the controlled variable was a velocity, its derivative was an acceleration, and the identical term landed beside the *mass* and made the response worse. The term did not change; the axis did.
-- **Why the two curves in the right panel differ.** They agree at the right-hand end and diverge at the left. The prediction is a linear result computed from $N_r$ alone, but the hull's real damping is $N_h = N_r(1 + 10\lvert r\rvert)r$, which is larger whenever the vessel turns quickly. At $K_d = 0$ the response is quick, the extra damping is largest, and the true overshoot is a third of the predicted one. As $K_d$ grows the motion slows, $\lvert r\rvert$ falls, and the linear prediction becomes correct.
-- **What changes with the situation.** The step is only $5°$ for this reason. Section F holds the gains fixed and varies the step size instead, turning the same nonlinearity from a nuisance into the subject.
+The left panel is the same $5°$ command answered by four controllers that differ in one number. The right panel puts the design formula beside the simulation, so it is visible where the paper agrees with the vessel and where it does not.
+
+Derivative action works here. Overshoot falls from $11.74\%$ at $K_d = 0$ to nothing at $K_d = 74.9$ — the exact opposite of Week 2, where the same term made the same kind of controller worse.
+
+The reason is one line of algebra. Substituting the control law into the equation of motion gives
+
+$$M_{66}\ddot\psi + \left(\lvert N_r\rvert + K_d\right)\dot\psi + K_p\psi = K_p\psi_d ,$$
+
+and $K_d$ lands **beside the damping**. In Week 2 the controlled variable was a velocity, so its derivative was an acceleration, and the identical term landed beside the *mass* instead. **The term did not change; the axis did.**
+
+More $K_d$ is not simply better, though. At $K_d = 150$ the response also overshoots nothing but takes $7.52$ s to settle rather than $4.14$. The quickest gain in the table is $K_d = 25$, which still overshoots $4.1\%$. The smoothest gain and the fastest gain are not the same gain, and the design has to say which one it wants.
+
+The right panel carries a second lesson. The two curves agree at the right-hand end and separate at the left. The prediction is linear, computed from $N_r$ alone, but the hull's real damping is $N_h = N_r(1 + 10\lvert r\rvert)r$ and grows whenever the vessel turns quickly. At $K_d = 0$ the motion is quickest, the extra damping is largest, and the true overshoot comes out a third of what was predicted. As $K_d$ rises the motion slows, $\lvert r\rvert$ falls, and the linear prediction becomes correct.
+
+That is why the step here is only $5°$. Section F holds the gains fixed and varies the step size instead, which turns this same nonlinearity from a nuisance into the subject.
 
 > [!note] Why the step is only 5 degrees here
 > The design equations of §3-3 use $N_r$ alone. The hull's actual damping is $N_h = N_r(1 + 10|r|)r$, which is larger whenever the vessel is turning quickly. A small step keeps $|r|$ small and the linear prediction close. Section F makes the same nonlinearity the subject rather than a nuisance.
@@ -653,11 +669,19 @@ The vessel is commanded to $+170°$, allowed to settle, and then commanded to $-
 
 **What the figure says**
 
-- **Meaning.** Two runs of one model with one flag changed. The left panel is what each vessel believed it had to do; the right panel is what that cost in the water.
-- **Trend, in numbers.** Up to $t = 25$ s the two curves are identical — both reach $+170°$ and hold it. At the second command they separate completely. The blue heading climbs $20°$ and stops; the orange one falls $340°$, through zero, all the way to $-170°$. Peak yaw rate more than doubles, from $8.375$ to $19.640$ deg/s. On the right the blue track is a gentle bend while the orange one **closes a full loop** and ends 60 m away, pointing the same way as the vessel that never left the line.
-- **Principle.** $\psi_d - \psi = -170 - 170 = -340°$ is a perfectly valid number and a perfectly wrong error. The smallest-signed-angle map $\operatorname{ssa}(a) = \operatorname{atan2}(\sin a, \cos a)$ folds it into $(-\pi, \pi]$ and returns $+20°$. **The controller is identical in both runs; only the arithmetic that forms its input differs.**
-- **What separates the two.** Not stability, not tuning, not the plant. Both loops are stable and both reach their setpoint. The failure is that one of them reaches it **the long way round**, and no gain adjustment would have prevented it.
-- **What changes with the situation.** The two runs are indistinguishable anywhere away from the $\pm 180°$ boundary, which is what makes the bug dangerous: it passes every test that does not cross the boundary, and a real mission crosses it routinely.
+Two runs of one model with a single flag changed. The left panel is what each vessel believed it had to do; the right panel is what that cost in the water.
+
+For the first $25$ s the two are the same run. Both reach $+170°$ and hold it. Then the second command arrives and they part completely: the blue heading climbs $20°$ and stops, while the orange one falls $340°$ — through zero, past south, all the way round to $-170°$. Peak yaw rate more than doubles, $8.375$ to $19.640$ deg/s. On the right, the blue track is a gentle bend and the orange one **closes a full circle**, ending 60 m away and pointing exactly the same direction as the vessel that never left the line.
+
+One subtraction caused all of it. Commanding $-170°$ while heading $+170°$ gives
+
+$$\psi_d - \psi = -170° - 170° = -340° ,$$
+
+which is a perfectly valid number and a perfectly wrong error — the two headings are only $20°$ apart. Wrapping it with $\operatorname{ssa}(a) = \operatorname{atan2}(\sin a, \cos a)$ returns $+20°$ and the vessel turns the short way. **The controller is identical in both runs. Only the arithmetic that forms its input differs.**
+
+Note what is *not* wrong here. Neither loop is unstable, neither is mistuned, and both reach the commanded heading. The orange one simply reaches it the long way round, and no adjustment to $K_p$ or $K_d$ would have prevented that.
+
+This is also why the fault is dangerous. Away from the $\pm180°$ boundary the two runs are indistinguishable, so the bug passes every test that does not happen to cross it — and a real mission crosses it routinely.
 
 > [!important] One line of arithmetic separates the two runs
 > The only difference is `e = atan2(sin(e), cos(e))`. It costs nothing, it is one line, and without it a heading controller is wrong near a boundary it will certainly cross during a mission.
@@ -692,15 +716,19 @@ $K_p = 100$, $K_d = 0$, four step sizes:
 
 **What the figure says**
 
-- **The point of the section.** A **larger** step overshoots **less** — $11.74\%$ at $5°$ against $0.10\%$ at $120°$, from a controller that was never retuned. The left panel is the proof: after normalising, any linear system must give one curve, and these four are visibly different. **Superposition fails, and that is the definition of a nonlinear plant.**
-- **The mechanism** is the yaw damping of `otter.m`, which grows with how fast the vessel is already turning, so a big turn damps itself:
+A **larger** step overshoots **less**. The $5°$ command overshoots $11.74\%$ and the $120°$ command overshoots $0.10\%$, from a controller that was never retuned between the runs.
 
-$$
-N_h = N_r\left(1 + 10|r|\right)r .
-$$
+That is not something a linear system can do. The left panel is the proof: the four responses are divided by their own step size, so a linear plant would have to give one curve. These four are visibly different. **Superposition fails, and that is the definition of a nonlinear plant.**
 
-- At the peak rate of the $120°$ step, $19.505$ deg/s $= 0.3404$ rad/s, the multiplier $1 + 10\lvert r\rvert$ is $4.40$ against $1.67$ for the $5°$ step. In the right panel the overshoot curve and the damping curve are mirror images, which is the claim being made.
-- The $60°$ and $120°$ runs share a peak rate because both saturate the propellers. Beyond that the vessel turns as fast as it can, and the design equations of §3-3 stand as a **small-signal** result: accurate for small corrections and conservative — never optimistic — for large ones.
+The mechanism is the yaw damping in `otter.m`, which grows with how fast the vessel is already turning:
+
+$$N_h = N_r\left(1 + 10|r|\right)r .$$
+
+So a big turn damps itself. At the peak rate of the $120°$ step, $19.505$ deg/s $= 0.3404$ rad/s, the multiplier $1 + 10\lvert r\rvert$ reaches $4.40$ — against $1.67$ for the small step. In the right panel the overshoot curve and the damping curve are mirror images of each other, which is exactly the claim being made.
+
+The $60°$ and $120°$ runs share the same peak rate because both saturate the propellers; beyond a certain command the vessel simply turns as fast as it can.
+
+The practical consequence is worth stating plainly. The design equations of §3-3 use $N_r$ alone, so they are a **small-signal** result: right for small corrections, and for large ones **conservative rather than optimistic**. A design that predicts $11.7\%$ overshoot and delivers $0.1\%$ has erred in the safe direction, which is the only direction worth erring in.
 
 ---
 
