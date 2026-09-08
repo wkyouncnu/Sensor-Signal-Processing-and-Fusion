@@ -556,6 +556,40 @@ $$
 
 - The first difference has a name and a remedy. Differentiating the error puts every setpoint step through the derivative; differentiating the measurement does not. Simulink's **two-degree-of-freedom** PID block exists precisely to let the two be weighted separately.
 
+### Selecting the anti-windup scheme in the block
+
+- Both schemes of §2-6 are already inside the library block. Neither has to be built: they are chosen from one menu, on the **PID Advanced** tab.
+- The menu is only active once **Limit output** is ticked on that tab. This is not a quirk — a controller with no saturation cannot wind up, so there is nothing for the scheme to act on, exactly as the $f(0,e) = 0$ requirement of §2-6 said.
+
+![Selecting clamping or back-calculation in the PID Controller block](../figures/w02-pid-dialog.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| **PID Advanced** tab | where all four fields live; nothing on the **Main** tab is involved |
+| Limit output | must be ticked, or the anti-windup menu stays greyed out |
+| Anti-windup method | the one menu — `none`, `back-calculation`, `clamping` |
+| (a) $K_b$ field | appears only for back-calculation, and is the $K_{\text{aw}}$ of §2-6 under Simulink's name |
+| (b) dashed box | the same place in the dialog with clamping selected — the field is simply not there |
+
+The dialog makes the structural difference of §2-6 visible before anything is run: back-calculation has a number to choose and clamping has none. A scheme that steers the integrator needs to be told how hard to pull; a scheme that switches it off does not.
+
+### Is it the same algorithm?
+
+Yes, and the model measures it rather than asserting it. Section H builds back-calculation **by hand** from the equation of §2-6 and runs it beside the library block on the same plant, with the same gains and the same limit:
+
+| Row | Anti-windup | Recovery [s] | $y$ at $t = 20$ s |
+|---|---|---|---|
+| 3 | back-calculation, **library block** | $2.645$ | $0.5003$ |
+| 4 | back-calculation, **written by hand** | $2.645$ | $0.5003$ |
+
+- The two rows agree to $0.00\text{e}{+}00$ — not closely, but **bit for bit**. The equation printed in §2-6 is therefore a correct description of what the block computes, and not merely a scheme with the same name.
+- Section G repeats the test on the whole controller rather than the anti-windup path alone, and with $K_d = 0$ the two implementations agree to $2.2\times10^{-16}$ m/s across the entire run. The only place they part company is the derivative input, which is the first row of the table above and has nothing to do with anti-windup.
+
+> [!note] Why this test is worth running at all
+> A library block is a claim in a manual. Building the same thing from the equations and getting the same numbers turns that claim into something checked. It also settles the more useful question in the other direction: since the hand-built path matches, the equations of §2-6 can be trusted on a platform that has no PID block at all.
+
 ---
 
 # Part 2 · Laboratory

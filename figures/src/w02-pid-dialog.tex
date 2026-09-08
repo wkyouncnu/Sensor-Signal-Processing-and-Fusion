@@ -1,0 +1,115 @@
+% figures/w02-pid-dialog.svg — Simulink PID Controller 블록에서 안티와인드업을 고르는 자리.
+%
+%   bash _tools/tikz2svg.sh figures/src/w02-pid-dialog.tex figures/w02-pid-dialog.svg
+%
+% 이것은 **스크린샷이 아니다.** CLAUDE.md 3 「GUI 창은 캡처할 수 없으므로 TikZ
+% 개략도로 그리고 "스크린샷" 이라고 부르지 않는다」에 따른 개략도다. 필드 이름과
+% 선택지 문자열은 R2023b~R2025a 의 PID Controller 블록에서 그대로 옮겼고,
+% 창의 픽셀 배치를 흉내 내려 하지 않았다 — 학생이 찾아야 하는 것은 픽셀이 아니라
+% **탭 이름과 필드 이름**이다.
+%
+% (a) back-calculation 을 골랐을 때  (b) clamping 을 골랐을 때.
+% 둘의 차이는 Kb 칸이 나타나는가 하나뿐이고, 그것이 이 그림의 요점이다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+% 체크박스 [x] 와 드롭다운 화살표에 amssymb 가 필요하다. gnc-style 은 amsmath 만
+% 싣는다 — 공용 스타일에 넣지 않고 이 그림에서만 부른다.
+\usepackage{amssymb}
+
+\tikzset{
+  win/.style   = {draw=ink, line width=0.6pt, fill=white, rounded corners=0.6mm},
+  bar/.style   = {draw=ink, line width=0.5pt, fill=black!6},
+  fld/.style   = {draw=soft, line width=0.4pt, fill=white,
+                  minimum height=4.2mm, inner xsep=1.2mm, font=\scriptsize, anchor=west},
+  afld/.style  = {draw=accent, line width=0.7pt, fill=accent!6,
+                  minimum height=4.2mm, inner xsep=1.2mm, font=\scriptsize,
+                  anchor=west, text=accent},
+  lbl/.style   = {font=\scriptsize, ink, anchor=east},
+  tab/.style   = {font=\scriptsize, ink, anchor=west},
+  atab/.style  = {font=\scriptsize\bfseries, accent, anchor=west},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=north west] at (0,10)
+     {Where the two schemes are selected in the PID Controller block};
+\node[anchor=north west, align=left, text width=178mm, font=\scriptsize, soft] at (0,4) {%
+  A schematic of the dialog, not a screenshot. Both schemes live on the same tab,
+  chosen from one menu; picking \emph{back-calculation} is what makes the
+  $K_b$ field appear. Everything else on the tab is identical.};
+
+% =====================================================================
+\def\WW{86}      % 창 너비
+\def\HH{50}      % 창 높이
+
+% ---------- (a) ------------------------------------------------------
+\begin{scope}[shift={(0,-12)}]
+  \node[font=\scriptsize\bfseries, anchor=west, text=ink] at (0,2)
+       {(a)\quad \texttt{aw\_mode = back-calculation}};
+
+  \draw[win] (0,0) rectangle (\WW,-\HH);
+  \draw[bar] (0,0) rectangle (\WW,-6);
+  \node[tab, font=\scriptsize\bfseries] at (2,-3) {Block Parameters: PID Controller};
+
+  % 탭 줄
+  \draw[soft, line width=0.4pt] (0,-11) -- (\WW,-11);
+  \node[tab]  at (2,-8.5)  {Main};
+  \node[atab] at (18,-8.5) {PID Advanced};
+  \node[tab]  at (46,-8.5) {Data Types};
+  \draw[accent, line width=1.0pt] (17,-11) -- (43,-11);
+
+  \node[lbl] at (40,-16) {Output saturation:};
+  \node[fld, minimum width=40mm] at (42,-16) {Limit output\quad$\boxtimes$};
+
+  \node[lbl] at (40,-22) {Upper limit:};
+  \node[fld, minimum width=40mm] at (42,-22) {\texttt{X\_max}};
+
+  \node[lbl] at (40,-28) {Lower limit:};
+  \node[fld, minimum width=40mm] at (42,-28) {\texttt{X\_min}};
+
+  \node[lbl] at (40,-35) {Anti-windup method:};
+  \node[afld, minimum width=40mm] at (42,-35) {back-calculation\hfill$\blacktriangledown$};
+
+  \node[lbl] at (40,-41) {Back-calc. coefficient (Kb):};
+  \node[afld, minimum width=40mm] at (42,-41) {\texttt{1/tau\_u}};
+
+  \node[anote, anchor=north west, text width=40mm, align=left] at (42,-44.2)
+       {appears \emph{only} for back-calculation};
+\end{scope}
+
+% ---------- (b) ------------------------------------------------------
+\begin{scope}[shift={(96,-12)}]
+  \node[font=\scriptsize\bfseries, anchor=west, text=ink] at (0,2)
+       {(b)\quad \texttt{aw\_mode = clamping}};
+
+  \draw[win] (0,0) rectangle (\WW,-\HH);
+  \draw[bar] (0,0) rectangle (\WW,-6);
+  \node[tab, font=\scriptsize\bfseries] at (2,-3) {Block Parameters: PID Controller};
+
+  \draw[soft, line width=0.4pt] (0,-11) -- (\WW,-11);
+  \node[tab]  at (2,-8.5)  {Main};
+  \node[atab] at (18,-8.5) {PID Advanced};
+  \node[tab]  at (46,-8.5) {Data Types};
+  \draw[accent, line width=1.0pt] (17,-11) -- (43,-11);
+
+  \node[lbl] at (40,-16) {Output saturation:};
+  \node[fld, minimum width=40mm] at (42,-16) {Limit output\quad$\boxtimes$};
+
+  \node[lbl] at (40,-22) {Upper limit:};
+  \node[fld, minimum width=40mm] at (42,-22) {\texttt{X\_max}};
+
+  \node[lbl] at (40,-28) {Lower limit:};
+  \node[fld, minimum width=40mm] at (42,-28) {\texttt{X\_min}};
+
+  \node[lbl] at (40,-35) {Anti-windup method:};
+  \node[afld, minimum width=40mm] at (42,-35) {clamping\hfill$\blacktriangledown$};
+
+  %  (a) 에서 Kb 칸이 있던 자리. 비어 있다는 것 자체가 이 판의 요점이다.
+  \draw[soft, line width=0.4pt, densely dashed] (42,-41) rectangle (82,-38.9);
+  \node[note, anchor=north west, text width=40mm, align=left] at (42,-44.2)
+       {no coefficient to set — clamping has nothing to tune};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}
