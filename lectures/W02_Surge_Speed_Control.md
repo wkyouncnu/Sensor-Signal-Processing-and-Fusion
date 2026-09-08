@@ -320,11 +320,17 @@ $$
 
 **What the figure says**
 
-- **Meaning.** One picture of why a derivative is dangerous and why one number fixes it. The horizontal axis is frequency; the vertical axis is how much this operator multiplies a signal at that frequency.
-- **Trend, in numbers.** At the teal tick — the frequency the controller is actually designed for — the ideal derivative gives a gain of $K_d\omega_n = 4.00$ and the $N = 10$ filter gives $3.92$: a difference of two per cent. At the violet tick the ideal gives $628$ and the filter gives $20.0$, a factor of **31.4**. The two operators are the same where the work is done and utterly different where the noise is.
-- **Principle.** The red line has **no ceiling**, and that is the entire problem: it is not that differentiation is inaccurate, it is that its gain is unbounded, so whatever is fastest in the measurement is amplified most. Sensor noise is always the fastest thing present.
-- **What the filter changes, and what it does not.** The blue curve lies on the red one until $\omega = N$ and then stops climbing. It does not make the derivative better below $N$; it only refuses to keep amplifying above it. **That is why choosing $N$ just above the closed-loop bandwidth costs nothing and buys everything.**
-- **Why large $N$ is not a safe default.** Moving from $N = 10$ to $N = 100$ lifts the whole right-hand end by a factor of ten while changing nothing near $\omega_n$. Section I measures exactly this: the response barely moves and the actuator RMS grows from $0.23$ to $1.68$.
+One picture of why a derivative is dangerous and why one number fixes it. Across the bottom is frequency — slow signals on the left, fast ones on the right. Up the side is how much the operator multiplies a signal at that frequency.
+
+The red line is the ideal derivative, and it **never stops climbing.** That is the whole problem, and it is worth stating carefully: differentiation is not inaccurate. Its gain is simply unbounded, so whatever is fastest in the measurement gets amplified most — and sensor noise is always the fastest thing present.
+
+Now compare the red and blue lines at the two ticks. At the teal tick, the frequency the controller is actually designed to work at, the ideal derivative gives $K_d\omega_n = 4.00$ and the $N = 10$ filter gives $3.92$ — two per cent apart. At the violet tick, the fastest thing the sensor can report, the ideal gives $628$ and the filter gives $20.0$ — a factor of **31.4** apart.
+
+**The two operators are the same where the work is done and utterly different where the noise is.** That is the entire argument for filtering.
+
+Look at what the blue curve does and does not do. It lies exactly on the red one up to $\omega = N$ and then stops climbing. It does not make the derivative *better* below $N$; it only refuses to keep amplifying above it. So choosing $N$ just above the closed-loop bandwidth costs nothing in the response and removes everything above it.
+
+That also settles why a large $N$ is not a cautious default. Moving from $N = 10$ to $N = 100$ lifts the whole right-hand end by a factor of ten while changing nothing near $\omega_n$ — more noise, no more control. Section I measures exactly that: the response barely moves and the actuator's quiet-state RMS grows from $0.23$ to $1.68$.
 
 > [!important] Differentiation multiplies every component by its own frequency
 > That is the whole problem in one sentence. The fastest thing in any real measurement is the sensor noise, so differentiation seeks out the least meaningful part of the signal and multiplies it by the largest number in the problem. The pseudo-derivative is the same operator with its gain capped at $N$, and $N$ is therefore the knob that decides **how much of the noise reaches the actuator**.
@@ -442,11 +448,15 @@ $$
 
 **What the figure says**
 
-- **Meaning.** The left panel says *why* windup happens; the right panel says *how badly* it happened here.
-- **The trend, in numbers.** The amber curve is a straight line only between $-133.42$ and $+239.36$ N. Outside that band it is flat, and the demand went to $3480$ N — **fourteen and a half times** the largest force the propellers can produce. Everything to the right of the corner is asked for and not delivered.
-- **The principle.** While the actuator is flat, $X_{\text{sat}}$ no longer depends on $X_{\text{cmd}}$, so the controller's output has no effect on the hull, and therefore none on the error. **The loop is open.** An integrator driven by the error of an open loop cannot converge, because nothing it does can change that error.
-- **Why the cross is drawn between the saturation and the hull, and not inside the integrator.** The integrator is behaving exactly as designed. The fault is upstream of it, in a block with no gain left to give. Calling this an "integrator problem" points at the wrong component.
-- **What both cures have in common.** The violet path carries $X_{\text{cmd}} - X_{\text{sat}}$, and that difference is **identically zero whenever the actuator is following**. Clamping and back-calculation use it differently, but neither can act on a loop that is not saturated — which is why anti-windup can be left switched on permanently and never has to be scheduled.
+The left panel says *why* windup happens. The right panel says *how badly* it happened on this vessel.
+
+Start on the right. The amber curve is a straight line only between $-133.42$ and $+239.36$ N. Outside that band it is flat — and the controller's demand reached $3480$ N, **fourteen and a half times** the largest force the propellers can produce. Everything to the right of that corner was asked for and not delivered.
+
+The left panel names the consequence. While the actuator is flat, $X_{\text{sat}}$ no longer depends on $X_{\text{cmd}}$: the controller's output has no effect on the hull, and therefore none on the error. **The loop is open.** An integrator driven by the error of an open loop cannot converge, because nothing it does can change that error.
+
+Notice where the red cross is drawn — between the saturation and the hull, not inside the integrator. That placement is the argument. The integrator is behaving exactly as designed; the fault is upstream of it, in a block that has no gain left to give. Calling this an "integrator problem" points at the wrong component and leads to the wrong fix.
+
+The violet path is what both cures are built from. It carries $X_{\text{cmd}} - X_{\text{sat}}$, and that difference is **identically zero whenever the actuator is following its command.** Clamping and back-calculation use it differently, but neither can act on a loop that is not saturated — which is why anti-windup can be switched on permanently and never has to be scheduled.
 
 ### The principle, in one line
 
@@ -716,11 +726,19 @@ Opening the folder shows about fifteen files. Only the ones in this table are ev
 
 **What the figure says**
 
-- **Meaning.** The loop is open — the controller is switched out and a constant force is applied directly. The left panel is the plant's response in time; the right panel collapses each of those responses to the single number that describes its steady state.
-- **Trend, in numbers.** All four curves have the **same shape** and differ only in height: each rises smoothly, with no overshoot and no oscillation, and is within 2 % of its final value by about $4.5$ s. Doubling the force from 100 to 200 N doubles the settled speed from $1.2894$ to $2.5788$ m/s exactly. The right panel is therefore a straight line through the origin, and the four measured points sit on it to four decimals.
-- **Principle.** A first-order lag, $\tau_u\dot u + u = K_u X$, has exactly this signature: no overshoot, one time constant, and a settled value proportional to the input. **The straightness of the right panel is what says the plant is linear; the identical shape of the four curves is what says it is first order.** Both had to be checked, because the vessel underneath is a twelve-state nonlinear model and neither property was guaranteed.
-- **Why identification comes before design.** Every gain in sections D to F is computed from the two numbers this figure produces, $K_u = 0.012894$ (m/s)/N and $\tau_u \approx 1.12$ s. Measuring them from the plant rather than reading them from a datasheet is what makes the later predictions checkable.
-- **What changes with the situation.** Nothing here depends on a controller, because there is none. Adding force moves the vessel up the same line; it never changes the line. The line does end, though — at $X = 239.36$ N the propellers saturate, and the speed ceiling that follows is the one number no controller in this week can argue with.
+There is no controller in this figure. The loop is open, a constant force is applied directly, and the vessel is asked what it does about it. The left panel is the answer in time; the right panel reduces each of those runs to the one number that describes where it ended up.
+
+Two things have to be true before any of this week's design can proceed, and each panel checks one of them.
+
+The four curves in the left panel have the **same shape** and differ only in height. Each rises smoothly, without overshoot or oscillation, and is within $2\%$ of its final value by about $4.5$ s. That shape is the signature of a first-order lag, $\tau_u\dot u + u = K_u X$ — one time constant and nothing else.
+
+The right panel is a **straight line through the origin**. Doubling the force from $100$ to $200$ N doubles the settled speed from $1.2894$ to $2.5788$ m/s exactly, and all four measured points lie on the line to four decimals. That straightness is what says the plant is linear.
+
+Neither property was guaranteed, which is why both were measured. The vessel underneath is a twelve-state nonlinear model, and it would have been entirely possible for it to curve.
+
+The two numbers this figure produces — $K_u = 0.012894$ (m/s)/N and $\tau_u \approx 1.12$ s — are what every gain in sections D to F is computed from. Measuring them from the plant rather than reading them off a datasheet is what makes the later predictions checkable rather than merely plausible.
+
+The line does end, though. At $X = 239.36$ N the propellers saturate, and the speed ceiling that follows is the one number no controller this week can argue with.
 
 > [!important] $u_{\max} = U_{\max}$ is exact, and it is not a coincidence
 > $X_{\max} = 2k_{\text{pos}}n_{\max}^2 = 24.4g$ by construction of $n_{\max}$, and $X_u = -24.4g/U_{\max}$ by construction of the damping. The two $24.4g$ cancel, leaving $u_{\max} = U_{\max} = 3.0864$ m/s exactly. No controller of any structure can ask for more.
@@ -765,11 +783,21 @@ Measured with $u_d = 1.5$ m/s, $K_i = K_d = 0$:
 
 **What the figure says**
 
-- **Meaning.** One setpoint, $1.5$ m/s, and three proportional controllers. The left panel is how close each got; the right panel is what each had to demand to get there.
-- **Trend, in numbers.** Raising $K_p$ from 100 to 2000 moves the settled speed from $0.8448$ to $1.4440$ m/s — closer at every step, and **short at every step**. The remaining gap shrinks from $44\%$ to $13\%$ to $3.7\%$: each twentyfold increase in gain buys roughly one decimal place, and none of them buys the last one. Meanwhile the peak demand explodes from $149.3$ to $2979.2$ N — the last of those is **twelve times** what the propellers can deliver, since $X_{\max} = 239.36$ N.
-- **Principle.** The plant has no free integrator, so the loop is **type 0** and the final-value theorem gives $u_{ss}/u_d = K_pK_u/(1 + K_pK_u)$ — a ratio that approaches one and never reaches it. Holding a speed requires a permanent force to balance the drag; a proportional controller manufactures force only from error; **so the error is what pays for the force, and it cannot be zero.**
-- **Why the right panel settles rather than falling to zero.** All three demands converge to roughly $65$–$112$ N and stay there. That plateau *is* the drag at the speed each vessel reached. Compare Week 3, where the same panel returns to zero because a vessel that has stopped turning needs no moment: the structural difference between the two axes is visible in this one plot.
-- **What changes with the situation.** Raising the gain here costs actuator authority to buy accuracy, and both run out: at $K_p = 2000$ the transient demand is an order of magnitude past saturation, so the response the figure shows is already partly fictional. Section E adds the integral term, which supplies the steady force from a **zero** error and settles the question rather than shrinking it.
+One setpoint of $1.5$ m/s, three proportional controllers. The left panel is how close each got; the right panel is what each had to demand to get there.
+
+None of them arrives. Raising $K_p$ from $100$ to $2000$ moves the settled speed from $0.8448$ to $1.4440$ m/s — closer at every step and **short at every step**. The remaining gap goes $44\%$, $13\%$, $3.7\%$: each twentyfold increase in gain buys about one decimal place, and no increase buys the last one.
+
+That is not a tuning failure, and no value of $K_p$ would fix it. The plant has no free integrator, so the loop is **type 0**, and the final-value theorem gives
+
+$$\frac{u_{ss}}{u_d} = \frac{K_pK_u}{1 + K_pK_u} ,$$
+
+a ratio that approaches one and never reaches it. The physical reason is simpler than the algebra: holding a speed requires a permanent force to balance the drag, and a proportional controller manufactures force only out of error. **So the error is what pays for the force, and it cannot be zero.**
+
+The right panel makes that visible. All three demands settle at roughly $65$–$112$ N and stay there — and that plateau *is* the drag at whatever speed each vessel reached. Compare the same panel in Week 3, where the demand returns to **zero** because a vessel that has stopped turning needs no moment to hold its heading. The structural difference between the two axes is readable in this one plot.
+
+What the gain does buy is paid for in actuator authority, and both run out together. At $K_p = 2000$ the peak demand is $2979.2$ N — **twelve times** what the propellers can deliver, since $X_{\max} = 239.36$ N — so the response drawn for that run is already partly fictional.
+
+Section E adds the integral term, which supplies the steady force from a **zero** error and settles the question rather than shrinking it.
 
 ## E. Integral and derivative (20 min)
 
@@ -851,10 +879,17 @@ $K_p$ and $K_i$ held at the values above:
 
 **What the figure says**
 
-- **The point.** Derivative action makes this loop **worse**. Overshoot rises with $K_d$ — $8.15\%$, $11.48\%$, $16.88\%$, $25.50\%$ — while $\zeta$ falls from $0.700$ to $0.422$, and prediction tracks measurement to within $1.1$ points across the whole sweep.
-- **Principle.** Substituting the control law into the surge equation gives $(M_{11} + K_d)\dot u + \lvert X_u\rvert u = \ldots$: the derivative gain lands **beside the mass**, not beside the damping. $K_d = 150$ does not damp the vessel, it makes it **heavier**, from $85.5$ to $235.5$ kg — and a heavier vessel with the same damping is less damped.
-- **How this differs from Week 3.** The identical term in an identical PID controller reduces overshoot on the heading axis and increases it here. On a **velocity** loop the derivative of the controlled variable is an acceleration, which multiplies mass; on an **angle** loop it is a rate, which multiplies damping. **The term did not change; the axis did.**
-- The conclusion is not that derivative action is useless, but that a term must be substituted into the equation of motion before its effect is assumed. Nothing here can be tuned away, so the practical answer on a speed loop is $K_d = 0$ — what the rest of this week uses. Section I revisits the term on a plant that wants one.
+Derivative action makes this loop **worse**, and the figure leaves no room to argue about it. Overshoot rises with $K_d$ — $8.15\%$, $11.48\%$, $16.88\%$, $25.50\%$ — while $\zeta$ falls from $0.700$ to $0.422$, and the prediction tracks the measurement to within $1.1$ points across the whole sweep.
+
+The reason is where $K_d$ lands when the control law is substituted into the surge equation:
+
+$$\left(M_{11} + K_d\right)\dot u + \lvert X_u\rvert u = \ldots$$
+
+It sits **beside the mass**, not beside the damping. So $K_d = 150$ does not damp the vessel; it makes it **heavier**, from $85.5$ to $235.5$ kg — and a heavier vessel with unchanged damping is a less damped vessel.
+
+Week 3 runs the identical term in an identical PID controller and gets the opposite result. The difference is not the controller and not the tuning. On a **velocity** loop the derivative of the controlled variable is an acceleration, and acceleration multiplies mass. On an **angle** loop it is a rate, and rate multiplies damping. **The term did not change; the axis did.**
+
+The conclusion is not that derivative action is useless — it is that a term has to be substituted into the equation of motion before its effect can be assumed. Nothing here can be tuned away, so the practical answer on a speed loop is $K_d = 0$, which is what the rest of this week uses. Section I revisits the term on a plant that genuinely wants one.
 
 ## F. Windup (25 min)
 
@@ -900,11 +935,15 @@ $K_p$ and $K_i$ held at the values above:
 
 **What the figure says**
 
-- **Meaning.** Four views of the same three runs. The two left panels are what happened and what was asked for; the two right panels are where the trouble was stored and what the water actually received.
-- **Trend, in numbers.** For the first 40 s **all three runs are identical** in the top-left and bottom-right panels: every controller sits on the limit, delivers $239$ N, and drives the vessel to $3.09$ m/s. Nothing distinguishes them. They separate the instant the setpoint drops to a reachable $1.5$ m/s: the protected runs recover in $3.4$ s while the unprotected one takes $13.98$ s, holding $3.09$ m/s for ten seconds after being told to slow down.
-- **Principle.** While the demand is impossible the error never changes sign, so the integrator keeps accumulating — to $3438$ N, a force the propellers can never produce. The top-right panel is the whole diagnosis: **the difference between the three runs lives entirely in the integrator, and nowhere else.**
-- **Why the bottom-right panel matters more than the bottom-left.** The bottom-left panel shows demands that differ by a factor of fourteen. The bottom-right shows that the water felt **exactly the same force** in all three. A demand above saturation is not a control action; it is a number in a register. The loop was open, and no gain chosen inside a closed-loop analysis can account for a loop that is not closed.
-- **What separates the two remedies.** Clamping stops the integrator where it happens to be; back-calculation steers it towards the value that makes the demand equal the limit. They settle at different integrator values, which is why raising the back-calculation gain never turns one into the other — section H measures that on a plant simple enough to see it.
+Four views of the same three runs. The two left panels are what happened and what was asked for; the two right panels are where the trouble was stored and what the water actually received.
+
+For the first $40$ s the three runs are **identical** in the top-left and bottom-right panels. Every controller sits on the limit, delivers $239$ N, and drives the vessel to $3.09$ m/s. Nothing whatsoever distinguishes them. They separate the instant the setpoint drops to a reachable $1.5$ m/s: the protected runs recover in $3.4$ s, the unprotected one takes $13.98$ s and holds $3.09$ m/s for ten seconds after being told to slow down.
+
+The top-right panel is the whole diagnosis. While the demand is impossible the error never changes sign, so the integrator keeps accumulating — reaching $3438$ N, a force the propellers can never produce. **The difference between the three runs lives entirely in the integrator and nowhere else.**
+
+Now compare the two bottom panels, because that pair carries the lesson. The bottom-left shows demands differing by a factor of fourteen. The bottom-right shows that the water felt **exactly the same force** in all three. A demand above saturation is not a control action; it is a number in a register. The loop was open, and no gain chosen from a closed-loop analysis can account for a loop that is not closed.
+
+The two remedies both work here and work differently. Clamping stops the integrator wherever it happens to be; back-calculation steers it toward the value that would make the demand equal the limit. They settle at different integrator values, which is why raising the back-calculation gain never turns one into the other. Section H measures that on a plant simple enough to see it happen.
 
 > [!important] Nothing was wrong with the integrator
 > It did exactly what an integrator does. The loop had been opened by the actuator, and no gain chosen inside a closed-loop analysis can account for a loop that is not closed. Every one of the four experiments this week was predicted correctly by the linear model **except** where saturation intervened, and that is the boundary of linear design.
@@ -948,11 +987,15 @@ The same two runs, with `pid_mode = 0` and `pid_mode = 1`:
 
 **What the figure says**
 
-- **Meaning.** The same plant, the same gains and the same setpoint, controlled twice: once by nine blocks assembled from the equations of §2-4, once by Simulink's PID Controller block. The two panels differ only in whether the derivative term is switched on.
-- **Trend, in numbers.** In the left panel the two traces are **one curve**: the largest difference anywhere in the run is $2.2\times10^{-16}$ m/s, which is machine precision. In the right panel they part company during the transient — the hand-built path peaks at $1.76$ m/s and the block at $1.68$, overshoots of $16.88\%$ against $11.54\%$ — and then converge again, ending on the same $1.5$ m/s.
-- **Principle.** With $K_d = 0$ the two implementations are algebraically identical, and the left panel is the proof. That agreement is what licenses using the library block for the rest of the course: it is not a different algorithm, only a shorter way of writing the same one.
-- **Where the difference comes from.** The library block differentiates its **input**, which is the error. The hand-built path differentiates the **measurement**. A step in $u_d$ therefore passes straight through the block's derivative and produces a kick; a measurement never steps, so the hand-built path sees nothing. **Both are correct implementations of a PID controller, and the phrase "a PID controller" is not specific enough to distinguish them.**
-- **What changes with the situation.** The gap appears only at a setpoint change and vanishes in steady state, so a loop that mostly rejects disturbances will never notice, and a loop that mostly follows commands will notice a great deal. Simulink's two-degree-of-freedom PID block exists to weight the two paths separately, which is the general answer to the question this figure raises.
+The same plant, the same gains and the same setpoint, controlled twice — once by nine blocks assembled from the equations of §2-4, once by Simulink's PID Controller block. The two panels differ only in whether the derivative term is switched on.
+
+In the left panel, with $K_d = 0$, the two traces are **one curve**. The largest difference anywhere in the run is $2.2\times10^{-16}$ m/s, which is machine precision. Nine blocks and one block compute the same thing, and that agreement is what licenses using the library block for the rest of the course: it is not a different algorithm, only a shorter way of writing the same one.
+
+In the right panel, with $K_d = 60$, they part company. The hand-built path peaks at $1.76$ m/s and the block at $1.68$ — overshoots of $16.88\%$ against $11.54\%$ — before converging again on the same $1.5$ m/s.
+
+The cause is one design choice, not a defect in either. The library block differentiates its **input**, which here is the error. The hand-built path differentiates the **measurement**. A step in $u_d$ therefore passes straight through the block's derivative and produces a kick, while a measurement never steps, so the hand-built path sees nothing. **Both are correct implementations of a PID controller — which tells you that "a PID controller" is not a specific enough phrase to distinguish them.**
+
+The gap appears only at a setpoint change and vanishes in steady state. A loop that mostly rejects disturbances will never notice it; a loop that mostly follows commands will notice a great deal. Simulink's two-degree-of-freedom PID block exists to weight the two paths separately, and is the general answer to the question this figure raises.
 
 > [!tip] Which to use
 > The library block, in almost every case. It is one block, it is tested, and it offers discrete-time forms, external reset and tracking mode that would each take several more blocks by hand. Build it by hand once, to know what is inside it, and then stop.
@@ -1033,10 +1076,13 @@ W02_H_antiwindup_run
 
 **What the figure says**
 
-- **The point of the section.** For the first 14 s all four curves coincide in three of the four panels: the output holds at $y = 1$, the control sits flat on the limit, the error sits flat at $+1$. Only the integrator panel separates them, and it does so by a factor of $49$ — $60.00$ unprotected against $1.225$ with back-calculation.
-- **Principle.** An integrator integrates. While the reference is unreachable the error cannot change sign, so the integral grows without bound, into a quantity the actuator cannot use. **The trouble is not that the integrator misbehaved; it is that the loop was open and the integrator was not told.**
-- The panel is drawn on a log scale because linearly the protected curve would lie flat against the axis. What it shows is not merely a smaller number but an integrator that **stays in the range the actuator can act on** for the whole run.
-- A scheme invisible for 14 s and decisive at second 15 cannot be judged on a reachable setpoint, which is why the reference here is impossible. At $t = 15$ s the unprotected loop needs $32.04$ s to settle; the others need about $2.5$ s.
+For the first $14$ s all four curves coincide in three of the four panels. The output holds at $y = 1$, the control sits flat on the limit, the error sits flat at $+1$. Only the integrator panel separates them — and it separates them by a factor of $49$: $60.00$ unprotected against $1.225$ with back-calculation.
+
+An integrator integrates. While the reference is unreachable the error cannot change sign, so the integral grows without bound, into a quantity the actuator has no way to use. **The trouble is not that the integrator misbehaved; it is that the loop was open and the integrator was not told.**
+
+That panel is on a log scale for a reason. Drawn linearly, the protected curve would lie flat against the axis and the reader would see one curve and a wall. On a log scale both are visible, and what it shows is not merely a smaller number but an integrator that **stays inside the range the actuator can act on** for the whole run.
+
+The setpoint here is deliberately impossible. A scheme that is invisible for $14$ s and decisive at second $15$ cannot be judged on a reachable command — and when second $15$ arrives, the unprotected loop needs $32.04$ s to settle while the others need about $2.5$.
 
 > [!important] Choosing $K_{\text{aw}}$
 > The usual starting point is $K_{\text{aw}} = 1/\tau$, which on this plant is $1$ and gives a $3.49$ s recovery. Sweeping it finds a shallow minimum near $K_{\text{aw}} = 5$ at $2.375$ s: below that the integrator is not emptied fast enough, above it the loop leaves the limit so abruptly that undershoot grows from $4.60\%$ to $43.96\%$. The rule of thumb is a reasonable default and it is not the optimum.
@@ -1117,10 +1163,17 @@ W02_I_pseudo_derivative_run
 
 **What the figure says**
 
-- **The point of the section.** In the top-left panel the three derivative rows are almost indistinguishable — the control job is done equally well by all of them. In the top-right panel they are nothing alike: the ideal derivative swings $\pm 106$ against a steady demand of $4$, **twenty-six times** the useful value, and all of it is noise.
-- **Principle.** Differentiation has gain $\lvert j\omega\rvert$, which grows without bound, so it finds the fastest thing in the measurement — the noise — and multiplies it by the largest number available. The pseudo-derivative $N s/(s+N)$ has the same gain below $N$ and levels off above it: **the same operator, with a ceiling on how much it may amplify.**
-- The bottom-left panel omits the ideal row deliberately; with it included the other three collapse onto the axis. Its peak, $\pm 96$, is printed on the panel instead.
-- Repeating the four runs with the noise generator switched off collapses every quiet-state RMS to below $2 \times 10^{-6}$, while the overshoots move by less than $0.1$ point. The factor of $37$ above **was noise and nothing else**, not filter phase lag.
+Look at the two top panels together, because the contrast between them is the whole section.
+
+In the top-left panel the three derivative rows are almost indistinguishable. Whatever the difference between them is, it is not the quality of the control — all three damp the plant equally well.
+
+In the top-right panel they are nothing alike. The ideal derivative swings $\pm 106$ against a steady demand of $4$ — **twenty-six times the useful value**, and every bit of it noise.
+
+Differentiation has gain $\lvert j\omega\rvert$, which grows without bound, so it finds the fastest thing in the measurement and multiplies it by the largest number available. The fastest thing in any measurement is the noise. The pseudo-derivative $Ns/(s+N)$ has the same gain below $N$ and levels off above it: **the same operator, with a ceiling on how much it may amplify.**
+
+The bottom-left panel leaves the ideal row out on purpose — included, it flattens the other three onto the axis and nothing can be read. Its peak of $\pm 96$ is printed on the panel instead, so nothing is hidden by the omission.
+
+One control experiment settles what the difference actually is. Repeating all four runs with the noise generator switched off collapses every quiet-state RMS to below $2\times10^{-6}$ while the overshoots move by less than $0.1$ point. So the factor of $37$ between the ideal and the filtered rows **was noise and nothing else** — not the filter's phase lag, which would have shown up here and did not.
 
 > [!important] Where to put $N$
 > Sweeping $N$ from $2$ to $500$ shows two different mechanisms, not one trade-off. Below $N \approx 5$ the filter is still shaping the response and overshoot improves with $N$, from $14.72\%$ to $4.77\%$. Above it the response has flattened — from $N = 100$ to $N = 500$ overshoot moves by $0.3$ points — while actuator noise keeps growing, from $1.68$ to $5.50$.

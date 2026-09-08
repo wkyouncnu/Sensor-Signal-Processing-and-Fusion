@@ -603,12 +603,17 @@ Section G sweeps the current speed with everything else held fixed and compares 
 
 **What the figure says**
 
-- **Meaning.** One vessel, one path, one current, three guidance laws. The question each panel answers is: *where does the bow end up pointing, and is the vessel on the path?*
-- **The one thing that is the same in all three.** The bow is tilted upstream by $15.7°$ in every panel. **That tilt is not optional** — it is the only way to travel along a path while water pushes sideways, and any law that works must produce it. Comparing the three laws is comparing *how they pay for the same tilt*.
-- **Panel 1, and why LOS is stuck.** LOS has exactly one way to tilt the bow: the $\arctan(y_e^{\,p}/\Delta)$ term. Using it to cancel the drift means it is no longer available to close the gap, so the vessel ends up parallel to the path and $2.25$ m beside it. **The law is not short of authority; it is short of terms.**
-- **Panel 2, the trick ILOS plays.** The integrator adds a second quantity inside the same arctan. Once that quantity has grown to $\kappa y_{int} = 2.25$ m, the law is being told there is a $2.25$ m error even though the vessel is exactly on the path — so it keeps the bow tilted while the real error sits at zero. **The integrator is a lie the law tells itself, and the lie is exactly the size of the truth it replaced.**
-- **Panel 3, what ALOS does instead.** ALOS adds a term *outside* the arctan: it subtracts an estimate of the drift angle directly from the command. The bow tilts by $\hat\beta$, and the arctan term is handed back its original job of closing $y_e^{\,p}$. **Nothing is invented; the disturbance is measured and removed.**
-- **What separates the two.** Both end with the same picture — on the path, bow upstream — and the state each carries is what differs. ILOS carries a number with no meaning ($7.52$, in seconds); ALOS carries the crab angle itself ($15.91°$ against a true $15.88°$). **Only one of them can be checked against a measurement.**
+One vessel, one path, one current, three guidance laws. Each panel answers the same question: where does the bow end up pointing, and is the vessel on the path?
+
+Start with what all three have in common. The bow is tilted upstream by $15.7°$ in **every** panel. That tilt is not a choice any of the laws made — it is the only way to travel along a line while water pushes sideways, so any law that works at all must produce it. Comparing the three laws means comparing *how each one pays for the same tilt*.
+
+LOS cannot pay for it. It has exactly one way to tilt the bow, the $\arctan(y_e^{\,p}/\Delta)$ term, and spending that term on cancelling the drift leaves nothing to close the gap with. The vessel ends up parallel to the path and $2.25$ m beside it, permanently. **The law is not short of authority; it is short of terms.**
+
+ILOS buys a second term with an integrator, placed **inside** the same arctan. Once the integral has grown to $\kappa y_{int} = 2.25$ m, the law is being told there is a $2.25$ m error at a moment when the vessel is exactly on the path — so it holds the bow tilted while the true error sits at zero. **The integrator is a lie the law tells itself, and the lie is exactly the size of the truth it replaced.**
+
+ALOS buys its second term differently, **outside** the arctan, by subtracting an estimate of the drift angle straight from the command. The bow tilts by $\hat\beta$ and the arctan term gets its original job back. Nothing is invented; the disturbance is estimated and removed.
+
+Both end with the same picture — on the path, bow upstream — so the outcome does not separate them. What separates them is the state each carries. ILOS carries $7.52$, a number in seconds that means nothing on its own. ALOS carries $15.91°$ against a true crab angle of $15.88°$. **Only one of those can be checked against a measurement**, and that is the practical difference between the two laws.
 
 > [!tip] If only one sentence from this week is remembered
 > A current is not resisted, it is **answered**. The vessel must point upstream, and the three laws differ only in where they find the authority to do it.
@@ -630,12 +635,16 @@ Section G sweeps the current speed with everything else held fixed and compares 
 
 **What the figure says**
 
-- **Meaning.** Three laws, one skeleton. Every row has the same $y_e^{\,p}$, the same arctan, the same $\pi_p$. Only the violet arrow moves.
-- **The trend, in numbers.** Settled cross-track error falls from $2.253$ m (no state) to $0.008$ m and $-0.004$ m (one state each) — **a factor of roughly 300**, from adding a single scalar.
-- **The principle, and it is the whole of §4-8 and §4-9 in one line.** ILOS injects **inside** the arctan; ALOS injects **outside** it. Everything else follows:
-  - A term inside the arctan is added to $y_e^{\,p}$ before the nonlinearity sees it, so the law **cannot distinguish it from real cross-track error**. ILOS therefore behaves as though the vessel were $2.25$ m further out than it is.
-  - A term outside the arctan is added to $\pi_p$'s side of the sum, so the law **cannot distinguish it from a rotated path**. ALOS therefore behaves as though it were following a line tilted by the drift it has estimated.
-- **Why this explains the unit puzzle of §4-8-3.** A quantity added to $y_e^{\,p}$ must be a length, which is why $\kappa y_{int}$ is in metres and $\kappa$ carries the odd unit m/s. A quantity added to an angle must be an angle, which is why $\hat\beta$ is simply in radians. **The units are not a convention; they are forced by where the term enters.**
+Three laws drawn on one skeleton. Every row has the same $y_e^{\,p}$, the same arctan and the same $\pi_p$; only the violet arrow moves. That is the point of drawing them this way — the difference between the three is one arrow, not three algorithms.
+
+What the arrow buys is large. Settled cross-track error falls from $2.253$ m with no extra state to $0.008$ m and $-0.004$ m with one scalar each — **roughly a factor of three hundred**, from adding a single number to the law.
+
+Where that number enters is the whole of §4-8 and §4-9:
+
+- **Inside** the arctan, the added quantity reaches $y_e^{\,p}$ before the nonlinearity sees it, so the law **cannot tell it apart from real cross-track error**. ILOS therefore steers as though the vessel were $2.25$ m further off the line than it is.
+- **Outside** the arctan, the added quantity lands on $\pi_p$'s side of the sum, so the law **cannot tell it apart from a rotated path**. ALOS therefore steers as though following a line tilted by the drift it has estimated.
+
+That single distinction also settles the unit puzzle of §4-8-3, which otherwise looks arbitrary. A quantity added to $y_e^{\,p}$ has to be a **length**, which is why $\kappa y_{int}$ is in metres and $\kappa$ carries the odd unit of m/s. A quantity added to an angle has to be an **angle**, which is why $\hat\beta$ is simply in radians. **The units are not a convention someone chose; they are forced by where the term enters.**
 
 ## 4-8. ILOS — integral line of sight, derived
 
@@ -1401,12 +1410,17 @@ Expected output:
 
 **What the figure says**
 
-- **The meaning.** Two vessels, identical in every respect but the guidance law, run the same four-leg mission in still water. The left panel is where they went; the right is how far each was from the line it was supposed to be on.
-- **The trend, with numbers.** On the three legs where the comparison is meaningful, `atan2` holds the path to $0.547$, $0.514$ and $1.184$ m while LOS holds it to $0.060$, $0.062$ and $0.014$ m — ratios of $9.1$, $8.3$ and $86.7$. On the track panel the two vessels visit the same waypoints; only the blue one travels along the lines between them.
-- **The principle.** Look at the shape of the orange curve after each corner. It rises to a peak and comes back down *slowly*, because the `atan2` law is not trying to return to the line — it is only trying to reduce the distance to the next waypoint, and drifting sideways barely changes that distance. The blue curve is pulled back within one look-ahead length because the arctan term grows with exactly the quantity that is wrong.
-- **The difference between the algorithms.** They differ in one line of code. `atan2` measures to a point, LOS measures to a line. Everything in the right panel follows from that.
-- **The part that is easy to miss.** After about $340$ s the orange curve breaks into a **sustained oscillation** of roughly $\pm2$ m that never decays. That is not noise and not a plotting artefact: the vessel has passed the final waypoint at about $332$ s, so the point it is chasing is now **behind it**. The `atan2` command flips by $180°$, the vessel turns around, overshoots the waypoint again, and repeats — a limit cycle produced entirely by the guidance law. It is also why the leg-4 entry of $1.184$ m in the table above should be read as an oscillation amplitude rather than as a tracking error.
-- **What LOS does instead** at the same moment is nothing at all: the aim point is $\Delta$ ahead on the *extension* of the last leg, so it stays ahead of the vessel for ever and the blue curve simply stays flat. §4-6 notes that neither behaviour is a mission-termination policy; this figure is what the absence of one looks like.
+Two vessels, identical in every respect except the guidance law, running the same four-leg mission in still water. The left panel is where they went; the right is how far each was from the line it was supposed to be on.
+
+Both reach every waypoint. Only the blue one travels along the lines between them. On the three legs where the comparison is meaningful, `atan2` stays within $0.547$, $0.514$ and $1.184$ m of the path while LOS stays within $0.060$, $0.062$ and $0.014$ m — better by factors of $9.1$, $8.3$ and $86.7$.
+
+The shape of the orange curve after each corner explains why. It rises to a peak and comes down *slowly*, because the `atan2` law is not trying to get back to the line at all. It is only trying to reduce the distance to the next waypoint, and drifting sideways barely changes that distance. The blue curve is pulled back within one look-ahead length, because its arctan term grows with exactly the quantity that is wrong.
+
+The two laws differ by one line of code. **`atan2` measures to a point; LOS measures to a line.** Everything in the right panel follows from that.
+
+One feature is easy to miss and worth pointing out. After about $340$ s the orange curve breaks into a **sustained oscillation** of roughly $\pm2$ m that never decays. It is neither noise nor a plotting artefact: the vessel passed the final waypoint at about $332$ s, so the point it is chasing is now **behind it**. The command flips by $180°$, the vessel turns around, overshoots the waypoint again, and repeats — a limit cycle created entirely by the guidance law. That is also why the leg-4 entry of $1.184$ m should be read as an oscillation amplitude rather than a tracking error.
+
+LOS does nothing at all at the same moment, because its aim point sits $\Delta$ ahead on the *extension* of the last leg and therefore stays ahead of the vessel for ever. Neither behaviour is a mission-termination policy, as §4-6 notes; this figure is what the absence of one looks like.
 
 ## D. The line-of-sight law
 
@@ -1446,11 +1460,17 @@ Expected output:
 
 **What the figure says**
 
-- **The meaning.** The three panels take the law $\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$ apart into its two terms and then show what the pair achieves.
-- **Panel 1, the trend.** $\pi_p$ is a **staircase**: $0°$, then $90°$, then $180°$, then $45°$, changing only at the three switching instants near $72$, $147$ and $222$ s and constant in between. This is the geometry of the mission and it contains no feedback whatever.
-- **Panel 2, the principle.** Two curves are drawn: the correction the law *prescribes*, $-\arctan(y_e^{\,p}/\Delta)$, and the correction actually applied, $\psi_d - \pi_p$. **They lie exactly on top of each other** — agreement to $0.0\text{e}{+}00$ degrees — which is the law verified graphically rather than argued. The correction is zero on the straight parts, dips to about $-33°$ at each of the first two corners and reaches $+23°$ at the $135°$ corner, and **never approaches the $\pm90°$ bound** drawn in red. That bound is the guarantee of §4-4: the vessel can be told to head straight at the path but never away from it.
-- **Panel 3, the difference between the algorithms.** Zoomed to $\pm1.5$ m, the same corner transients are visible for both laws — they start from the same place and take a comparable excursion — but LOS returns to the line and stays there while `atan2` does not. Settled over the last quarter of the run, that is $0.016$ m against $1.175$ m, a factor of **seventy-four**.
-- **Why the panels stop at 300 s** while the settled numbers are measured over $375$–$500$ s: the last quarter of the run is where `atan2` is in the limit cycle of section C, which would compress everything else into a band. The comparison of settled values belongs here; the picture of the limit cycle belongs to section C.
+The three panels take the law $\psi_d = \pi_p - \arctan(y_e^{\,p}/\Delta)$ apart into its two terms and then show what the pair achieves together.
+
+The first panel is $\pi_p$ alone, and it is a **staircase** — $0°$, then $90°$, then $180°$, then $45°$ — changing only at the three switching instants near $72$, $147$ and $222$ s and flat in between. This term is pure mission geometry with no feedback in it whatever.
+
+The second panel is the correction term, drawn twice: once as the law *prescribes* it, $-\arctan(y_e^{\,p}/\Delta)$, and once as it was actually *applied*, $\psi_d - \pi_p$. The two lie exactly on top of each other, agreeing to $0.0\text{e}{+}00$ degrees. That is the implementation verified graphically rather than argued from the source.
+
+Read that panel's size as well as its shape. The correction is zero on the straight parts, dips to about $-33°$ at each of the first two corners, reaches $+23°$ at the $135°$ corner, and **never approaches the $\pm90°$ bound** drawn in red. That bound is the guarantee of §4-4: the vessel can be told to head straight at the path, but never away from it.
+
+The third panel zooms to $\pm1.5$ m and compares the two laws. They start from the same place and take comparable excursions at each corner — but LOS returns to the line and stays, and `atan2` does not. Settled over the last quarter of the run that is $0.016$ m against $1.175$ m, a factor of **seventy-four**.
+
+The panels stop at $300$ s while the settled numbers are measured over $375$–$500$ s, and that is deliberate: the last quarter is where `atan2` enters the limit cycle of section C, which would squash everything else into a band. The comparison of settled values belongs here; the picture of the limit cycle belongs to section C.
 
 ## E. The look-ahead distance
 
@@ -1487,12 +1507,15 @@ Expected output:
 
 **What the figure says**
 
-- **The meaning.** Left: five approaches to the same path from the same $8$ m offset, one per $\Delta$. Right: the two costs plotted against $\Delta$, on twin axes.
-- **The trend, with numbers.** On the left, $\Delta = 2$ m (blue) turns almost perpendicular to the path, reaches it by $x^n \approx 13$ m and **crosses it**, swinging $0.94$ m to the far side before recovering. $\Delta = 30$ m (green) leans so gently that at the end of the $60$ m leg it is still $1.29$ m out and has never crossed. Between them the curves fan out monotonically.
-- **The principle.** All five vessels obey the identical law and differ only in one length. The arctan converts the *ratio* $y_e^{\,p}/\Delta$ into an angle, so a small $\Delta$ saturates that ratio at once — the command sits near $90°$ for most of the approach, which is why `max |psi_d'|` is $14.64$ deg/s at $\Delta = 2$ and $0.27$ deg/s at $\Delta = 30$, a factor of fifty.
-- **The difference between the situations.** The right panel shows the trade is **not symmetric**. Overshoot falls quickly and then flattens: going from $\Delta = 2$ to $4$ buys $0.31$ m of it, but going from $8$ to $16$ buys only $0.06$ m. Settling distance, by contrast, grows without limit — $12.82$, $20.06$, $35.82$ m and then off the end of the leg entirely. **Past about $\Delta = 8$ m there is nothing left to buy and a great deal still to pay.**
-- **The two red crosses** are drawn above the dashed line marking the end of leg 1, which is where "no settling distance" honestly belongs: those two runs did not fail to be measured, they failed to settle.
-- **Note the axes on the left panel are not to the same scale.** The leg is $60$ m long and the whole story happens within $9$ m of East. Drawn to a true aspect ratio, all five tracks collapse onto the path line and the figure shows nothing.
+Five approaches to the same path, from the same $8$ m offset, differing only in $\Delta$. The right panel reduces each run to the two things $\Delta$ costs.
+
+At $\Delta = 2$ m the vessel turns almost perpendicular to the path, reaches it by $x^n \approx 13$ m and **overshoots**, swinging $0.94$ m to the far side before recovering. At $\Delta = 30$ m it leans in so gently that after the whole $60$ m leg it is still $1.29$ m out and has never crossed at all. The three between fan out in order.
+
+All five obey the identical law and differ in one length. The arctan works on the *ratio* $y_e^{\,p}/\Delta$, so a small $\Delta$ saturates that ratio immediately and the command sits near $90°$ for most of the approach. That is why the peak turn rate runs from $14.64$ deg/s at $\Delta = 2$ down to $0.27$ deg/s at $\Delta = 30$ — a factor of fifty, from one number.
+
+The right panel is where the choice is actually made, and the trade is **not symmetric**. Overshoot falls quickly and then flattens: moving from $\Delta = 2$ to $4$ removes $0.31$ m of it, but moving from $8$ to $16$ removes only $0.06$ m. Settling distance grows without ever flattening — $12.82$, $20.06$, $35.82$ m, and then off the end of the leg. **Past about $\Delta = 8$ m there is nothing left to buy and a great deal still to pay**, which is why this course uses $8$ m.
+
+Two details of the drawing are worth stating so they are not misread. The two red crosses sit above the dashed line marking the end of leg 1, because that is where "no settling distance" honestly belongs — those runs did not fail to be *measured*, they failed to *settle*. And the left panel is not to a true aspect ratio: the leg is $60$ m long while everything interesting happens within $9$ m of East, so at true scale all five tracks would collapse onto the path and show nothing.
 
 ## F. Waypoint switching
 
@@ -1532,12 +1555,15 @@ Expected output:
 
 **What the figure says**
 
-- **The meaning.** Left: the first $90°$ corner, with the four tracks and the four **switching thresholds** drawn as horizontal dotted lines. Right: the active waypoint index against time, for the same four runs.
-- **The thresholds are lines, not circles.** Leg 1 runs due North along $E = 0$, so the along-track test $d_k - x_e^{\,p} < R$ is the half-plane $N > 60 - R$, whose boundary is horizontal. This is the distinction §4-6 makes, drawn on the data: had circles been drawn here, the figure would contradict the page that precedes it.
-- **The trend, with numbers.** Each track leaves the leg exactly where its own dotted line crosses it, and the corner cut follows: $0.44$ m at $R = 2$, then $2.26$, $7.02$ and $9.62$ m. The $R = 25$ track (purple) begins turning at $x^n = 35$ m, fully $25$ m before the waypoint, and passes almost $10$ m from it.
-- **The principle.** $R$ does not tune accuracy. It decides **how early the vessel gives up on the current leg**, and the corner cut is the direct consequence.
-- **The right panel** makes the same statement in time: all four staircases have the same three steps, shifted earlier as $R$ grows — $[76\ 154\ 232]$ s at $R = 2$ against $[46\ 111\ 176]$ s at $R = 25$. Cutting the corners saves $56$ s over the mission.
-- **The difference between the situations.** The last column of the table barely moves: $0.004$ to $0.019$ m. **$R$ costs almost nothing in straight-line accuracy** — it is paid for entirely at the corners. A survey that needs each line held to its end wants a small $R$; a transit that only needs to pass near the waypoints wants a large one. Neither is wrong.
+The left panel is the first $90°$ corner, with four tracks and the four **switching thresholds** drawn as horizontal dotted lines. The right panel is the active waypoint index against time for the same four runs.
+
+Notice first that the thresholds are **lines, not circles**. Leg 1 runs due North along $E = 0$, so the along-track test $d_k - x_e^{\,p} < R$ is the half-plane $N > 60 - R$, and its boundary is horizontal. That is the distinction §4-6 draws, shown here on the data — circles would have contradicted the page before.
+
+Each track leaves the leg exactly where its own dotted line crosses it, and the corner cut follows directly: $0.44$ m at $R = 2$, then $2.26$, $7.02$ and $9.62$ m. The $R = 25$ track begins turning at $x^n = 35$ m — a full $25$ m before the waypoint — and passes almost $10$ m from it.
+
+So **$R$ does not tune accuracy. It decides how early the vessel gives up on the current leg**, and the corner cut is the consequence. The right panel says the same thing in time: four staircases with the same three steps, shifted earlier as $R$ grows, from $[76\ 154\ 232]$ s at $R = 2$ to $[46\ 111\ 176]$ s at $R = 25$. Cutting the corners saves $56$ s over the mission.
+
+The straight-line column of the table barely moves across all of this — $0.004$ to $0.019$ m. **$R$ costs almost nothing on the straights and everything at the corners.** A survey that must hold each line to its end wants a small $R$; a transit that only needs to pass near the waypoints wants a large one. Neither choice is wrong, and the figure is how the trade is made visible before choosing.
 
 ## G. The current, and the two laws that beat it
 
@@ -1586,12 +1612,17 @@ Expected output:
 
 **What the figure says**
 
-- **The meaning.** All four laws, one mission, one current of $0.30$ m/s from the East. Left: the tracks, with the current drawn as arrows. Middle: the cross-track error of each. Right: what the ALOS vessel believes the crab angle to be, against what it actually is.
-- **The trend, with numbers.** In the middle panel the blue LOS curve settles onto the **dashed grey line**, which is not fitted to the data — it is $\Delta\tan\beta_c = 2.25$ m, drawn from §4-7 before the run. Green (ILOS) and purple (ALOS) converge to zero instead: $0.008$ m and $-0.004$ m. Orange (`atan2`) is in its limit cycle again, now with the current widening it to about $\pm6$ m.
-- **The principle.** The blue curve is the most important line in the week. **LOS has not failed and is not mistuned**: its heading error is zero, its autopilot is doing exactly what it was told, and it still sits $2.25$ m off the path, because the law commands a heading while the vessel travels along a course. The offset is what the law asks for.
-- **The difference between the algorithms.** ILOS and ALOS remove the same offset by opposite routes. ILOS accumulates an integral state until it happens to cancel the error, and the state settles at $7.519$ — **a number with no physical meaning**, in units of seconds. ALOS estimates the crab angle itself, and its state settles at $15.91°$ against a true $15.88°$ — **a number that can be read off and checked against $\operatorname{atan2}(v,u)$.** Both end within $0.01$ m of the path; only one can say why.
-- **The right panel repays close reading.** The dashed line — the true crab angle — swings between $+28°$ and $-32°$ during the first $300$ s. That is not disturbance: the current comes from a fixed direction, so as the vessel turns through each corner the current strikes the hull at a different angle and the crab angle genuinely changes with it. The estimate (purple) follows with a visible **lag**, which is what a first-order adaptation law does. Only on the final leg, where the heading is constant, do the two settle together at about $15.9°$.
-- **The difference between the situations.** The estimate is good when the assumption of §4-9-7 holds — a constant $\beta$ — and lags whenever it does not. The sweep table shows the other side of the same coin: the ILOS residual grows slowly with current speed, from $-0.019$ m at rest to $0.054$ m at $0.5$ m/s, because a larger current means a larger integral state and a longer time to reach it within a fixed run.
+All four laws, one mission, one current of $0.30$ m/s from the East. Left: the tracks, with the current drawn as arrows. Middle: each law's cross-track error. Right: what the ALOS vessel believes the crab angle to be, against what it actually is.
+
+The blue LOS curve in the middle panel is the most important line in the week. It settles onto the dashed grey line — and that grey line was **not fitted to the data.** It is $\Delta\tan\beta_c = 2.25$ m, drawn from §4-7 before the run was made.
+
+**LOS has not failed and is not mistuned.** Its heading error is zero, its autopilot is doing exactly what it was told, and it still sits $2.25$ m off the path. The law commands a *heading* while the vessel travels along a *course*, and the offset is precisely what the law asked for. No amount of tuning removes it, because nothing is wrong.
+
+ILOS and ALOS both remove that offset — $0.008$ m and $-0.004$ m — by opposite routes. ILOS accumulates an integral until it happens to cancel the error, and the state settles at $7.519$: **a number with no physical meaning**, carrying units of seconds. ALOS estimates the crab angle itself and settles at $15.91°$ against a true $15.88°$: **a number that can be read off and checked against $\operatorname{atan2}(v,u)$.** Both finish within $0.01$ m of the path. Only one can say why.
+
+The right panel repays slow reading. The dashed true crab angle swings between $+28°$ and $-32°$ over the first $300$ s, and that is not disturbance. The current comes from one fixed direction, so as the vessel turns through each corner the water strikes the hull at a different angle and the crab angle genuinely changes. The estimate follows with a visible **lag**, which is what a first-order adaptation law does. Only on the final leg, where the heading holds still, do the two settle together at about $15.9°$.
+
+That lag is the honest limit of the method: the estimate is good while §4-9-7's assumption of a slowly-varying $\beta$ holds, and lags whenever it does not. The sweep table shows the same limit from the other side — the ILOS residual grows from $-0.019$ m in still water to $0.054$ m at $0.5$ m/s, because a stronger current needs a larger integral state and a fixed-length run gives it less time to get there.
 
 ## H. The gains, and the Lyapunov function
 
@@ -1641,10 +1672,15 @@ Expected output:
 
 **What the figure says**
 
-- **The point of the section.** Left: what each $\gamma$ believes the crab angle to be, against the truth. Right: the Lyapunov function of §4-9-5, evaluated on the real vessel over leg 1. The adaptation finds a current nothing told it about — and the function that justifies it does **not** fall monotonically.
-- **Choosing $\gamma$.** $\gamma = 0.0005$ crawls, reaching only $9.31°$ after $500$ s. $\gamma = 0.02$ does the opposite, swinging between $\pm 70°$: it is tracking the *corner transients* rather than the current, and those excursions come within sight of breaking the $\lvert\tilde\beta\rvert < 90°$ assumption of §4-9-7. $\gamma = 0.005$ follows the truth with a modest lag and settles on it, at $15.91°$ against a true $15.88°$.
-- **The honest result.** $V$ starts at $5.80$, **rises to $12.94$ at $t = 17.5$ s**, then falls to $0.5588$ — $23.2\times$ down from the peak, with only $62.2\%$ of samples decreasing. §4-9-6 proved $\dot V < 0$ *on the assumption that $\psi = \psi_d$ exactly*, and there is a Week 3 autopilot in between with its own settling time. While the heading is still catching up, the error dynamics the proof rests on do not yet describe the vessel.
-- **Why this is reported rather than hidden.** A monotone $V$ could have been produced by plotting the kinematic subsystem in isolation, and it would have been a picture of an assumption rather than of a vessel. What the reference supports is that the guidance subsystem is USGES and that its cascade with a stable autopilot is stable — **not** that $V$ of the outer loop alone decreases at every instant of a real run.
+The left panel is what each $\gamma$ believes the crab angle to be, against the truth. The right panel is the Lyapunov function of §4-9-5, evaluated on the actual vessel over leg 1.
+
+Choosing $\gamma$ is choosing between two failures. At $\gamma = 0.0005$ the estimate crawls, reaching only $9.31°$ after $500$ s — too slow to finish the job. At $\gamma = 0.02$ it does the opposite, swinging between $\pm70°$ as it chases the *corner transients* instead of the current; those excursions also come within sight of breaking the $\lvert\tilde\beta\rvert < 90°$ assumption the derivation rests on. At $\gamma = 0.005$ the estimate follows with a modest lag and settles at $15.91°$ against a true $15.88°$.
+
+The right panel reports something less comfortable. $V$ starts at $5.80$, **rises to $12.94$ at $t = 17.5$ s**, and only then falls, to $0.5588$ — down $23.2\times$ from its peak, but with just $62.2\%$ of samples decreasing.
+
+That rise is not a contradiction of §4-9-6, and it is worth being precise about why. The proof gives $\dot V < 0$ *on the assumption that $\psi = \psi_d$ exactly*. Between the guidance law and the water sits a Week 3 autopilot with its own settling time, and while the heading is still catching up the error dynamics the proof describes are not yet the dynamics the vessel has.
+
+This is reported rather than smoothed away deliberately. A monotone $V$ was available — plot the kinematic subsystem on its own and it decreases everywhere — but that would have been a picture of an assumption rather than of a vessel. What the reference actually supports is that the guidance subsystem is USGES and that its cascade with a stable autopilot is stable. It does **not** claim that $V$ of the outer loop falls at every instant of a real run, and this figure is what the difference looks like.
 
 ---
 
