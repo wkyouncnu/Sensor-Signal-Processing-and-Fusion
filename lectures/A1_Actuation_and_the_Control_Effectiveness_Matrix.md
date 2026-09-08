@@ -65,6 +65,25 @@ Upon completion of this week, the learner is able to:
 
 # Part 1 · Theory
 
+### Where this appendix goes
+
+Seven sections, all of them consequences of **one rule** stated in A1-2. Read that rule carefully and the rest follows.
+
+| | Question | Sections |
+|---|---|---|
+| 1 | **Why does anything sit between a controller and a propeller?** | A1-1 |
+| 2 | **The column rule.** One thruster at $(x,y)$ pushing along $\mathbf{e}$ contributes exactly one column of $\mathbf{B}$ | A1-2 |
+| 3 | **What the rule tells you before any arithmetic.** The rank says which demands are reachable; a tilting thruster contributes two columns, not one | A1-3, A1-4 |
+| 4 | **Three results that surprise people.** A symmetric command is not a symmetric force; the reachable set is a polygon, not a box; an empty row of $\mathbf{B}$ is not an empty column of its inverse | A1-5 to A1-7 |
+
+$$
+\mathbf{b}_i = \big[\,e_x\ \ e_y\ \ x_i e_y - y_i e_x\,\big]^\top
+$$
+
+**Every $\mathbf{B}$ in this course is produced by that expression** — none is transcribed from another file. The Otter's sway row is empty because both propellers face forward and $e_y = 0$, not because someone decided it should be.
+
+This appendix is a prerequisite for Week 5 and is referenced from Weeks 2, 3 and 4 wherever a demanded force has to become a shaft speed.
+
 ## A1-1. The problem this week solves
 
 - Week 1 wrote the generalised force of the base Otter as a $3 \times 2$ matrix and moved on. That matrix was asserted. It has to be derived, for three reasons.

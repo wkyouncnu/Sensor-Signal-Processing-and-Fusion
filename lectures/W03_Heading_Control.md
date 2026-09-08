@@ -64,6 +64,21 @@ Upon completion of this week, the learner is able to:
 
 # Part 1 · Theory
 
+### Where this week goes
+
+Six sections. The week is deliberately the **same question as Week 2, asked about a different axis**, and most of it is about why the answers come out opposite.
+
+| | Question | Sections |
+|---|---|---|
+| 1 | **How is the yaw axis different from the surge axis?** It carries a free integrator, and that changes every steady-state answer | 3-1 |
+| 2 | **What law, and where does the derivative go this time?** P–D on the yaw rate, not on the error | 3-2, 3-3 |
+| 3 | **Two things that only appear on an angle.** The vessel does not travel where it points, and $+180°$ and $-180°$ are the same heading | 3-4, 3-5 |
+| 4 | **Two demands into two propellers** | 3-6 |
+
+**The structural fact the week rests on** is $\psi = \int r$. Week 2's plant had no free integrator and could not reach its setpoint at any gain; this one reaches it at every gain. Nothing was tuned to make that happen.
+
+**The debt this week leaves unpaid** is 3-4: the crab angle means the vessel does not go where it points. Week 4 has to steer around it.
+
 ## 3-1. The yaw axis, and one structural difference
 
 - The heading is not a velocity. It is the **integral** of one:

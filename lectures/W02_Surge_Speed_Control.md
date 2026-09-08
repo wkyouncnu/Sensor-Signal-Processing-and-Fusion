@@ -66,6 +66,20 @@ Upon completion of this week, the learner is able to:
 
 # Part 1 · Theory
 
+### Where this week goes
+
+Seven sections, answering three questions. Each answer creates the next question — that is the shape of the week, and it is worth holding on to.
+
+| | Question | Sections |
+|---|---|---|
+| 1 | **What does the surge axis look like to a controller?** One gain and one time constant, derived from the full model | 2-1 |
+| 2 | **What does each term of a PID buy, and what does it cost?** P leaves an error; I removes it; D is the one that behaves differently here than it will in Week 3 | 2-2 to 2-4 |
+| 3 | **What breaks when the actuator saturates?** Windup, and why an anti-windup scheme is not an optional extra | 2-5 to 2-7 |
+
+**The number the week turns on** is $K_u = 0.012894$ (m/s)/N. Once the plant is two numbers, every steady-state claim in 2-2 and 2-3 is arithmetic rather than simulation.
+
+**The one thing to carry into Week 3:** the derivative term sits beside the **mass** here, and it will sit beside the **damping** there. The term does not change; the axis does.
+
 ## 2-1. The plant, reduced to two numbers
 
 ### Where the surge equation comes from

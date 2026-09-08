@@ -71,6 +71,21 @@ Upon completion of this week, the learner is able to:
 
 # Part 1 · Theory
 
+### Where this week goes
+
+Thirteen sections is a lot to enter without a map. They answer four questions, in this order, and nothing later needs anything that has not already been answered.
+
+| | Question | Sections |
+|---|---|---|
+| 1 | **Where is the vessel, and which way is it pointing?** Two frames, three angles, and the matrix that converts between them | 1-1 to 1-5 |
+| 2 | **What makes it move?** Forces and moments, and why a surface craft needs only three of the six | 1-6, 1-7 |
+| 3 | **What exactly does `otter.m` compute?** The equation of motion term by term, the twelve states, and the propellers | 1-8 to 1-10 |
+| 4 | **Three things worth being surprised by.** Surge is first order; the hull sways with no side force; a current moves the vessel without pushing it | 1-11 to 1-13 |
+
+**The one idea the whole week rests on** is in 1-4: body velocity is not the rate of change of position. Everything from the rotation matrix to the ocean current is a consequence of that sentence.
+
+A reader short of time can go 1-1 → 1-3 → 1-4 → 1-9 and still follow the laboratory.
+
 ## 1-1. Two reference frames
 
 - Every quantity in this course belongs to exactly one of two frames. Naming which one is not pedantry; it is the difference between a model that steers and a model that does not.

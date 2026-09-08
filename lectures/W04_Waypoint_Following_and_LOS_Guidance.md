@@ -109,6 +109,21 @@ $$
 > [!note] This is a statement about the objective, not about tuning
 > No choice of autopilot gain makes `atan2` follow the path, because the path does not appear anywhere in the law. Section C measures the gap on the same mission with the same autopilot: on leg 2, `atan2` holds the line to $0.547$ m and LOS to $0.060$ m, a factor of nine. Leg 1 is excluded because the vessel starts on it, already pointing along it, so both laws read zero and the comparison is empty.
 
+### Where this week goes
+
+Eleven sections is a lot to enter without a map. They answer four questions, in this order, and each one is forced by the answer before it.
+
+| | Question | Sections |
+|---|---|---|
+| 1 | **What is the path, and where is the vessel relative to it?** Two waypoints give an angle; one rotation gives two errors | 4-2, 4-3 |
+| 2 | **What heading closes that error?** The LOS law, what $\Delta$ trades away, and when to move to the next leg | 4-4, 4-5, 4-6 |
+| 3 | **Why is that not enough?** In a current the law settles *beside* the path and stays there — with the heading error already zero | 4-7 |
+| 4 | **Two ways to fix it.** ILOS invents the missing term; ALOS estimates it | 4-8, 4-9 |
+
+Sections 4-10 and 4-11 then set the equations against the code, and point at what lies beyond straight legs.
+
+**Everything after 4-7 exists because of one number**: $\Delta\tan\beta_c$, the offset the plain law is left holding. A reader short of time can go 4-2 → 4-3 → 4-4 → 4-7 and still have the argument.
+
 ## 4-2. The path is a straight leg between two waypoints
 
 > [!important] The notation of this week, and why every symbol carries a superscript
@@ -614,11 +629,10 @@ Section G sweeps the current speed with everything else held fixed and compares 
 
 - **Meaning.** Three laws, one skeleton. Every row has the same $y_e^{\,p}$, the same arctan, the same $\pi_p$. Only the violet arrow moves.
 - **The trend, in numbers.** Settled cross-track error falls from $2.253$ m (no state) to $0.008$ m and $-0.004$ m (one state each) — **a factor of roughly 300**, from adding a single scalar.
-- **The principle, and it is the whole section in one line.** ILOS injects **inside** the arctan; ALOS injects **outside** it. Everything else follows:
+- **The principle, and it is the whole of §4-8 and §4-9 in one line.** ILOS injects **inside** the arctan; ALOS injects **outside** it. Everything else follows:
   - A term inside the arctan is added to $y_e^{\,p}$ before the nonlinearity sees it, so the law **cannot distinguish it from real cross-track error**. ILOS therefore behaves as though the vessel were $2.25$ m further out than it is.
   - A term outside the arctan is added to $\pi_p$'s side of the sum, so the law **cannot distinguish it from a rotated path**. ALOS therefore behaves as though it were following a line tilted by the drift it has estimated.
 - **Why this explains the unit puzzle of §4-8-3.** A quantity added to $y_e^{\,p}$ must be a length, which is why $\kappa y_{int}$ is in metres and $\kappa$ carries the odd unit m/s. A quantity added to an angle must be an angle, which is why $\hat\beta$ is simply in radians. **The units are not a convention; they are forced by where the term enters.**
-- **What separates the two in practice.** Nothing in accuracy on this mission. The difference is in the right-hand column: ILOS's state is a number, ALOS's state is the crab angle.
 
 ## 4-8. ILOS — integral line of sight, derived
 
