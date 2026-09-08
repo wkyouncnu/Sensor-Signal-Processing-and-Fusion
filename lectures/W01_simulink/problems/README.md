@@ -173,10 +173,7 @@ $$
 
 **The point.** A current is a **velocity, not a force**. Every hydrodynamic term is computed from $\boldsymbol\nu_r$, the velocity through the water, so the forces on the hull do not change. The position integrates $\boldsymbol\nu$, so the vessel is carried along by the water. That single asymmetry is why a current moves a vessel without pushing it.
 
-Two things are worth noticing beyond the numbers:
-
-- The predicted drift of $25.9^\circ$ and the measured $25.81^\circ$ agree, but the **ground speed is lower** than the naive vector sum of $1.144$ m/s. The hull weathervanes about $4^\circ$ into the flow, which turns part of the current from beam-on to head-on.
-- **The vessel turns with no yaw command at all.** Cross-flow drag acts on $v_r$, and its line of action does not pass through the origin, so it makes a yaw moment. Nothing in the model was asked to do this.
+The predicted drift of $25.9°$ and the measured $25.81°$ agree, but the ground speed comes out below the naive vector sum of $1.144$ m/s: the hull weathervanes about $4°$ into the flow with no yaw command anywhere in the model, which turns part of the current from beam-on to head-on.
 
 ---
 

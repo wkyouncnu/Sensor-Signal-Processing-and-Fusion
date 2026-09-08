@@ -5,7 +5,7 @@
 %
 %  Nothing reverses. A turn is a small DIFFERENCE between two propellers that
 %  both run ahead, because N = y_p (T_left - T_right).
-%  Produces img/W01_result_states.png and img/W01_result_track.png
+%  Produces img/W01_result_track.png
 
 clear V cfg y_p o y tp PH seg i k u v r nL nR dpsi N_cmd Ymax nn kP kS f Ls b ax
 here = fileparts(mfilename('fullpath'));
@@ -90,20 +90,17 @@ fprintf(['\n    Y is identically zero. Both propellers are bolted to the hull\n'
          '    any side force. It is the crab angle, and Week 3 has to steer\n' ...
          '    around it.\n']);
 
-%% ---- figure 1: the states, drawn by the model's own plotting function ---
-f = W01_plot({o}, {sprintf('n0 = %g, dn = %g', V.n0, V.dn)}, ...
-             'W01 D — straight, port, straight, starboard, straight');
-%  Phase boundaries on every time axis. HandleVisibility off, or the four
-%  lines join the legend as data1..data4.
-for ax = findobj(f, 'Type','axes').'
-    if strcmp(get(get(ax,'XLabel'),'String'), 'time [s]')
-        for b = tp, xline(ax, b, 'Color',[0.75 0.75 0.75], 'HandleVisibility','off'); end
-        xlim(ax, [0 V.T_final]);
-    end
-end
-exportgraphics(f, fullfile(here,'img','W01_result_states.png'), 'Resolution', 150);
+%  WITHDRAWN 2026-09-08, at the lecturer's request: the five-panel state
+%  figure that used to be saved here as img/W01_result_states.png.
+%
+%  It drew u, v, r, psi and the track — and the live dashboard inside
+%  W01_openloop.slx now draws exactly those six signals WHILE the run is in
+%  progress. Saving them a second time afterwards is the same picture twice.
+%  See gnc-lecture-vault/references/standing-orders.md §9-8.
+%
+%  `W01_plot.m` is untouched and still in use: it is the model's StopFcn.
 
-%% ---- figure 2: where it went, and where it pointed ---------------------
+%% ---- the figure: where it went, and where it pointed -------------------
 %  Two panels. The track answers "where did it go", the angle panel answers
 %  "where was it pointing while it went there" — which is the whole reason
 %  the hull is drawn on the track rather than a bare line.
@@ -135,7 +132,7 @@ title({'where it points, and where it goes', ...
 sgtitle('W01 D — where the vessel went, and where it pointed', 'FontWeight','bold');
 exportgraphics(f, fullfile(here,'img','W01_result_track.png'), 'Resolution', 150);
 
-fprintf('\n  figures -> img/W01_result_states.png, img/W01_result_track.png\n\n');
+fprintf('\n  figure -> img/W01_result_track.png\n\n');
 
 
 % =========================================================================

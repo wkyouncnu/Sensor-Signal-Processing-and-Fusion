@@ -21,7 +21,7 @@ varargin = {};   % kept so the override loop below still works unchanged
 %   Produces
 %     img/W02_I_pseudo_derivative.png              the block diagram
 %     img/W02_result_pd.png           the four rows: output, actuator, D term
-%     img/W02_result_pd_N.png         the trade, swept over N
+%     (the N sweep prints a table; its figure was withdrawn — see below)
 
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));
@@ -149,26 +149,19 @@ f = W02_pd_plot({R}, LBL, V, ...
     'W02 section I — one derivative, taken four ways, against the same noise');
 exportgraphics(f, img('W02_result_pd.png'), 'Resolution', 150);
 
-f = lab_fig('W02  choosing N', 1000, 400);
-subplot(1,2,1);
-semilogx(NS, sw(:,3), 'o-', 'Color', COL(3,:), 'MarkerFaceColor', COL(3,:));
-xlabel('N  filter coefficient'); ylabel('RMS(u) in the quiet state');
-title({'what a large N costs', 'the actuator works harder for no benefit'});
-grid on;
-subplot(1,2,2);
-semilogx(NS, sw(:,1), 'o-', 'Color', COL(2,:), 'MarkerFaceColor', COL(2,:));
-hold on;
-plot(NS(kb), sw(kb,1), 'p', 'MarkerSize', 14, ...
-     'MarkerFaceColor', COL(1,:), 'MarkerEdgeColor', COL(1,:));
-text(NS(kb), sw(kb,1), sprintf('  best, N = %g', NS(kb)), 'Color', COL(1,:));
-xlabel('N  filter coefficient'); ylabel('overshoot [%]');
-title({'what a small N costs', 'below the best N the derivative arrives late'});
-grid on;
-sgtitle(sprintf(['W02 section I — above N \\approx %g the response stops improving ' ...
-                 'and only the noise grows'], NS(kb)), 'FontWeight','bold');
-exportgraphics(f, img('W02_result_pd_N.png'), 'Resolution', 150);
+%  WITHDRAWN 2026-09-08, at the lecturer's request: the two-panel N sweep
+%  figure that used to be saved here as img/W02_result_pd_N.png.
+%
+%  The section makes ONE point — an ideal derivative amplifies measurement
+%  noise without bound, a filtered one does not — and the figure above makes
+%  it. Where to put N is a rule, not a second picture; the lecture now states
+%  it in one callout backed by the sweep TABLE printed above.
+%  See gnc-lecture-vault/references/standing-orders.md §9-8.
+%
+%  The sweep LOOP is kept: it is where the numbers in that callout come from,
+%  and measurement provenance is not what §9-8 asks to cut.
 
-fprintf('\n  figures written to %s\n\n', fullfile(here,'img'));
+fprintf('\n  figure written to %s\n\n', img('W02_result_pd.png'));
 %  (the old function-closing end was here; this file is a script now)
 
 % =========================================================================

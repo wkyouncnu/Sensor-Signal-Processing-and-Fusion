@@ -529,8 +529,8 @@ Opening the folder shows about fifteen files. Only the ones in this table are ev
 | E | `W02_E_integral_and_derivative.m` | E | `img/W02_result_PI.png`, `img/W02_result_D.png` |
 | F | `W02_F_windup.m` | F | `img/W02_result_windup.png` |
 | G | `W02_G_block_vs_handbuilt.m` | G | `img/W02_result_block.png` |
-| H | `W02_H_build_antiwindup.m` then `W02_H_antiwindup_run.m` | H | `img/W02_result_aw_principle.png`, `img/W02_result_aw_Kb.png` |
-| I | `W02_I_build_pseudo_derivative.m` then `W02_I_pseudo_derivative_run.m` | I | `img/W02_result_pd.png`, `img/W02_result_pd_N.png` |
+| H | `W02_H_build_antiwindup.m` then `W02_H_antiwindup_run.m` | H | `img/W02_result_aw_principle.png` |
+| I | `W02_I_build_pseudo_derivative.m` then `W02_I_pseudo_derivative_run.m` | I | `img/W02_result_pd.png` |
 
 - **One script per section.** Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
 - Sections H and I have a **build** script and a **run** script, because each adds a model of its own. Run the build once, then the run script as often as needed.
@@ -862,7 +862,7 @@ The same two runs, with `pid_mode = 0` and `pid_mode = 1`:
 > |---|---|
 > | script | `W02_H_antiwindup_run.m` |
 > | model | `W02_H_antiwindup.slx` |
-> | figure | `img/W02_result_aw_principle.png and img/W02_result_aw_Kb.png` |
+> | figure | `img/W02_result_aw_principle.png` |
 >
 > ```matlab
 > W02_0_setup                    % once per session
@@ -930,49 +930,15 @@ W02_H_antiwindup_run
 
 **What the figure says**
 
-- **Meaning.** The plant is $1/(s+1)$ with the actuator limited to $\pm 1$, chosen so that nothing in the picture belongs to a boat. Four integrator treatments, four panels: what the plant did, what the actuator received, what the integrator held, and what the error was doing all along.
-- **Trend, in numbers.** For the first 14 s **all four curves coincide in three of the four panels**. The output reaches $y = 1$ and stops there, because $y_{\max} = K u_{\max} = 1$ and the reference asked for 2. The control signal sits flat on the limit. The error sits flat at $+1$. Only the bottom-left panel separates them, and it does so by a factor of $49$: the unprotected integrator climbs to $60.00$ while back-calculation holds $1.225$.
-- **Principle.** An integrator integrates. While the reference is unreachable the error cannot change sign, so the integral grows without bound — and it grows into a quantity the actuator cannot use, since the largest demand the limit can accept corresponds to an integrator value of $1.0$. **The trouble is not that the integrator misbehaved; it is that the loop was open and the integrator was not told.**
-- **Why the bottom-left panel is drawn on a log scale.** Linearly, the back-calculation curve would be a flat line against the axis and the reader would see one curve and a wall. The log scale shows both, and shows that the protected integrator is not merely smaller but **stays in the range the actuator can act on** for the whole run.
-- **What separates the four schemes, and when.** Nothing, until $t = 15$ s. When the reference becomes reachable the unprotected loop must first unwind 30 s of stored demand and takes $32.04$ s to settle; the others take about $2.5$ s. **A scheme that is invisible for 14 s and decisive at second 15 cannot be evaluated on the response to a reachable setpoint** — which is why this experiment commands an impossible one.
+- **The point of the section.** For the first 14 s all four curves coincide in three of the four panels: the output holds at $y = 1$, the control sits flat on the limit, the error sits flat at $+1$. Only the integrator panel separates them, and it does so by a factor of $49$ — $60.00$ unprotected against $1.225$ with back-calculation.
+- **Principle.** An integrator integrates. While the reference is unreachable the error cannot change sign, so the integral grows without bound, into a quantity the actuator cannot use. **The trouble is not that the integrator misbehaved; it is that the loop was open and the integrator was not told.**
+- The panel is drawn on a log scale because linearly the protected curve would lie flat against the axis. What it shows is not merely a smaller number but an integrator that **stays in the range the actuator can act on** for the whole run.
+- A scheme invisible for 14 s and decisive at second 15 cannot be judged on a reachable setpoint, which is why the reference here is impossible. At $t = 15$ s the unprotected loop needs $32.04$ s to settle; the others need about $2.5$ s.
 
-### What the back-calculation gain does
-
-| $K_{\text{aw}}$ | recovery [s] | peak integrator | undershoot after [%] |
-|---|---|---|---|
-| 0.2 | $7.845$ | $18.308$ | $4.60$ |
-| 0.5 | $4.680$ | $7.199$ | $4.60$ |
-| 1 | $3.490$ | $3.389$ | $4.60$ |
-| 2 | $2.645$ | $1.225$ | $7.02$ |
-| **5** | **$2.375$** | $0.538$ | $37.84$ |
-| 20 | $3.330$ | $0.548$ | $48.25$ |
-| 100 | $3.170$ | $0.544$ | $43.96$ |
-
-- clamping, for comparison: recovery $2.380$ s
-
-![The back-calculation gain](W02_simulink/img/W02_result_aw_Kb.png)
-
-**Reading the figure**
-
-| Element | Meaning |
-|---|---|
-| left panel | the moment of leaving saturation, at seven values of $K_{\text{aw}}$, with clamping dashed |
-| right panel, left axis | recovery time, with a minimum near $K_{\text{aw}} = 5$ |
-| right panel, right axis | the peak integrator state, falling and then flattening |
-
-- There is a **minimum**, near $K_{\text{aw}} = 5$. Below it the integrator is not pulled back fast enough; above it the loop leaves saturation abruptly and undershoots, from $4.60\%$ to $43.96\%$.
-- Raising $K_{\text{aw}}$ does **not** turn back-calculation into clamping. The two remain different at every gain, and the reason is §2-6: clamping stops the integrator wherever it happens to be, while back-calculation steers it to the value that makes the demand equal the limit. They are different fixed points, not two ends of one scale.
-
-**What the figure says**
-
-- **Meaning.** The left panel zooms in on the one moment that matters — the twelve seconds around leaving saturation — for seven back-calculation gains and, dashed, for clamping. The right panel reduces each of those runs to two numbers.
-- **Trend, in numbers.** The two curves in the right panel do **not** move together. The peak integrator state falls steeply and then flattens, from $18.3$ at $K_{\text{aw}} = 0.2$ to about $0.54$ at $K_{\text{aw}} = 5$ and no lower afterwards. Recovery time falls too, from $7.845$ to $2.375$ s, and then **turns and rises again** to $3.33$ s. In the left panel the reason is visible: the high-gain runs dive to $y \approx 0.27$ before recovering, an undershoot that grows from $4.60\%$ to $43.96\%$.
-- **Principle.** Back-calculation feeds the excess demand back into the integrator through $K_{\text{aw}}$. A larger gain empties the integrator faster, which shortens the recovery — until the emptying is so abrupt that the loop leaves the limit with a jolt and has to recover from that instead. **The minimum near $K_{\text{aw}} = 5$ is where those two effects cross.**
-- **Why the dotted clamping line never becomes an asymptote.** If clamping were the $K_{\text{aw}} \to \infty$ limit of back-calculation, the blue curve would approach the dotted line from above and stay there. It does not: it dips **below** clamping near $K_{\text{aw}} = 5$ and comes back up. The two schemes drive the integrator to different values, so no gain makes one into the other.
-- **What changes with the situation.** The rule of thumb $K_{\text{aw}} = 1/\tau$ puts this plant at $K_{\text{aw}} = 1$, giving $3.49$ s against a best available $2.375$ s — a reasonable default and not an optimum. The sweep costs one line to run, and on a plant where saturation is routine it is worth running rather than guessing.
-
-> [!important] The rule of thumb, and its limit
-> $K_{\text{aw}} = 1/\tau$ is the usual starting point, and on this plant $\tau = 1$ s gives $K_{\text{aw}} = 1$ — a recovery of $3.49$ s against the best available $2.375$ s. It is a reasonable default and it is not optimal. The sweep above takes one line to run, and the result is a genuine trade-off between how fast the integrator is emptied and how violently the loop leaves the limit.
+> [!important] Choosing $K_{\text{aw}}$
+> The usual starting point is $K_{\text{aw}} = 1/\tau$, which on this plant is $1$ and gives a $3.49$ s recovery. Sweeping it finds a shallow minimum near $K_{\text{aw}} = 5$ at $2.375$ s: below that the integrator is not emptied fast enough, above it the loop leaves the limit so abruptly that undershoot grows from $4.60\%$ to $43.96\%$. The rule of thumb is a reasonable default and it is not the optimum.
+>
+> Raising $K_{\text{aw}}$ does **not** turn back-calculation into clamping. Clamping stops the integrator wherever it happens to be; back-calculation steers it to the value that makes the demand equal the limit. Those are different fixed points, not two ends of one scale — which is why the swept curve dips *below* clamping's $2.380$ s and comes back up rather than approaching it as an asymptote.
 
 ## I. The pseudo-derivative, on a plant that wants one (25 min)
 
@@ -982,7 +948,7 @@ W02_H_antiwindup_run
 > |---|---|
 > | script | `W02_I_pseudo_derivative_run.m` |
 > | model | `W02_I_pseudo_derivative.slx` |
-> | figure | `img/W02_result_pd.png and img/W02_result_pd_N.png` |
+> | figure | `img/W02_result_pd.png` |
 >
 > ```matlab
 > W02_0_setup                    % once per session
@@ -1024,7 +990,7 @@ W02_I_pseudo_derivative_run
 > [!important] One noise source, not four
 > Four independent noise generators would make the four control signals differ for two reasons at once, and the comparison would prove nothing. Sharing one realisation is what licenses the claim that the differences below are caused by the derivative implementation alone.
 
-### ① The four rows, with noise
+### Results
 
 | Derivative | overshoot | settling | RMS($u$) quiet | max $\lvert u \rvert$ |
 |---|---|---|---|---|
@@ -1046,64 +1012,17 @@ W02_I_pseudo_derivative_run
 | bottom left | the quiet state, **with the ideal row omitted** so the other three are visible at all |
 | bottom right | the derivative term alone, for the two filtered rows |
 
-- The ideal derivative does its control job perfectly and destroys the actuator doing it. Its peak demand is $106$ — **twenty-six times** the steady demand — and all of it is noise.
-
 **What the figure says**
 
-- **Meaning.** Four controllers, one plant, one shared realisation of the measurement noise. The left column is the useful signal; the right column is what the actuator was asked to do while producing it.
-- **Trend, in numbers.** The top-left panel says the derivative is genuinely wanted here: row 1 rings for the whole 20 s and overshoots $73.2\%$, while the other three settle in about 3 s at under $10\%$. **On that panel the three derivative rows are almost indistinguishable.** The top-right panel says they are nothing alike: the ideal derivative swings $\pm 106$ against a steady demand of 4, and quiet-state RMS runs $0.18$, $8.75$, $1.68$, $0.23$ across the four rows — a factor of 37 between the ideal and the slower filter.
-- **Principle.** Differentiation has gain $\lvert j\omega\rvert$, which grows without bound. It therefore finds the fastest thing in the measurement — the noise — and multiplies it by the largest number available. The pseudo-derivative $N s/(s+N)$ has the same gain below $N$ and levels off at $N$ above it, so **it is the same operator with a ceiling on how much it may amplify.**
-- **Why the bottom-left panel omits the ideal row.** With it included, the other three collapse onto the axis and nothing can be read. Leaving it out is not hiding the result; the number $\pm 96$ is printed on the panel, and the omission is what makes the remaining comparison visible at all.
-- **What separates $N = 100$ from $N = 10$.** The bottom-right panel isolates the derivative term itself: the fast filter passes eight times the noise the slow one does, for a response that is $2.8$ points *worse* in overshoot. Above a certain $N$ nothing is bought and the noise is charged for anyway — which is what the sweep in ③ turns into a rule.
+- **The point of the section.** In the top-left panel the three derivative rows are almost indistinguishable — the control job is done equally well by all of them. In the top-right panel they are nothing alike: the ideal derivative swings $\pm 106$ against a steady demand of $4$, **twenty-six times** the useful value, and all of it is noise.
+- **Principle.** Differentiation has gain $\lvert j\omega\rvert$, which grows without bound, so it finds the fastest thing in the measurement — the noise — and multiplies it by the largest number available. The pseudo-derivative $N s/(s+N)$ has the same gain below $N$ and levels off above it: **the same operator, with a ceiling on how much it may amplify.**
+- The bottom-left panel omits the ideal row deliberately; with it included the other three collapse onto the axis. Its peak, $\pm 96$, is printed on the panel instead.
+- Repeating the four runs with the noise generator switched off collapses every quiet-state RMS to below $2 \times 10^{-6}$, while the overshoots move by less than $0.1$ point. The factor of $37$ above **was noise and nothing else**, not filter phase lag.
 
-### ② The same four rows with the noise switched off
-
-- This is the control experiment. If the rows differed here, the difference would be the filter's phase lag rather than noise amplification, and the argument would be about something else.
-
-| Derivative | overshoot | settling | RMS($u$) quiet |
-|---|---|---|---|
-| P only | $72.92\%$ | $19.00$ s | $0.176501$ |
-| ideal, $K_d s$ | $9.47\%$ | $2.97$ s | $0.000002$ |
-| pseudo, $N = 100$ | $9.13\%$ | $2.95$ s | $0.000001$ |
-| pseudo, $N = 10$ | $6.19\%$ | $2.61$ s | $0.000000$ |
-
-- Every RMS collapses to zero. With no noise there is nothing for the derivative to amplify, so the factor of $37$ between rows 2 and 4 in ① **was noise and nothing else**.
-- The response changes by only $3.3$ points of overshoot across rows 2 to 4, and the *slower* filter is the best of the three. Filtering the derivative is not a concession made under protest.
-
-### ③ Sweeping $N$
-
-| $N$ | overshoot | settling | RMS($u$) quiet |
-|---|---|---|---|
-| 2 | $14.72\%$ | $5.15$ s | $0.0800$ |
-| **5** | $\mathbf{4.77\%}$ | $1.99$ s | $0.1389$ |
-| 10 | $6.28\%$ | $2.63$ s | $0.2348$ |
-| 20 | $7.78\%$ | $2.86$ s | $0.4212$ |
-| 50 | $8.77\%$ | $2.95$ s | $0.9370$ |
-| 100 | $9.10\%$ | $2.97$ s | $1.6780$ |
-| 200 | $9.26\%$ | $2.98$ s | $2.8691$ |
-| 500 | $9.37\%$ | $2.99$ s | $5.5044$ |
-
-![Choosing N](W02_simulink/img/W02_result_pd_N.png)
-
-**Reading the figure**
-
-| Element | Meaning |
-|---|---|
-| left panel | actuator noise against $N$, on a logarithmic $N$ axis — it never stops growing |
-| right panel | overshoot against $N$, with the measured best value marked |
-
-**What the figure says**
-
-- **Meaning.** The filter coefficient is swept over more than two decades and each run is reduced to two numbers: what it cost the actuator, and what it bought the response. The two panels are the price and the goods.
-- **Trend, in numbers.** The left panel rises without ever turning: RMS($u$) climbs from $0.08$ at $N = 2$ to $5.50$ at $N = 500$, a factor of 69, and the curve is steepest at the right-hand end. The right panel has a **minimum**: overshoot falls from $14.72\%$ at $N = 2$ to $4.77\%$ at $N = 5$, then rises again to $8.77\%$ by $N = 50$ and **flattens** — from $N = 100$ to $N = 500$ it moves by $0.3$ points.
-- **Principle.** Below the closed-loop bandwidth the filter delays the derivative and damping is lost; above it, the filter is no longer shaping the response at all and is only deciding how much sensor noise reaches the actuator. **Those are two different mechanisms, and only one of them is a trade-off.**
-- **Why the flattening is the important part.** A reader who sees two opposing curves concludes there is a trade to be tuned. There is — but only left of $N \approx 5$. Everywhere to the right the goods have stopped improving while the price keeps climbing, so **large $N$ is not a cautious default; it is a purchase of nothing.**
-- **What changes with the situation.** The best $N$ tracks the closed-loop bandwidth, here $\omega_n = \sqrt{K_p} = 2.0$ rad/s against a measured optimum of $5$. Retuning $K_p$ moves the minimum; the shape of both curves does not change. That is what makes "place $N$ just above the bandwidth" a rule rather than a coincidence of this plant.
-
-> [!important] Two regimes, not one trade-off
-> The two columns oppose each other only **below** $N \approx 5$. Above it, overshoot has flattened — from $N = 100$ to $N = 500$ it changes by $0.3$ points — while RMS($u$) grows by a factor of $3$. Large $N$ is not a safe default that merely costs a little noise; above the bandwidth it buys **nothing at all** and charges for it.
+> [!important] Where to put $N$
+> Sweeping $N$ from $2$ to $500$ shows two different mechanisms, not one trade-off. Below $N \approx 5$ the filter is still shaping the response and overshoot improves with $N$, from $14.72\%$ to $4.77\%$. Above it the response has flattened — from $N = 100$ to $N = 500$ overshoot moves by $0.3$ points — while actuator noise keeps growing, from $1.68$ to $5.50$.
 >
-> The closed-loop bandwidth here is $\omega_n = \sqrt{K_p} = 2.0$ rad/s, and the measured best $N$ is $5$ — just above it. **Place $N$ just above the closed-loop bandwidth and stop.**
+> Large $N$ is therefore not a cautious default; above the bandwidth it buys **nothing** and charges for it. The closed-loop bandwidth here is $\omega_n = \sqrt{K_p} = 2.0$ rad/s and the measured best $N$ is $5$. **Place $N$ just above the closed-loop bandwidth and stop.**
 
 ### Why this matters back on the vessel
 

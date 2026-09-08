@@ -554,23 +554,17 @@ $K_p = 100$, $K_d = 0$, four step sizes:
 | right panel, left axis | the measured overshoot, falling with step size |
 | right panel, right axis | the damping multiplier $1 + 10\lvert r\rvert$ at the peak rate of each run |
 
-- A **larger** step overshoots **less**. No linear model can produce this, and normalising the responses makes it obvious: they do not superimpose.
-- The mechanism is the yaw damping of `otter.m`:
+**What the figure says**
+
+- **The point of the section.** A **larger** step overshoots **less** — $11.74\%$ at $5°$ against $0.10\%$ at $120°$, from a controller that was never retuned. The left panel is the proof: after normalising, any linear system must give one curve, and these four are visibly different. **Superposition fails, and that is the definition of a nonlinear plant.**
+- **The mechanism** is the yaw damping of `otter.m`, which grows with how fast the vessel is already turning, so a big turn damps itself:
 
 $$
 N_h = N_r\left(1 + 10|r|\right)r .
 $$
 
-- At the peak rate of the $120°$ step, $19.505$ deg/s $= 0.3404$ rad/s, the damping is $4.40$ times its small-signal value. The design equations of §3-3 are therefore a **small-signal** result: accurate for the $5°$ step and conservative for the large ones.
-- The peak rate is the same for the $60°$ and $120°$ steps. Both saturate the propellers, so beyond a certain step size the vessel turns as fast as it can and no faster.
-
-**What the figure says**
-
-- **Meaning.** Four commands of different size, answered by one unchanged controller. The left panel removes the size difference by normalising, so the only thing left to compare is the **shape** of the response. The right panel puts the measured overshoot against the physical quantity that explains it.
-- **Trend, in numbers.** Overshoot falls from $11.74\%$ at $5°$ to $0.10\%$ at $120°$ — a factor of 117, from a controller that was never retuned. Over the same range the damping multiplier $1 + 10\lvert r\rvert$ climbs from $1.67$ to $4.40$. The two curves in the right panel are mirror images, which is the claim being made: **the extra damping is the reason for the missing overshoot.**
-- **Principle.** `otter.m` models yaw damping as $N_h = N_r(1 + 10\lvert r\rvert)r$. Damping therefore grows with how fast the vessel is already turning, so a big turn damps itself. A linear plant has no such term, and the four normalised curves would lie exactly on top of one another.
-- **Why the left panel is the proof rather than the right.** Normalisation is what makes the nonlinearity visible: after dividing by the step, any linear system must give one curve. These four are visibly different — the $5°$ response overshoots to $1.12$ while the $120°$ one never exceeds $1.00$. **Superposition fails, and that is the definition of a nonlinear plant.**
-- **What changes with the situation.** The $60°$ and $120°$ runs share a peak rate of $19.505$ deg/s because both saturate the propellers; past that point the vessel turns as fast as it can and the damping multiplier stops rising too, which is why the orange curve flattens. The practical consequence is that the design of §3-3 is a **small-signal** result: honest for small corrections, and conservative — never optimistic — for large ones.
+- At the peak rate of the $120°$ step, $19.505$ deg/s $= 0.3404$ rad/s, the multiplier $1 + 10\lvert r\rvert$ is $4.40$ against $1.67$ for the $5°$ step. In the right panel the overshoot curve and the damping curve are mirror images, which is the claim being made.
+- The $60°$ and $120°$ runs share a peak rate because both saturate the propellers. Beyond that the vessel turns as fast as it can, and the design equations of §3-3 stand as a **small-signal** result: accurate for small corrections and conservative — never optimistic — for large ones.
 
 ---
 

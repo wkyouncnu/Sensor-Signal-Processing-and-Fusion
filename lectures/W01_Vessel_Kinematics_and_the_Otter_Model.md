@@ -1039,14 +1039,14 @@ Expected output:
 | 0 | `W01_0_setup.m` | A | the base workspace, so the model can be run from Simulink |
 | 1 | `W01_1_build_openloop.m` | B | `W01_openloop.slx` and `img/W01_openloop.png` |
 | C | `W01_C_terminal_speed.m` | C | `img/W01_result_speed.png` |
-| D | `W01_D_the_manoeuvre.m` | D | `img/W01_result_states.png`, `img/W01_result_track.png` |
+| D | `W01_D_the_manoeuvre.m` | D | `img/W01_result_track.png` |
 | E | `W01_E_build_current.m` | E | `W01_current.slx` and `img/W01_current.png` |
 | E | `W01_E_current_run.m` | E | `img/W01_result_current.png` |
 
 - Each laboratory section is one script. Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
 - Sections C, D and E build the model they need if it is missing, so any one of them can be run first.
 - The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_cur_plot.m`, `W01_animate.m`, `W01c_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
-- `W01_frames.m` and `W01_cur_plot.m` are not called by anything. They drew two figures that were withdrawn for repeating what the surrounding text already said; the files are kept so the figures can be brought back without rewriting them.
+- `W01_frames.m` is not called by anything. It drew a figure that was withdrawn for repeating what §1-4 already worked through with the same numbers; the file is kept so the figure can be brought back without rewriting it. The same applies to the three-panel and drift-rose drawings inside `W01_cur_plot.m` — that file is still the current model's `StopFcn`, but §E no longer calls those two drawings.
 - The laboratory of the second hour lives in `W01_simulink/problems/` and `solutions/`, and is separate from these.
 
 ### Step 3 — restore a model if it is broken
@@ -1211,7 +1211,7 @@ W01_D_the_manoeuvre
 ```
 
 > [!note] To produce every figure in this section
-> `W01_D_the_manoeuvre.m` runs `W01_openloop.slx` once for the full 150 s, prints both tables below, and writes `img/W01_result_states.png` and `img/W01_result_track.png`.
+> `W01_D_the_manoeuvre.m` runs `W01_openloop.slx` once for the full 150 s, prints the table below, and writes `img/W01_result_track.png`. The three body velocities are not plotted again here — the live dashboard inside the model draws $u$, $v$, $r$, $x$, $y$ and $\psi$ while the run is in progress.
 
 - Each row is the mean over the **last fifth of its phase**, after the transient at the phase boundary has decayed. Averaging over a whole phase would mix the transient into the steady number.
 
@@ -1226,82 +1226,27 @@ W01_D_the_manoeuvre
 - Heading change: **−70.2°** in the port turn, **+70.6°** in the starboard turn. The two differ by $0.41°$, so the hull is symmetric about its centreline and nothing in `otter.m` favours one side.
 - The commanded yaw moment in the starboard turn is $N = +3.676$ N·m. The slower propeller still pushes **ahead** at $35.37$ N while the faster one pushes at $44.68$ N.
 
-![Body velocities and heading](W01_simulink/img/W01_result_states.png)
-
-**Reading the figure**
-
-| Element | Meaning |
-|---|---|
-| grey vertical lines | the four phase boundaries at 30, 60, 90 and 120 s |
-| top left | surge velocity. It dips by only $0.7\%$ in the turns — the manoeuvre barely costs speed |
-| top centre | sway velocity. Zero on the straight legs, and **opposite in sign** in the two turns |
-| top right | yaw rate. Note the overshoot at each phase change, then the settled value |
-| bottom left | heading, **unwrapped**. It never wraps here because the turns are small |
-| bottom right | the track, with the hull drawn at intervals; the bow is the triangular end and the line leaving it is the heading |
-
-**What the figure says**
-
-- **Meaning.** Five panels, one run. The top row is what the vessel is *doing* — the three body velocities. The bottom row is where that puts it: the heading over time, and the path over the ground.
-- **Trend, in numbers.** Surge climbs to $1.0286$ m/s in about 8 s and then never moves again: the dips at 30 s and 90 s are $0.7\%$ and are invisible at this scale, which is the point. Sway steps to $+0.127$ m/s the instant the port turn begins, holds while the turn holds, and steps to $-0.127$ m/s in the starboard turn. Yaw rate does the same but **overshoots first** — it spikes to about $2.8$ deg/s at each phase change before settling at $2.29$.
-- **Principle.** The command is a step, and the vessel's yaw axis is second order, so $r$ cannot follow a step exactly: it overshoots and settles. Surge is first order and much more heavily damped, so it shows no overshoot at all. **The three panels have different shapes because the three axes have different dynamics, not because they were driven differently.**
-- **What separates the two turns.** Everything is antisymmetric. Sway and yaw rate reverse sign; surge does not change at all. That is the signature of a differential command on a hull symmetric about its centreline: the two turns are the same manoeuvre mirrored, and the $0.41°$ difference in heading change is the only asymmetry in the run.
-- **What changes with the situation.** Raising `dn` in `W01_0_setup.m` raises $r$ and $v$ proportionally and leaves $u$ almost alone, until `dn` grows large enough that one propeller approaches zero. The straight legs exist so the transient at each boundary has room to die before the next command arrives; shortening them mixes two transients and the steady numbers in the table stop meaning anything.
-
 ![Track, heading and course](W01_simulink/img/W01_result_track.png)
 
 **Reading the figure**
 
 | Element | Meaning |
 |---|---|
-| left panel, blue | the straight legs |
-| left panel, orange | the two turns |
-| left panel, outlines | the hull at 3× true size, with its heading line, drawn every few metres |
+| left panel, blue / orange | the straight legs / the two turns |
+| left panel, outlines | the hull at 3× true size, with its heading line |
 | right panel, blue | heading $\psi$ — where the vessel **points** |
 | right panel, orange | course $\chi = \psi + \beta$ — where it actually **goes** |
 | right panel, green | the crab angle $\beta$, the gap between the two |
 
 **What the figure says**
 
-- **Meaning.** The left panel answers *where did it go*; the right panel answers *where was it pointing while it went there*. The two questions have different answers, and that gap is the whole reason the hull is drawn on the track rather than a bare line.
-- **Trend, in numbers.** The track runs due north for 30 s, swings about 62 m to the west during the port turn, and straightens again — a shallow S. On the right, heading and course leave zero together at 30 s but **separate immediately**: $\psi$ reaches $-71°$ while $\chi$ stops at $-64°$, a gap of $7.05°$ held for the whole turn. In the starboard turn the gap reappears with the opposite sign.
-- **Principle.** $\chi = \psi + \beta$ with $\beta = \operatorname{atan2}(v, u)$. A turning vessel has $v \neq 0$, so it moves at an angle to its own centreline. **Heading is not course, and the difference is not an error** — it is the crab angle, and it is $7°$ here.
-- **Where the difference shows up in each panel.** On the left it is visible only because the hulls are drawn: on the turning legs the silhouettes point slightly inside the curve they are tracing. On the right it is the green line, which is flat at zero on every straight leg and steps to $\pm 7°$ the moment a turn starts.
-- **What changes with the situation.** $\beta$ scales with the turn rate, so a larger `dn` widens the gap and a straight run closes it. Week 3 has to steer around this: a heading controller that reaches its commanded $\psi$ still leaves the vessel travelling $7°$ off, and Week 4's line-of-sight guidance is where that finally has to be paid for.
+- **The point of the section.** The left panel answers *where did it go*, the right panel *where was it pointing while it went there*. The two answers differ by $7.05°$ throughout each turn, and that gap is why the hull is drawn on the track rather than a bare line.
+- $\chi = \psi + \beta$ with $\beta = \operatorname{atan2}(v, u) = \operatorname{atan2}(0.1264,\ 1.0218) = +7.05°$. A turning vessel has $v \neq 0$, so it moves at an angle to its own centreline. **Heading is not course, and the difference is not an error.**
+- The turn is nearly free: surge falls from $1.0286$ to $1.0218$ m/s, $0.7\%$. Because $n\lvert n\rvert$ is convex, what the slowed propeller loses the other more than makes up — this is why a differential turn is the cheap way to steer a twin-screw craft.
+- Raising `dn` in `W01_0_setup.m` widens the gap, because $\beta$ scales with turn rate. Week 3 §3-4 has to steer around it, and Week 4's line-of-sight guidance is where it is finally paid for.
 
-### Three observations
-
-**① The turn costs almost no speed.**
-
-- Surge falls from $1.0286$ to $1.0218$ m/s, a loss of $0.7\%$. The differential $dn = 3.5$ rad/s is small against $n_0 = 60$, and the total thrust $T_L + T_R$ is nearly unchanged because $n|n|$ is convex: what one propeller loses the other more than makes up.
-- This is why a differential turn is the cheap way to steer a twin-screw craft, and why the alternative — reversing one propeller — is reserved for manoeuvring at rest.
-
-**② The sway force is zero and the sway velocity is not.**
-
-| | value |
-|---|---|
-| max $\lvert Y \rvert$ over every command in the manoeuvre | $0.0 \times 10^{0}$ N |
-| mean $v$ in the port turn | $+0.1264$ m/s |
-| mean $v$ in the starboard turn | $-0.1264$ m/s |
-
-- $Y$ is zero at every instant, bit for bit — not small, but **structurally** zero. Both propellers are bolted to the hull facing forward, so no combination of them has a component across the centreline.
-- The vessel nevertheless sways in both turns, and $v$ **changes sign** between them. That sway comes from the Coriolis term of §1-7 acting while the hull rotates, not from any force.
-- The sign reversal is the proof. A side force would have to come from somewhere; a Coriolis term simply follows the sign of $r$.
-
-**③ Heading is not course.**
-
-$$
-\beta = \operatorname{atan2}(v, u) = \operatorname{atan2}(0.1264,\ 1.0218) = +7.05^\circ
-$$
-
-- In the **port** turn the vessel points $70°$ to the left of north but travels $7.05°$ to the right of where it points. In the **starboard** turn both signs flip.
-- The right-hand panel makes this visible: the orange course line runs consistently inside the blue heading line during each turn, and the green gap between them is $\beta$.
-- A track drawn as a bare line cannot show this. That is the whole reason the hull outline is drawn along it, and why Week 3 §3-4 has to return to $\beta$ before any path-following law can work.
-
-> [!note] The straight legs do not return to exactly zero
-> After each turn, $v$ settles at $\pm 0.0215$ m/s rather than $0$, and $\beta$ at $\pm 1.20°$. Thirty seconds is not long enough for the sway transient to decay completely. This is a genuine measurement, not a numerical artefact — lengthening `t_phase` drives both towards zero.
-
-> [!warning] A quantity that is structurally zero looks different from one that is merely negligible
-> Reporting $Y \approx 0$ and $Y = 0$ as the same observation loses the entire content of §1-5. Verify which one is being seen before writing it down.
+> [!important] The sway force is zero and the sway velocity is not
+> $\max\lvert Y\rvert = 0.0 \times 10^{0}$ N over every command in the manoeuvre — not small, but **structurally** zero, because both propellers face forward and $\mathbf{B}$ of §1-5 has no sway row. The vessel sways anyway, at $\pm 0.1264$ m/s, and $v$ **changes sign** between the two turns. That sway is the Coriolis term of §1-7 acting while the hull rotates, not a force. Reporting $Y \approx 0$ and $Y = 0$ as the same observation loses the entire content of §1-5.
 
 ## E. The same command in four currents (25 min)
 
@@ -1476,7 +1421,7 @@ W01_check(1)                 % run this whenever, as often as needed
 - `W01_simulink/W01_C_terminal_speed.m` · `W01_D_the_manoeuvre.m` · `W01_E_current_run.m` — one script per laboratory section
 - `W01_simulink/W01_vars.m` · `W01_read.m` — the same numbers as a struct, and the log with named fields
 - `W01_simulink/W01_animate.m` — the live view, called by the model's `Animate` block
-- `W01_simulink/W01_plot.m`, `W01_cur_plot.m` — the summary figures, called by both the section scripts and the models' `StopFcn`
+- `W01_simulink/W01_plot.m` — the summary figure, called by the models' `StopFcn`; `W01_cur_plot.m` is the same for the current model
 - `_tools/otter_config.m`, `_tools/otter_B.m` — the actuator configuration and the column rule
 - `_tools/draw_ship.m`, `_tools/track_ships.m`, `_tools/ship_marks.m` — the hull silhouette drawn on every track in this course
 

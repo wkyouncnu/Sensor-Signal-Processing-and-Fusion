@@ -1601,7 +1601,7 @@ Expected output:
 > W04_0_setup
 > W04_H_adaptive_and_stability
 > ```
-> Produces `img/W04_result_stability.png`. Ten runs — five values of $\kappa$, five of $\gamma$ — plus the Lyapunov computation on leg 1.
+> Produces `img/W04_result_stability.png`. Ten runs — five values of $\kappa$, five of $\gamma$ — plus the Lyapunov computation on leg 1. The $\kappa$ sweep is reported as the table below rather than as a third panel; the figure keeps only what the section is about.
 
 Expected output:
 
@@ -1641,13 +1641,10 @@ Expected output:
 
 **What the figure says**
 
-- **The meaning.** Left: the ILOS gain swept over five values, on log axes. Middle: the ALOS estimate for five values of $\gamma$, against the truth. Right: the Lyapunov function of §4-9-5, evaluated on the real vessel over leg 1.
-- **Panel 1, the trend.** The settled error (blue, log scale) falls from $1.34$ m at $\kappa = 0.02$ to $0.0103$ m at $\kappa = 0.3$ and then **rises again** to $0.0260$ m at $\kappa = 1.0$. The minimum is real and is the reason this course uses $\kappa = 0.3$. A linear axis would have hidden it: the last three points would all have sat on the zero line.
-- **Panel 1, the principle.** The peak error (orange, right axis) falls monotonically throughout, from $3.64$ m to $2.12$ m. **The two curves disagree about which gain is best**, and that is the trade: a larger $\kappa$ pulls harder, so it reduces the worst excursion while degrading the settled value. Choosing $\kappa$ means choosing which of those two the mission cares about.
-- **Panel 2, the difference between the algorithms' settings.** The dashed black line is the true crab angle; the five coloured curves are what each $\gamma$ believes it to be. $\gamma = 0.0005$ (blue) crawls, reaching only $9.31°$ after $500$ s — the adaptation is simply too slow to finish. $\gamma = 0.02$ (green) does the opposite, swinging between $+70°$ and $-70°$: it is tracking the *corner transients* rather than the current. **Those excursions also break the assumption the derivation rests on**, since §4-9-7 requires $\lvert\tilde\beta\rvert < 90°$ and this is within sight of it. $\gamma = 0.005$ (purple) follows the truth with a modest lag and settles on it.
-- **Panel 3, the honest result.** $V$ starts at $5.80$, **rises to $12.94$ at $t = 17.5$ s**, and then falls to $0.5588$ — a reduction of $23.2\times$ from the peak, with only $62.2$ % of samples decreasing.
-- **The principle behind the rise.** §4-9-6 proved $\dot V < 0$ *on the assumption that $\psi = \psi_d$ exactly*. There is a Week 3 autopilot in between, with its own settling time. During the first seconds of the leg the heading is still catching up, so $\chi - \pi_p$ is set by where the bow actually is rather than by where the guidance asked it to be, and the error dynamics on which the proof rests do not yet describe the vessel. Once the heading has converged, $V$ falls monotonically for the rest of the leg.
-- **Why this is reported rather than hidden.** A monotone $V$ could have been produced by plotting the kinematic subsystem in isolation, and it would have been a picture of an assumption rather than of a vessel. The claim the reference actually supports is that the guidance subsystem is USGES and that the cascade of it with a stable autopilot is stable — **not** that $V$ of the outer loop alone decreases at every instant of a real run.
+- **The point of the section.** Left: what each $\gamma$ believes the crab angle to be, against the truth. Right: the Lyapunov function of §4-9-5, evaluated on the real vessel over leg 1. The adaptation finds a current nothing told it about — and the function that justifies it does **not** fall monotonically.
+- **Choosing $\gamma$.** $\gamma = 0.0005$ crawls, reaching only $9.31°$ after $500$ s. $\gamma = 0.02$ does the opposite, swinging between $\pm 70°$: it is tracking the *corner transients* rather than the current, and those excursions come within sight of breaking the $\lvert\tilde\beta\rvert < 90°$ assumption of §4-9-7. $\gamma = 0.005$ follows the truth with a modest lag and settles on it, at $15.91°$ against a true $15.88°$.
+- **The honest result.** $V$ starts at $5.80$, **rises to $12.94$ at $t = 17.5$ s**, then falls to $0.5588$ — $23.2\times$ down from the peak, with only $62.2\%$ of samples decreasing. §4-9-6 proved $\dot V < 0$ *on the assumption that $\psi = \psi_d$ exactly*, and there is a Week 3 autopilot in between with its own settling time. While the heading is still catching up, the error dynamics the proof rests on do not yet describe the vessel.
+- **Why this is reported rather than hidden.** A monotone $V$ could have been produced by plotting the kinematic subsystem in isolation, and it would have been a picture of an assumption rather than of a vessel. What the reference supports is that the guidance subsystem is USGES and that its cascade with a stable autopilot is stable — **not** that $V$ of the outer loop alone decreases at every instant of a real run.
 
 ---
 

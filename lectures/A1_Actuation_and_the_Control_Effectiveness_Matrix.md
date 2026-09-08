@@ -592,25 +592,15 @@ The table probes the plant at rest, where $\mathbf{C}(\boldsymbol{\nu})$ and the
 | right panel, dashed | the coupling alone, $\left(\mathbf{M}^{-1}\right)_{26} N t$ |
 | right panel, solid | the plant, over the first $0.6$ s |
 
-- The two curves leave the origin on the same slope, agreeing to $0.01\%$, and separate after roughly $0.15$ s as the Coriolis and cross-flow terms take hold. The agreement at $t = 0$ is the measurement; the separation afterwards is the rest of the physics arriving.
-- Two effective inertias follow from the same probe and are used in later weeks:
-
-| Quantity | Value | Note |
-|---|---|---|
-| $1/\left(\mathbf{M}^{-1}\right)_{11}$ | $76.71$ kg | effective surge mass, with heave and pitch free |
-| $M_{11}$ | $85.50$ kg | the matrix entry, used by the first-order model of Week 2 |
-| $1/\left(\mathbf{M}^{-1}\right)_{66}$ | $41.00$ kg·m² | effective yaw inertia, with sway free |
-| $M_{66}$ | $42.65$ kg·m² | the matrix entry, used by the second-order model of Week 3 |
-
-- The two pairs differ by $10\%$ and $4\%$ respectively. Week 3 uses $M_{66}$ and states the discrepancy rather than hiding it.
-
 **What the figure says**
 
-- **Meaning.** The left panel is a measurement of two columns of $\mathbf{M}^{-1}$: apply one newton of surge force, read six accelerations; apply one newton-metre of yaw moment, read six more. The right panel checks that measurement against the running model.
-- **Trend, in numbers.** Under a pure surge force the vessel accelerates in surge, $1.3036 \times 10^{-2}$ m/s² per newton, and also in **heave and pitch**, $5.27\times10^{-4}$ and $5.80\times10^{-3}$, because the propellers push below the centre of gravity. Sway, roll and yaw are exactly zero. Under a pure yaw moment the vessel accelerates in yaw, $2.4391\times10^{-2}$ rad/s² per newton-metre, and also in **sway and roll**, $-1.3046\times10^{-3}$ and $-4.39\times10^{-3}$. Surge, heave and pitch are zero to within $3\times10^{-18}$, which is arithmetic noise and not physics.
-- **Principle.** The two blocks of zeros are port–starboard symmetry: the Otter is a symmetric catamaran, so the longitudinal motions and the lateral motions do not mix. The non-zero entries within the lateral group are the coupling $M_{2,6} = 12.25$ kg·m, which is not zero because the payload sits $0.153$ m forward of the origin of $\{b\}$. **An empty row in $\mathbf{B}$ and an empty column in $\mathbf{M}^{-1}$ are different statements, and only the first one is true here.**
-- **Why the two curves in the right panel separate.** They leave the origin together, agreeing to $0.01\%$, because at $t = 0$ the vessel is at rest and the only term acting is $\mathbf{M}^{-1}\boldsymbol{\tau}$. They part company after roughly $0.15$ s because by then $r$ is large enough that the Coriolis and cross-flow terms are no longer negligible, and those terms oppose the sway. The dashed line keeps going because it is arithmetic with no physics in it after the first instant.
-- **What changes with the situation.** The sway velocity reaches only $-0.015$ m/s and then turns back; the vessel does not slide away sideways. This is the honest reading of the coupling: it produces a **transient** sideways motion in the first fraction of a second of a turn, and not a means of translating sideways. Anything that needs a sustained sway force still needs a thruster that can produce one, which is the subject of the hull variants later in the course.
+- **The point of the section.** The sway row of $\mathbf{B}$ is empty, and the vessel sways anyway. A pure yaw moment produces $-1.3046\times10^{-3}$ m/s² of sway per newton-metre, through the mass matrix and not through any force. **An empty row in $\mathbf{B}$ and an empty column in $\mathbf{M}^{-1}$ are different statements, and only the first one is true here.**
+- **Principle.** The two blocks of zeros are port–starboard symmetry: the Otter is a symmetric catamaran, so longitudinal and lateral motions do not mix. Within the lateral group the coupling is $M_{2,6} = 12.25$ kg·m, non-zero because the payload sits $0.153$ m forward of the origin of $\{b\}$. The entries that read $10^{-18}$ are arithmetic noise, not physics.
+- The two curves in the right panel leave the origin together, agreeing to $0.01\%$, because at $t = 0$ nothing acts but $\mathbf{M}^{-1}\boldsymbol{\tau}$. They part after roughly $0.15$ s, when $r$ has grown enough for the Coriolis and cross-flow terms to oppose the sway. The dashed line keeps going because it is arithmetic with no physics in it after the first instant.
+- The sway velocity reaches only $-0.015$ m/s and turns back. The coupling gives a **transient** sideways motion at the start of a turn, not a means of translating sideways — anything needing sustained sway still needs a thruster that can produce it.
+
+> [!note] Two effective inertias, used in later weeks
+> The same probe gives $1/(\mathbf{M}^{-1})_{11} = 76.71$ kg against the matrix entry $M_{11} = 85.50$ kg, and $1/(\mathbf{M}^{-1})_{66} = 41.00$ kg·m² against $M_{66} = 42.65$ kg·m². The pairs differ by $10\%$ and $4\%$ because the probe leaves heave, pitch and sway free while the matrix entry does not. Weeks 2 and 3 use the matrix entries and state the discrepancy rather than hiding it.
 
 ---
 

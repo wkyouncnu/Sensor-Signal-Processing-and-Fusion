@@ -106,25 +106,20 @@ fprintf(['\n    V FALLS BY A FACTOR OF %.0f FROM ITS PEAK, AND IT IS NOT MONOTON
          max(Vly)/Vly(end), 100*mean(diff(Vly) > 1e-9));
 
 %% ---- the figure --------------------------------------------------------
-f = lab_fig('W04 H  gains and stability', 1250, 470);
+f = lab_fig('W04 H  the adaptation, and the function that justifies it', 1000, 440);
 COL = lines(numel(GG));
 
-subplot(1,3,1); hold on;
-yyaxis left;  plot(KK, RESk(:,1), 'o-', 'LineWidth',1.5);
-%  LOG on this axis too. The settled error runs from 1.34 m down to 0.010 m
-%  and back up to 0.026 m; on a linear axis the last three points sit on the
-%  zero line and the minimum the title claims is invisible.
-set(gca,'YScale','log');
-ylabel('settled |y_e| [m]   (log)');
-yyaxis right; plot(KK, RESk(:,2), 's--', 'LineWidth',1.5);
-ylabel('peak |y_e| on leg 1 [m]');
-set(gca,'XScale','log'); grid on;
-xlabel('\kappa  ILOS integral gain constant');
-[~, jb] = min(RESk(:,1));
-title({'ILOS: the integral gain', ...
-       sprintf('settled error is least at \\kappa = %g; peak error falls throughout', KK(jb))});
+%  WITHDRAWN 2026-09-08, at the lecturer's request: the kappa sweep panel
+%  that used to be the left third of this figure.
+%
+%  Three panels asked the reader to hold three unrelated sweeps at once, and
+%  the section's point is only the last of them: the adaptation converges on
+%  a current nothing told it about, and the Lyapunov function that justifies
+%  it does NOT fall monotonically on a real vessel. The kappa numbers that
+%  fix the course's choice of 0.3 are in the TABLE this script prints above.
+%  See gnc-lecture-vault/references/standing-orders.md §9-8.
 
-subplot(1,3,2); hold on;
+subplot(1,2,1); hold on;
 for i = 1:numel(GG)
     plot(YG{i}.t, rad2deg(YG{i}.aux(:,4)), 'Color', COL(i,:), ...
          'DisplayName', sprintf('\\gamma = %g', GG(i)));
@@ -134,7 +129,7 @@ xlabel('time [s]'); ylabel('$\hat\beta$  [deg]', 'Interpreter','latex');
 legend('Location','southeast');
 title({'ALOS: the estimate, five gains', 'the dashed line is what it is estimating'});
 
-subplot(1,3,3); hold on;
+subplot(1,2,2); hold on;
 [Vpk, ipk] = max(Vly);
 plot(y.t(leg1), Vly, 'Color',[0.49 0.18 0.56], 'LineWidth',1.6);
 plot(y.t(leg1(ipk)), Vpk, 'o', 'Color',[0.49 0.18 0.56], 'MarkerFaceColor','w');

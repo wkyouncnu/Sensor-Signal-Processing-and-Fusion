@@ -15,7 +15,6 @@ varargin = {};   % kept so the override loop below still works unchanged
 %   Produces
 %     img/W02_H_antiwindup.png            the block diagram
 %     img/W02_result_aw_principle.png   the four schemes on one plant
-%     img/W02_result_aw_Kb.png          what the back-calculation gain does
 
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));
@@ -122,37 +121,20 @@ f = W02_aw_plot(R, ...
     'W02 — one plant, one limit, four ways of treating the integrator', R0);
 exportgraphics(f, img('W02_result_aw_principle.png'), 'Resolution', 150);
 
-f = lab_fig('W02  Kb sweep', 1050, 430);
-subplot(1,2,1); hold on;
-CO = parula(numel(KB));
-plot(R.t, R.y(:,1), ':', 'Color',[0.35 0.35 0.35], 'LineWidth',1.3);
-for i = 1:numel(KB)
-    plot(RK{i}.t, RK{i}.y(:,8), 'Color', CO(i,:), 'LineWidth',1.3);
-end
-plot(R.t, R.y(:,7), '--', 'Color',[0.47 0.67 0.19], 'LineWidth',1.8);
-xlim([V.aw_t2-1 V.aw_t2+12]);
-xlabel('time [s]'); ylabel('y');
-legend([{'r'} arrayfun(@(k) sprintf('K_b = %g', k), KB, 'UniformOutput',false) ...
-        {'clamping'}], 'Location','southeast', 'NumColumns',2);
-title({'leaving saturation', 'back-calculation at seven gains, and clamping'});
+%  WITHDRAWN 2026-09-08, at the lecturer's request: the two-panel Kb sweep
+%  figure that used to be saved here as img/W02_result_aw_Kb.png.
+%
+%  The section makes ONE point — an unprotected integrator stores demand the
+%  actuator cannot use — and the four-panel principle figure above makes it.
+%  The Kb sweep is a second, weaker point about tuning; its three numbers
+%  (best 2.375 s near Kb = 5, undershoot 4.60 -> 43.96 %, clamping 2.380 s)
+%  now live in one callout in the lecture instead of a whole figure.
+%  See gnc-lecture-vault/references/standing-orders.md §9-8.
+%
+%  The sweep LOOP above is kept: it is where those numbers come from, and
+%  measurement provenance is not what §9-8 asks to cut.
 
-subplot(1,2,2); hold on;
-yyaxis left
-semilogx(KB, recK, 'o-', 'LineWidth',1.5);
-yline(recC, ':', 'clamping', 'LineWidth',1.4);
-ylabel('recovery time [s]');
-yyaxis right
-semilogx(KB, ipk, 's--', 'LineWidth',1.5);
-ylabel('peak integrator state');
-set(gca,'XScale','log'); grid on;
-xlabel('K_b');
-legend({'recovery','clamping','peak integrator'}, 'Location','north');
-title({'more K_b, less stored charge', 'but it does not become clamping'});
-sgtitle('W02 — back-calculation and clamping are different schemes', ...
-        'FontWeight','bold');
-exportgraphics(f, img('W02_result_aw_Kb.png'), 'Resolution', 150);
-
-fprintf('\n  figures written to %s\n\n', fullfile(here,'img'));
+fprintf('\n  figure written to %s\n\n', img('W02_result_aw_principle.png'));
 %  (the old function-closing end was here; this file is a script now)
 
 % =========================================================================
