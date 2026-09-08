@@ -73,7 +73,7 @@ Seven sections, all of them consequences of **one rule** stated in A1-2. Read th
 |---|---|---|
 | 1 | **Why does anything sit between a controller and a propeller?** | A1-1 |
 | 2 | **The column rule.** One thruster at $(x,y)$ pushing along $\mathbf{e}$ contributes exactly one column of $\mathbf{B}$ | A1-2 |
-| 3 | **What the rule tells you before any arithmetic.** The rank says which demands are reachable; a tilting thruster contributes two columns, not one | A1-3, A1-4 |
+| 3 | **What the rule settles before any arithmetic.** The rank says which demands are reachable; a tilting thruster contributes two columns, not one | A1-3, A1-4 |
 | 4 | **Three results that surprise people.** A symmetric command is not a symmetric force; the reachable set is a polygon, not a box; an empty row of $\mathbf{B}$ is not an empty column of its inverse | A1-5 to A1-7 |
 
 $$
