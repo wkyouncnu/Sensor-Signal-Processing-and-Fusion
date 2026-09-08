@@ -581,10 +581,33 @@ Section G sweeps the current speed with everything else held fixed and compares 
 > [!important] Sections 4-8 and 4-9 are worked to a different standard
 > These are the two advanced laws of the course, and for them **every equation and every parameter is derived rather than quoted**. Each section gives the error dynamics first, then the reason for the particular Lyapunov function and the particular weight in it, then the derivative expanded line by line with nothing skipped, then the point at which the update law is *forced* rather than chosen, then a table of every parameter with its unit, and finally the assumptions and what is lost when they fail.
 
-### 4-8-1. The problem, restated as an equation
+### How this section is laid out
 
-- §4-7 established that plain LOS settles at $y_e^{ss} = \Delta\tan\beta_c$, and that this happens with the heading error already at zero. The offset is not a tracking failure; it is what the law asks for.
-- The classical fix for a steady offset is an integrator, and the classical failure of that fix is windup. The law of this section does both at once: it adds the integrator **inside the arctan**, which turns out to make the anti-windup part of the law rather than something bolted on afterwards.
+Five questions, in this order. Nothing later depends on skipping anything earlier.
+
+| | Question | Where |
+|---|---|---|
+| 1 | **Why is a new law needed?** What plain LOS cannot do, measured | §4-8-1 |
+| 2 | **What is the idea?** One sentence, before any algebra | §4-8-1a |
+| 3 | **What is the law, and where does it come from?** | §4-8-2, §4-8-4 to §4-8-6 |
+| 4 | **How is it applied?** Every parameter, with its unit and its source | §4-8-3, §4-8-8 |
+| 5 | **What does it achieve, and what does it cost?** | §4-8-5a, §4-8-7 |
+
+### 4-8-1. Why a new law is needed at all
+
+Plain LOS is not badly tuned, and it is not badly implemented. It is doing exactly what it was asked to do, and the result is still wrong. That is the situation this section starts from, and it is worth stating in three steps.
+
+- **The measurement.** Section 4-7 ran plain LOS in a $0.3$ m/s beam current. The vessel settled **$2.253$ m to one side of the path** and stayed there for the rest of the run. It did not oscillate and it did not drift further; it simply held station beside the line it was asked to follow.
+- **The reason more gain cannot help.** At that steady state the heading error is **already zero**. The autopilot is holding $\psi$ on $\psi_d$ to the last decimal. There is no error left anywhere in the loop for a larger gain to act on, so raising $K_p$ or $K_d$ in the autopilot changes nothing at all.
+- **What is actually missing.** To travel along a line while water pushes the hull sideways, the bow must be tilted **upstream** by the crab angle $\beta_c$. Plain LOS has exactly one term that can tilt the bow, namely $\arctan(y_e/\Delta)$, and once that term is spent producing the tilt it is no longer available to close the remaining gap. **The law is not short of authority; it is short of terms.**
+
+The classical fix for a steady offset is an integrator, and the classical failure of that fix is windup. The law of this section does both at once: it puts the integrator **inside the arctan**, which turns out to make the anti-windup part of the law rather than something bolted on afterwards.
+
+### 4-8-1a. The idea, in one sentence
+
+> **ILOS invents a cross-track error that is not there, of exactly the size needed to keep the bow tilted upstream once the real error has reached zero.**
+
+That is the whole of it. The arctan is left untouched and is still the only thing that tilts the bow; what changes is *what the arctan is told*. Section 4-8-2 turns the sentence into an equation, and §4-8-5 shows that the invented error settles at precisely $\Delta\tan\beta_c$ — the same number the plain law was stuck at, now carried by the integrator instead of by the vessel's position.
 
 ### 4-8-2. The law
 
@@ -863,10 +886,31 @@ $$
 >
 > **Source.** T. I. Fossen (2023). *An Adaptive Line-of-sight (ALOS) Guidance Law for Path Following of Aircraft and Marine Craft.* IEEE Transactions on Control Systems Technology **31**(6), 2887–2894. [doi:10.1109/TCST.2023.3259819](https://doi.org/10.1109/TCST.2023.3259819) — cited in the header of `ALOSpsi.m` itself.
 
-### 4-9-1. A different idea
+### How this section is laid out
 
-- ILOS removes the offset **without ever learning what caused it**. Its integral state ends at whatever value makes the error zero, and if asked what the current was doing, it cannot say.
-- ALOS asks a different question: since §4-7 showed that the entire problem is the unknown angle $\beta$, why not **estimate $\beta$ and subtract it**? The estimate then has physical meaning — it is the crab angle, in degrees, available as an output.
+The same five questions as §4-8, in the same order.
+
+| | Question | Where |
+|---|---|---|
+| 1 | **Why a second law, when ILOS already works?** | §4-9-1 |
+| 2 | **What is the idea?** One sentence, before any algebra | §4-9-1a |
+| 3 | **What is the law, and where does it come from?** | §4-9-2, §4-9-4 to §4-9-6 |
+| 4 | **How is it applied?** Every parameter, with its unit and its source | §4-9-3, §4-9-8 |
+| 5 | **What does it achieve, and what does it cost?** | §4-9-6a, §4-9-7, §4-9-9 |
+
+### 4-9-1. Why a second law, when ILOS already works
+
+Section 4-8 ends with the cross-track error at $0.008$ m. On the accuracy of this mission there is nothing left to improve, so a second law has to justify itself on something other than accuracy. It does, and the argument is about **what the controller knows**.
+
+- **ILOS removes the offset without ever learning what caused it.** Its integral state settles at whatever value drives the error to zero — on this mission, $7.516$. That number is in seconds, it is not a current speed, it is not a drift angle, and there is no measurement anywhere on the vessel that it can be compared against.
+- **A state that cannot be checked cannot be trusted.** If the integrator drifts because of a sensor fault, a wrong $\Delta$, or a mission that never leaves a turn, nothing in the run will look wrong until the vessel is off the path. The law has no opinion about whether its own state is sensible.
+- **The disturbance itself is a physical quantity.** Section 4-7 showed that the entire problem is one unknown angle, the crab angle $\beta_c$. It is an angle, it is measurable after the fact as $\operatorname{atan2}(v,u)$, and a controller that estimates *it* produces a number that can be plotted, logged, alarmed on, and compared with a second sensor.
+
+### 4-9-1a. The idea, in one sentence
+
+> **ALOS estimates the drift angle and subtracts it from the command, so that the arctan term is handed back the job it was designed for — closing the cross-track error.**
+
+The contrast with §4-8 is exactly one word: ILOS adds its extra term **inside** the arctan, ALOS adds it **outside**. Everything that follows — the units, the stability argument, and the fact that one state is meaningful and the other is not — comes from that single structural choice, and §4-7's figure shows it side by side before any algebra.
 
 ### 4-9-2. The law
 
