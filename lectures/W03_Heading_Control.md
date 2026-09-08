@@ -258,13 +258,32 @@ M_{66}\ddot\psi &+ \left(|N_r| + K_d\right)\dot\psi + K_p\psi = K_p\psi_d .
 \end{aligned}
 $$
 
-- Comparing with $\ddot\psi + 2\zeta\omega_n\dot\psi + \omega_n^2\psi = \omega_n^2\psi_d$:
+### The closed loop, as a transfer function
+
+- Taking Laplace transforms of the second line, with zero initial conditions:
 
 $$
-\omega_n = \sqrt{\frac{K_p}{M_{66}}},
-\qquad
-\zeta = \frac{|N_r| + K_d}{2\sqrt{K_p M_{66}}} .
+\left(M_{66}s^2 + \left(|N_r| + K_d\right)s + K_p\right)\psi(s) = K_p\,\psi_d(s) ,
 $$
+
+$$
+\frac{\psi(s)}{\psi_d(s)}
+= \frac{K_p}{M_{66}s^2 + \left(|N_r| + K_d\right)s + K_p}
+= \frac{K_p/M_{66}}{s^2 + \dfrac{|N_r| + K_d}{M_{66}}\,s + \dfrac{K_p}{M_{66}}} .
+$$
+
+- Every second-order transfer function with a constant numerator can be written in one standard shape, and that shape has only two free numbers:
+
+$$
+\frac{\psi(s)}{\psi_d(s)} = \frac{\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2} .
+$$
+
+- The two forms are the same expression, so matching them coefficient by coefficient defines $\omega_n$ and $\zeta$ rather than assuming anything:
+
+| Coefficient of | This loop | Standard form | Gives |
+|---|---|---|---|
+| $s^0$ | $K_p/M_{66}$ | $\omega_n^2$ | $\omega_n = \sqrt{K_p/M_{66}}$ |
+| $s^1$ | $\left(|N_r| + K_d\right)/M_{66}$ | $2\zeta\omega_n$ | $\zeta = \dfrac{|N_r| + K_d}{2\sqrt{K_p M_{66}}}$ |
 
 - Inverting for a chosen pair:
 
@@ -276,12 +295,56 @@ $$
 
 - For $\omega_n = 1.53$ rad/s and $\zeta = 0.9$ this gives $K_p = 100.00$ and $K_d = 74.90$.
 
+### This is pole placement
+
+- The denominator $s^2 + 2\zeta\omega_n s + \omega_n^2$ is a quadratic, so it has two roots. Those roots are the **closed-loop poles**, and they are what the response is made of:
+
+$$
+s = -\zeta\omega_n \pm \mathrm{j}\,\omega_n\sqrt{1 - \zeta^2}
+\qquad (\zeta < 1) .
+$$
+
+- $\omega_n$ is the distance of each pole from the origin and $\zeta$ fixes the angle. Choosing a $(\zeta, \omega_n)$ pair and choosing where to put the two poles are therefore **the same act**, described in two coordinate systems.
+- Since $K_p$ and $K_d$ follow uniquely from $(\zeta, \omega_n)$, the design procedure of this section has a name: **pole placement.** Two gains, two poles, one solution — nothing is optimised and nothing is searched for.
+- The real part $-\zeta\omega_n$ governs how fast the transient decays and the imaginary part $\omega_n\sqrt{1-\zeta^2}$ how fast it oscillates while decaying. The names follow directly: $\zeta$ is the **damping ratio** and $\omega_n$ the **natural frequency**.
+
+### What the two numbers do
+
+![How ζ and ωₙ change a second-order response](../figures/w03-second-order.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| both panels | the step response of $\omega_n^2/(s^2 + 2\zeta\omega_n s + \omega_n^2)$, computed from the closed form |
+| violet curve | the pair this course actually uses, $\omega_n = 1.53$ rad/s and $\zeta = 0.9$ |
+| dotted line | the commanded heading, reached when the curve settles on $1$ |
+| (a) | $\omega_n$ held fixed, $\zeta$ swept |
+| (b) | $\zeta$ held fixed, $\omega_n$ swept |
+
+**What the figure says**
+
+The two numbers do completely different jobs, and the panels are arranged to show that one at a time.
+
+In panel (a) only $\zeta$ changes. At $\zeta = 0.3$ the vessel swings $37\%$ past the commanded heading and rings for the rest of the run. Raising $\zeta$ damps that out: $16.3\%$ at $\zeta = 0.5$, $4.6\%$ at $0.7$, and $0.15\%$ at the $0.9$ this course uses. At $\zeta = 1.5$ the response no longer overshoots at all — the two poles have become real, so there is nothing left to oscillate — but it is visibly slower to arrive. **$\zeta$ buys smoothness and charges for it in speed.**
+
+In panel (b) only $\omega_n$ changes, and the three curves are the **same curve**. All three overshoot by $0.15\%$, agreeing to within $0.001$ points. What changes is the clock: settling takes $6.28$ s at $\omega_n = 0.75$, $3.11$ s at $1.53$ and $1.61$ s at $3.0$ — inversely proportional to $\omega_n$, to within $2\%$.
+
+So the design splits cleanly in two. **Pick $\zeta$ for the shape wanted and $\omega_n$ for the speed wanted**, and the two choices do not interfere. That independence is the reason the standard form is worth writing down at all.
+
+> [!important] Why the textbook overshoot formula is trustworthy here and was not in Week 2
+> The numerator above is $K_p$ alone — a constant, with no $s$ in it. The closed loop therefore has **no zero**, and the tabulated relation
+>
+> $$M_p = \exp\!\left(\frac{-\pi\zeta}{\sqrt{1-\zeta^2}}\right)$$
+>
+> applies exactly. `_tools/w03_second_order.m` checks this before drawing: computed against formula, the overshoots agree at every $\zeta$ in the figure — $37.23$, $16.30$, $4.60$, $0.15$ per cent.
+>
+> Week 2 §2-5 got $8.15\%$ where the same formula predicted $4.60\%$, because a **PI** controller puts $K_i/s$ in the forward path and that leaves a zero at $s = -K_i/K_p$ in the closed loop. The controller here is **PD**: $K_d$ contributes to the denominator only. The formula did not become more accurate; the loop became simpler.
+
 > [!important] The same term, the opposite effect
 > In Week 2 the controlled variable was a velocity, so $K_d$ multiplied an **acceleration** and landed beside the mass: $\left(M_{11} + K_d\right)\dot u$. Here the controlled variable is an angle, so $K_d$ multiplies a **rate** and lands beside the damping: $\left(|N_r| + K_d\right)\dot\psi$. Nothing about the controller changed. The axis did.
 
-- Two further remarks, both measurable in Part 2.
-  - There is **no zero** in the closed loop. The numerator is $K_p$ alone, so the tabulated relation $M_p = \exp\!\left(-\pi\zeta/\sqrt{1-\zeta^2}\right)$ applies here in a way it did not in Week 2.
-  - The hull already supplies damping. At $K_p = 100$ and $K_d = 0$, $\zeta = 42.65/(2\sqrt{100 \times 42.65}) = 0.327$. Most of what damps a heading loop on this vessel is $N_r$, not the controller.
+- One further remark, measurable in Part 2: **the hull already supplies damping.** At $K_p = 100$ and $K_d = 0$, $\zeta = 42.65/(2\sqrt{100 \times 42.65}) = 0.327$ — the vessel is not undamped when the controller stops damping it. Most of what steadies a heading loop on this hull is $N_r$, and $K_d$ only makes up the difference between $0.327$ and the $0.9$ asked for.
 
 ## 3-4. Heading is not course — the crab angle
 
@@ -362,20 +425,56 @@ $$
 
 ## 3-6. Allocation, now with two demands
 
-- The controller asks for a yaw moment. A constant forward force $X_{\text{ff}}$ is added so that the vessel travels while it turns and the track is worth looking at. Two demands, two propellers:
+- The controller asks for a yaw moment. A constant forward force $X_{\text{ff}}$ is added so that the vessel travels while it turns and the track is worth looking at. Week 2 had one demand and two propellers and split the force in half; this week there are **two** demands, and the split is no longer arbitrary.
+
+### Where the two equations come from
+
+- Each propeller produces a thrust $T_i$ directed **along the hull**, applied at its own pontoon. Appendix A1 §A1-3 built the general statement of this as $\boldsymbol{\tau} = \mathbf{B}\mathbf{T}$, with one column of $\mathbf{B}$ per thruster. Restricted to the two demands this week uses:
 
 $$
-X = T_1 + T_2, \qquad N = y_{\text{pont}}\left(T_1 - T_2\right)
+\begin{bmatrix} X \\[2pt] N \end{bmatrix}
+=
+\underbrace{\begin{bmatrix} 1 & 1 \\[2pt] +y_{\text{pont}} & -y_{\text{pont}} \end{bmatrix}}_{\textstyle \mathbf{B}}
+\begin{bmatrix} T_1 \\[2pt] T_2 \end{bmatrix},
+\qquad y_{\text{pont}} = 0.395\ \text{m} .
+$$
+
+| Row | Reads | Why |
+|---|---|---|
+| $X = T_1 + T_2$ | both propellers push forward, so surge forces **add** | both columns of the first row are $+1$: neither thruster is tilted |
+| $N = y_{\text{pont}}(T_1 - T_2)$ | a moment is force times lever arm, and the two arms point **opposite ways** | thruster 1 sits at $y = +y_{\text{pont}}$, thruster 2 at $y = -y_{\text{pont}}$ |
+
+- Two equations, two unknowns. Solving is ordinary elimination — add the rows to remove $T_2$, subtract to remove $T_1$:
+
+$$
+X + \frac{N}{y_{\text{pont}}} = 2T_1
+\qquad\Longrightarrow\qquad
+T_1 = \frac{X}{2} + \frac{N}{2y_{\text{pont}}} ,
 $$
 
 $$
-\Longrightarrow\quad
-T_1 = \frac{X}{2} + \frac{N}{2y_{\text{pont}}},
-\qquad
+X - \frac{N}{y_{\text{pont}}} = 2T_2
+\qquad\Longrightarrow\qquad
 T_2 = \frac{X}{2} - \frac{N}{2y_{\text{pont}}} .
 $$
 
-- The map is **square** in the $(X, N)$ plane, so the inverse exists and is unique. Nothing is optimised and nothing is chosen. Week 5 meets the case where there are more thrusters than demands.
+- Equivalently, and this is the form Week 5 generalises, the result is the matrix inverse:
+
+$$
+\begin{bmatrix} T_1 \\[2pt] T_2 \end{bmatrix}
+= \mathbf{B}^{-1}\begin{bmatrix} X \\[2pt] N \end{bmatrix}
+= \frac{1}{2}\begin{bmatrix} 1 & +1/y_{\text{pont}} \\[2pt] 1 & -1/y_{\text{pont}} \end{bmatrix}
+\begin{bmatrix} X \\[2pt] N \end{bmatrix} .
+$$
+
+- **Reading the answer.** Each propeller receives half the requested surge force plus or minus half the requested moment divided by the lever arm. The surge demand is shared equally; the yaw demand is shared *antisymmetrically*. Setting $N = 0$ recovers Week 2's even split, so nothing that worked last week has been changed.
+
+> [!note] Two checks worth doing on any allocation
+> **Dimensions.** $N/y_{\text{pont}}$ is N·m divided by m, which is newtons, so it may be added to $X/2$. Had the lever arm been left out, the two terms would not have been addable — the dimension check catches that immediately.
+>
+> **Limits.** $y_{\text{pont}} \to 0$ sends $T_1, T_2 \to \pm\infty$ for any $N \neq 0$: two propellers on the centreline cannot produce a yaw moment at all, and the algebra says so by diverging. Physically that is $\det\mathbf{B} = -2y_{\text{pont}} \to 0$.
+
+- The map is **square** in the $(X, N)$ plane and $\det\mathbf{B} = -2y_{\text{pont}} = -0.79 \neq 0$, so the inverse exists and is unique. Nothing is optimised and nothing is chosen — there is exactly one thrust pair for each demand pair. Week 5 meets the case where there are more thrusters than demands, $\mathbf{B}$ is no longer square, and a choice genuinely has to be made.
 - Each thrust is then converted to a shaft speed by inverting the propeller curve one propeller at a time, $n = \operatorname{sign}(T)\sqrt{|T|/k}$, and saturated.
 
 > [!tip] Allocating thrust rather than shaft speed pays a dividend
