@@ -1038,14 +1038,15 @@ Expected output:
 |---|---|---|---|
 | 0 | `W01_0_setup.m` | A | the base workspace, so the model can be run from Simulink |
 | 1 | `W01_1_build_openloop.m` | B | `W01_openloop.slx` and `img/W01_openloop.png` |
-| C | `W01_C_terminal_speed.m` | C | `img/W01_result_speed.png`, `img/W01_result_frames.png` |
+| C | `W01_C_terminal_speed.m` | C | `img/W01_result_speed.png` |
 | D | `W01_D_the_manoeuvre.m` | D | `img/W01_result_states.png`, `img/W01_result_track.png` |
 | E | `W01_E_build_current.m` | E | `W01_current.slx` and `img/W01_current.png` |
 | E | `W01_E_current_run.m` | E | `img/W01_result_current.png`, `img/W01_result_current_rose.png` |
 
 - Each laboratory section is one script. Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
 - Sections C, D and E build the model they need if it is missing, so any one of them can be run first.
-- The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_frames.m`, `W01_animate.m`, `W01c_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
+- The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_cur_plot.m`, `W01_animate.m`, `W01c_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
+- `W01_frames.m` is not called by anything. It drew a four-panel figure that repeated §1-4 with the same numbers, and that figure was withdrawn; the file is kept so it can be brought back without rewriting it.
 - The laboratory of the second hour lives in `W01_simulink/problems/` and `solutions/`, and is separate from these.
 
 ### Step 3 — restore a model if it is broken
@@ -1154,7 +1155,7 @@ W01_C_terminal_speed
 ```
 
 > [!note] To produce every figure in this section
-> `W01_C_terminal_speed.m` runs `W01_openloop.slx` four times with `dn = 0`, prints the table below, and writes `img/W01_result_speed.png` and `img/W01_result_frames.png`.
+> `W01_C_terminal_speed.m` runs `W01_openloop.slx` four times with `dn = 0`, prints the table below, and writes `img/W01_result_speed.png`.
 
 Measured, over four commands:
 
@@ -1182,26 +1183,6 @@ Measured, over four commands:
 - **Principle.** Two different laws meet at the steady state. Thrust is quadratic in shaft speed; damping is linear in surge velocity. Setting them equal, $2k_{\text{pos}}n\lvert n\rvert = \lvert X_u\rvert u$, gives $u \propto n^2$ — so **doubling the propeller speed does not double the boat speed, it quadruples it**.
 - **Why the dashed line and the markers coincide.** The prediction was made from a single scalar equation and the measurement comes from a twelve-state nonlinear model, and they agree to four decimals. That is a statement about the *plant*, not about the method: surge damping in `otter.m` really is linear when nothing else is moving. Week 3 repeats the exercise on the yaw axis, where the same procedure is only approximate, and the difference between the two weeks is a property of the vessel.
 - **What changes with the situation.** Nothing here depends on the controller, because there is none. These four points are the ceiling every later week works underneath: no surge controller can ask for a speed the propellers cannot produce.
-
-![One velocity, two frames](W01_simulink/img/W01_result_frames.png)
-
-**Reading the figure**
-
-| Element | Meaning |
-|---|---|
-| top left | $u$ and $v$, the velocity measured along axes that turn with the vessel |
-| top right | $\dot N$ and $\dot E$, the same motion along axes that never move |
-| bottom left | the two speeds, $\lVert[u\ v]\rVert$ against $\lVert[\dot N\ \dot E]\rVert$ |
-| bottom right | the track, with the body $x$-axis in orange and the NED velocity in green |
-
-**What the figure says**
-
-- **Meaning.** One physical velocity, written twice. All four panels are the same vessel in the same **steady turn** — nothing changes between them except which axes the numbers are measured along.
-- **Trend, in numbers.** In the body frame $u$ and $v$ are flat lines at $0.1932$ and $-0.0713$ m/s, unchanging for the whole minute. In the NED frame the same motion is two full sinusoids swinging between $\pm 0.21$ m/s, a quarter period apart. **Nothing about the motion changed between the two panels; only the axes did.**
-- **Principle.** $\begin{bmatrix}\dot N \\ \dot E\end{bmatrix} = \mathbf{R}(\psi)\begin{bmatrix}u \\ v\end{bmatrix}$. The body axes rotate with the hull, so a constant body velocity sweeps a circle in NED — which is what the bottom-right panel draws, orange arrows turning steadily while the green ones follow them round.
-- **Why the bottom-left panel is the check worth making.** A rotation preserves length, so the two speeds must be equal at every instant, and they are: the largest gap over the whole run is $5.55\times10^{-17}$ m/s. **A transposed or mis-signed rotation matrix breaks that equality immediately**, and no other single test catches the error as cheaply.
-- **What this rules out.** Integrating $u$ to obtain a north position is wrong, and this figure is where it becomes visible: $u$ is constant while $\dot N$ is not. The error is invisible on a straight run and grows without bound in a turn.
-- **What changes with the situation.** On a straight leg $\psi$ is constant, the sinusoids flatten, and the two frames differ by a fixed rotation. Every disagreement in this figure is produced by $r \neq 0$, which is exactly why the manoeuvre of section D turns rather than running straight.
 
 ## D. One manoeuvre: straight, port, straight, starboard, straight (30 min)
 

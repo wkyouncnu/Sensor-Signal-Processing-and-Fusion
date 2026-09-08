@@ -3,11 +3,10 @@
 %      W01_0_setup
 %      W01_C_terminal_speed
 %
-%  Quadratic thrust against linear damping, and the frame conversion that
-%  every later week depends on.
-%  Produces img/W01_result_speed.png and img/W01_result_frames.png
+%  Quadratic thrust against linear damping.
+%  Produces img/W01_result_speed.png
 
-clear V cfg Xu NS u_pred u_meas i X o y f nn TT Tf
+clear V cfg Xu NS u_pred u_meas i X o y f nn TT
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)),'_tools'), here);
 mss_path();
@@ -63,16 +62,15 @@ title({'terminal surge speed', 'quadratic thrust against linear damping'});
 sgtitle('W01 C — thrust in, speed out', 'FontWeight','bold');
 exportgraphics(f, fullfile(here,'img','W01_result_speed.png'), 'Resolution', 150);
 
-%% ---- the same velocity in two frames -----------------------------------
-%  No simulation: one rotation, checked two ways. A rotation preserves length,
-%  and nothing catches a transposed or mis-signed R as reliably.
-[f, Tf] = W01_frames();
-exportgraphics(f, fullfile(here,'img','W01_result_frames.png'), 'Resolution', 150);
+%  REMOVED 2026-09-08, at the lecturer's request: the four-panel
+%  "one velocity, two frames" figure, and the table that went with it.
+%
+%  It was a second telling of §1-4, which already works the same rotation
+%  through with the same numbers (psi = 30 deg, u = 2.0, v = 0.5) and its own
+%  figure. Two tellings of one idea is not emphasis — see
+%  gnc-lecture-vault/references/standing-orders.md §9-5.
+%
+%  `W01_frames.m` is left in the folder. Nothing calls it now, and it is kept
+%  so the figure can be brought back without rewriting it.
 
-fprintf('\n  one velocity, two frames  (psi = 30 deg, u = 2.0, v = 0.5)\n\n');
-disp(Tf);
-fprintf(['\n    The two speeds agree because a rotation preserves length. Nothing\n' ...
-         '    else in a frame conversion is as easy to check, and nothing else\n' ...
-         '    catches a transposed or mis-signed rotation matrix as reliably.\n']);
-
-fprintf('\n  figures -> img/W01_result_speed.png, img/W01_result_frames.png\n\n');
+fprintf('\n  figure -> img/W01_result_speed.png\n\n');
