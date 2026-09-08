@@ -1,116 +1,153 @@
-% figures/w04-los-geometry.svg — LOS 법칙과 그 안의 기호가 사는 자리.
+% figures/w04-los-geometry.svg — LOS 유도의 기하. Fossen 의 표준 그림 배치.
 %
+%   matlab -batch "addpath _tools; w04_losgeo"          <- 먼저 기하를 계산하고
 %   bash _tools/tikz2svg.sh figures/src/w04-los-geometry.tex figures/w04-los-geometry.svg
 %
-% 다리는 북에서 62 deg. 배는 다리 위 30 m 지점에서 우현으로 12 m 벗어나 있고,
-% 조준점은 수선의 발에서 다리를 따라 20 m 앞이다. 그러면
-%     atan(12/20) = 30.96 deg,  psi_d = 62 - 30.96 = 31.04 deg
-% 이고 그림에서 잰 각이 그것과 같아야 한다.
+% 배치와 기호는 Fossen 의 TTK 4190 "Guidance, Navigation and Control of
+% Vehicles" 강의노트, 그리고 Handbook of Marine Craft Hydrodynamics and Motion
+% Control (2021, 2nd ed.) §12.3 을 따른다. 사용자가 그 그림으로 맞춰 달라고
+% 지시했다 (2026-09-08).
 %
-% 화면: 북 위, 동 오른쪽. 다리는 +x 에서 28 deg (= 90 - 62) 이므로
-% [rotate=28] 안에서 다리를 +x 로 두면 우현이 국소 -y 가 된다.
+%   p_i^n, p_{i+1}^n   웨이포인트 (NED). 굵은 소문자에 위첨자 n
+%   pi_p               경로 접선각
+%   x_e^p, y_e^p       경로좌표계 {p} 에서의 along-track / cross-track 오차
+%   Delta              look-ahead distance. 수선의 발에서 **경로를 따라** 잰다
+%   chi_d              요구 침로각 = pi_p - atan(y_e^p/Delta)
+%   chi, psi, beta_c   실제 침로각, 선수각, 크랩각.  chi = psi + beta_c
+%
+% 좌표는 전부 _tools/w04_losgeo.m 이 계산한다. **이 파일에는 산술이 없다** —
+% TikZ 의 calc 에 매크로 좌표와 음수 계수를 함께 물리면 pgf 의 계수 파서가
+% 폭주하고, 이름표를 눈으로 놓으면 세 개가 LOS 벡터 위에 겹친다. 둘 다 실제로
+% 겪었다. 설명 글은 그림 **아래**에 둔다 — 옆에 두면 전체 폭이 A4 본문 폭
+% 703 px 를 넘어 인쇄될 때 축소된다 (CLAUDE.md §4 규칙 6-0).
 \documentclass[border=5pt]{standalone}
 \input{gnc-style}
+\input{w04-los-geometry-geo}
+
+\tikzset{
+  pathline/.style = {ink, line width=0.9pt},
+  aux/.style      = {soft, line width=0.35pt, densely dashed},
+  errline/.style  = {errc, line width=1.0pt},
+  alngline/.style = {alng, line width=1.0pt},
+  losline/.style  = {accent, line width=1.0pt, -{Stealth[length=4.6pt,width=3.4pt]}},
+  velline/.style  = {pathc, line width=1.0pt, -{Stealth[length=4.6pt,width=3.4pt]}},
+  bodyline/.style = {ink, line width=0.8pt, -{Stealth[length=4.2pt,width=3.0pt]}},
+  ang/.style      = {soft, line width=0.5pt},
+  rmark/.style    = {soft, line width=0.4pt},
+}
 
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
-\def\S{1.55}                % 1 m = 1.55 mm
-\def\XE{46.5}               % x_e = 30 m
-\def\YE{18.6}               % y_e = 12 m
-\def\DL{31.0}               % Delta = 20 m
-\def\LG{132}                % 다리 길이 85 m
-\def\RA{18.6}               % 수락반경 12 m
+% ---- 북·동 축 ------------------------------------------------------------
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,96) -- (2,109);
+\node[font=\scriptsize, anchor=south] at (2,109.5) {North};
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,96) -- (15,96);
+\node[font=\scriptsize, anchor=west] at (15.5,96) {East};
 
-% ---- NED 축 ---------------------------------------------------------------
-\begin{scope}[shift={(-6,66)}]
-  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,11);
-  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (11,0);
-  \node[font=\small, anchor=east]  at (-0.8,10) {$N$};
-  \node[font=\small, anchor=north] at (10,-0.8) {$E$};
-\end{scope}
+% ---- 경로 ----------------------------------------------------------------
+\draw[pathline] \PathA -- \PathB;
+\fill[ink] \WPi    circle (1.5pt);
+\fill[ink] \WPnext circle (1.5pt);
+\node[font=\small, anchor=east]        at (-3.0,1.0)    {$\mathbf{p}_{i}^{n}$};
+%  p_i 의 오른쪽 아래에 둔다. 왼쪽에 두면 그림 왼쪽 끝에 딱 붙어 잘려 보인다.
+\node[note, anchor=north west]         at (2.5,-2.0)    {$[\,x_i^n,\ y_i^n\,]^{\!\top}$};
+\node[font=\small, anchor=south east]  at (117.0,101.5) {$\mathbf{p}_{i+1}^{n}$};
 
-\begin{scope}[rotate=28]
-  % ---- 다리와 웨이포인트 ---------------------------------------------------
-  \draw[pathc, line width=0.9pt] (0,0) -- (\LG,0);
-  \draw[pathc, line width=0.5pt, densely dashed] (\LG,0) circle (\RA);
-  \filldraw[pathc, fill=white, line width=0.7pt] (0,0)   circle (1.1);
-  \filldraw[pathc, fill=white, line width=0.7pt] (\LG,0) circle (1.1);
+% ---- 선박을 지나는 북쪽 점선, 그리고 pi_p ------------------------------
+\draw[aux] \Ves -- \Xntop;
+\node[font=\small, soft, anchor=south east] at (53.0,59.0) {$x_n$};
+\draw[ang] (53.937,58.258) arc (90:\ScrPip:13);
+\node[font=\small, anchor=east] at \LabPip {$\pi_p$};
 
-  % ---- x_e : wp_k 에서 수선의 발까지 --------------------------------------
-  \draw[alng, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\XE,0);
+% ---- 수선의 발, along-track 과 cross-track -----------------------------
+\draw[alngline] \WPi -- \Foot;
+\draw[errline]  \Foot -- \Ves;
+\fill[ink] \Foot circle (1.1pt);
+\draw[rmark] \RaA -- \RaB -- \RaC;
 
-  % ---- y_e : 수선의 발에서 배까지 (우현 = 국소 -y) -------------------------
-  \draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
-        (\XE,0) -- (\XE,-\YE);
-  \draw[errc, line width=0.4pt] (\XE,-2.2) -- ({\XE+2.2},-2.2) -- ({\XE+2.2},0);
+\node[alng, font=\small, anchor=south east] at (17.0,17.8) {$x_e^{p}$};
+\node[errc, font=\small, anchor=east]       at (43.6,22.4) {$y_e^{p}$};
 
-  % ---- Delta : 수선의 발에서 조준점까지, 경로를 따라 -----------------------
-  \draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
-        (\XE,0) -- ({\XE+\DL},0);
-  \fill[accent] ({\XE+\DL},0) circle (1.0);
+% ---- look-ahead 와 조준점 -----------------------------------------------
+\draw[alngline] \Foot -- \Aim;
+\fill[accent] \Aim circle (1.4pt);
+\node[alng, font=\small, anchor=south east] at \LabDelta {$\Delta$};
 
-  % ---- 시선 : 배에서 조준점으로 -------------------------------------------
-  \draw[accent, line width=0.8pt, densely dashed, -{Stealth[length=4.5pt,width=3.4pt]}]
-        (\XE,-\YE) -- ({\XE+\DL},0);
+% ---- LOS 벡터 ------------------------------------------------------------
+\draw[losline] \Ves -- \Aim;
+\node[accent, font=\scriptsize, anchor=north west, rotate=\ScrChid]
+     at (70.8,41.0) {LOS vector};
 
-  % ---- 배 -----------------------------------------------------------------
-  % 선수는 psi_d 방향, 즉 국소 프레임에서 +30.96 deg
-  % 선수 방향이 곧 psi_d 다. 중첩된 [rotate=] 는 합성 방향을 착각하기 쉬워
-  % (한 번 반대로 그렸다) 좌표를 직접 쓴다.
-  %   다리 프레임에서 선수 = 30.96 deg,  (cos, sin) = (0.8575, 0.5146)
-  \fill[ink] ({\XE+3.60},{-\YE+2.16}) -- ({\XE-3.74},{-\YE+0.79})
-          -- ({\XE-1.06},{-\YE-3.67}) -- cycle;
-  \draw[ink, line width=0.4pt, densely dotted]
-        ({\XE+3.60},{-\YE+2.16}) -- ({\XE+10.29},{-\YE+6.18});
+%  조준점에서의 각. 두 선을 조준점에서 **뒤로** 본 구간이다.
+\draw[ang] \ArcTopCorr arc (\ScrPip+180:\ScrChid+180:\RadCorr);
+\draw[soft, line width=0.35pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+     (98.0,52.0) -- \ArcMidCorr;
+\node[font=\scriptsize, anchor=west] at (98.5,51.6)
+     {$\tan^{-1}\!\big(y_e^{p}/\Delta\big)$};
 
-  % ---- 라벨 (회전을 되돌려 수평으로) --------------------------------------
-  \node[pathc, font=\small, anchor=north east] at (-1.5,-1.5) {waypoint $k$};
-  \node[pathc, font=\small, anchor=south west] at ({\LG+1.5},2.5) {$k+1$};
-  \node[pathc, font=\scriptsize, anchor=north]
-       at ({\LG}, {-\RA-2}) {acceptance radius $R$};
-  \node[alng, font=\small, anchor=south] at ({0.5*\XE}, 1.5) {$x_e$};
-  \node[errc, font=\small, anchor=west]  at ({\XE+1.8}, {-0.6*\YE}) {$y_e$};
-  \node[accent, font=\small, anchor=south] at ({\XE+0.5*\DL}, 1.6) {$\Delta$};
-  \node[accent, font=\scriptsize, anchor=north west]
-       at ({\XE+\DL+1.5}, -2.5) {the aim point};
-  \node[ink, font=\scriptsize, anchor=north east]
-       at ({\XE-1.5}, {-\YE-1.5}) {the vessel};
-\end{scope}
+%  조준점에서 내린 세로 점선, 선박에서 오는 가로 점선, 만나는 곳의 직각
+\draw[aux] \Aim   -- \DropA;
+\draw[aux] \Ves   -- \DropB;
+\draw[rmark] \RbA -- \RbB -- \RbC;
 
-% ---- pi_p : 북에서 다리까지 -----------------------------------------------
-\draw[soft, line width=0.4pt, densely dashed] (0,0) -- (0,34);
-\draw[soft, line width=0.5pt] (0,26) arc (90:28:26);
-\node[soft, font=\small] at (7.5,29) {$\pi_p = 62^\circ$};
+% ---- 선박 ----------------------------------------------------------------
+\fill[ink, opacity=0.85] \HullBow -- \HullStbd -- \HullPort -- cycle;
 
-% ---- psi_d : 배에서 북 기준 ------------------------------------------------
-% 배의 절대 위치 = rotate(28) 적용한 (XE, -YE)
-\def\VX{57.79}   % 46.5*cos28 + 18.6*sin28
-\def\VY{5.41}    % 46.5*sin28 - 18.6*cos28
-\draw[soft, line width=0.4pt, densely dashed] (\VX,\VY) -- (\VX,{\VY+30});
-\draw[accent, line width=0.5pt] ({\VX},{\VY+23}) arc (90:58.96:23);
-\node[accent, font=\small] at ({\VX+9},{\VY+26}) {$\psi_d$};
+\draw[bodyline] \Ves -- ++(\ScrPsi:24);
+\node[font=\small] at \LabXb {$x_b$};
 
-% ===================== 오른쪽 : 법칙 =======================================
-\begin{scope}[shift={(150,0)}]
-  \node[font=\small\bfseries, anchor=north west] at (0,72) {the law};
-  \node[anchor=north, font=\normalsize] at (36,66)
-       {$\psi_d = \pi_p - \arctan\!\left(\dfrac{y_e}{\Delta}\right)$};
+\draw[velline] \Ves -- ++(\ScrChi:38);
+\node[pathc, font=\small] at \LabU {$U$};
 
-  \node[anchor=north west, align=left, text width=72mm, font=\scriptsize] at (0,48) {%
-    $\pi_p$ — line up with the path.\\
-    $-\arctan(y_e/\Delta)$ — and lean towards it.\\[5pt]
-    Here $y_e = 12$\,m and $\Delta = 20$\,m, so the correction is
-    $\arctan(12/20) = 30.96^\circ$ and
-    $\psi_d = 62^\circ - 30.96^\circ = 31.04^\circ$.\\[7pt]
-    \textbf{The correction is bounded by $90^\circ$.}\\
-    $y_e \to 0$: on the path, so $\psi_d \to \pi_p$ and the vessel steers along it.\\
-    $y_e \to \infty$: $\psi_d \to \pi_p - 90^\circ$ — head straight at the path,
-    and never away from it.\\[7pt]
-    $\Delta$ is measured \textbf{along the path} from the foot of the
-    perpendicular, not from the vessel. The distance from the vessel to the aim
-    point is $\sqrt{\Delta^2+y_e^2}$, which is larger.};
-\end{scope}
+\draw[ang] \ArcTopPsi  arc (90:\ScrPsi:\RadPsi);
+\node[font=\small]       at \LabPsi  {$\psi$};
+\draw[ang] \ArcTopChi  arc (90:\ScrChi:\RadChi);
+\node[pathc, font=\small] at \LabChi {$\chi$};
+\draw[ang] \ArcTopChid arc (90:\ScrChid:\RadChid);
+\node[accent, font=\small] at \LabChid {$\chi_d$};
+
+\draw[accent, line width=0.7pt] \ArcTopBeta arc (\ScrPsi:\ScrChi:14);
+\node[anote] at \LabBeta {$\beta_c$};
+
+\node[note, anchor=north east] at (51.0,8.0) {$(x^n,\ y^n)$};
+
+% ===================== 아래 : 법칙과 수치 ================================
+\draw[soft, line width=0.3pt] (-6,-26) -- (140,-26);
+
+\node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (-6,-30) {%
+  {\small\bfseries The line-of-sight law}\\[4pt]
+  \hspace*{4mm}$\chi_d = \pi_p - \tan^{-1}\!\Big(\dfrac{y_e^{p}}{\Delta}\Big)$\\[7pt]
+  \textbf{Two terms, and that is all.} $\pi_p$ lines the vessel up \emph{with}
+  the path; $-\tan^{-1}(y_e^{p}/\Delta)$ leans it \emph{towards} the path.
+  Nothing else appears, which is exactly why §4-7 can say what the law cannot
+  do.\\[4pt]
+  \textbf{The correction is bounded by $90^\circ$.} As $y_e^{p}\to 0$ the
+  vessel is on the path and $\chi_d\to\pi_p$; as $y_e^{p}\to\infty$ the law
+  gives $\chi_d\to\pi_p-90^\circ$, which heads straight at the path and never
+  away from it.\\[4pt]
+  \textbf{$\Delta$ is measured along the path}, from the foot of the
+  perpendicular and not from the vessel. The vessel's own distance to the aim
+  point is $\sqrt{\Delta^2+(y_e^{p})^2}$, which is larger.};
+
+\node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (72,-30) {%
+  {\small\bfseries Notation, and the numbers drawn here}\\[4pt]
+  Waypoints are $\mathbf{p}_i^{n} = [\,x_i^n,\ y_i^n\,]^{\!\top}$, resolved in
+  $\{n\}$. The two errors carry the superscript $p$ because they are resolved
+  in the \textbf{path} frame $\{p\}$ — not in $\{n\}$ and not in $\{b\}$. The
+  superscripts are what keep the three frames apart.\\[4pt]
+  Drawn with $\pi_p = \ValPip^\circ$, $x_e^{p} = \ValXe$\,m,
+  $y_e^{p} = \ValYe$\,m and $\Delta = \ValDelta$\,m, so the correction is
+  $\tan^{-1}(\ValYe/\ValDelta) = \ValCorr^\circ$ and
+  $\chi_d = \ValChid^\circ$; the line-of-sight distance is $\ValLOS$\,m.
+  The hull is at $\psi = \ValPsi^\circ$ with $\beta_c = \ValBeta^\circ$, so
+  $\chi = \ValChi^\circ$ — not yet on the commanded course, which is what
+  makes the three arcs at the hull distinct.\\[4pt]
+  \textbf{Course or heading.} The law as written commands a \emph{course}
+  $\chi_d$. This course carries a heading autopilot from Week~3, so §4-4
+  commands $\psi_d$: the same expression with $\psi_d$ in place of $\chi_d$.
+  The two agree exactly when $\beta_c = 0$, and §4-7 measures what the
+  difference costs when it is not.};
 
 \end{tikzpicture}
 \end{document}

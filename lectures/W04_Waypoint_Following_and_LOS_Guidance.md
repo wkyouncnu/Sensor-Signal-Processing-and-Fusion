@@ -111,22 +111,39 @@ $$
 
 ## 4-2. The path is a straight leg between two waypoints
 
-- The mission is an ordered list $\mathbf{wp}_1, \dots, \mathbf{wp}_n$ with $\mathbf{wp}_k = [N_k\ \ E_k]^\top$. Between consecutive waypoints the path is a straight line, and the **active leg** runs from $\mathbf{wp}_k$ to $\mathbf{wp}_{k+1}$.
+> [!important] The notation of this week, and why every symbol carries a superscript
+> From here on this week uses the notation of Fossen's TTK 4190 lecture notes and of the *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. (2021), §12.3. It is worth one paragraph, because the superscripts are not decoration.
+>
+> Three different frames appear in the same equation in this week, and a quantity is meaningless until its frame is named:
+>
+> | Frame | Written | What it is |
+> |---|---|---|
+> | $\{n\}$ | superscript $n$ | NED. North, East, Down. Does not move |
+> | $\{p\}$ | superscript $p$ | the **path** frame. Its $x$ axis runs along the active leg |
+> | $\{b\}$ | subscript $b$ | the hull. Its $x$ axis runs from stern to bow |
+>
+> - Waypoints are points in $\{n\}$: $\mathbf{p}_i^{\,n} = [\,x_i^n\ \ y_i^n\,]^\top$. The index is $i$, and the active leg runs from $\mathbf{p}_i^{\,n}$ to $\mathbf{p}_{i+1}^{\,n}$.
+> - The vessel is at $\mathbf{p}^{\,n} = [\,x^n\ \ y^n\,]^\top$. In NED, $x$ **is** North and $y$ **is** East — the letters $N$ and $E$ are not used once a superscript is available.
+> - The two errors are resolved in $\{p\}$, so they are written $x_e^{\,p}$ and $y_e^{\,p}$. Writing them without the superscript is the single most common way of confusing a cross-track error with an East error, and the two differ by $\pi_p$.
+>
+> **The code cannot carry superscripts.** MATLAB identifiers have no place to put them, so `_tools/crosstrack_err.m` returns `x_e` and `y_e`, and the Simulink signals are named the same way. Every such identifier means the path-frame quantity. §4-10 sets the equations and the code side by side.
+
+- The mission is an ordered list $\mathbf{p}_1^{\,n}, \dots, \mathbf{p}_N^{\,n}$. Between consecutive waypoints the path is a straight line, and the **active leg** runs from $\mathbf{p}_i^{\,n}$ to $\mathbf{p}_{i+1}^{\,n}$.
 - One number describes that leg — its direction measured from North:
 
 $$
-\boxed{\ \pi_p = \operatorname{atan2}\!\left(E_{k+1} - E_k,\; N_{k+1} - N_k\right)\ }
+\boxed{\ \pi_p = \operatorname{atan2}\!\left(y_{i+1}^n - y_i^n,\; x_{i+1}^n - x_i^n\right)\ }
 $$
 
 | Symbol | Quantity | Unit / source |
 |---|---|---|
-| $\pi_p$ | path-tangential angle, from North, positive towards East | rad — recomputed whenever $k$ changes |
-| $\mathbf{wp}_k$ | the leg's origin, the waypoint most recently passed | m — `WP_N(k)`, `WP_E(k)` |
-| $d_k$ | leg length $\lVert \mathbf{wp}_{k+1} - \mathbf{wp}_k \rVert$ | m — 60, 60, 60, 84.85 m this week |
-| $n$ | number of waypoints | 5, giving 4 legs |
+| $\pi_p$ | path-tangential angle, from North, positive towards East | rad — recomputed whenever $i$ changes |
+| $\mathbf{p}_i^{\,n}$ | the leg's origin, the waypoint most recently passed | m — `WP_N(k)`, `WP_E(k)` |
+| $d_i$ | leg length $\lVert \mathbf{p}_{i+1}^{\,n} - \mathbf{p}_i^{\,n} \rVert$ | m — 60, 60, 60, 84.85 m this week |
+| $N$ | number of waypoints | 5, giving 4 legs |
 
 - The two-argument `atan2` and not `atan`: the leg may point into any of the four quadrants, and only the two-argument form separates North-East from South-West. The single-argument form would fold the third quadrant onto the first and send the vessel backwards along its own path.
-- $\pi_p$ is constant on a leg. Every quantity downstream of it in this week — $x_e$, $y_e$, $\psi_d$ — changes continuously as the vessel moves, but $\pi_p$ changes only at a switch.
+- $\pi_p$ is constant on a leg. Every quantity downstream of it in this week — $x_e^{\,p}$, $y_e^{\,p}$, $\psi_d$ — changes continuously as the vessel moves, but $\pi_p$ changes only at a switch.
 
 > [!note] Curved paths are deferred, and nothing here has to change for them
 > Lekkas and Fossen (2014) replace the straight leg by a Hermite spline and $\pi_p$ by the spline's tangent angle at the closest point. Everything downstream of $\pi_p$ in this week — §4-3 through §4-9 — is unchanged by that substitution. §4-11 gives the reference.
@@ -165,15 +182,38 @@ $\hat{\mathbf{t}}$ is a unit vector at angle $\pi_p$ from North, which is the le
 The vessel at $\mathbf{p} = [N\ \ E]^\top$ has position error $\mathbf{p} - \mathbf{wp}_k$ relative to the leg's origin. Its components in the leg frame are its projections onto the two basis vectors:
 
 $$
-x_e = \hat{\mathbf{t}}^\top(\mathbf{p} - \mathbf{wp}_k),
+x_e^{\,p} = \hat{\mathbf{t}}^\top\big(\mathbf{p}^{\,n} - \mathbf{p}_i^{\,n}\big),
 \qquad
-y_e = \hat{\mathbf{n}}^\top(\mathbf{p} - \mathbf{wp}_k)
+y_e^{\,p} = \hat{\mathbf{n}}^\top\big(\mathbf{p}^{\,n} - \mathbf{p}_i^{\,n}\big)
 $$
 
-Stacking the two projections turns them into one matrix product, and that matrix is the transpose of the planar rotation of Week 1 §1-4:
+Stacking the two projections turns them into one matrix product, and that matrix is the transpose of the planar rotation of Week 1 §1-4. Written with the frames named, it is the rotation **from** $\{p\}$ **to** $\{n\}$, transposed:
+
+$$
+\mathbf{R}_p^{\,n}(\pi_p) =
+\begin{bmatrix} \cos\pi_p & -\sin\pi_p \\[2pt] \sin\pi_p & \cos\pi_p \end{bmatrix} \in SO(2)
+$$
 
 $$
 \boxed{\
+\begin{bmatrix} x_e^{\,p} \\[2pt] y_e^{\,p} \end{bmatrix}
+= \mathbf{R}_p^{\,n}(\pi_p)^\top
+\left(\begin{bmatrix} x^n \\[2pt] y^n \end{bmatrix} -
+      \begin{bmatrix} x_i^n \\[2pt] y_i^n \end{bmatrix}\right)\ }
+$$
+
+Multiplied out, that is the pair most often quoted:
+
+$$
+\begin{aligned}
+x_e^{\,p} &= \phantom{-}\big(x^n - x_i^n\big)\cos\pi_p + \big(y^n - y_i^n\big)\sin\pi_p\\[3pt]
+y_e^{\,p} &= -\big(x^n - x_i^n\big)\sin\pi_p + \big(y^n - y_i^n\big)\cos\pi_p
+\end{aligned}
+$$
+
+The same statement once more, in the older notation this section used before, so that the two can be read against each other:
+
+$$
 \begin{bmatrix} x_e \\[2pt] y_e \end{bmatrix}
 =
 \begin{bmatrix} \cos\pi_p & \sin\pi_p \\[2pt] -\sin\pi_p & \cos\pi_p \end{bmatrix}
