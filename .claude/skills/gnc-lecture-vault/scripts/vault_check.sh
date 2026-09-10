@@ -158,6 +158,12 @@ check_figs() {
     [ -d "$d/img" ] || continue
     for png in "$d"/img/*.png; do
       [ -f "$png" ] || continue
+      #  강의자료가 더 이상 싣지 않는 그림은 건너뛴다. §9-8 로 철회한 그림은
+      #  생성기가 돌지 않으므로 **영원히** 낡은 상태이고, 그것을 계속 지적하면
+      #  검사기가 늑대 소년이 된다. 파일은 남기고(사용자 절대 지침) 판정에서만 뺀다.
+      if ! grep -qrF "$(basename "$png")" lectures/*.md 2>/dev/null; then
+        continue
+      fi
       if [ "$bld" -nt "$png" ]; then
         echo "     [낡음] $png  <  $(basename "$bld")"; stale=$((stale+1))
       fi

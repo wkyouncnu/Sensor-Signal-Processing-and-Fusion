@@ -132,6 +132,19 @@ A reader short of time can go 1-1 → 1-3 → 1-4 → 1-9 and still follow the l
 >
 > The MATLAB code writes `N` and `E` for these two, because an identifier has nowhere to put a superscript. That mapping is stated in each week's symbol table and is the only place the two spellings meet.
 
+> [!important] Three letters that are easy to overload, and the rule for each
+> A course this long runs out of letters. These three are the ones that would otherwise mean two things, and each follows `otter.m`'s own naming so that the document and the code never disagree.
+>
+> | Symbol | Means | Never means | Source |
+> |---|---|---|---|
+> | $\boldsymbol{\tau}$, $\tau_N$ | a **generalised force** — N for a force, N·m for a moment | a time constant | `otter.m` writes `tau`, `tau_damp`, `tau_crossflow`, all forces |
+> | $T_u$, $T_{\text{yaw}}$, $T_{\text{sway}}$ — a **named** subscript | a **time constant**, in seconds | a thrust | `otter.m` writes `T_yaw = 1; % time constant in yaw (s)` |
+> | $T$, $T_1$, $T_2$ — bare, or a **numbered** subscript | a **thrust**, in newtons | a time constant | `otter.m` writes `Thrust(i)` for exactly this quantity |
+>
+> The one deliberate exception is Nomoto's second-order model in §3-2, where the literature's own $T_1, T_2, T_3$ are time constants. It is confined to a single callout, which says so on the spot.
+>
+> Week 2's surge time constant was written $\tau_u$ until 2026-09-10 and is now $T_u$, in both the lecture and the scripts. If an older printout shows `tau_u = 1.1025 s`, it is the same number under the old name.
+
 ### NED and ENU — the other convention
 
 - Not everyone uses NED. Most robotics software — ROS, Gazebo, and the VRX simulator this course reaches at the end — uses **ENU**: $x$ East, $y$ North, $z$ **Up**.
@@ -811,7 +824,7 @@ $$
 - This is a first-order lag. Two numbers describe it completely:
 
 $$
-\tau_u = \frac{M_{11}}{|X_u|} = \frac{85.50}{77.55} = 1.1025\ \text{s},
+T_u = \frac{M_{11}}{|X_u|} = \frac{85.50}{77.55} = 1.1025\ \text{s},
 \qquad
 K_u = \frac{1}{|X_u|} = 0.012894\ \frac{\text{m/s}}{\text{N}}
 $$
@@ -1397,7 +1410,7 @@ W01_E_current_run
 | Step | What was done | How it was verified |
 |---|---|---|
 | 1 | Identified the twelve states and their frames | listed against `otter.m` and the selector blocks |
-| 2 | Reduced the 6-DOF equation to first-order surge | $\tau_u = 1.1025$ s against $1.1064$ s measured from the plant |
+| 2 | Reduced the 6-DOF equation to first-order surge | $T_u = 1.1025$ s against $1.1064$ s measured from the plant |
 | 3 | Predicted terminal speed before simulating | four commands, agreement to four decimals |
 | 4 | Ran a port-then-starboard manoeuvre with both propellers ahead | heading changed $-70.2°$ then $+70.6°$, symmetric to $0.41°$ |
 | 5 | Separated sway force from sway velocity | $Y = 0$ exactly, $v = \pm 0.1264$ m/s, sign reversing between the turns |
@@ -1496,7 +1509,7 @@ W01_check(1)                 % run this whenever, as often as needed
 | `Undefined variable 'n0'` when pressing Run in Simulink | the model reads base-workspace variables that the setup script defines | run `W01_0_setup` first, or run any section script, which sets its own variables |
 | The vessel turns right when the port turn was expected | the yaw moment is $N = y_p(T_L - T_R)$, so slowing the **right** propeller turns the bow right | for a port turn slow the **left** propeller: $n = [n_0 - dn;\ n_0 + dn]$ |
 | The exported block diagram is thousands of pixels wide | an annotation was edited into one long line; Simulink does not wrap annotation text | keep the manual line breaks in `W01_1_build_openloop.m` |
-| Terminal speed differs from the prediction by a few percent | the simulation was stopped before the transient finished | `T_final` must exceed roughly $5\tau_u \approx 5.5$ s; the default is 120 s |
+| Terminal speed differs from the prediction by a few percent | the simulation was stopped before the transient finished | `T_final` must exceed roughly $5T_u \approx 5.5$ s; the default is 120 s |
 | Heading reads more than 360° | $\psi$ is an unwrapped integral of $r$ and nothing in this model wraps it | expected. Week 3 introduces the wrapping and shows what happens without it |
 | The run is far slower than the simulated time | the live view is redrawing too often | raise `animate_every` in `W01_0_setup.m`, or set `animate = 0` |
 | The vessel leaves the live view and disappears | the axes are fixed before the run and do not auto-range | widen `track_Nmin` … `track_Emax` in `W01_0_setup.m` |
@@ -1534,7 +1547,7 @@ W01_check(1)                 % run this whenever, as often as needed
 - **Week 2 — Surge Speed Control**
 - The first closed loop. The surge equation of §1-6 becomes a plant, a controller is placed around it, and the settled speed is predicted before it is measured — as in this week, but now with feedback.
 - The propeller curve of §1-5 is inverted, so that a demanded **force** becomes a shaft speed.
-- Preparation: bring $\tau_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-6, and the derivation of $u_{ss}(n)$ from Assignment 1.
+- Preparation: bring $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-6, and the derivation of $u_{ss}(n)$ from Assignment 1.
 
 > [!note] Appendix A1 is available but not required yet
 > The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 2 and 3 quote its two results where they need them. It becomes required reading before Week 5.

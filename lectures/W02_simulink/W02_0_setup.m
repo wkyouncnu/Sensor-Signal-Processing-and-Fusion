@@ -24,7 +24,7 @@ cfg = otter_config('base');
 M11  = 85.50;                       % surge mass including added mass [kg]
 Xu   = 24.4*9.81/(6*0.5144);        % linear surge damping [N per m/s]
 K_u  = 1/Xu;                        % DC gain  [(m/s) per N]
-tau_u = M11/Xu;                     % time constant [s]
+T_u = M11/Xu;                     % time constant [s]
 
 %% ---- the reference ------------------------------------------------------
 %  Two steps are summed, so one model covers a single step and the up-then-down
@@ -42,7 +42,7 @@ t_dn = 1e6;                  % time of the second step [s]
 %% ---- the controller -----------------------------------------------------
 %  Designed in §3-4 for a closed-loop damping ratio and natural frequency:
 %
-%     K_i = wn^2 tau_u / K_u,     K_p = (2 zeta sqrt(tau_u K_u K_i) - 1)/K_u
+%     K_i = wn^2 T_u / K_u,     K_p = (2 zeta sqrt(T_u K_u K_i) - 1)/K_u
 %
 %  With zeta = 0.7 and wn = 1.5 rad/s this gives the pair below.
 Kp = 102.00;                 % proportional gain [N per m/s]
@@ -57,7 +57,7 @@ Nf = 20;                     % derivative filter bandwidth [rad/s]
 %           2  back-calculation the excess (X_sat - X_cmd) is fed back into
 %                              the integrator through K_aw
 aw_mode = 2;
-K_aw    = 1/tau_u;           % back-calculation gain [1/s]
+K_aw    = 1/T_u;           % back-calculation gain [1/s]
 
 %% ---- open loop ----------------------------------------------------------
 %  loop_closed = 0 disconnects the controller and applies X_open directly,
@@ -96,13 +96,13 @@ track_Emin = -35;   track_Emax = 35;
 %% ---- report -------------------------------------------------------------
 X_lim = [2*k_neg*n_min*abs(n_min), 2*k_pos*n_max*abs(n_max)];
 fprintf('\n  W02 setup complete\n');
-fprintf('    plant           tau_u = %.4f s,  K_u = %.6f (m/s)/N\n', tau_u, K_u);
+fprintf('    plant           T_u = %.4f s,  K_u = %.6f (m/s)/N\n', T_u, K_u);
 fprintf('    actuator        X in [%.2f, %.2f] N  ->  u_ss in [%.4f, %.4f] m/s\n', ...
         X_lim(1), X_lim(2), X_lim(1)*K_u, X_lim(2)*K_u);
 fprintf('    controller      Kp = %g, Ki = %g, Kd = %g, Nf = %g\n', Kp, Ki, Kd, Nf);
 if Ki > 0
-    wn = sqrt(K_u*Ki/tau_u);
-    ze = (1 + K_u*Kp)/(2*sqrt(tau_u*K_u*Ki));
+    wn = sqrt(K_u*Ki/T_u);
+    ze = (1 + K_u*Kp)/(2*sqrt(T_u*K_u*Ki));
     fprintf('    closed loop     wn = %.4f rad/s,  zeta = %.4f\n', wn, ze);
 else
     fprintf('    closed loop     P only, steady-state error = %.2f %%\n', 100/(1+K_u*Kp));

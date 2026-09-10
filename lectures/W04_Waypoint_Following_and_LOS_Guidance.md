@@ -1398,7 +1398,7 @@ Expected output:
 Expected output:
 
 ```
-  W04 section C — psi_d = atan2(E_next - E, N_next - N)
+  W04 section C — psi_d = atan2(yn_next - yn, xn_next - xn)
 
     leg       atan2 |y_e|      LOS |y_e|      atan2 max          ratio
     ----------------------------------------------------------------------

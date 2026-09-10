@@ -34,7 +34,7 @@ status: done
 - **This week**: ① the surge axis as a first-order, type 0 plant identified from the plant itself ② why proportional control leaves an error and integral action removes it ③ what an actuator limit does to an integrator, and three ways of surviving it
 
 > [!important] Prerequisites from the previous week
-> - From Week 1: $\tau_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N, and the propeller curve $T = k\,n|n|$.
+> - From Week 1: $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N, and the propeller curve $T = k\,n|n|$.
 > - Two numbers, and nothing else, are carried in from **Appendix A1**: the surge force this vessel can produce lies in $X \in [-133.42,\ 239.36]$ N. That limit is what causes the windup of §2-6. Appendix A1 derives it; a reader who takes the two numbers on trust loses nothing this week.
 
 ---
@@ -83,7 +83,7 @@ Seven sections, answering three questions. Each answer creates the next question
 ## 2-1. The plant, reduced to two numbers
 
 - Before a controller can be designed, the thing being controlled has to be written down. This section starts from the same 6-DOF equation as Week 1 and ends with **two numbers** — a gain and a time constant — that between them describe everything the surge axis does.
-- Those two numbers are what the rest of the week argues with. Once the plant is $K_u$ and $\tau_u$, every steady-state claim in §2-2 and §2-3 is arithmetic rather than simulation.
+- Those two numbers are what the rest of the week argues with. Once the plant is $K_u$ and $T_u$, every steady-state claim in §2-2 and §2-3 is arithmetic rather than simulation.
 
 ### Where the surge equation comes from
 
@@ -181,11 +181,11 @@ $$
 - Taking Laplace transforms with $u(0) = 0$ gives a first-order lag:
 
 $$
-\frac{u(s)}{X(s)} = \frac{K_u}{\tau_u s + 1},
+\frac{u(s)}{X(s)} = \frac{K_u}{T_u s + 1},
 \qquad
 K_u = \frac{1}{|X_u|},
 \qquad
-\tau_u = \frac{M_{11}}{|X_u|}.
+T_u = \frac{M_{11}}{|X_u|}.
 $$
 
 | Symbol | Quantity | Value / source |
@@ -193,7 +193,7 @@ $$
 | $M_{11}$ | surge mass including added mass | $85.50$ kg, `otter.m` |
 | $X_u$ | linear surge damping | $-77.5544$ N per m/s, $-24.4g/U_{\max}$ |
 | $K_u$ | DC gain | $0.012894$ (m/s)/N |
-| $\tau_u$ | time constant | $1.1025$ s |
+| $T_u$ | time constant | $1.1025$ s |
 
 > [!important] The plant has no free integrator
 > There is no $1/s$ anywhere in $u(s)/X(s)$. The loop is therefore **type 0**, and every consequence of §2-2 follows from that single structural fact rather than from any numerical value.
@@ -203,7 +203,7 @@ $$
 - With $X = K_p(u_d - u)$ the closed loop is
 
 $$
-\frac{u(s)}{u_d(s)} = \frac{K_p K_u}{\tau_u s + 1 + K_p K_u},
+\frac{u(s)}{u_d(s)} = \frac{K_p K_u}{T_u s + 1 + K_p K_u},
 $$
 
 - and the final value theorem gives the steady state directly:
@@ -226,23 +226,23 @@ $$
 - Adding $K_i \int e\,\mathrm{d}t$ supplies the steady force without steady error. The closed loop becomes second order:
 
 $$
-\frac{u(s)}{u_d(s)} = \frac{K_u\left(K_p s + K_i\right)}{\tau_u s^{2} + \left(1 + K_u K_p\right)s + K_u K_i}.
+\frac{u(s)}{u_d(s)} = \frac{K_u\left(K_p s + K_i\right)}{T_u s^{2} + \left(1 + K_u K_p\right)s + K_u K_i}.
 $$
 
 - Matching the denominator to $s^2 + 2\zeta\omega_n s + \omega_n^2$ gives the design equations used in `W02_0_setup.m`:
 
 $$
-\omega_n = \sqrt{\frac{K_u K_i}{\tau_u}},
+\omega_n = \sqrt{\frac{K_u K_i}{T_u}},
 \qquad
-\zeta = \frac{1 + K_u K_p}{2\sqrt{\tau_u K_u K_i}} .
+\zeta = \frac{1 + K_u K_p}{2\sqrt{T_u K_u K_i}} .
 $$
 
 - Inverting them for a specified pair:
 
 $$
-K_i = \frac{\omega_n^{2}\,\tau_u}{K_u},
+K_i = \frac{\omega_n^{2}\,T_u}{K_u},
 \qquad
-K_p = \frac{2\zeta\sqrt{\tau_u K_u K_i} - 1}{K_u}.
+K_p = \frac{2\zeta\sqrt{T_u K_u K_i} - 1}{K_u}.
 $$
 
 - For $\zeta = 0.7$ and $\omega_n = 1.5$ rad/s this gives $K_p = 102.00$ and $K_i = 192.38$.
@@ -363,8 +363,8 @@ $$
 $$
 
 > [!important] On a velocity loop the derivative term is a mass, not a damper
-> The controlled variable is a velocity, so its derivative is an **acceleration**, and $K_d$ enters the equation of motion in exactly the place occupied by the mass. The effective time constant becomes $\tau_{\text{eff}} = \tau_u + K_u K_d$, so
-> $$\omega_n = \sqrt{\frac{K_u K_i}{\tau_u + K_u K_d}}\ \downarrow, \qquad \zeta = \frac{1 + K_u K_p}{2\sqrt{(\tau_u + K_u K_d)K_u K_i}}\ \downarrow .$$
+> The controlled variable is a velocity, so its derivative is an **acceleration**, and $K_d$ enters the equation of motion in exactly the place occupied by the mass. The effective time constant becomes $\tau_{\text{eff}} = T_u + K_u K_d$, so
+> $$\omega_n = \sqrt{\frac{K_u K_i}{T_u + K_u K_d}}\ \downarrow, \qquad \zeta = \frac{1 + K_u K_p}{2\sqrt{(T_u + K_u K_d)K_u K_i}}\ \downarrow .$$
 > Adding derivative action to this loop makes it **less** damped, not more. Section E measures it.
 
 - This is a property of the **axis**, not of PID. Week 3 controls a heading, whose derivative is a rate rather than an acceleration, and there the same term supplies genuine damping. The lesson is to substitute the control law into the equation of motion before assuming what a term does.
@@ -524,7 +524,7 @@ $$
 $$
 \dot I = K_i e - K_{\text{aw}}\left(X_{\text{cmd}} - X_{\text{sat}}\right),
 \qquad
-K_{\text{aw}} = \frac{1}{\tau_u} .
+K_{\text{aw}} = \frac{1}{T_u} .
 $$
 
 - Back-calculation has a fixed point worth naming. While the actuator is saturated, $\dot I \to 0$ requires
@@ -615,7 +615,7 @@ Expected output:
 
 ```
   W02 setup complete
-    plant           tau_u = 1.1025 s,  K_u = 0.012894 (m/s)/N
+    plant           T_u = 1.1025 s,  K_u = 0.012894 (m/s)/N
     actuator        X in [-133.42, 239.36] N  ->  u_ss in [-1.7203, 3.0864] m/s
     controller      Kp = 102, Ki = 192.38, Kd = 0, Nf = 20
     closed loop     wn = 1.5000 rad/s,  zeta = 0.7000
@@ -730,13 +730,13 @@ There is no controller in this figure. The loop is open, a constant force is app
 
 Two things have to be true before any of this week's design can proceed, and each panel checks one of them.
 
-The four curves in the left panel have the **same shape** and differ only in height. Each rises smoothly, without overshoot or oscillation, and is within $2\%$ of its final value by about $4.5$ s. That shape is the signature of a first-order lag, $\tau_u\dot u + u = K_u X$ — one time constant and nothing else.
+The four curves in the left panel have the **same shape** and differ only in height. Each rises smoothly, without overshoot or oscillation, and is within $2\%$ of its final value by about $4.5$ s. That shape is the signature of a first-order lag, $T_u\dot u + u = K_u X$ — one time constant and nothing else.
 
 The right panel is a **straight line through the origin**. Doubling the force from $100$ to $200$ N doubles the settled speed from $1.2894$ to $2.5788$ m/s exactly, and all four measured points lie on the line to four decimals. That straightness is what says the plant is linear.
 
 Neither property was guaranteed, which is why both were measured. The vessel underneath is a twelve-state nonlinear model, and it would have been entirely possible for it to curve.
 
-The two numbers this figure produces — $K_u = 0.012894$ (m/s)/N and $\tau_u \approx 1.12$ s — are what every gain in sections D to F is computed from. Measuring them from the plant rather than reading them off a datasheet is what makes the later predictions checkable rather than merely plausible.
+The two numbers this figure produces — $K_u = 0.012894$ (m/s)/N and $T_u \approx 1.12$ s — are what every gain in sections D to F is computed from. Measuring them from the plant rather than reading them off a datasheet is what makes the later predictions checkable rather than merely plausible.
 
 The line does end, though. At $X = 239.36$ N the propellers saturate, and the speed ceiling that follows is the one number no controller this week can argue with.
 
@@ -1272,7 +1272,7 @@ W02_check(1)                 % run this whenever, as often as needed
 1. Run the proportional loop at $K_p^\star$ and report the measured steady-state error to four decimal places, with the averaging window stated.
 2. Run the PI design of ①.3 and report the measured overshoot and $2\%$ settling time. Compare with both predictions — poles only, and poles with the zero — and state which one the plant follows.
 3. Apply the step of ①.4 and report the peak $X_{\text{cmd}}$ and peak $X_{\text{sat}}$. State whether saturation occurred. Then apply a step $20\%$ larger and repeat.
-4. With the design of ①.3 and $u_d = 3.5$ m/s held for 35 s, sweep $K_{\text{aw}} \in \{0.2, 0.5, 1/\tau_u, 2, 5\}$ and report the recovery time for each. Produce **one figure** of recovery time against $K_{\text{aw}}$.
+4. With the design of ①.3 and $u_d = 3.5$ m/s held for 35 s, sweep $K_{\text{aw}} \in \{0.2, 0.5, 1/T_u, 2, 5\}$ and report the recovery time for each. Produce **one figure** of recovery time against $K_{\text{aw}}$.
 5. Produce **one figure** comparing the response of ①.3 with $K_d = 0$ and with $K_d = 40$, and report both overshoots.
 
 ### ③ Analysis (8–12 lines)

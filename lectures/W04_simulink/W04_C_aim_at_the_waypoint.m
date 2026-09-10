@@ -21,7 +21,9 @@ y = W04_read(o);
 %% ---- what atan2 does, leg by leg --------------------------------------
 %  Measured over the LAST THIRD of each leg, so the number describes steady
 %  tracking on that leg and not the turn onto it.
-fprintf('\n  W04 section C — psi_d = atan2(E_next - E, N_next - N)\n\n');
+%  기호는 강의와 같게 쓴다: NED 좌표는 x^n, y^n 이다 (W01 1-1 의 표기 규약).
+%  MATLAB 식별자에는 위첨자를 못 쓰므로 로그의 필드 이름만 N, E 로 남는다.
+fprintf('\n  W04 section C — psi_d = atan2(yn_next - yn, xn_next - xn)\n\n');
 fprintf('    %-6s %14s %14s %14s %14s\n', ...
         'leg', 'atan2 |y_e|', 'LOS |y_e|', 'atan2 max', 'ratio');
 fprintf('    %s\n', repmat('-', 1, 70));

@@ -20,15 +20,15 @@ cfg = otter_config('base');
 V.M11   = 85.50;                      % surge mass incl. added mass [kg]
 V.Xu    = 24.4*9.81/(6*0.5144);       % |X_u|, linear surge damping [N per m/s]
 V.K_u   = 1/V.Xu;                     % DC gain [(m/s)/N]
-V.tau_u = V.M11/V.Xu;                 % time constant [s]
+V.T_u = V.M11/V.Xu;                 % time constant [s]
 V.X_hi  =  2*cfg.k_pos*cfg.n_max^2;   % most the propellers can push [N]
 V.X_lo  = -2*cfg.k_neg*cfg.n_min^2;   % most they can pull back [N]
 
 %  ---- the PI design of 2-3 -----------------------------------------------
 zeta_d = 0.7;  wn_d = 1.5;
 V.zeta_d = zeta_d;  V.wn_d = wn_d;
-V.Ki_d = wn_d^2 * V.tau_u / V.K_u;
-V.Kp_d = (2*zeta_d*sqrt(V.tau_u*V.K_u*V.Ki_d) - 1)/V.K_u;
+V.Ki_d = wn_d^2 * V.T_u / V.K_u;
+V.Kp_d = (2*zeta_d*sqrt(V.T_u*V.K_u*V.Ki_d) - 1)/V.K_u;
 
 %  ---- controller, as the model reads it ----------------------------------
 V.Kp = V.Kp_d;  V.Ki = V.Ki_d;  V.Kd = 0;  V.Nf = 20;

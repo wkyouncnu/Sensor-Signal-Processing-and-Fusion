@@ -166,7 +166,7 @@ $$
 | | Week 2, surge | Week 3, heading |
 |---|---|---|
 | controlled variable | a velocity | an angle |
-| plant | $K_u/(\tau_u s + 1)$ | $1/[s(M_{66}s + \lvert N_r\rvert)]$ |
+| plant | $K_u/(T_u s + 1)$ | $1/[s(M_{66}s + \lvert N_r\rvert)]$ |
 | type | 0 | 1 |
 | steady state needs | a non-zero force | no moment |
 | P alone reaches the setpoint | no, at any gain | yes, at every gain |
@@ -174,32 +174,33 @@ $$
 ### The same plant under its usual name: Nomoto
 
 - The model just derived has a name. Every paper on ship steering writes it as **Nomoto's model** (Nomoto et al., 1957), and a student who does not recognise it will not recognise most of the steering literature.
-- Keeping the sway–yaw coupling that §3-1 discarded and eliminating $v$ between the two rows gives a **second-order** relation between rudder angle $\delta$ and yaw rate:
+> [!note] Nomoto's second-order form, and a symbol warning
+> Keeping the sway–yaw coupling that §3-1 discarded and eliminating $v$ between the two rows gives a **second-order** relation between rudder angle $\delta$ and yaw rate:
+>
+> $$T_1 T_2\,\ddot r + (T_1 + T_2)\,\dot r + r = K\left(\delta + T_3\,\dot\delta\right)$$
+>
+> **Those three $T$'s are time constants, in seconds.** They are written $T_1, T_2, T_3$ because that is what the steering literature calls them, and recognising the form is the point of this subsection. They have **nothing to do with $T_1$ and $T_2$ in §3-6**, which are the thrusts of the two propellers, in newtons. This callout is the only place in the course where a numbered $T$ means a time constant.
+>
+> The sway dynamics are fast compared with the yaw dynamics, so $T_2$ and $T_3$ nearly cancel, and dropping them leaves the first-order model below with $T_{\text{yaw}} = T_1 + T_2 - T_3$.
+
+- The **first-order Nomoto model** is what almost every autopilot is designed on:
 
 $$
-T_1 T_2\,\ddot r + (T_1 + T_2)\,\dot r + r = K\left(\delta + T_3\,\dot\delta\right)
+\boxed{\ T_{\text{yaw}}\,\dot r + r = K\,\delta\ }
 $$
 
-- The sway dynamics are fast compared with the yaw dynamics, so $T_2$ and $T_3$ nearly cancel. Dropping them leaves the **first-order Nomoto model**, which is what almost every autopilot is designed on:
-
-$$
-\boxed{\ T\,\dot r + r = K\,\delta\ },
-\qquad
-T = T_1 + T_2 - T_3
-$$
-
-| Symbol | Meaning |
-|---|---|
-| $K$ | rudder gain — how much steady yaw rate one degree of rudder buys |
-| $T$ | time constant — how long the rate takes to build |
-| $K/T$ | turning ability; large $K/T$ is a nimble vessel |
+| Symbol | Meaning | Unit |
+|---|---|---|
+| $K$ | rudder gain — how much steady yaw rate one degree of rudder buys | 1/s |
+| $T_{\text{yaw}}$ | time constant — how long the rate takes to build | s |
+| $K/T_{\text{yaw}}$ | turning ability; large $K/T_{\text{yaw}}$ is a nimble vessel | 1/s² |
 
 - The Otter has no rudder. Its yaw moment comes from the **difference between two propellers**, so $\delta$ is replaced by $\tau_N$ and the same first-order form appears directly from §3-1:
 
 $$
 M_{66}\,\dot r + |N_r|\,r = \tau_N
 \qquad\Longleftrightarrow\qquad
-\underbrace{\frac{M_{66}}{|N_r|}}_{T}\,\dot r + r = \underbrace{\frac{1}{|N_r|}}_{K}\,\tau_N
+\underbrace{\frac{M_{66}}{|N_r|}}_{T_{\text{yaw}}}\,\dot r + r = \underbrace{\frac{1}{|N_r|}}_{K}\,\tau_N
 $$
 
 - Putting in the two numbers from `otter.m`:
@@ -219,18 +220,18 @@ verify_constants
 - That script rebuilds $\mathbf{M}$ exactly as `otter.m` lines 55–120 build it and compares all sixteen quoted values. It reports `every quoted value agrees with otter.m to its printed precision`.
 
 > [!note] $T = 1$ s exactly, and it is not a coincidence
-> `otter.m` sets the yaw damping as $N_r = -M_{66}/T_{\text{yaw}}$ with $T_{\text{yaw}} = 1$ s — the damping is *defined* from a chosen time constant rather than measured. So the Nomoto $T$ of this vessel is $1$ s by construction. Read the source before quoting a hydrodynamic coefficient as if it were a measurement.
+> `otter.m` sets the yaw damping as $N_r = -M_{66}/T_{\text{yaw}}$ with $T_{\text{yaw}} = 1$ s — the damping is *defined* from a chosen time constant rather than measured. So the Nomoto time constant of this vessel is $1$ s by construction, and the symbol used here is the source's own name for it. Read the source before quoting a hydrodynamic coefficient as if it were a measurement.
 
 - Adding the kinematics $\dot\psi = r$ turns the first-order Nomoto model into the type 1 plant used for the rest of this week:
 
 $$
-\frac{\psi(s)}{\tau_N(s)} = \frac{K}{s\,(Ts + 1)} = \frac{1}{s\left(M_{66}s + |N_r|\right)}
+\frac{\psi(s)}{\tau_N(s)} = \frac{K}{s\,(T_{\text{yaw}}\,s + 1)} = \frac{1}{s\left(M_{66}s + |N_r|\right)}
 $$
 
 - The two right-hand sides are the same expression, divided top and bottom by $|N_r|$. Nothing new has been introduced; the Nomoto form simply names the two numbers that matter.
 
 > [!warning] Nomoto is linear, and this hull is not
-> Nomoto's model has a constant $T$. Section 3-5 shows that the Otter's damping grows with $|r|$, so its effective $T$ **shrinks as the turn gets harder**. The nonlinear extension that repairs this is Norrbin's, $T\dot r + r + \alpha r^3 = K\delta$, and it is the reason a large turn overshoots less than a small one.
+> Nomoto's model has a **constant** $T_{\text{yaw}}$. Section 3-5 shows that the Otter's damping grows with $|r|$, so its effective time constant **shrinks as the turn gets harder**. The nonlinear extension that repairs this is Norrbin's, $T_{\text{yaw}}\dot r + r + \alpha r^3 = K\delta$, and it is the reason a large turn overshoots less than a small one.
 
 ## 3-2. The control law
 
