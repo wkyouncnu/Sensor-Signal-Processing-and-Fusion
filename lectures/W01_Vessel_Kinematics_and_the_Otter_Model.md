@@ -116,15 +116,21 @@ A reader short of time can go 1-1 → 1-3 → 1-4 → 1-9 and still follow the l
 > $$\boldsymbol{\eta} = \begin{bmatrix} x & y & z & \phi & \theta & \psi \end{bmatrix}^{\!\top} \text{ in } \{n\}, \qquad \boldsymbol{\nu} = \begin{bmatrix} u & v & w & p & q & r \end{bmatrix}^{\!\top} \text{ in } \{b\}$$
 > The whole of §1-2 to §1-5 exists to connect these two vectors. Nothing in those sections involves a mass or a force — it is geometry only, which is what the word **kinematics** means.
 
-> [!note] Two names for the same two numbers — and when each is used
-> In NED, **$x$ is North and $y$ is East**. Both spellings appear in the literature and in this course:
+> [!important] How the two position coordinates are written, everywhere in this course
+> In NED, **$x$ is North and $y$ is East**. This course writes them $x^n$ and $y^n$, with the superscript naming the frame, in every week and in every figure:
 >
-> | Written | Used where | Why |
-> |---|---|---|
-> | $N$, $E$ | Weeks 1 to 3, in prose and in figures | reads naturally, and only one frame is in play |
-> | $x^n$, $y^n$ | Week 4 onward | three frames appear in one equation, so **every symbol has to carry its frame** |
+> $$\mathbf{p}^n = \begin{bmatrix} x^n \\[2pt] y^n \end{bmatrix}, \qquad \dot{\mathbf{p}}^n = \begin{bmatrix} \dot{x}^n \\[2pt] \dot{y}^n \end{bmatrix} .$$
 >
-> They are the same quantities, and $\boldsymbol{\eta}$ above is written the second way already. Week 4 §4-2 explains the superscripts where they first become necessary; the code writes neither, because a MATLAB identifier has nowhere to put a superscript.
+> Marine texts often write $N$ and $E$ instead, and that reads naturally when only one frame is in play. **This course does not**, for two reasons:
+>
+> | | |
+> |---|---|
+> | $N$ is already taken | $N$ is the **yaw moment** in $\boldsymbol{\tau} = [X\ \ Y\ \ N]^{\!\top}$, used from §1-5 onward and in every week after. One letter cannot be both a position and a moment in the same document |
+> | frames must be visible | By Week 4 three frames appear in one equation — $\{n\}$, $\{b\}$ and the path frame $\{p\}$ — and a symbol with no superscript cannot say which one it belongs to |
+>
+> This is Fossen's notation, so the Handbook and the lecture agree symbol for symbol. The **superscript** marks the frame; subscripts are already spoken for by components and coefficients, as in $x_g$, $y_{\text{pont}}$ and $N_r$.
+>
+> The MATLAB code writes `N` and `E` for these two, because an identifier has nowhere to put a superscript. That mapping is stated in each week's symbol table and is the only place the two spellings meet.
 
 ### NED and ENU — the other convention
 
@@ -279,7 +285,7 @@ $$
 \sin\psi & \phantom{-}\cos\psi
 \end{bmatrix},
 \qquad
-\begin{bmatrix} \dot{N} \\ \dot{E} \end{bmatrix}
+\begin{bmatrix} \dot{x}^n \\[2pt] \dot{y}^n \end{bmatrix}
 = \mathbf{R}(\psi)\begin{bmatrix} u \\ v \end{bmatrix} .
 $$
 
@@ -288,10 +294,10 @@ $$
 - This is the single most important line of the week, and the one most often got wrong in code.
 
 $$
-u \neq \dot{N}, \qquad v \neq \dot{E} .
+u \neq \dot{x}^n, \qquad v \neq \dot{y}^n .
 $$
 
-- $u$ and $v$ are components **along axes that are themselves turning**. $\dot N$ and $\dot E$ are components along axes that never move. They coincide only at $\psi = 0$.
+- $u$ and $v$ are components **along axes that are themselves turning**. $\dot{x}^n$ and $\dot{y}^n$ are components along axes that never move. They coincide only at $\psi = 0$.
 
 ![u and v are not the rate of change of position](../figures/w01-velocity.svg)
 
@@ -301,22 +307,22 @@ $$
 |---|---|
 | orange | $u$ and $v$, the components the vessel measures in $\{b\}$ |
 | blue | the velocity itself — one physical vector, drawn once |
-| green dashed | $\dot N$ and $\dot E$, the components that the position actually changes by |
+| green dashed | $\dot{x}^n$ and $\dot{y}^n$, the components that the position actually changes by |
 | right-hand panel | the arithmetic, and the length check |
 
 - Worked out for $\psi = 30°$, $u = 2.0$ m/s, $v = 0.5$ m/s:
 
 $$
 \begin{aligned}
-\dot N &= u\cos\psi - v\sin\psi = 2.0(0.8660) - 0.5(0.5000) = 1.4821\ \text{m/s}, \\[3pt]
-\dot E &= u\sin\psi + v\cos\psi = 2.0(0.5000) + 0.5(0.8660) = 1.4330\ \text{m/s}.
+\dot{x}^n &= u\cos\psi - v\sin\psi = 2.0(0.8660) - 0.5(0.5000) = 1.4821\ \text{m/s}, \\[3pt]
+\dot{y}^n &= u\sin\psi + v\cos\psi = 2.0(0.5000) + 0.5(0.8660) = 1.4330\ \text{m/s}.
 \end{aligned}
 $$
 
 | Quantity | Value |
 |---|---|
 | speed in $\{b\}$, $\sqrt{u^2+v^2}$ | $2.0616$ m/s |
-| speed in $\{n\}$, $\sqrt{\dot N^2+\dot E^2}$ | $2.0616$ m/s |
+| speed in $\{n\}$, $\sqrt{(\dot{x}^n)^2+(\dot{y}^n)^2}$ | $2.0616$ m/s |
 
 - The two agree because a rotation preserves length. **That equality is the cheapest available check on any frame conversion**, and it catches a transposed or mis-signed matrix immediately.
 
@@ -860,19 +866,81 @@ where $\chi$ is the course angle. Week 4 §4-7 shows that a guidance law which r
 | $\beta_c - \psi$ | the angle the flow makes with the hull. Only this difference matters to the hydrodynamics |
 | the box | the three lines that put a current into the model, and the one line that keeps it out of the kinematics |
 
-### How it enters
+### Why a current cannot be a force
 
-- A current is **not** a force added to the right-hand side. It is subtracted from the velocity, because a hull does not feel a compass direction — it feels water flowing past it:
+The natural first guess is that a current pushes on the hull, so it should be added to $\boldsymbol{\tau}$ like the propellers are. One thought experiment rules that out.
+
+**Drop a log into a river.** It drifts downstream at exactly the speed of the water. Now ask what force the water exerts on it. The answer is **none**: the log and the water are moving together, so no water flows past the log, and drag is what happens when water flows past something. The log is moving over the ground and feeling nothing at all.
+
+If the current were a force, that log would keep accelerating for as long as it stayed in the river. It does not. So whatever a current is, it is not a term on the right-hand side of $\mathbf{M}\dot{\boldsymbol{\nu}} + \ldots = \boldsymbol{\tau}$.
+
+**What the hull actually responds to is the water flowing past it** — the difference between its own velocity and the water's. That difference has a name and a symbol:
 
 $$
+\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c
+\qquad
+\begin{array}{l}
+\boldsymbol{\nu}\ \ \text{velocity over the ground} \\
+\boldsymbol{\nu}_c\ \text{velocity of the water} \\
+\boldsymbol{\nu}_r\ \text{velocity through the water}
+\end{array}
+$$
+
+Every hydrodynamic term — damping, cross-flow drag, added-mass Coriolis — is computed from $\boldsymbol{\nu}_r$ and not from $\boldsymbol{\nu}$. Set $\boldsymbol{\nu} = \boldsymbol{\nu}_c$, the drifting log, and $\boldsymbol{\nu}_r = \mathbf{0}$: every hydrodynamic force vanishes, exactly as it should.
+
+### Why the angle is $\beta_c - \psi$
+
+A current is described by exactly two numbers, and both are properties of **the water**, not of the vessel:
+
+| Symbol | Definition | Unit | Set by | Sign convention |
+|---|---|---|---|---|
+| $V_c$ | the **speed of the water** over the ground. Always $\ge 0$: a current has no negative speed, only a direction | m/s | `V_c` in `WXX_0_setup.m` | $V_c = 0$ is still water |
+| $\beta_c$ | the **direction the water flows towards**, measured clockwise from North in $\{n\}$ | rad (deg in the setup print-out) | `beta_c` in `WXX_0_setup.m` | $\beta_c = 0$ sends the water **north**; $\beta_c = 90°$ sends it **east** |
+
+> [!warning] $\beta_c$ is where the water **goes**, not where it comes **from**
+> Meteorology names a wind by the direction it blows *from* — a "north wind" comes out of the north and blows southward. `otter.m` does the opposite for current: $\beta_c = 0$ means the water travels **towards** the north. The two conventions differ by exactly $180°$, so taking one for the other reverses every drift in the model and the tracks come out mirrored.
+>
+> $\beta_c$ is also **not** the crab angle. The crab angle is $\beta$, it is an *outcome* of the run rather than an input to it, and §1-12 measured one with no current present at all. Nothing in the model lets a crab angle be commanded.
+
+Neither number is a force, and neither has anything to do with the propellers. They enter the model only through the next two lines.
+
+The current is given in $\{n\}$ — the water runs at $V_c$ towards $\beta_c$:
+
+$$
+\boldsymbol{\nu}_c^{\,n} = V_c\begin{bmatrix} \cos\beta_c \\[2pt] \sin\beta_c \end{bmatrix} .
+$$
+
+But $\boldsymbol{\nu}$ lives in $\{b\}$, so the subtraction cannot be done until both are in the same frame. Rotating from $\{n\}$ into $\{b\}$ is the job of $\mathbf{R}(\psi)^{\!\top}$ — the transpose of §1-3, and nothing new:
+
+$$
+\begin{bmatrix} u_c \\[2pt] v_c \end{bmatrix}
+= \mathbf{R}(\psi)^{\!\top}\,\boldsymbol{\nu}_c^{\,n}
+= \begin{bmatrix} \phantom{-}\cos\psi & \sin\psi \\[2pt] -\sin\psi & \cos\psi \end{bmatrix}
+  V_c\begin{bmatrix} \cos\beta_c \\[2pt] \sin\beta_c \end{bmatrix}
+= V_c\begin{bmatrix} \cos\beta_c\cos\psi + \sin\beta_c\sin\psi \\[2pt]
+                     \sin\beta_c\cos\psi - \cos\beta_c\sin\psi \end{bmatrix} .
+$$
+
+Those two entries are the angle-difference identities, and they collapse:
+
+$$
+\boxed{\;
 u_c = V_c\cos(\beta_c - \psi),
 \qquad
-v_c = V_c\sin(\beta_c - \psi),
-\qquad
-\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c
+v_c = V_c\sin(\beta_c - \psi)
+\;}
 $$
 
-- The heading appears in the rotation, so a turning vessel sees a **changing** current in its own frame even when the current is perfectly steady.
+So $\beta_c - \psi$ is **not a new convention to memorise.** It is what $\mathbf{R}(\psi)^{\!\top}$ becomes when the vector it acts on is written as a magnitude and an angle. Both $\beta_c$ and $\psi$ are measured from North, so subtracting them leaves the angle measured from the **bow** — which is the only thing the hull can respond to. Panel (b) of the figure draws all three arcs from the same North line so that the subtraction is visible rather than asserted.
+
+| Check | |
+|---|---|
+| $\psi = 0$ | $u_c = V_c\cos\beta_c$, $v_c = V_c\sin\beta_c$ — the body frame is the NED frame, as it must be |
+| $\beta_c = \psi$ | $u_c = V_c$, $v_c = 0$ — the water runs straight down the hull, dead astern to dead ahead |
+| $\beta_c = \psi + 90°$ | $u_c = 0$, $v_c = V_c$ — pure beam current, no fore-and-aft component |
+| the figure's numbers | $V_c = 0.5$, $\beta_c = 70°$, $\psi = 30°$ gives $\beta_c - \psi = 40°$, so $u_c = 0.383$ and $v_c = 0.321$ m/s |
+
+- Because $\psi$ sits inside that rotation, **a turning vessel sees a changing current in its own frame even when the current is perfectly steady.** Nothing about the water changed; the frame it is being measured in did.
 
 ### The asymmetry that makes drift possible
 
@@ -983,8 +1051,8 @@ xdot = [ M \ ( tau + tau_damp + tau_crossflow - C * nu_r - G * eta - g_0)
 > [a(1) b(1)]      % surge ACCELERATION differs — the hull feels the current
 > [a(7) b(7)]      % north RATE is identical — both integrate the same nu
 > ```
-> It prints $\dot u = 0.000046$ against $0.505557$ m/s² — a difference of $0.51$ — and $\dot N = 1.028600$ against $1.028600$ m/s, a difference of **exactly zero**.
-> The first pair differs because the following current reduces $u_r$, which reduces the damping and leaves a net accelerating force. The second pair is identical because $\dot N$ is read from $\boldsymbol{\nu}$, which the current has not touched. **Two lines of output, and the whole section is in them.**
+> It prints $\dot u = 0.000046$ against $0.505557$ m/s² — a difference of $0.51$ — and $\dot{x}^n = 1.028600$ against $1.028600$ m/s, a difference of **exactly zero**.
+> The first pair differs because the following current reduces $u_r$, which reduces the damping and leaves a net accelerating force. The second pair is identical because $\dot{x}^n$ is read from $\boldsymbol{\nu}$, which the current has not touched. **Two lines of output, and the whole section is in them.**
 
 ### And the same thing in the Simulink model
 

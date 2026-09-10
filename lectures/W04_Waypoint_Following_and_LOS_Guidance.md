@@ -59,7 +59,7 @@ After this week the learner should be able to:
 | Week 1 §1-3 | $\boldsymbol{\eta} = [x^n\ y^n\ \psi]^\top$, $\boldsymbol{\nu} = [u\ v\ r]^\top$, and the rotation $\mathbf{R}(\psi)$ |
 | Week 1 §1-4 | body velocity is not the rate of change of position — the same rotation reappears in §4-3 |
 | Week 1 §1-9 | the ocean current enters as a velocity, so the vessel's speed **through the water** differs from its speed over ground |
-| Week 3 §3-4 | the crab angle and the course $\chi = \psi + \beta_c$. **Weeks 1 and 3 write this angle $\beta$; this week writes $\beta_c$**, following Fossen, because §4-9 needs $\beta$ free for the estimated quantity. The two symbols mean the same thing: $\operatorname{atan2}(v,u)$ |
+| Week 3 §3-4 | the crab angle and the course $\chi = \psi + \beta$, with $\beta = \operatorname{atan2}(v,u)$. The same symbol is used here, and §4-9 adds $\hat\beta$ for the estimate of it and $\tilde\beta$ for the estimation error |
 | Week 3 §3-5 | the P–D heading autopilot, used here **unchanged** so that the only difference between the four vessels is the guidance law |
 | Appendix A1 | the column rule and the allocation $\boldsymbol{\tau} = \mathbf{B}\mathbf{f}$ |
 
@@ -122,7 +122,7 @@ Eleven sections is a lot to enter without a map. They answer four questions, in 
 
 Sections 4-10 and 4-11 then set the equations against the code, and point at what lies beyond straight legs.
 
-**Everything after 4-7 exists because of one number**: $\Delta\tan\beta_c$, the offset the plain law is left holding. A reader short of time can go 4-2 → 4-3 → 4-4 → 4-7 and still have the argument.
+**Everything after 4-7 exists because of one number**: $\Delta\tan\beta$, the offset the plain law is left holding. A reader short of time can go 4-2 → 4-3 → 4-4 → 4-7 and still have the argument.
 
 ## 4-2. The path is a straight leg between two waypoints
 
@@ -290,7 +290,7 @@ $$
 | violet arrow, "LOS vector" | the line of sight from the vessel to the aim point |
 | grey arc at the aim point | $\tan^{-1}(y_e^{p}/\Delta)$ — the correction, between the path and the line of sight |
 | three arcs at the hull | $\psi$ where the bow points, $\chi$ where the vessel goes, $\chi_d$ where the law says to go |
-| violet arc at the hull | $\beta_c$, the crab angle between $\psi$ and $\chi$ |
+| violet arc at the hull | $\beta$, the crab angle between $\psi$ and $\chi$ |
 | grey dashed, lower right | the right-angle construction that makes $\Delta$ and $y_e^{p}$ the two legs of one triangle |
 
 > [!note] This figure follows Fossen's own
@@ -335,8 +335,8 @@ $$
 >
 > $$\psi_d = \pi_p - \tan^{-1}\!\left(\frac{y_e^{\,p}}{\Delta}\right)$$
 >
-> — the same expression, with $\psi_d$ in place of $\chi_d$. The substitution is exact when the crab angle $\beta_c$ is zero, and MSS ships both variants for the same reason: `LOSchi.m` commands $\chi_d$ and `LOSpsi.m` commands $\psi_d$.
-> **The substitution is not free, and this week measures its price.** §4-7 shows that using $\psi_d$ in a current leaves the vessel permanently $\Delta\tan\beta_c$ to one side of the path; §4-8 and §4-9 are two ways of paying it back.
+> — the same expression, with $\psi_d$ in place of $\chi_d$. The substitution is exact when the crab angle $\beta$ is zero, and MSS ships both variants for the same reason: `LOSchi.m` commands $\chi_d$ and `LOSpsi.m` commands $\psi_d$.
+> **The substitution is not free, and this week measures its price.** §4-7 shows that using $\psi_d$ in a current leaves the vessel permanently $\Delta\tan\beta$ to one side of the path; §4-8 and §4-9 are two ways of paying it back.
 
 - Read the law as two terms with two jobs. $\pi_p$ says *line up with the path*. The arctan says *and lean towards it, by an amount that grows with how far off it the vessel is*.
 - The figure's own arithmetic is the smallest possible worked example: $y_e^{\,p} = 12$ m and $\Delta = 20$ m give a correction of $\arctan(12/20) = 30.96°$, so $\psi_d = 62° - 30.96° = 31.04°$. The vessel is to starboard, so it is commanded to port, and by less than $90°$.
@@ -505,15 +505,23 @@ end
 - LOS commands a **heading**, and the autopilot delivers that heading faithfully. But the vessel travels along its **course**, which differs from its heading by the crab angle:
 
 $$
-\chi = \psi + \beta_c, \qquad \beta_c = \operatorname{atan2}(v,\,u)
+\chi = \psi + \beta, \qquad \beta = \operatorname{atan2}(v,\,u)
 $$
 
 | Symbol | Quantity | Unit |
 |---|---|---|
 | $\psi$ | heading — where the bow points | rad |
 | $\chi$ | course — the direction the vessel actually moves over ground | rad |
-| $\beta_c$ | crab angle, over ground, from the Week 3 definition | rad |
+| $\beta$ | crab angle, over ground, from the Week 3 definition: $\operatorname{atan2}(v,u)$ | rad |
 | $U$ | speed over ground, $\sqrt{u^2+v^2}$ | m/s |
+| $\beta_c$ | **the ocean current's direction**, clockwise from North — Week 1 §1-13, and the `beta_c` argument of `otter.m` | rad |
+
+> [!warning] $\beta$ and $\beta_c$ are two different angles
+> $\beta$ is the **crab angle**: how far the vessel's motion differs from where its bow points. $\beta_c$ is the **direction the water flows towards**, a compass bearing set before the run.
+>
+> They are related but not equal — a current with direction $\beta_c$ *causes* a crab angle $\beta$, and how large a $\beta$ it causes depends on the current's speed and on the vessel's own heading. In section G a current of $0.30$ m/s produces a crab angle of $15.74°$; the current's own direction is a different number entirely.
+>
+> The distinction matters because `beta_c` is a variable the learner sets in `W04_0_setup.m`, and it sets the current, never the crab angle. Nothing in the model lets a crab angle be commanded — it is an outcome.
 
 ### The cross-track error dynamics
 
@@ -544,25 +552,25 @@ $$
 The autopilot has by then delivered its command, $\psi = \psi_d$, and $\psi_d$ is the LOS law of §4-4. Substituting both:
 
 $$
-\pi_p \;=\; \chi \;=\; \psi + \beta_c \;=\; \psi_d + \beta_c \;=\; \pi_p - \arctan\!\left(\frac{y_e^{\,p}}{\Delta}\right) + \beta_c
+\pi_p \;=\; \chi \;=\; \psi + \beta \;=\; \psi_d + \beta \;=\; \pi_p - \arctan\!\left(\frac{y_e^{\,p}}{\Delta}\right) + \beta
 $$
 
 The $\pi_p$ cancels from both sides — which is the point, because it means the result does not depend on which leg the vessel is on:
 
 $$
-\arctan\!\left(\frac{y_e^{\,p}}{\Delta}\right) = \beta_c
+\arctan\!\left(\frac{y_e^{\,p}}{\Delta}\right) = \beta
 $$
 
 and therefore
 
 $$
-\boxed{\ y_{e,ss}^{\,p} = \Delta\,\tan\beta_c\ }
+\boxed{\ y_{e,ss}^{\,p} = \Delta\,\tan\beta\ }
 $$
 
 | Reading | |
 |---|---|
 | **What it says** | the vessel settles **parallel to the path and beside it**, offset by an amount proportional to $\Delta$ |
-| **Why it is not a tuning failure** | the loop is doing exactly what it was asked. It is holding $\psi_d$ to the last decimal, and $\psi_d$ was computed by a law in which $\beta_c$ never appears |
+| **Why it is not a tuning failure** | the loop is doing exactly what it was asked. It is holding $\psi_d$ to the last decimal, and $\psi_d$ was computed by a law in which $\beta$ never appears |
 | **Why more autopilot gain does not help** | the heading error is already zero. There is nothing left for the autopilot to act on |
 | **The third cost of a large $\Delta$** | the offset is *linear* in $\Delta$: doubling the look-ahead doubles the steady error. §4-5's trade has a third term after all |
 
@@ -570,7 +578,7 @@ $$
 
 Section G sweeps the current speed with everything else held fixed and compares the measured settled offset against the prediction:
 
-| $V_c$ [m/s] | $\beta_c$ [deg] | measured $y_e^{\,p}$ [m] | $\Delta\tan\beta_c$ [m] | difference [m] |
+| $V_c$ [m/s] | $\beta$ [deg] | measured $y_e^{\,p}$ [m] | $\Delta\tan\beta$ [m] | difference [m] |
 |---|---|---|---|---|
 | 0.0 | $-0.10$ | $-0.014$ | $-0.013$ | 0.001 |
 | 0.1 | 5.10 | 0.713 | 0.714 | 0.001 |
@@ -669,7 +677,7 @@ Plain LOS is not badly tuned, and it is not badly implemented. It is doing exact
 
 - **The measurement.** Section 4-7 ran plain LOS in a $0.3$ m/s beam current. The vessel settled **$2.253$ m to one side of the path** and stayed there for the rest of the run. It did not oscillate and it did not drift further; it simply held station beside the line it was asked to follow.
 - **The reason more gain cannot help.** At that steady state the heading error is **already zero**. The autopilot is holding $\psi$ on $\psi_d$ to the last decimal. There is no error left anywhere in the loop for a larger gain to act on, so raising $K_p$ or $K_d$ in the autopilot changes nothing at all.
-- **What is actually missing.** To travel along a line while water pushes the hull sideways, the bow must be tilted **upstream** by the crab angle $\beta_c$. Plain LOS has exactly one term that can tilt the bow, namely $\arctan(y_e^{\,p}/\Delta)$, and once that term is spent producing the tilt it is no longer available to close the remaining gap. **The law is not short of authority; it is short of terms.**
+- **What is actually missing.** To travel along a line while water pushes the hull sideways, the bow must be tilted **upstream** by the crab angle $\beta$. Plain LOS has exactly one term that can tilt the bow, namely $\arctan(y_e^{\,p}/\Delta)$, and once that term is spent producing the tilt it is no longer available to close the remaining gap. **The law is not short of authority; it is short of terms.**
 
 The classical fix for a steady offset is an integrator, and the classical failure of that fix is windup. The law of this section does both at once: it puts the integrator **inside the arctan**, which turns out to make the anti-windup part of the law rather than something bolted on afterwards.
 
@@ -677,7 +685,7 @@ The classical fix for a steady offset is an integrator, and the classical failur
 
 > **ILOS invents a cross-track error that is not there, of exactly the size needed to keep the bow tilted upstream once the real error has reached zero.**
 
-That is the whole of it. The arctan is left untouched and is still the only thing that tilts the bow; what changes is *what the arctan is told*. Section 4-8-2 turns the sentence into an equation, and §4-8-5 shows that the invented error settles at precisely $\Delta\tan\beta_c$ — the same number the plain law was stuck at, now carried by the integrator instead of by the vessel's position.
+That is the whole of it. The arctan is left untouched and is still the only thing that tilts the bow; what changes is *what the arctan is told*. Section 4-8-2 turns the sentence into an equation, and §4-8-5 shows that the invented error settles at precisely $\Delta\tan\beta$ — the same number the plain law was stuck at, now carried by the integrator instead of by the vessel's position.
 
 ### 4-8-2. The law
 
@@ -771,26 +779,26 @@ $$
 
 because $\Delta > 0$ and $D^2 \ge \Delta^2 > 0$, so the fraction vanishes only through its numerator. **The integrator has no equilibrium other than zero cross-track error.** This one line is the entire reason for adding it, and it holds regardless of $\kappa$, $\Delta$, the current, or the vessel.
 
-- Now the position condition. From §4-7, $\dot y_e^{\,p} = 0$ requires $\chi = \pi_p$, and $\chi = \psi_d + \beta_c$ once the autopilot has converged:
+- Now the position condition. From §4-7, $\dot y_e^{\,p} = 0$ requires $\chi = \pi_p$, and $\chi = \psi_d + \beta$ once the autopilot has converged:
 
 $$
-\pi_p = \pi_p - \arctan\!\left(\frac{y_e^{\,p} + \kappa y_{int}}{\Delta}\right) + \beta_c
+\pi_p = \pi_p - \arctan\!\left(\frac{y_e^{\,p} + \kappa y_{int}}{\Delta}\right) + \beta
 $$
 
 With $y_e^{\,p} = 0$ from the first condition,
 
 $$
-\arctan\!\left(\frac{\kappa\,y_{int}^{eq}}{\Delta}\right) = \beta_c
+\arctan\!\left(\frac{\kappa\,y_{int}^{eq}}{\Delta}\right) = \beta
 \quad\Longrightarrow\quad
-\boxed{\ y_{int}^{eq} = \frac{\Delta\tan\beta_c}{\kappa}\ }
+\boxed{\ y_{int}^{eq} = \frac{\Delta\tan\beta}{\kappa}\ }
 $$
 
-- Read the last line against §4-7. The quantity $\kappa y_{int}^{eq} = \Delta\tan\beta_c$ is **exactly the offset that plain LOS was left holding**. The integrator does not remove the crab angle and does not know it exists; it accumulates until the fictitious cross-track error it contributes equals the real one that the crab angle was producing, and from then on the real one can be zero.
+- Read the last line against §4-7. The quantity $\kappa y_{int}^{eq} = \Delta\tan\beta$ is **exactly the offset that plain LOS was left holding**. The integrator does not remove the crab angle and does not know it exists; it accumulates until the fictitious cross-track error it contributes equals the real one that the crab angle was producing, and from then on the real one can be zero.
 
 | Verification | Result |
 |---|---|
-| $\Delta = 8$ m, $\kappa = 0.3$ m/s, $\beta_c = 15.74°$ | $y_{int}^{eq} = 7.5158$ s |
-| $\kappa y_{int}^{eq}$ against $\Delta\tan\beta_c$ | $2.254726$ m against $2.254726$ m — difference exactly $0$ |
+| $\Delta = 8$ m, $\kappa = 0.3$ m/s, $\beta = 15.74°$ | $y_{int}^{eq} = 7.5158$ s |
+| $\kappa y_{int}^{eq}$ against $\Delta\tan\beta$ | $2.254726$ m against $2.254726$ m — difference exactly $0$ |
 | both derivatives evaluated at the equilibrium | $\dot y_e^{\,p} = 0$, $\dot y_{int} = 0$, to machine zero |
 | integrating the pair for $400$ s from $y_e^{\,p} = 5$ m, $y_{int} = 0$ | $y_e^{\,p} \to 1.05\times10^{-9}$ m, $y_{int} \to 7.5158$ s — the predicted value |
 | measured on the full model, section G | $y_e^{\,p} = 0.008$ m against LOS's $2.253$ m |
@@ -817,8 +825,8 @@ $$
 | $y_e^{\,p}$ **grows first**, to $1.62$ m at $t = 10$ s | at $t = 0$ the integrator is empty, so the law is plain LOS and the current pushes the vessel off the path exactly as §4-7 says it must |
 | $\kappa y_{int}$ climbs towards $2.255$ | the fourth column is the phantom error of the figure, filling up |
 | bow tilt **overshoots** to $17.59°$ at $t = 25$ s | the integrator does not know when to stop; it overshoots and comes back, which is why §4-8-8's sweep has an interior minimum |
-| the last column settles on $15.74°$ | which is $\beta_c$ — **the tilt the vessel needed all along**, now supplied by the integrator instead of by a standing error |
-| $\kappa y_{int} \to 2.255$ m | the same $\Delta\tan\beta_c$ that plain LOS carried as a *real* offset, now carried as a *phantom* one |
+| the last column settles on $15.74°$ | which is $\beta$ — **the tilt the vessel needed all along**, now supplied by the integrator instead of by a standing error |
+| $\kappa y_{int} \to 2.255$ m | the same $\Delta\tan\beta$ that plain LOS carried as a *real* offset, now carried as a *phantom* one |
 
 - **The last two rows are the whole idea.** The vessel is on the path, $y_e^{\,p} = 0.000$, and the bow is still tilted $15.74°$ upstream. Plain LOS could only produce that tilt by being $2.255$ m off the path. ILOS produces it from a state instead.
 
@@ -828,41 +836,41 @@ This is the longest derivation of the week, so it is worth knowing where it land
 
 | | | |
 |---|---|---|
-| 1 | **The current is eliminated, exactly.** Substituting the equilibrium of §4-8-5 makes $\beta_c$ cancel out of the error dynamics algebraically — not approximately | below |
+| 1 | **The current is eliminated, exactly.** Substituting the equilibrium of §4-8-5 makes $\beta$ cancel out of the error dynamics algebraically — not approximately | below |
 | 2 | **A Lyapunov function is chosen, and its weight is forced.** The cross term has to vanish, and that requirement picks the weight; nothing is guessed | *Choosing the Lyapunov function* |
 | 3 | **The course form closes; the heading form does not.** That is why MSS ships two normalisations, and it is not an inconsistency | *The course form closes…* |
 
-- To argue stability, put the closed loop into error coordinates. Let $\tilde y = y_{int} - y_{int}^{eq}$ be the integrator's error, and assume for the argument that the autopilot is fast enough that $\psi = \psi_d$ and that $\beta_c$ is constant. Starting from §4-7's $\dot y_e^{\,p} = U\sin(\chi - \pi_p)$ with $\chi - \pi_p = \beta_c - \arctan(a/\Delta)$:
+- To argue stability, put the closed loop into error coordinates. Let $\tilde y = y_{int} - y_{int}^{eq}$ be the integrator's error, and assume for the argument that the autopilot is fast enough that $\psi = \psi_d$ and that $\beta$ is constant. Starting from §4-7's $\dot y_e^{\,p} = U\sin(\chi - \pi_p)$ with $\chi - \pi_p = \beta - \arctan(a/\Delta)$:
 
 $$
-\dot y_e^{\,p} = U\sin\!\left(\beta_c - \arctan\frac{a}{\Delta}\right)
+\dot y_e^{\,p} = U\sin\!\left(\beta - \arctan\frac{a}{\Delta}\right)
 $$
 
 Expand the sine of a difference, and use $\cos(\arctan(a/\Delta)) = \Delta/D$ and $\sin(\arctan(a/\Delta)) = a/D$:
 
 $$
-\dot y_e^{\,p} = U\left[\sin\beta_c\cdot\frac{\Delta}{D} - \cos\beta_c\cdot\frac{a}{D}\right]
-        = \frac{U}{D}\Big[\Delta\sin\beta_c - a\cos\beta_c\Big]
+\dot y_e^{\,p} = U\left[\sin\beta\cdot\frac{\Delta}{D} - \cos\beta\cdot\frac{a}{D}\right]
+        = \frac{U}{D}\Big[\Delta\sin\beta - a\cos\beta\Big]
 $$
 
-Substitute $a = y_e^{\,p} + \kappa y_{int} = y_e^{\,p} + \kappa\tilde y + \Delta\tan\beta_c$, using the equilibrium value from §4-8-5:
+Substitute $a = y_e^{\,p} + \kappa y_{int} = y_e^{\,p} + \kappa\tilde y + \Delta\tan\beta$, using the equilibrium value from §4-8-5:
 
 $$
-\Delta\sin\beta_c - \big(y_e^{\,p} + \kappa\tilde y + \Delta\tan\beta_c\big)\cos\beta_c
-= \underbrace{\Delta\sin\beta_c - \Delta\tan\beta_c\cos\beta_c}_{=\ 0} - (y_e^{\,p} + \kappa\tilde y)\cos\beta_c
+\Delta\sin\beta - \big(y_e^{\,p} + \kappa\tilde y + \Delta\tan\beta\big)\cos\beta
+= \underbrace{\Delta\sin\beta - \Delta\tan\beta\cos\beta}_{=\ 0} - (y_e^{\,p} + \kappa\tilde y)\cos\beta
 $$
 
-The bracketed pair cancels identically, because $\tan\beta_c\cos\beta_c = \sin\beta_c$. **The current disappears from the error dynamics**, which is the formal statement of what the integrator achieved:
+The bracketed pair cancels identically, because $\tan\beta\cos\beta = \sin\beta$. **The current disappears from the error dynamics**, which is the formal statement of what the integrator achieved:
 
 $$
-\boxed{\ \dot y_e^{\,p} = -\,\frac{U\cos\beta_c}{D}\,\big(y_e^{\,p} + \kappa\tilde y\big)\ },
+\boxed{\ \dot y_e^{\,p} = -\,\frac{U\cos\beta}{D}\,\big(y_e^{\,p} + \kappa\tilde y\big)\ },
 \qquad
 \dot{\tilde y} = \frac{\Delta\,y_e^{\,p}}{D^2}
 $$
 
 | Verification | Result |
 |---|---|
-| the closed form against the original $U\sin(\beta_c - \arctan(a/\Delta))$ | agreement to $6.7\times10^{-16}$ over $10^4$ random states |
+| the closed form against the original $U\sin(\beta - \arctan(a/\Delta))$ | agreement to $6.7\times10^{-16}$ over $10^4$ random states |
 
 #### Choosing the Lyapunov function
 
@@ -879,50 +887,50 @@ $$
 $$
 
 $$
-\dot V = y_e^{\,p}\left[-\frac{U\cos\beta_c}{D}(y_e^{\,p} + \kappa\tilde y)\right] + c\,\tilde y\left[\frac{\Delta y_e^{\,p}}{D^2}\right]
+\dot V = y_e^{\,p}\left[-\frac{U\cos\beta}{D}(y_e^{\,p} + \kappa\tilde y)\right] + c\,\tilde y\left[\frac{\Delta y_e^{\,p}}{D^2}\right]
 $$
 
 $$
-\dot V = -\frac{U\cos\beta_c}{D}\,y_e^2
-\;\underbrace{-\;\frac{U\kappa\cos\beta_c}{D}\,y_e^{\,p}\tilde y \;+\; \frac{c\,\Delta}{D^2}\,y_e^{\,p}\tilde y}_{\text{the cross term}}
+\dot V = -\frac{U\cos\beta}{D}\,y_e^2
+\;\underbrace{-\;\frac{U\kappa\cos\beta}{D}\,y_e^{\,p}\tilde y \;+\; \frac{c\,\Delta}{D^2}\,y_e^{\,p}\tilde y}_{\text{the cross term}}
 $$
 
-- The first term is what is wanted: negative whenever $y_e^{\,p} \ne 0$, provided $\cos\beta_c > 0$. The cross term has no definite sign and must be made to vanish. Collecting it,
+- The first term is what is wanted: negative whenever $y_e^{\,p} \ne 0$, provided $\cos\beta > 0$. The cross term has no definite sign and must be made to vanish. Collecting it,
 
 $$
-y_e^{\,p}\tilde y\left[\frac{c\Delta}{D^2} - \frac{U\kappa\cos\beta_c}{D}\right] = 0
+y_e^{\,p}\tilde y\left[\frac{c\Delta}{D^2} - \frac{U\kappa\cos\beta}{D}\right] = 0
 \quad\Longleftrightarrow\quad
-c = \frac{U\kappa\,D\cos\beta_c}{\Delta}
+c = \frac{U\kappa\,D\cos\beta}{\Delta}
 $$
 
-- **and this is where the heading form runs out of room**: $D$ is a function of the state, so the required $c$ is not constant and $V$ as written is not a Lyapunov function. Substituting the constant $c = \kappa\cos\beta_c$ and measuring what is left over $10^4$ random states gives a residual with rms $2.94$ — it is genuinely non-zero, not a small error.
+- **and this is where the heading form runs out of room**: $D$ is a function of the state, so the required $c$ is not constant and $V$ as written is not a Lyapunov function. Substituting the constant $c = \kappa\cos\beta$ and measuring what is left over $10^4$ random states gives a residual with rms $2.94$ — it is genuinely non-zero, not a small error.
 
 #### The course form closes where the heading form does not
 
 - Repeat the calculation with the normalisation of `ILOSchi.m`, $\dot{\tilde y} = U y_e^{\,p} / D$. Only the second term of $\dot V$ changes:
 
 $$
-\dot V = -\frac{U\cos\beta_c}{D}y_e^2 - \frac{U\kappa\cos\beta_c}{D}y_e^{\,p}\tilde y + c\,\frac{U}{D}y_e^{\,p}\tilde y
+\dot V = -\frac{U\cos\beta}{D}y_e^2 - \frac{U\kappa\cos\beta}{D}y_e^{\,p}\tilde y + c\,\frac{U}{D}y_e^{\,p}\tilde y
 $$
 
 Now both cross terms carry the same $1/D$, and the choice
 
 $$
-c = \kappa\cos\beta_c \;>\; 0 \quad\text{for}\ \lvert\beta_c\rvert < 90°
+c = \kappa\cos\beta \;>\; 0 \quad\text{for}\ \lvert\beta\rvert < 90°
 $$
 
 is a genuine constant. It cancels them exactly and leaves
 
 $$
-\boxed{\ \dot V = -\,\frac{U\cos\beta_c}{D}\,y_e^2 \;\le\; 0\ }
+\boxed{\ \dot V = -\,\frac{U\cos\beta}{D}\,y_e^2 \;\le\; 0\ }
 $$
 
 | Verification | Result |
 |---|---|
-| $\dot V$ against $-U\cos\beta_c\,y_e^2/D$, course form | agreement to $1.1\times10^{-14}$ over $10^4$ random states |
+| $\dot V$ against $-U\cos\beta\,y_e^2/D$, course form | agreement to $1.1\times10^{-14}$ over $10^4$ random states |
 | $\dot V \le 0$ over all $10^4$ samples | true |
 
-- $\dot V \le 0$ gives stability and boundedness. It is only negative *semi*definite — $\dot V = 0$ on the whole line $y_e^{\,p} = 0$ — so LaSalle's invariance principle supplies the rest: on that line $\dot y_e^{\,p} = -U\cos\beta_c\,\kappa\tilde y/D$, which is non-zero unless $\tilde y = 0$, so the largest invariant set inside $\dot V = 0$ is the single point $(0,0)$, and the equilibrium is asymptotically stable.
+- $\dot V \le 0$ gives stability and boundedness. It is only negative *semi*definite — $\dot V = 0$ on the whole line $y_e^{\,p} = 0$ — so LaSalle's invariance principle supplies the rest: on that line $\dot y_e^{\,p} = -U\cos\beta\,\kappa\tilde y/D$, which is non-zero unless $\tilde y = 0$, so the largest invariant set inside $\dot V = 0$ is the single point $(0,0)$, and the equilibrium is asymptotically stable.
 
 > [!note] What this does and does not settle
 > The clean cancellation above is for the **course** form. The heading form of `ILOSpsi.m` differs from it only by the positive state-dependent factor $\Delta/(U D)$ multiplying the integrator, so it has the **same equilibrium** and the **same sign of integration** — §4-8-5 is untouched, and the numerical integration of §4-8-5 confirms convergence. What it does not have is this one-line quadratic proof. Børhaug, Pavlov and Pettersen (2008) prove the heading case by a cascade argument instead, and their result is uniform global asymptotic stability of the $(y_e^{\,p},y_{int})$ subsystem under a bound on $\kappa$.
@@ -932,16 +940,16 @@ $$
 
 | Assumption | Used where | What fails if it does not hold |
 |---|---|---|
-| $\psi = \psi_d$ — the autopilot is infinitely fast | $\chi = \psi_d + \beta_c$ in §4-8-5 and §4-8-6 | with real autopilot lag the true system is a cascade; $V$ is no longer monotone during transients. §4-9-7 measures exactly this |
-| $\beta_c$ constant | the cancellation $\Delta\sin\beta_c - \Delta\tan\beta_c\cos\beta_c = 0$ | a time-varying current leaves a residual proportional to $\dot\beta_c$; the integrator tracks it with a lag |
-| $\lvert\beta_c\rvert < 90°$ | $\cos\beta_c > 0$, the sign of both the leading term and the weight $c$ | the vessel is moving backwards relative to its heading; the law's sign inverts |
+| $\psi = \psi_d$ — the autopilot is infinitely fast | $\chi = \psi_d + \beta$ in §4-8-5 and §4-8-6 | with real autopilot lag the true system is a cascade; $V$ is no longer monotone during transients. §4-9-7 measures exactly this |
+| $\beta$ constant | the cancellation $\Delta\sin\beta - \Delta\tan\beta\cos\beta = 0$ | a time-varying current leaves a residual proportional to $\dot\beta$; the integrator tracks it with a lag |
+| $\lvert\beta\rvert < 90°$ | $\cos\beta > 0$, the sign of both the leading term and the weight $c$ | the vessel is moving backwards relative to its heading; the law's sign inverts |
 | $U > 0$ | $\dot V < 0$ | at rest there is no guidance at all — the law commands a heading but nothing moves along the path |
 | $\Delta > 0$ | $D \ge \Delta > 0$, and $K_p = 1/\Delta$ | division by zero |
 | straight leg, $\pi_p$ constant | $\dot y_e^{\,p} = U\sin(\chi-\pi_p)$ | on a curved path an extra curvature term appears; Lekkas and Fossen (2014) carry it |
 
 ### 4-8-8. Choosing $\kappa$
 
-- $\kappa$ sets how fast the integrator fills. From §4-8-5 the state must reach $\Delta\tan\beta_c/\kappa$, and from §4-8-4 it fills at up to $1/2$ per second, so the time to converge scales roughly as $\Delta\tan\beta_c/(2\kappa)\cdot 2 = \Delta\tan\beta_c/\kappa$ — **a larger $\kappa$ needs a smaller final state and therefore converges sooner**, at the cost of a larger contribution per unit of $y_{int}$ and hence more overshoot.
+- $\kappa$ sets how fast the integrator fills. From §4-8-5 the state must reach $\Delta\tan\beta/\kappa$, and from §4-8-4 it fills at up to $1/2$ per second, so the time to converge scales roughly as $\Delta\tan\beta/(2\kappa)\cdot 2 = \Delta\tan\beta/\kappa$ — **a larger $\kappa$ needs a smaller final state and therefore converges sooner**, at the cost of a larger contribution per unit of $y_{int}$ and hence more overshoot.
 - Section H measures it on the full model rather than arguing it. Mean absolute cross-track error over the final $100$ s:
 
 | $\kappa$ [m/s] | $K_i$ [$\text{s}^{-1}$] | settled $\lvert y_e^{\,p}\rvert$ [m] | peak $\lvert y_e^{\,p}\rvert$ [m] | settling time [s] |
@@ -982,7 +990,7 @@ Section 4-8 ends with the cross-track error at $0.008$ m. On the accuracy of thi
 
 - **ILOS removes the offset without ever learning what caused it.** Its integral state settles at whatever value drives the error to zero — on this mission, $7.516$. That number is in seconds, it is not a current speed, it is not a drift angle, and there is no measurement anywhere on the vessel that it can be compared against.
 - **A state that cannot be checked cannot be trusted.** If the integrator drifts because of a sensor fault, a wrong $\Delta$, or a mission that never leaves a turn, nothing in the run will look wrong until the vessel is off the path. The law has no opinion about whether its own state is sensible.
-- **The disturbance itself is a physical quantity.** Section 4-7 showed that the entire problem is one unknown angle, the crab angle $\beta_c$. It is an angle, it is measurable after the fact as $\operatorname{atan2}(v,u)$, and a controller that estimates *it* produces a number that can be plotted, logged, alarmed on, and compared with a second sensor.
+- **The disturbance itself is a physical quantity.** Section 4-7 showed that the entire problem is one unknown angle, the crab angle $\beta$. It is an angle, it is measurable after the fact as $\operatorname{atan2}(v,u)$, and a controller that estimates *it* produces a number that can be plotted, logged, alarmed on, and compared with a second sensor.
 
 ### 4-9-1a. The idea, in one sentence
 
@@ -1016,7 +1024,7 @@ $$
 |---|---|---|---|
 | $\Delta$ | look-ahead distance | m | §4-5; $8$ m |
 | $\hat\beta$ | estimate of the crab angle | rad | a state of the guidance block |
-| $\beta$ | the true crab angle — **the same $\beta_c$ used in §4-7 and §4-8**, written without the subscript here so that $\hat\beta$ and $\tilde\beta$ stay legible | rad | unknown to the law; measured only for verification |
+| $\beta$ | the true crab angle, $\operatorname{atan2}(v,u)$ — the same $\beta$ as §4-7 and §4-8, and as Week 1 §1-12 and Week 3 §3-4 | rad | unknown to the law; measured only for verification |
 | $\tilde\beta$ | estimation error $\beta - \hat\beta$ | rad | appears only in the analysis |
 | $\gamma$ | adaptation gain | **rad/(m·s)** | §4-9-8; $0.005$, from the sweep of section H. `ALOSpsi.m` suggests $\gamma_h \approx 0.001$ and $\Delta_h = 5$–$20$ m as typical; the sweep of section H picks a faster gain for this hull and mission |
 | $U$ | speed over ground | m/s | $\approx 1.31$ m/s for the Otter at this thrust |
@@ -1142,7 +1150,7 @@ $$
 | **Sign** | $y_e^{\,p} > 0$ (starboard) must raise $\hat\beta$, since a starboard offset under an unmodelled current means $\beta$ was underestimated | $\dot{\hat\beta} > 0$ for $y_e^{\,p} > 0$ — correct |
 | **Limit** $y_e^{\,p} \to 0$ | adaptation must stop when on the path | $\dot{\hat\beta} \to 0$ |
 | **Limit** $y_e^{\,p} \to \infty$ | the rate must not run away | $\dot{\hat\beta} \to \gamma\Delta$, bounded — a built-in rate limit, as in §4-8-4 |
-| **Numeric** | measured in section G: does $\hat\beta$ converge to the true crab angle? | $\hat\beta = 15.91°$ against a true $\beta_c = 15.88°$ — an error of $0.04°$ |
+| **Numeric** | measured in section G: does $\hat\beta$ converge to the true crab angle? | $\hat\beta = 15.91°$ against a true $\beta = 15.88°$ — an error of $0.04°$ |
 | **Numeric** | settled cross-track error under current, section G | $-0.004$ m, against LOS's $2.253$ m |
 | **Source** | `_tools/verify_alos.m` drives this derivation and Fossen's `ALOSpsi.m` (MSS 2023+) for 400 steps | largest disagreement in $\psi_d$ and $y_e^{\,p}$: **exactly zero** |
 
@@ -1166,7 +1174,7 @@ $$
 |---|---|
 | $y_e^{\,p}$ grows to $1.60$ m first | with $\hat\beta = 0$ the law *is* plain LOS, so the vessel drifts off exactly as in §4-7 |
 | $\hat\beta$ climbs **monotonically**, with no overshoot | the update $\dot{\hat\beta} = \gamma\Delta y_e^{\,p}/\sqrt{\Delta^2+y_e^2}$ has the same sign as $y_e^{\,p}$, and $y_e^{\,p}$ never changes sign here |
-| $\hat\beta \to 15.74°$ | which is $\beta_c$ exactly. **The law was never told the current speed or direction, and it recovered the drift angle to two decimals** |
+| $\hat\beta \to 15.74°$ | which is $\beta$ exactly. **The law was never told the current speed or direction, and it recovered the drift angle to two decimals** |
 | $y_e^{\,p} \to 0.000$ | once the estimate is right, $\tilde\beta = 0$ and §4-9-4 reduces to plain LOS with no disturbance left |
 
 > [!tip] The one difference a beginner should take from the two tables
@@ -1643,8 +1651,8 @@ Expected output:
 
 | Row | What it confirms |
 |---|---|
-| `LOS 2.253` | the §4-7 prediction $y_{e,ss}^{\,p} = \Delta\tan\beta_c$, to $0.0012$ m |
-| `ILOS 0.008` with `aux 7.519` | the §4-8-5 equilibrium: $y_{int}^{eq} = \Delta\tan\beta_c/\kappa = 7.5158$ s predicted, $7.519$ s measured |
+| `LOS 2.253` | the §4-7 prediction $y_{e,ss}^{\,p} = \Delta\tan\beta$, to $0.0012$ m |
+| `ILOS 0.008` with `aux 7.519` | the §4-8-5 equilibrium: $y_{int}^{eq} = \Delta\tan\beta/\kappa = 7.5158$ s predicted, $7.519$ s measured |
 | `ALOS -0.004` with `aux 0.278` | $0.278$ rad is $15.91°$, against a true crab angle of $15.88°$ |
 | the sweep | the prediction holds at every current speed, to at most $0.002$ m |
 
@@ -1657,7 +1665,7 @@ Expected output:
 | left | the tracks of all four laws, with the path, waypoints and hull outlines as before |
 | left, small arrows | the ocean current, $0.30$ m/s from the East |
 | middle | $y_e^{\,p}$ for each law against time |
-| middle, dashed grey | $\Delta\tan\beta_c = 2.25$ m — **predicted in §4-7 before the run**, not fitted to it |
+| middle, dashed grey | $\Delta\tan\beta = 2.25$ m — **predicted in §4-7 before the run**, not fitted to it |
 | right, dashed black | the true crab angle, computed from the log as $\operatorname{atan2}(v,u)$ |
 | right, solid | $\hat\beta$, what the ALOS vessel believes that angle to be |
 
@@ -1665,7 +1673,7 @@ Expected output:
 
 All four laws, one mission, one current of $0.30$ m/s from the East. Left: the tracks, with the current drawn as arrows. Middle: each law's cross-track error. Right: what the ALOS vessel believes the crab angle to be, against what it actually is.
 
-The blue LOS curve in the middle panel is the most important line in the week. It settles onto the dashed grey line — and that grey line was **not fitted to the data.** It is $\Delta\tan\beta_c = 2.25$ m, drawn from §4-7 before the run was made.
+The blue LOS curve in the middle panel is the most important line in the week. It settles onto the dashed grey line — and that grey line was **not fitted to the data.** It is $\Delta\tan\beta = 2.25$ m, drawn from §4-7 before the run was made.
 
 **LOS has not failed and is not mistuned.** Its heading error is zero, its autopilot is doing exactly what it was told, and it still sits $2.25$ m off the path. The law commands a *heading* while the vessel travels along a *course*, and the offset is precisely what the law asked for. No amount of tuning removes it, because nothing is wrong.
 
@@ -1754,9 +1762,9 @@ This is reported rather than smoothed away deliberately. A monotone $V$ was avai
 | §4-4 | derived the LOS law from the aim-point geometry | five limits checked numerically; compared against MSS `LOSchi.m`; recomputed from the log in section D, agreement $0.0\text{e}{+}00$ deg |
 | §4-5 | fixed $\Delta = 8$ m | five-point sweep, section E: settling distance and overshoot move in opposite directions and $8$ m is where the second stops improving |
 | §4-6 | established the two switching criteria and $R < \min_k d_k$ | section F evaluates both tests on one position — $4.50$ m passes, $10.97$ m fails; four-point sweep of $R$ |
-| §4-7 | derived $\dot y_e^{\,p} = U\sin(\chi-\pi_p)$ and $y_{e,ss}^{\,p} = \Delta\tan\beta_c$ | six-point current sweep, section G; worst disagreement $0.002$ m on a $4.1$ m offset |
-| §4-8 | derived ILOS, its units, its built-in anti-windup and its equilibrium | $y_{int}^{eq} = \Delta\tan\beta_c/\kappa$ predicted $7.5158$ s, measured $7.519$ s; closed form of $\dot y_e^{\,p}$ checked to $6.7\times10^{-16}$ over $10^4$ states |
-| §4-8-6 | showed the course normalisation admits a constant-weight Lyapunov function and the heading one does not | $\dot V$ matches $-U\cos\beta_c y_e^2/D$ to $1.1\times10^{-14}$; the heading form leaves a residual of rms $2.94$ |
+| §4-7 | derived $\dot y_e^{\,p} = U\sin(\chi-\pi_p)$ and $y_{e,ss}^{\,p} = \Delta\tan\beta$ | six-point current sweep, section G; worst disagreement $0.002$ m on a $4.1$ m offset |
+| §4-8 | derived ILOS, its units, its built-in anti-windup and its equilibrium | $y_{int}^{eq} = \Delta\tan\beta/\kappa$ predicted $7.5158$ s, measured $7.519$ s; closed form of $\dot y_e^{\,p}$ checked to $6.7\times10^{-16}$ over $10^4$ states |
+| §4-8-6 | showed the course normalisation admits a constant-weight Lyapunov function and the heading one does not | $\dot V$ matches $-U\cos\beta y_e^2/D$ to $1.1\times10^{-14}$; the heading form leaves a residual of rms $2.94$ |
 | §4-9 | derived ALOS and showed the adaptation law is forced | $\hat\beta = 15.91°$ against a true $15.88°$, with nothing in the law told what the current was; and the derived law checked against Fossen's `ALOSpsi.m` over 400 steps — **disagreement exactly zero** |
 | §4-10 | put every equation beside the line of MATLAB that implements it | the code shown is generated by `guidance_code(law)`, so it cannot drift from the model |
 | Part 2 | eight scripts, six result figures | every number quoted in this document appears in the console output of the script named above it |
@@ -1769,7 +1777,7 @@ This is reported rather than smoothed away deliberately. A monotone $V$ was avai
 - [ ] Section D reports the recomputed $\psi_d$ agreeing with the logged one to $0.000\text{e}{+}00$ deg.
 - [ ] Section E shows settling distance rising and overshoot falling as $\Delta$ grows, with two values that never settle.
 - [ ] Section F prints $4.50 < 5$ passing the along-track test while $10.97$ fails the circle test.
-- [ ] Section G reproduces $\Delta\tan\beta_c = 2.2545$ m against a measured $2.2533$ m.
+- [ ] Section G reproduces $\Delta\tan\beta = 2.2545$ m against a measured $2.2533$ m.
 - [ ] Section H shows the ILOS settled error with a minimum at $\kappa = 0.3$ and the ALOS estimate landing on the true crab angle at $\gamma = 0.005$.
 - [ ] The learner can state, without looking, which of $x_e^{\,p}$ and $y_e^{\,p}$ the switching logic uses and why.
 - [ ] The learner can explain why $V(t)$ in section H is not monotone.
@@ -1788,7 +1796,7 @@ W04_check(1)                 % run this whenever, as often as needed
 |---|---|---|---|
 | 1 | The LOS law on leg 1 | 25 min | $\pi_p = 0$ exactly; $y_e^{\,p}$ from $18$ m to $0$; $\psi_d \to \pi_p$ |
 | 2 | atan2 against LOS, same vessel | 20 min | worst $\lvert y_e^{\,p}\rvert$: $0.09$ m against $3.78$ m |
-| 3 | A current, and the offset that stays | 15 min | settled $y_e^{\,p} = \Delta\tan\beta_c$, heading error $0$ |
+| 3 | A current, and the offset that stays | 15 min | settled $y_e^{\,p} = \Delta\tan\beta$, heading error $0$ |
 
 - The full problem sheet is [`W04_simulink/problems/README.md`](W04_simulink/problems/README.md), and reference answers are in [`W04_simulink/solutions/`](W04_simulink/solutions/README.md).
 - The problem sheet carries **the result graphs a correct model produces**.
@@ -1812,8 +1820,8 @@ Each of the following must be reported as a number produced by a script, not as 
 | Claim | Required evidence |
 |---|---|
 | the fifth row implements the course law | its $\psi_d$ recomputed from the logged $y_e^{\,p}$ and $y_{int}$, agreeing to better than $10^{-9}$ deg |
-| the rescaled $\kappa$ is right | a dimensional argument in the report **and** an equilibrium check: $\kappa y_{int}^{eq}$ against $\Delta\tan\beta_c$ |
-| the current sweep | for the LOS rows, each measured offset against $\Delta\tan\beta_c$ computed from the *measured* $\beta_c$ of that run |
+| the rescaled $\kappa$ is right | a dimensional argument in the report **and** an equilibrium check: $\kappa y_{int}^{eq}$ against $\Delta\tan\beta$ |
+| the current sweep | for the LOS rows, each measured offset against $\Delta\tan\beta$ computed from the *measured* $\beta$ of that run |
 | the short-leg case | the error text, and an explanation of which inequality was violated |
 | the model is still readable | `check_overlaps` returning 0 |
 

@@ -28,8 +28,10 @@
 
   \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,30);
   \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (34,0);
-  \node[font=\small, anchor=east]  at (-1,28) {North};
-  \node[font=\small, anchor=north] at (32,-1) {East};
+  %  축 이름은 축 **바깥쪽**이 아니라 축 끝에 붙인다. anchor=east 로 왼쪽에
+  %  붙이면 "x^n (North)" 는 "North" 보다 훨씬 넓어 그림 경계를 넘는다.
+  \node[font=\small, anchor=south] at (0,29)  {$x^n$~(North)};
+  \node[font=\small, anchor=west]  at (33,0)  {$y^n$~(East)};
 
   \draw[flow, line width=1.1pt, -{Stealth[length=5pt,width=3.6pt]}]
         (0,0) -- ({0.5*\SC*cos(\CB)},{0.5*\SC*sin(\CB)});
@@ -47,6 +49,24 @@
 % ===================== (b) body ============================================
 \begin{scope}[shift={(66,0)}]
   \node[ink, font=\small\bfseries, anchor=west] at (-8,38) {(b)\ \ in the body frame — what the hull feels};
+
+  %  북쪽 기준선을 (b) 에도 그린다. 이것이 없으면 beta_c - psi 가 어디서 나온
+  %  각인지 그림만 보고는 알 수 없다 — 사용자 지적 2026-09-10
+  %  "1-13 그림도 조금 더 잘 설명해줘봐 왜 beta_c - psi 이 인지?"
+  %  북쪽에서 잰 두 각(psi 와 beta_c)의 차가 뱃머리에서 잰 각이라는 것이
+  %  세 호를 나란히 놓으면 눈으로 보인다.
+  \draw[soft, line width=0.4pt, densely dashed] (0,0) -- (0,30);
+  \node[tick, anchor=east] at (-0.8,29) {North};
+
+  %  psi : 북쪽에서 x_b 까지. 안쪽 호.
+  %  u_c 이름표가 반지름 21 근처(화면 60도)에 오므로 psi 호는 그보다 안쪽에 둔다
+  \draw[ink, line width=0.6pt] (0,13) arc (90:\PB:13);
+  \node[ink, font=\scriptsize, anchor=south east] at ({13.4*cos(80)},{13.4*sin(80)}) {$\psi$};
+
+  %  beta_c : 북쪽에서 조류까지. 바깥 호 — x_b 화살(길이 30)보다 짧게 두어
+  %  화살촉과 부딪히지 않게 한다.
+  \draw[flow, line width=0.6pt] (0,26) arc (90:\CB:26);
+  \node[flow, font=\scriptsize, anchor=south west] at ({26.6*cos(38)},{26.6*sin(38)}) {$\beta_c$};
 
   % 바디 축
   \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}]
@@ -69,15 +89,18 @@
      -- ({0.5*\SC*cos(\CB)},{0.5*\SC*sin(\CB)});
   \node[flow, font=\scriptsize, anchor=south east]
        at ({0.3830*\SC*cos(\PB)},{0.3830*\SC*sin(\PB)}) {$u_c = 0.383$};
-  \node[flow, font=\scriptsize, anchor=north west]
-       at ({0.3214*\SC*cos(\PB-90)+1},{0.3214*\SC*sin(\PB-90)}) {$v_c = 0.321$};
+  %  y_b 축 이름표(반지름 25)와 부딪히지 않게 성분 끝(반지름 18)에 바짝 붙인다
+  \node[flow, font=\scriptsize, anchor=north east]
+       at ({0.3214*\SC*cos(\PB-90)-1},{0.3214*\SC*sin(\PB-90)-1}) {$v_c = 0.321$};
 
   \draw[accent, line width=0.7pt] ({16*cos(\CB)},{16*sin(\CB)}) arc (\CB:\PB:16);
   \node[accent, font=\scriptsize, anchor=west] at ({18*cos(40)},{18*sin(40)}) {$\beta_c-\psi$};
 
   \node[note, anchor=north west, align=left, text width=64mm] at (-8,-18) {%
-    Only the \textbf{difference} $\beta_c-\psi$ matters to the hydrodynamics, so a
-    turning vessel sees a changing current even in a steady one.};
+    Both $\psi$ and $\beta_c$ are measured from North, so the angle left over at
+    the bow is their \textbf{difference}. Only that difference reaches the
+    hydrodynamics, which is why a turning vessel sees a changing current even in
+    a perfectly steady one.};
 \end{scope}
 
 % ---- 아래 : 코드 세 줄과 그 결과 -------------------------------------------

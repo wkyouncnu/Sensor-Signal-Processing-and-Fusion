@@ -126,7 +126,7 @@ W('\\fill[accent, opacity=0.13] (0,0) -- (%.2f:%.2f) arc (%.2f:%.2f:%.2f) -- cyc
   sP, SC, sP, sP-ssa, SC);
 W('\\draw[soft, line width=0.4pt] (0,0) circle (%.2f);\n', SC);
 W('\\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,%.2f);\n', SC+6);
-W('\\node[font=\\scriptsize, anchor=south] at (0,%.2f) {North};\n', SC+6.4);
+W('\\node[font=\\scriptsize, anchor=south] at (0,%.2f) {$x^n$~(North)};\n', SC+6.4);
 for k = 0:3
     ang = 90 - 90*k;
     lbl = {'N','E','S','W'};

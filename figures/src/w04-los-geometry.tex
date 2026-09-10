@@ -57,9 +57,9 @@
 
 % ---- 북·동 축 ------------------------------------------------------------
 \draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,96) -- (2,109);
-\node[font=\scriptsize, anchor=south] at (2,109.5) {North};
+\node[font=\scriptsize, anchor=south] at (2,109.5) {$x^n$~(North)};
 \draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,96) -- (15,96);
-\node[font=\scriptsize, anchor=west] at (15.5,96) {East};
+\node[font=\scriptsize, anchor=west] at (15.5,96) {$y^n$~(East)};
 
 % ---- 경로 ----------------------------------------------------------------
 \draw[pathline] \PathA -- \PathB;
@@ -131,7 +131,7 @@
 \node[accent, font=\small] at \LabChid {$\chi_d$};
 
 \draw[accent, line width=0.7pt] \ArcTopBeta arc (\ScrPsi:\ScrChi:14);
-\node[anote] at \LabBeta {$\beta_c$};
+\node[anote] at \LabBeta {$\beta$};
 
 \node[note, anchor=north east] at (51.0,8.0) {$(x^n,\ y^n)$};
 
@@ -194,13 +194,13 @@
   $y_e^{p} = \ValYe$\,m and $\Delta = \ValDelta$\,m, so the correction is
   $\tan^{-1}(\ValYe/\ValDelta) = \ValCorr^\circ$ and
   $\chi_d = \ValChid^\circ$; the line-of-sight distance is $\ValLOS$\,m.
-  The hull is at $\psi = \ValPsi^\circ$ with $\beta_c = \ValBeta^\circ$, so
+  The hull is at $\psi = \ValPsi^\circ$ with a crab angle $\beta = \ValBeta^\circ$, so
   $\chi = \ValChi^\circ$ — not yet on the commanded course, which is what
   makes the three arcs at the hull distinct.\\[4pt]
   \textbf{Course or heading.} The law as written commands a \emph{course}
   $\chi_d$. This course carries a heading autopilot from Week~3, so §4-4
   commands $\psi_d$: the same expression with $\psi_d$ in place of $\chi_d$.
-  The two agree exactly when $\beta_c = 0$, and §4-7 measures what the
+  The two agree exactly when $\beta = 0$, and §4-7 measures what the
   difference costs when it is not.};
 
 \end{tikzpicture}

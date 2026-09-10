@@ -67,9 +67,9 @@
 \begin{tikzpicture}[eul]
   \draw[ref] (1.15,1.15,0) -- (1.15,-1.15,0) -- (-1.15,-1.15,0) -- (-1.15,1.15,0) -- cycle;
   \draw[dck] \PAdeck;
-  \draw[qax] (0,0,0) -- \PAaxX;   \node[font=\scriptsize, ink]    at \PAlabX {$x_n$};
-  \draw[qax] (0,0,0) -- \PAaxY;   \node[font=\scriptsize, ink]    at \PAlabY {$y_n$};
-  \draw[aax] (0,0,0) -- \PAaxZ;   \node[font=\scriptsize, accent, anchor=north] at \PAlabact {$z_n$};
+  \draw[qax] (0,0,0) -- \PAaxX;   \node[font=\scriptsize, ink]    at \PAlabX {$x^n$};
+  \draw[qax] (0,0,0) -- \PAaxY;   \node[font=\scriptsize, ink]    at \PAlabY {$y^n$};
+  \draw[aax] (0,0,0) -- \PAaxZ;   \node[font=\scriptsize, accent, anchor=north] at \PAlabact {$z^n$};
   \fill[ink] (0,0,0) circle (0.7pt);
   \draw[stub] \PAarcstub -- \PAarcc;
   \draw[arcs] \PAarc;
@@ -117,8 +117,8 @@
 \\[1.5mm]
 
 \ftr{Nothing has turned yet. The deck lies in the dashed plane and the triad is
-     the chart's own: $x_n$ North, $y_n$ East, $z_n$ Down.}
-& \ftr{Yaw acts about $z_n$, which is \textbf{Down} and not the deck normal. The
+     the chart's own: $x^n$ North, $y^n$ East, $z^n$ Down.}
+& \ftr{Yaw acts about $z^n$, which is \textbf{Down} and not the deck normal. The
        deck is still level, so this rotation alone is the compass heading.}
 & \ftr{Pitch acts about $y_1$ — an axis produced by the first rotation, not about
        East. This is where the order starts to matter.}

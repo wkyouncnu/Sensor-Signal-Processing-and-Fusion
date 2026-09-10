@@ -376,7 +376,7 @@ $$
 \beta = \operatorname{atan2}(0.5,\ 2.0) = 14.04^\circ, \qquad \chi = 44.04^\circ .
 $$
 
-- And the check: $\operatorname{atan2}(\dot E, \dot N) = \operatorname{atan2}(1.4330,\ 1.4821) = 44.04°$. The course computed from the body velocity and the course computed from the NED velocity are the same number, as they must be.
+- And the check: $\operatorname{atan2}(\dot{y}^n,\ \dot{x}^n) = \operatorname{atan2}(1.4330,\ 1.4821) = 44.04°$. The course computed from the body velocity and the course computed from the NED velocity are the same number, as they must be.
 
 > [!important] $\beta$ is not a disturbance
 > The crab angle is non-zero whenever $v \neq 0$ — in a turn, in a current, in a beam wind. It is what the hull is doing, not an error to be removed. Week 1 measured $\beta = -20.3°$ in the turning run of a vessel with **no** sway actuation at all.

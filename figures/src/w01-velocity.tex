@@ -24,8 +24,8 @@
 % ---- NED 축 ---------------------------------------------------------------
 \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,54);
 \draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (56,0);
-\node[font=\small, anchor=east]  at (-1,52) {North};
-\node[font=\small, anchor=north] at (54,-1) {East};
+\node[font=\small, anchor=east]  at (-1,52) {$x^n$~(North)};
+\node[font=\small, anchor=north] at (54,-1) {$y^n$~(East)};
 
 % ---- psi -------------------------------------------------------------------
 \draw[soft, line width=0.5pt] (0,20) arc (90:\PB:20);
@@ -50,8 +50,8 @@
      {the same vector};
 \draw[pathc, line width=0.4pt, densely dashed] (0,{1.4821*\SC}) -- ({1.4330*\SC},{1.4821*\SC});
 \draw[pathc, line width=0.4pt, densely dashed] ({1.4330*\SC},0) -- ({1.4330*\SC},{1.4821*\SC});
-\node[pathc, font=\scriptsize, anchor=east] at (-1,{1.4821*\SC}) {$\dot N = 1.4821$};
-\node[pathc, font=\scriptsize, anchor=north] at ({1.4330*\SC},-1) {$\dot E = 1.4330$};
+\node[pathc, font=\scriptsize, anchor=east] at (-1,{1.4821*\SC}) {$\dot x^n = 1.4821$};
+\node[pathc, font=\scriptsize, anchor=north] at ({1.4330*\SC},-1) {$\dot y^n = 1.4330$};
 
 \node[note, anchor=north west] at (-14,-9) {%
   \textcolor{alng}{orange}: measured in $\{b\}$ by the vessel \quad
@@ -61,12 +61,12 @@
 \begin{scope}[shift={(78,0)}]
   \node[font=\small\bfseries, anchor=north west] at (0,58) {the arithmetic};
   \node[anchor=north west, font=\small] at (0,52)
-       {$\dot N = u\cos\psi - v\sin\psi$};
+       {$\dot x^n = u\cos\psi - v\sin\psi$};
   \node[anchor=north west, font=\small] at (0,44)
-       {$\dot E = u\sin\psi + v\cos\psi$};
+       {$\dot y^n = u\sin\psi + v\cos\psi$};
   \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,36) {%
-    $\dot N = 2.0(0.8660) - 0.5(0.5000) = 1.4821$\,m/s\\[2pt]
-    $\dot E = 2.0(0.5000) + 0.5(0.8660) = 1.4330$\,m/s};
+    $\dot x^n = 2.0(0.8660) - 0.5(0.5000) = 1.4821$\,m/s\\[2pt]
+    $\dot y^n = 2.0(0.5000) + 0.5(0.8660) = 1.4330$\,m/s};
 
   \node[font=\small\bfseries, anchor=north west] at (0,22) {the check that always works};
   \node[anchor=north west, align=left, text width=62mm, font=\scriptsize] at (0,16) {%
@@ -78,7 +78,7 @@
 % ---- 아래 한 줄 -------------------------------------------------------------
 \draw[soft, line width=0.3pt] (-14,-18) -- (146,-18);
 \node[anchor=north west, align=left, text width=160mm, font=\scriptsize] at (-14,-20) {%
-  Neither $\dot N$ nor $\dot E$ equals $u$. Integrating $u$ to get a north
+  Neither $\dot x^n$ nor $\dot y^n$ equals $u$. Integrating $u$ to get a north
   position is wrong at every heading except $\psi = 0$, and \textbf{it is wrong
   silently} — the number keeps looking plausible.};
 
