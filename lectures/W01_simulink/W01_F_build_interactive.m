@@ -167,7 +167,7 @@ add_block('simulink_hmi_blocks/Radio Button', [m '/DRIVE'], ...
 set_param([m '/DRIVE'], 'States', struct('Value', {0, 1, 2, 3, 4}, ...
           'Label', {'STOP', 'AHEAD', 'ASTERN', 'PORT (left)', 'STARBOARD (right)'}));
 set_param([m '/DRIVE'], 'ButtonGroupName', 'DRIVE');     % 기본값은 'Group'
-bind_to([m '/DRIVE'], [cmd '/mode']);
+hmi_bind([m '/DRIVE'], [cmd '/mode']);
 
 %  슬라이더 위의 글자("n0:Value")는 묶인 Constant 를 알려 준다. 블록 이름은
 %  아래에 따로 보이게 해서 무엇을 조절하는지 말로도 읽히게 한다.
@@ -175,12 +175,12 @@ bind_to([m '/DRIVE'], [cmd '/mode']);
 add_block('simulink_hmi_blocks/Slider', [m '/SPEED  n0  (rad per s)'], ...
           'Position', [270 y0 600 y0+60], 'ShowName', 'on');
 set_param([m '/SPEED  n0  (rad per s)'], 'Limits', [0 -1 100]);
-bind_to([m '/SPEED  n0  (rad per s)'], [cmd '/n0']);
+hmi_bind([m '/SPEED  n0  (rad per s)'], [cmd '/n0']);
 
 add_block('simulink_hmi_blocks/Slider', [m '/TURN  dn  (rad per s)'], ...
           'Position', [270 y0+110 600 y0+170], 'ShowName', 'on');
 set_param([m '/TURN  dn  (rad per s)'], 'Limits', [0 -1 30]);
-bind_to([m '/TURN  dn  (rad per s)'], [cmd '/dn']);
+hmi_bind([m '/TURN  dn  (rad per s)'], [cmd '/dn']);
 
 note(m, [640 y0-20 1180 y0+300], strjoin({ ...
 'WEEK 1  -  DRIVE IT YOURSELF'
@@ -227,35 +227,8 @@ fprintf('  built  %s\n', out);
 end
 
 % -------------------------------------------------------------------------
-function bind_to(dash, target)
-%  Dashboard 블록 하나를 Constant 블록의 Value 에 묶는다.
-b = Simulink.HMI.ParamSourceInfo;
-b.BlockPath = Simulink.BlockPath(target);
-b.ParamName = 'Value';
-set_param(dash, 'Binding', b);
-end
-
-function image_button(m, label, sub, pos, face, edge, fcn)
-%  둥근 버튼 그림을 만들어 주석에 넣고, 한 번 누르면 fcn 이 돌게 한다.
-%  그림은 임시 파일로 만든 뒤 모델 파일 안으로 들어가므로 따로 남기지 않는다.
-w = pos(3) - pos(1);   hgt = pos(4) - pos(2);
-f = figure('Visible','off', 'Color','w', 'Units','pixels', 'Position',[100 100 w hgt]);
-ax = axes(f, 'Position',[0 0 1 1]);
-axis(ax,'off');  hold(ax,'on');  xlim(ax,[0 1]);  ylim(ax,[0 1]);
-rectangle(ax, 'Position',[0.03 0.07 0.94 0.86], 'Curvature',[0.35 0.8], ...
-          'FaceColor',face, 'EdgeColor',edge, 'LineWidth',2.5);
-text(ax, 0.5, 0.60, label, 'HorizontalAlignment','center', ...
-     'FontSize',20, 'FontWeight','bold', 'Color','w');
-text(ax, 0.5, 0.27, sub,   'HorizontalAlignment','center', 'FontSize',10, 'Color','w');
-png = [tempname '.png'];
-exportgraphics(f, png, 'Resolution', 96);
-close(f);
-h = Simulink.Annotation([m '/' label]);
-h.Position = pos;
-h.setImage(png);
-h.ClickFcn = fcn;
-delete(png);
-end
+%  Dashboard 묶기와 그림 버튼은 _tools/hmi_bind.m, _tools/image_button.m 에 있다.
+%  W01_rc.slx (§G) 도 같은 둘을 쓴다.
 
 function note(m, pos, txt)
 h = Simulink.Annotation([m '/note']);

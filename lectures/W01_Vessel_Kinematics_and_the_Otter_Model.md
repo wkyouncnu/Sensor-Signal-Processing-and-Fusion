@@ -57,6 +57,7 @@ Upon completion of this week, the learner is able to:
 5. Predict the terminal surge speed of the vessel from the propeller curve and the linear damping coefficient, before running any simulation.
 6. Explain why the sway force of this vessel is identically zero, and derive the Coriolis term that produces a non-zero sway *velocity* during a turn.
 7. Rebuild the week's Simulink model from its builder script after breaking it.
+8. Invert the actuator model of the twin-screw Otter by hand — a demanded surge force and yaw moment to two thrusts, and two thrusts to two shaft speeds — and state what saturation does to the delivered force.
 
 ## Prerequisites and Setup
 
@@ -1892,6 +1893,205 @@ W01_F_button_check
 > [!tip] The track window follows the vessel
 > `W01_openloop.slx` knows its route in advance, so its window is fixed before the run. A vessel driven by hand can go anywhere, so `W01i_animate.m` moves the window whenever the hull comes within $20\%$ of an edge. The size of the window never changes, so the outline keeps one scale and its speed across the page can be judged by eye.
 
+## G. An RC transmitter, and the allocation behind it (25 min)
+
+- In §F the operator commanded shaft speeds. To drive straight at a chosen speed, the operator had to know the propeller curve $T = k\,n\lvert n\rvert$; to turn, the operator had to know that the yaw moment is $N = y_p(T_L - T_R)$. A real operator — a person on a transmitter, the joystick of a dynamic-positioning console, or the autopilot of later weeks — asks instead for a **force and a moment**. Turning that request into shaft speeds is **control allocation**.
+- This section puts an RC transmitter in front of the allocation. The throttle stick asks for a surge force, the rudder stick asks for a yaw moment, and the model works out $n_L$ and $n_R$ by inverting the two maps of §1-10 in reverse order.
+
+| | §F `W01_interactive.slx` | §G `W01_rc.slx` |
+|---|---|---|
+| the operator chooses | the shaft speeds $[n_L;\ n_R]$ | the generalised force $[X;\ N]$ |
+| who inverts $\mathbf{B}$ and the propeller curve | the operator, in the head | the `Control allocation` block |
+| stick at half travel gives | half of $n$, a quarter of the thrust | half of the force |
+| what happens beyond the actuator limits | $n$ is clipped inside `otter.m`, silently | the model reports what was delivered, $\boldsymbol{\tau}_a$, beside what was asked, $\boldsymbol{\tau}_d$ |
+
+### The transmitter — Mode 1 and Mode 2
+
+- A two-stick transmitter has four axes. Which axis is the throttle is fixed by the **mode** of the transmitter, a convention inherited from model aircraft. Mode 2 is the common one; Mode 1 moves the throttle to the right hand.
+
+| Stick axis | Channel | Mode 1 | Mode 2 | On a real transmitter |
+|---|---|---|---|---|
+| left, up–down | `LY` | elevator — not used on a boat | **throttle** | a spring returns it to the centre, except when it is the throttle, which stays where it is left |
+| left, left–right | `LX` | **rudder** | **rudder** | a spring returns it to the centre |
+| right, up–down | `RY` | **throttle** | elevator — not used on a boat | as `LY`, with the modes swapped |
+| right, left–right | `RX` | aileron — not used on a boat | aileron — not used on a boat | a spring returns it to the centre |
+
+- The rudder is the left stick left–right in **both** modes. Only the throttle changes hands.
+- The throttle of this model is centred: stick forward drives ahead, stick back drives astern, centre stops both propellers. This is how a boat transmitter drives a reversible speed controller; an aircraft throttle has no reverse and starts at the bottom instead.
+- Rudder left turns the vessel to port, rudder right turns it to starboard.
+
+### From a channel to a demanded force
+
+- A receiver hands on each channel as a pulse of $1000$ to $2000$ µs, $1500$ µs at the centre. In the model each channel is a Dashboard slider from $0$ to $100$, with the centre at $50$, and the block `receiver` turns it into a stick deflection $s \in [-1, 1]$:
+
+$$
+s = \operatorname{sign}(c - 50)\;\frac{\max\!\left(\lvert c - 50\rvert - d_b,\ 0\right)}{50 - d_b}
+$$
+
+| Symbol | Quantity | Value |
+|---|---|---|
+| $c$ | raw channel, one slider | $0$ to $100$ |
+| $d_b$ | neutral zone either side of the centre | $3$ |
+| $s$ | stick deflection | $-1$ to $1$; exactly $0$ inside the neutral zone |
+
+- The neutral zone is there for the same reason a speed controller has one: a stick released a little off the centre must not make the vessel creep.
+- The block `Mode 1 or 2` picks the throttle $s_T$ and the rudder $s_R$ out of the four deflections. The block `Joystick` then scales them into the demanded generalised force:
+
+$$
+\boldsymbol{\tau}_d =
+\begin{bmatrix} X_d \\ N_d \end{bmatrix}
+=
+\begin{bmatrix} X_{\max} & 0 \\ 0 & N_{\max} \end{bmatrix}
+\begin{bmatrix} s_T \\ s_R \end{bmatrix},
+\qquad
+X_{\max} = 2\,T_{\max},
+\qquad
+N_{\max} = 2\,y_p\,\lvert T_{\min}\rvert
+$$
+
+| Symbol | Quantity | Value | Source |
+|---|---|---|---|
+| $T_{\max} = k_{\text{pos}}\,n_{\max}^2$ | largest forward thrust of one propeller | $119.68$ N | `otter.m` lines 93–96 |
+| $T_{\min} = -k_{\text{neg}}\,n_{\min}^2$ | largest reverse thrust of one propeller | $-66.71$ N | `otter.m` lines 93–96 |
+| $X_{\max}$ | full throttle: both propellers at full ahead | $239.36$ N | `W01_G_rc_check` |
+| $N_{\max}$ | full rudder: the largest yaw moment with $X = 0$, one propeller at full reverse and the other matching it ahead | $52.70$ N·m | `W01_G_rc_check` |
+| $y_p$ | moment arm of each propeller, $y_{\text{pont}}$ | $0.395$ m | `otter.m` line 69 |
+
+### Allocation, step 1 — invert the configuration matrix
+
+- Section 1-10 wrote the forces of the two propellers as $\boldsymbol{\tau} = \mathbf{B}\mathbf{f}$ with a sway row that is exactly zero. A demand for sway force could never be met, so allocation keeps the two rows that can be (Fossen 2021, §11.2):
+
+$$
+\begin{bmatrix} X \\ N \end{bmatrix}
+=
+\underbrace{\begin{bmatrix} 1 & 1 \\ y_p & -y_p \end{bmatrix}}_{\mathbf{B}_{XN}}
+\begin{bmatrix} T_L \\ T_R \end{bmatrix}
+$$
+
+- $\mathbf{B}_{XN}$ is square with $\det \mathbf{B}_{XN} = -2y_p \neq 0$, so it has exactly one inverse. For a $2\times 2$ matrix, swap the diagonal, negate the off-diagonal and divide by the determinant:
+
+$$
+\mathbf{B}_{XN}^{-1}
+= \frac{1}{-2y_p}\begin{bmatrix} -y_p & -1 \\ -y_p & 1 \end{bmatrix}
+= \begin{bmatrix} \tfrac12 & \tfrac{1}{2y_p} \\[3pt] \tfrac12 & -\tfrac{1}{2y_p} \end{bmatrix}
+= \begin{bmatrix} 0.5000 & 1.2658 \\ 0.5000 & -1.2658 \end{bmatrix}
+$$
+
+- Written row by row, this is the whole allocation law of a twin-screw vessel:
+
+$$
+T_L = \frac{X_d}{2} + \frac{N_d}{2y_p},
+\qquad
+T_R = \frac{X_d}{2} - \frac{N_d}{2y_p}
+$$
+
+| Term | What it does |
+|---|---|
+| $X_d/2$ | splits the surge demand equally, as in Week 2 §2-5 |
+| $+N_d/(2y_p)$ on the left, $-N_d/(2y_p)$ on the right | makes the difference $T_L - T_R = N_d/y_p$, which is exactly the moment asked for. The difference does not change $X$ |
+
+- Check the sign against §1-10: a starboard demand $N_d > 0$ gives $T_L > T_R$, and $N = y_p(T_L - T_R) > 0$. The model's block `B inverse` is this matrix, computed in `W01_G_build_rc.m` as `inv(Bxn)` from the $\mathbf{B}$ of `_tools/otter_B.m`.
+- The same answer comes from the Moore–Penrose pseudo-inverse of the full $3\times 2$ matrix, $\mathbf{f} = \mathbf{B}^{+}[X;\ 0;\ N]$, the unconstrained allocation of Fossen (2021, §11.2). For $X = 100$ N and $N = 20$ N·m the two differ by $4.3\times10^{-14}$ N. The $2\times 2$ inverse is used here because it can be written down by hand.
+
+### Allocation, step 2 — invert the propeller curve
+
+- Each thrust is turned into a shaft speed separately, with the coefficient chosen by the sign of the thrust (§1-10; the same inversion as Week 2 §2-5, applied per propeller):
+
+$$
+n_i = \operatorname{sign}(T_i)\sqrt{\frac{\lvert T_i\rvert}{k_i}},
+\qquad
+k_i = \begin{cases} k_{\text{pos}}, & T_i \ge 0 \\ k_{\text{neg}}, & T_i < 0 \end{cases}
+$$
+
+### Allocation, step 3 — saturate, and report what was delivered
+
+- The shaft speeds are clipped to $[n_{\min},\ n_{\max}] = [-101.74,\ 103.93]$ rad/s by the block `shaft limits`. The block `delivered thrust` then runs the propeller curve of `otter.m` lines 165–177 forward on the clipped speeds, and `B` maps the result back to $\boldsymbol{\tau}_a = \mathbf{B}_{XN}\,\mathbf{T}(\mathbf{n}_{\text{sat}})$.
+- Inside the attainable set of Appendix A1-6, $\boldsymbol{\tau}_a = \boldsymbol{\tau}_d$ to round-off. Outside it, the two differ, and the difference is what the operator asked for and did not get.
+
+> [!warning] Saturation changes the direction of the force, not only its size
+> Each propeller is clipped on its own. When one of them saturates and the other does not, the ratio $N_a/X_a$ is no longer the ratio the sticks asked for. In case 5 below the sticks ask for $N_d/X_d = 0.220$ and receive $0.153$: the vessel turns less sharply than commanded, not merely more slowly. What to give up first — surge or yaw — is a design decision, and a later allocation method must make it explicitly.
+
+### The model
+
+```matlab
+W01_G_build_rc      % only if W01_rc.slx is missing or broken
+```
+
+> [!note] To produce this figure
+> `W01_G_build_rc` writes `W01_simulink/img/W01_rc.png` at the end of the build, as every builder in this course does.
+
+![The RC transmitter model](W01_simulink/img/W01_rc.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| `RC transmitter` (white) | four Constants `LX`, `LY`, `RX`, `RY` and a Constant `mode`, then `receiver` and `Mode 1 or 2`. Output: $[s_T;\ s_R]$ |
+| `Joystick` (blue) | one matrix gain, $\operatorname{diag}(X_{\max}, N_{\max})$. Output: $\boldsymbol{\tau}_d$ |
+| `Control allocation` (sand) | `B inverse` → `thrust to n` → `shaft limits` → $\mathbf{n}$; and `delivered thrust` → `B` → $\boldsymbol{\tau}_a$ |
+| `Otter USV`, `Measurements` | the plant and measurement stage of §B. The log holds $[u\ v\ r\ N\ E\ \psi]$, then $\mathbf{n}$, $\boldsymbol{\tau}_d$ and $\boldsymbol{\tau}_a$ |
+| `to live view` | hands $\boldsymbol{\tau}_d$, $\boldsymbol{\tau}_a$ and $\mathbf{n}$ to `W01rc_animate.m` at every step |
+| dark panel | the transmitter: two vertical and two horizontal sliders, one per channel, each bound to its Constant, and the MODE switch bound to `mode`. The legend at the bottom of the panel gives the role of each channel in each mode |
+| START, STOP, CENTRE | START sets all four channels to $50$ and starts from rest, as a transmitter's throttle check does. CENTRE returns every channel except the throttle to $50$ — the springs that a slider does not have |
+
+- The live view, drawn by `W01rc_animate.m` on the right half of the screen, adds one panel to the view of §F: the attainable set, with the demanded force as an open circle and the delivered force as an orange dot. It is drawn in stick directions — surge force up, starboard moment to the right — so pushing the throttle forward moves the circle up. Below it are $u$ with the prediction $X_a/\lvert X_u\rvert$, $r$, and $n_L$, $n_R$ with the saturation limits.
+
+### Measured
+
+```matlab
+W01_G_rc_check
+```
+
+- As in §F, a person on the sticks never repeats a run, so the numbers come from a script. `W01_G_rc_check.m` holds each stick position for $60$ s from rest, in Mode 2, with pacing and the live view switched off.
+
+| Case | Sticks | $X_d$ [N] | $N_d$ [N·m] | $n_L$, $n_R$ [rad/s] | $X_a$ [N] | $N_a$ [N·m] | $u$ [m/s] | $r$ [deg/s] |
+|---|---|---|---|---|---|---|---|---|
+| 1 | half ahead | $119.7$ | $0.00$ | $73.49,\ 73.49$ | $119.7$ | $0.00$ | $1.5432$ | $0.000$ |
+| 2 | full ahead | $239.4$ | $0.00$ | $103.93,\ 103.93$ | $239.4$ | $0.00$ | $3.0864$ | $0.000$ |
+| 3 | half ahead, half right | $119.7$ | $26.35$ | $91.71,\ 48.89$ | $119.7$ | $26.35$ | $1.4542$ | $+8.845$ |
+| 4 | full right, throttle centred | $0.0$ | $52.70$ | $77.59,\ -101.74$ | $0.0$ | $52.70$ | $0.0106$ | $+16.493$ |
+| 5 | full ahead, full right | $239.4$ | $52.70$ | $103.93,\ 69.15$ | $172.7$ | $26.35$ | $2.1265$ | $+8.252$ |
+| 6 | full astern | $-239.4$ | $0.00$ | $-101.74,\ -101.74$ | $-133.4$ | $0.00$ | $-1.7203$ | $0.000$ |
+| 7 | half ahead, half left | $119.7$ | $-26.35$ | $48.89,\ 91.71$ | $119.7$ | $-26.35$ | $1.4542$ | $-8.845$ |
+
+- The directions are as intended: throttle forward gives $u > 0$, throttle back gives $u < 0$, rudder right gives $r > 0$ (starboard) and rudder left $r < 0$ (port). Cases 3 and 7 are mirror images to every printed digit.
+- Case 3 run in Mode 1 — throttle on `RY` — and in Mode 2 — throttle on `LY` — gives logs that differ by exactly $0$. The mode moves the throttle to the other hand and changes nothing downstream.
+- Cases 1, 2, 3, 4 and 7 lie inside the attainable set, and $\boldsymbol{\tau}_a = \boldsymbol{\tau}_d$. Case 4 sits exactly on its edge by construction of $N_{\max}$: the right propeller is at $n_{\min} = -101.74$ rad/s.
+- Case 5 saturates the left propeller at $n_{\max}$, and case 6 both propellers at $n_{\min}$. Astern, the sticks ask for $-239.4$ N and the propellers deliver $-133.4$ N: the last $44\%$ of the throttle's backward travel does nothing.
+
+> [!important] The allocation undoes the square
+> In every straight-line case the settled speed equals $X_a/\lvert X_u\rvert$ to four decimals — $1.5432$, $3.0864$ and $-1.7203$ m/s — so the speed is **proportional to the throttle**: half throttle, half speed. In §F, halving the SPEED slider gave a quarter of the speed, because the command was $n$ and thrust grows with $n\lvert n\rvert$. Allocation inverts that curve, so whatever sits upstream — a thumb on a stick, or a speed controller — acts on a plant that is linear in its command.
+
+```matlab
+W01_G_rc_check      % also writes the figure below
+```
+
+![Seven stick positions on the attainable set](W01_simulink/img/W01_result_attainable.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| grey region | the attainable set of Appendix A1-6: every $[X;\ N]$ the two propellers can produce, drawn with $N$ across and $X$ up |
+| dashed blue rectangle | everything the sticks can ask for, $\lvert X\rvert \le X_{\max}$ and $\lvert N\rvert \le N_{\max}$ |
+| open circle | the demanded force $\boldsymbol{\tau}_d$ of each case; the number is the case of the table above |
+| orange dot | the delivered force $\boldsymbol{\tau}_a$ |
+| orange line | from demand to delivery. It is visible only where the propellers saturate — cases 5 and 6 |
+
+- The set is not symmetric fore and aft, because $T_{\min}$ is smaller than $T_{\max}$ in magnitude (§1-10, A1-5). That is why the rectangle reaches further down than the set does.
+- The set is widest at $X = T_{\max} + T_{\min} = 52.97$ N, not at $X = 0$: the largest yaw moment, $\pm 73.62$ N·m, needs one propeller at full ahead and the other at full astern. With the throttle centred the rudder is limited to $N_{\max} = 52.70$ N·m.
+
+### Things to try, in this order
+
+| Do this | Watch | Section |
+|---|---|---|
+| START, then throttle forward to about $75$ | the circle moves up; $u$ settles on the dashed prediction | above, and §1-11 |
+| throttle to the top | $u \to 3.09$ m/s, both propellers at $n_{\max}$ | case 2 |
+| from there, rudder hard right | the circle leaves the grey region; the dot stays on its edge and the title turns red | case 5 |
+| CENTRE | the rudder springs back; the throttle stays | the transmitter table |
+| throttle to the bottom | the dot stops at $X = -133.4$ N while the circle goes on to $-239.4$ N | case 6 |
+| switch to MODE 1 and repeat | the throttle is now the right stick; the vessel behaves identically | Mode check above |
+
 ---
 
 # Summary
@@ -1907,6 +2107,7 @@ W01_F_button_check
 | 5 | Ran a port-then-starboard manoeuvre with both propellers ahead | heading changed $-70.2°$ then $+70.6°$, symmetric to $0.41°$ |
 | 6 | Separated sway force from sway velocity, and derived the Coriolis term | $Y = 0$ exactly; $M_{11}ur = -3.4980$ N against $Y_{\text{cf}} = -3.4980$ N in the steady turn |
 | 7 | Drove the vessel with buttons, at real time, from Simulink alone | AHEAD $1.0286$ m/s and ASTERN $-0.5983$ m/s, both equal to the hand prediction |
+| 8 | Drove it with an RC transmitter through a control allocation | $\boldsymbol{\tau}_a = \boldsymbol{\tau}_d$ inside the attainable set; $u = X_a/\lvert X_u\rvert$ to four decimals; Mode 1 and Mode 2 logs identical |
 
 - Rows 2, 3 and 6 are reproduced by `_tools/verify_w01_theory.m`.
 
@@ -1932,6 +2133,7 @@ W01_F_button_check
 - [ ] `W01_1_build_openloop` regenerated the model after it was deliberately broken
 - [ ] Sections C, D and E were run in that order and together wrote six result PNG files into `W01_simulink/img/`
 - [ ] `W01_interactive.slx` was opened and run from Simulink alone, with each of the five buttons used at least once
+- [ ] `W01_rc.slx` was driven in both modes, and the demanded force was pushed outside the attainable set at least once
 
 ### Recorded observations
 
@@ -2012,6 +2214,8 @@ W01_check(1)                 % run this whenever, as often as needed
 | Heading reads more than 360° | $\psi$ is an unwrapped integral of $r$ and nothing in this model wraps it | expected. Week 3 introduces the wrapping and shows what happens without it |
 | The run is far slower than the simulated time | the live view is redrawing too often | raise `animate_every` in `W01_0_setup.m`, or set `animate = 0` |
 | The vessel leaves the live view and disappears | the axes are fixed before the run and do not auto-range | widen `track_Nmin` … `track_Emax` in `W01_0_setup.m` |
+| In `W01_rc.slx` the vessel does not move although a stick was moved | the stick moved was not the throttle of the selected mode, or it is still inside the neutral zone $50 \pm 3$ | check MODE: the throttle is `LY` in Mode 2 and `RY` in Mode 1 |
+| In `W01_rc.slx` the vessel keeps turning after the rudder was let go | a Dashboard slider has no spring; it stays where it was left | click CENTRE, which returns every channel except the throttle to $50$ |
 | The hull in the live view turns the wrong way | the two signs in the NED rotation of the silhouette were swapped | it is $N = N_0 + x_b\cos\psi - y_b\sin\psi$ and $E = E_0 + x_b\sin\psi + y_b\cos\psi$, the planar block of $\mathbf{R}_b^n$. See `_tools/draw_ship.m` |
 
 ---
@@ -2020,7 +2224,7 @@ W01_check(1)                 % run this whenever, as often as needed
 
 ### Primary
 
-- Fossen, T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. Chapters 2 (kinematics), 3 (rigid-body dynamics) and 6 (manoeuvring models, including the cross-flow drag model). §2.2.2 unit quaternions, §2.2.3 quaternions from Euler angles, §2.2.4 Euler angles from quaternions. The section numbers were checked against the 1st edition and the 2020 manuscript of the 2nd edition, because the printed 2nd edition available to this course is a scan without searchable text.
+- Fossen, T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. Chapters 2 (kinematics), 3 (rigid-body dynamics) and 6 (manoeuvring models, including the cross-flow drag model). §2.2.2 unit quaternions, §2.2.3 quaternions from Euler angles, §2.2.4 Euler angles from quaternions, §11.2 control allocation (§G). The section numbers were checked against the 1st edition and the 2020 manuscript of the 2nd edition, because the printed 2nd edition available to this course is a scan without searchable text.
 - MSS toolbox, `Tools/MSS/VESSELS/otter.m` — the plant used unchanged in this week's model. Line numbers in this document refer to the 2021 release that `mss_path` puts on the path.
 - MSS toolbox, `Tools/MSS/GNC/` — `Rzyx`, `Tzyx`, `Smtrx`, `m2c`, `crossFlowDrag`, called internally by `otter.m`.
 - MSS toolbox, `Tools/MSS/GNC/` — `euler2q`, `q2euler`, `Rquat`, `Tquat`, `quatprod`, `quatern` for §1-5; `LIBRARY/kinematics/` in the 2022 and later releases. MIT License, © Thor I. Fossen.
@@ -2033,6 +2237,8 @@ W01_check(1)                 % run this whenever, as often as needed
 - `W01_simulink/W01_vars.m` · `W01_read.m` — the same numbers as a struct, and the log with named fields
 - `W01_simulink/W01_animate.m` — the live view, called by the model's `Animate` block
 - `W01_simulink/W01_F_build_interactive.m` · `W01_interactive.slx` · `W01i_animate.m` · `W01i_control.m` · `W01_F_button_check.m` — the model driven by buttons, its live view with a following window and a shaft-speed panel, the handler of its START and STOP buttons, and the headless check behind the table of §F
+- `W01_simulink/W01_G_build_rc.m` · `W01_rc.slx` · `W01rc_animate.m` · `W01rc_control.m` · `W01_G_rc_check.m` — the model driven by an RC transmitter through a control allocation, its live view with the attainable set, the handler of its START, STOP and CENTRE buttons, and the headless check behind the table and figure of §G
+- `_tools/hmi_bind.m`, `_tools/image_button.m` — a Dashboard block bound to a Constant, and a clickable button image on the canvas, used by the models of §F and §G
 - `W01_simulink/W01_plot.m` — the summary figure, called by the models' `StopFcn`; `W01_cur_plot.m` is the same for the current model
 - `_tools/otter_config.m`, `_tools/otter_B.m` — the actuator configuration and the column rule
 - `_tools/verify_w01_theory.m` — rebuilds $\mathbf{M}$ and $\mathbf{C}$ from `otter.m` and reproduces every number of the quaternion part of §1-5, of §1-11 and of §1-12

@@ -67,7 +67,7 @@
 │                            gnc_chain.m · gnc_colour.m · add_subsys.m · add_measurement.m
 │                            add_sum.m · mss_style.m · export_diagram.m
 │                            port_xy.m · row_feed.m · lane_line.m · check_overlaps.m
-│                            ensure_base_vars.m
+│                            ensure_base_vars.m · hmi_bind.m · image_button.m  (대화형 모델)
 │                            crosstrack_err.m · wp_switch.m · path_plot.m
 │                            verify_guidance.m · verify_alos.m        (W04 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m

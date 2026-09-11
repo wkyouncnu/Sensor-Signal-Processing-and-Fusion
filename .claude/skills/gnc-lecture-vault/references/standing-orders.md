@@ -720,6 +720,19 @@ bash _tools/md2pdf.sh lectures/W01_simulink/problems/README.md \
 | 궤적 창 | 경로를 미리 모르므로 창이 배를 **따라가게** 한다 (`W01i_animate.m`). 크기는 고정 — 축척이 바뀌면 선체 그림으로 속도를 가늠할 수 없다 | — |
 | 문서의 수 | 사람이 누른 실행은 재현되지 않는다. **버튼마다 한 번씩 돌리는 확인 스크립트**(`W01_F_button_check.m`)가 표를 만든다 | AHEAD 1.0286 = §1-11, ASTERN −0.5983 = $k_{neg}$ 예측 |
 
+**RC 조종기 모델 `W01_rc.slx` (`W01_G_build_rc.m`, 2026-09-11) 에서 확인한 것**
+
+| 요구 | 방법 | 확인한 것 |
+|---|---|---|
+| 조종기 스틱 모양 | `simulink_hmi_customizable_blocks/Vertical Slider` · `Horizontal Slider`. 어두운 베젤에 빨간 손잡이라 조종기처럼 보인다 | Binding 은 저장 후 유지 |
+| 스틱 범위 | Customizable 슬라이더의 범위는 **코드로 바꿀 수 없다** (`ScaleMin`·`Limits` 는 에러 없이 받고 저장 뒤 비어 있다). 0~100 그대로 두고 모델 안 `receiver` 가 −1~+1 로 바꾼다 — 수신기 펄스 1000~2000 µs 와 같은 구조라 오히려 가르치기 좋다 | — |
+| 조종기 몸체 | **그림 주석**을 먼저 놓고 슬라이더를 그 위에 얹는다. 주석은 블록 뒤에 그려진다. 영역(area) 주석과 글자 주석의 배경색은 저장 뒤 흰색으로 돌아가므로 쓰지 않는다. 채널 이름·모드별 역할은 **그림 안에** 그린다 (블록 이름은 검은 글씨라 어두운 몸체에서 안 읽힌다) | 렌더해서 확인 |
+| 실행 중 변경 | `BlockReduction off`. 켜 두면 Terminator 로만 가는 Constant 가 최적화로 사라져 `set_param` 이 "시뮬레이션 중에는 변경할 수 없다" 로 거부된다 | 끈 뒤 실행 중 50→20, 슬라이더도 따라 움직임 |
+| 스프링 | 슬라이더에는 스프링이 없다. `set_param` 으로 Constant 를 바꾸면 **묶인 슬라이더가 따라 움직인다** — CENTRE 버튼이 스로틀이 아닌 채널을 50 으로 되돌린다 | 정지·실행 중 둘 다 확인 |
+| 모드 | Mode 1 스로틀 = `RY`, Mode 2 = `LY`, 러더는 두 모드 모두 `LX`. 모드 전환은 모델 안 `Mode 1 or 2` 블록 하나 | 같은 스틱의 두 모드 로그 차이 0 |
+| 조종기 블록? | Aerospace Blockset 의 pilot 라이브러리는 **사람 조종사 동특성 모델**(Crossover/Precision/Tustin)뿐이고 화면 조종기는 없다. 실물 USB 조종기(HID)는 Simulink 3D Animation `vrlib/Joystick Input` 으로 읽을 수 있다 — 하드웨어 없이 검증하지 못했으므로 강의에 넣지 않았다 | 라이브러리 목록 |
+| 공용 도구 | `_tools/hmi_bind.m` (묶기), `_tools/image_button.m` (그림 버튼). §F·§G 모델이 함께 쓴다 | — |
+
 - Dashboard 블록은 `simulink/Dashboard/...` 경로로는 **추가되지 않는다.** 그 이름은
   `open_system('simulink_hmi_blocks')` 를 부르는 껍데기다
 - `mss_style` 은 모든 블록의 크기를 바꾸므로 Dashboard 블록은 **그 뒤에** 넣는다
