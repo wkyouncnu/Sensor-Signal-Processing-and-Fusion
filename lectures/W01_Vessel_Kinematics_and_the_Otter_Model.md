@@ -64,7 +64,7 @@ Upon completion of this week, the learner is able to:
 | Item | Requirement |
 |---|---|
 | MATLAB | R2024b, with Simulink |
-| Toolboxes | none beyond Simulink for this week |
+| Toolboxes | none beyond Simulink for this week; the optional §H also needs Simulink 3D Animation and a transmitter with a USB joystick mode |
 | MSS | `Tools/MSS`, added by the setup script |
 | Course folder | `GradCourse/lectures/W01_simulink` |
 | Expected duration | 60 min theory, 60 min laboratory |
@@ -2092,6 +2092,109 @@ W01_G_rc_check      % also writes the figure below
 | throttle to the bottom | the dot stops at $X = -133.4$ N while the circle goes on to $-239.4$ N | case 6 |
 | switch to MODE 1 and repeat | the throttle is now the right stick; the vessel behaves identically | Mode check above |
 
+## H. A real transmitter over USB (optional hardware, 15 min)
+
+- A slider has neither a spring nor the feel of a gimbal. A real transmitter has both, and many transmitters running EdgeTX or OpenTX present themselves to a PC as a USB game controller when connected in their USB joystick (HID) mode. The Joystick Input block of Simulink 3D Animation reads such a device, and `W01_rc_usb.slx` puts it in place of the on-screen transmitter of §G.
+- Only the first block of the chain changes. `Joystick`, `Control allocation`, `Otter USV`, `Measurements` and the live view are built by the same code as in §G.
+
+| Needed | For |
+|---|---|
+| Simulink 3D Animation | the Joystick Input block, library `vrlib` |
+| a transmitter with a USB joystick (HID) mode, or any USB game controller | the device the block reads |
+| `W01_rc_usb.slx` | built by `W01_H_build_rc_usb`; the model is built and opens without a device, only START needs one |
+
+### Channels, not sticks
+
+- Over USB a transmitter sends its **channels** — aileron, elevator, throttle, rudder — each as one axis from $-1$ to $+1$. The mode of §G is applied inside the transmitter before anything leaves it. The throttle therefore arrives on the same axis whichever hand moves it, and `W01_rc_usb.slx` has no MODE switch.
+
+| | §G `W01_rc.slx` | §H `W01_rc_usb.slx` |
+|---|---|---|
+| what enters the model | four sticks, one slider each | the axes of the USB device |
+| where the mode is applied | the block `Mode 1 or 2` in the model | inside the transmitter |
+| what the model must be told | Mode 1 or Mode 2 | which axis is the throttle, which the rudder, and which way each is positive |
+| returning the sticks to the centre | the CENTRE button | the springs of the transmitter |
+
+- The axis order depends on the transmitter's channel-order setting. The EdgeTX and OpenTX default, AETR, puts the throttle on axis 3 and the rudder on axis 4; that is the default of the model until it is calibrated.
+- The block `USB receiver` turns the two chosen axes into the stick deflections of §G, through the same neutral zone:
+
+$$
+s = \operatorname{sign}(d)\,\frac{\max\!\left(\lvert d\rvert - d_b,\ 0\right)}{50 - d_b},
+\qquad
+d = 50\,\sigma\,a_k
+$$
+
+| Symbol | Quantity | Value / source |
+|---|---|---|
+| $a_k$ | axis $k$ of the device | $-1$ to $1$, from Joystick Input |
+| $k$ | `js_thr` for the throttle, `js_rud` for the rudder | found by CALIBRATE; default $3$ and $4$ (AETR) |
+| $\sigma$ | `js_sgn`, the sign that makes forward and right positive | found by CALIBRATE; default $+1$ |
+| $d_b$ | neutral zone, as in §G | $3$ |
+
+### Calibration, once per transmitter
+
+- The CALIBRATE button runs `W01_H_usb_setup`. It opens three dialogs and reads the axes when each one is confirmed:
+
+| Dialog | Asks for | Gives |
+|---|---|---|
+| 1 | every stick at the centre | the reference reading $\mathbf{a}_0$ |
+| 2 | throttle fully forward | `js_thr`: the axis with the largest $\lvert a - a_0\rvert$; `js_sgn(1)`: the sign of that change |
+| 3 | throttle centred, rudder fully right | `js_rud` and `js_sgn(2)` the same way, with the throttle axis excluded |
+
+- An axis that moved by less than a quarter of its travel is not accepted, so a dialog confirmed without moving the stick produces an error instead of a wrong setting. The result is written into the model workspace and the model is saved.
+- START checks the throttle before it starts, as a transmitter does when it is switched on. With no device on the configured joystick number, or with the throttle more than $10\%$ off the centre, START opens a dialog and does not start the simulation.
+
+```matlab
+W01_H_build_rc_usb      % only if W01_rc_usb.slx is missing or broken
+```
+
+![The USB transmitter model](W01_simulink/img/W01_rc_usb.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| `RC transmitter` (white) | Joystick Input, then `USB receiver`, then a reshape to the vector `stick`. The buttons output of the device is terminated |
+| the rest of the chain | identical to the model of §G |
+| START, STOP, CALIBRATE | START checks the device and the throttle, then starts from rest; CALIBRATE runs `W01_H_usb_setup` |
+
+### Verified without a transmitter
+
+```matlab
+W01_H_usb_check
+```
+
+- The only signal a transmitter contributes is the axis vector at the output of Joystick Input. `W01_H_usb_check.m` makes a temporary copy of `W01_rc_usb.slx` in which that block is replaced by a Constant of the same shape — a fake transmitter with eight axes — and runs it for $60$ s per case, from rest.
+
+| Fake transmitter | $s_T$ | $s_R$ | $n_L$, $n_R$ [rad/s] | $u$ [m/s] | $r$ [deg/s] |
+|---|---|---|---|---|---|
+| AETR, throttle full forward | $1.000$ | $0.000$ | $103.93,\ 103.93$ | $3.0864$ | $0.000$ |
+| AETR, throttle full back | $-1.000$ | $0.000$ | $-101.74,\ -101.74$ | $-1.7203$ | $0.000$ |
+| AETR, half ahead, half left | $0.500$ | $-0.500$ | $48.89,\ 91.71$ | $1.4542$ | $-8.845$ |
+| AETR, half ahead, half right | $0.500$ | $0.500$ | $91.71,\ 48.89$ | $1.4542$ | $+8.845$ |
+| TAER, half ahead, half left | $0.500$ | $-0.500$ | $48.89,\ 91.71$ | $1.4542$ | $-8.845$ |
+| throttle axis inverted, same sticks | $0.500$ | $-0.500$ | $48.89,\ 91.71$ | $1.4542$ | $-8.845$ |
+
+- Throttle forward drives ahead and back drives astern; rudder left turns to port and right to starboard.
+- Half ahead with half left rudder reproduces case 7 of §G to every printed digit, whatever the channel order and the direction of the throttle axis, once the model is told which is which.
+- The axis finder of CALIBRATE, given simulated readings, found the throttle and rudder axes and their signs for AETR, TAER and inverted axes, and rejected a reading in which no axis moved by a quarter of its travel.
+- START with no device connected opened the dialog *No transmitter on joystick 1: Joystick is not connected* and left the simulation stopped.
+
+> [!warning] What has not been verified
+> The Joystick Input block itself — reading a physical device — was not exercised when this section was written, because no transmitter was connected. Everything downstream of it was. The first run with a real transmitter is the check below.
+
+### The first run with a real transmitter
+
+- Connect the transmitter by USB in its joystick mode, open `W01_rc_usb.slx`, click CALIBRATE and follow the three dialogs, then centre the throttle and click START. The run is correct when all of the following hold:
+
+| Do this | Correct when |
+|---|---|
+| CALIBRATE | the final dialog names two different axes, and repeating CALIBRATE names the same two |
+| START with the throttle centred | the live view opens and the vessel stays at the origin |
+| throttle forward | the open circle in the live view moves up and $u > 0$ |
+| throttle back | $u < 0$, and the circle stops following below $X = -133.4$ N |
+| rudder left, then let go | $r < 0$ and the track curves to port; after release the spring centres the stick and $r \to 0$ |
+| change the mode in the transmitter's own menu | nothing in the model changes, because the channels are the same |
+
 ---
 
 # Summary
@@ -2108,6 +2211,7 @@ W01_G_rc_check      % also writes the figure below
 | 6 | Separated sway force from sway velocity, and derived the Coriolis term | $Y = 0$ exactly; $M_{11}ur = -3.4980$ N against $Y_{\text{cf}} = -3.4980$ N in the steady turn |
 | 7 | Drove the vessel with buttons, at real time, from Simulink alone | AHEAD $1.0286$ m/s and ASTERN $-0.5983$ m/s, both equal to the hand prediction |
 | 8 | Drove it with an RC transmitter through a control allocation | $\boldsymbol{\tau}_a = \boldsymbol{\tau}_d$ inside the attainable set; $u = X_a/\lvert X_u\rvert$ to four decimals; Mode 1 and Mode 2 logs identical |
+| 9 | Replaced the on-screen transmitter by a USB transmitter | a fake transmitter reproduces case 7 of §G exactly for AETR, TAER and an inverted throttle axis; the physical device is checked on first connection |
 
 - Rows 2, 3 and 6 are reproduced by `_tools/verify_w01_theory.m`.
 
@@ -2215,6 +2319,9 @@ W01_check(1)                 % run this whenever, as often as needed
 | The run is far slower than the simulated time | the live view is redrawing too often | raise `animate_every` in `W01_0_setup.m`, or set `animate = 0` |
 | The vessel leaves the live view and disappears | the axes are fixed before the run and do not auto-range | widen `track_Nmin` … `track_Emax` in `W01_0_setup.m` |
 | In `W01_rc.slx` the vessel does not move although a stick was moved | the stick moved was not the throttle of the selected mode, or it is still inside the neutral zone $50 \pm 3$ | check MODE: the throttle is `LY` in Mode 2 and `RY` in Mode 1 |
+| `W01_rc_usb.slx`: START opens *No transmitter on joystick 1* | the transmitter is not connected, is not in its USB joystick mode, or is joystick 2 on this PC | connect it in joystick mode; with more than one game controller run `W01_H_usb_setup(2)` |
+| `W01_rc_usb.slx`: START opens *Throttle is not at the centre* | the throttle check of START | centre the throttle stick, then START again |
+| `W01_rc_usb.slx`: throttle forward drives astern, or a stick does nothing | the model's axis settings do not match this transmitter | click CALIBRATE |
 | In `W01_rc.slx` the vessel keeps turning after the rudder was let go | a Dashboard slider has no spring; it stays where it was left | click CENTRE, which returns every channel except the throttle to $50$ |
 | The hull in the live view turns the wrong way | the two signs in the NED rotation of the silhouette were swapped | it is $N = N_0 + x_b\cos\psi - y_b\sin\psi$ and $E = E_0 + x_b\sin\psi + y_b\cos\psi$, the planar block of $\mathbf{R}_b^n$. See `_tools/draw_ship.m` |
 
@@ -2238,6 +2345,7 @@ W01_check(1)                 % run this whenever, as often as needed
 - `W01_simulink/W01_animate.m` — the live view, called by the model's `Animate` block
 - `W01_simulink/W01_F_build_interactive.m` · `W01_interactive.slx` · `W01i_animate.m` · `W01i_control.m` · `W01_F_button_check.m` — the model driven by buttons, its live view with a following window and a shaft-speed panel, the handler of its START and STOP buttons, and the headless check behind the table of §F
 - `W01_simulink/W01_G_build_rc.m` · `W01_rc.slx` · `W01rc_animate.m` · `W01rc_control.m` · `W01_G_rc_check.m` — the model driven by an RC transmitter through a control allocation, its live view with the attainable set, the handler of its START, STOP and CENTRE buttons, and the headless check behind the table and figure of §G
+- `W01_simulink/W01_H_build_rc_usb.m` · `W01_rc_usb.slx` · `W01_H_usb_setup.m` · `W01rc_usb_axis.m` · `W01_H_usb_check.m` — the same chain read from a USB transmitter, its calibration, the axis finder the calibration uses, and the check with a fake transmitter behind the table of §H
 - `_tools/hmi_bind.m`, `_tools/image_button.m` — a Dashboard block bound to a Constant, and a clickable button image on the canvas, used by the models of §F and §G
 - `W01_simulink/W01_plot.m` — the summary figure, called by the models' `StopFcn`; `W01_cur_plot.m` is the same for the current model
 - `_tools/otter_config.m`, `_tools/otter_B.m` — the actuator configuration and the column rule

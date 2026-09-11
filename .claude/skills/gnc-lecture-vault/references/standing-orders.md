@@ -732,6 +732,10 @@ bash _tools/md2pdf.sh lectures/W01_simulink/problems/README.md \
 | 모드 | Mode 1 스로틀 = `RY`, Mode 2 = `LY`, 러더는 두 모드 모두 `LX`. 모드 전환은 모델 안 `Mode 1 or 2` 블록 하나 | 같은 스틱의 두 모드 로그 차이 0 |
 | 조종기 블록? | Aerospace Blockset 의 pilot 라이브러리는 **사람 조종사 동특성 모델**(Crossover/Precision/Tustin)뿐이고 화면 조종기는 없다. 실물 USB 조종기(HID)는 Simulink 3D Animation `vrlib/Joystick Input` 으로 읽을 수 있다 — 하드웨어 없이 검증하지 못했으므로 강의에 넣지 않았다 | 라이브러리 목록 |
 | 공용 도구 | `_tools/hmi_bind.m` (묶기), `_tools/image_button.m` (그림 버튼). §F·§G 모델이 함께 쓴다 | — |
+| 실물 조종기 (§H) | `W01_rc_usb.slx` = `W01_G_build_rc('usb')`. `vrlib/Joystick Input` → `USB receiver`. 조종기는 USB 로 **채널**(AETR 등)을 보낸다 — 모드는 조종기 안에서 적용되므로 모델에 MODE 스위치가 없다. 축 번호·방향은 조종기마다 달라 **CALIBRATE**(`W01_H_usb_setup`)가 "움직여 보라" 고 해서 찾는다 | 장치 없이 모델 생성 가능 (조이스틱 블록은 컴파일 때만 장치를 찾는다) |
+| 장치 없이 검증 | 장치에서 오는 것은 축 벡터 하나뿐이다. **그 블록만 Constant 로 바꾼 임시 사본**을 돌린다 (`W01_H_usb_check`). 축 순서·방향이 다른 가짜 조종기로도 §G 경우 7 과 자릿수까지 같다. 장치를 읽는 부분만 미검증이며 **문서에 그렇게 적는다** — 출력을 지어내지 않고 판정 기준 표만 둔다 | 2026-09-11, 조종기 미연결 |
+| 장치 없음 · 스로틀 | START 가 먼저 `vrjoystick` 으로 열어 본다. 없으면 창으로 알리고 시작하지 않는다(Simulink 오류 대신). 스로틀이 10 % 넘게 벗어나 있으면 시작하지 않는다 — 실물 조종기의 throttle check | 장치 없이 창 문구와 stopped 상태 확인 |
+| 모델 이름 공유 | 실시간 화면 하나(`W01rc_animate`)를 두 모델이 쓴다. `StartFcn` 이 `setappdata(0,'W01rc_model',bdroot)` 로 자기 이름을 맡기고, 화면이 그 모델 작업공간에서 한계값을 읽는다 | — |
 
 - Dashboard 블록은 `simulink/Dashboard/...` 경로로는 **추가되지 않는다.** 그 이름은
   `open_system('simulink_hmi_blocks')` 를 부르는 껍데기다

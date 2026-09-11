@@ -1,7 +1,11 @@
-function W01_G_build_rc()
+function W01_G_build_rc(src)
 %W01_G_BUILD_RC  W01_rc.slx 를 코드로 만든다 — RC 조종기로 모는 Otter, 추력 배분을 거쳐.
 %
-%   >> W01_G_build_rc
+%   >> W01_G_build_rc            화면 조종기   -> W01_rc.slx      (강의 §G)
+%   >> W01_G_build_rc('usb')     실물 USB 조종기 -> W01_rc_usb.slx (강의 §H,
+%                                W01_H_build_rc_usb 가 이렇게 부른다)
+%
+%   두 모델은 맨 앞 RC transmitter 블록 하나만 다르다. 그 뒤는 같은 코드가 만든다.
 %
 %   무엇을 만드는가
 %     W01_interactive.slx (§F) 는 두 프로펠러 속도 n 을 직접 명령했다. 이 모델은
@@ -27,7 +31,9 @@ function W01_G_build_rc()
 %   스크립트 없이 돈다. 변수는 모두 모델 작업공간에 있다 (standing-orders §8-4).
 %   다시 만들어도 안전하다. 기존 W01_rc.slx 는 덮어쓴다.
 
-m    = 'W01_rc';
+if nargin < 1, src = 'screen'; end
+usb  = strcmp(src, 'usb');
+m    = 'W01_rc';   if usb, m = 'W01_rc_usb'; end
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));                 % ...\GradCourse
 out  = fullfile(here, [m '.slx']);
@@ -36,6 +42,7 @@ addpath(fullfile(root,'_tools'), here);
 mss_path();
 load_system('simulink_hmi_blocks');                % Radio Button
 load_system('simulink_hmi_customizable_blocks');   % 세로 · 가로 슬라이더 — 조종기 스틱
+if usb, load_system('vrlib'); end                  % Joystick Input — Simulink 3D Animation
 
 cfg = otter_config('base');
 
@@ -64,6 +71,12 @@ VV = struct('mp', 25, 'rp', [0.05 0 -0.35]', 'V_c', 0, 'beta_c', 0, ...
             'X_max', 2*T_max, ...                   % 스로틀 끝 = 두 프로펠러 최대 전진
             'N_max', 2*cfg.y_pont*abs(T_min), ...   % 러더 끝 = 전후진 힘이 0 인 채 낼 수 있는 최대 선회 모멘트
             'Xu_abs', 24.4*9.81/(6*0.5144));        % |X_u|, otter.m line 157 — 화면의 예측선
+if usb
+    %  실물 조종기의 축. 기본값은 EdgeTX · OpenTX 의 기본 채널 순서 AETR —
+    %  1 aileron, 2 elevator, 3 throttle, 4 rudder. 조종기마다 다르므로
+    %  W01_H_usb_setup (CALIBRATE) 이 실제로 움직여 보고 다시 쓴다.
+    VV.js_thr = 3;   VV.js_rud = 4;   VV.js_sgn = [1 1];
+end
 fn = fieldnames(VV);
 for i = 1:numel(fn), assignin(mw, fn{i}, VV.(fn{i})); end
 
@@ -73,6 +86,10 @@ L = @(a,b) add_line(m, a, b, 'autorouting','smart');
 
 %  1. command — 조종기와 수신기. 채널 네 개와 모드 스위치, 그리고 규칙 둘.
 tx = add_subsys(m, 'RC transmitter', P.command, {}, {'stick'}, gnc_colour('command'));
+if usb
+    usb_receiver(tx);          % §H — Joystick Input -> USB receiver -> stick
+else
+%  §G — 화면 슬라이더 넷(채널)과 MODE 스위치 -> receiver -> Mode 1 or 2 -> stick
 CH = {'LX','LY','RX','RY'};
 for i = 1:4
     add_block('simulink/Sources/Constant', [tx '/' CH{i}], 'Value','50', ...
@@ -126,6 +143,7 @@ add_line(tx, 'receiver/1',    'Mode 1 or 2/1', 'autorouting','smart');
 add_line(tx, 'mode/1',        'Mode 1 or 2/2', 'autorouting','smart');
 add_line(tx, 'Mode 1 or 2/1', 'as vector/1',   'autorouting','smart');
 add_line(tx, 'as vector/1',   'stick/1',       'autorouting','smart');
+end
 
 %  2. controller — 조이스틱. 스틱 [s_T; s_R] 를 힘 [X; N] 으로. 선박 DP 시스템의
 %     조이스틱 모드가 하는 일과 같다: 스틱 편각에 비례하는 힘을 요구한다.
@@ -242,6 +260,9 @@ L('to live view/1',       'tap end/1');
 %  글자(스틱 이름, 모드별 역할)는 그림에 함께 그린다 — 블록 이름은 검은 글씨라
 %  어두운 몸체 위에서 읽히지 않는다.
 bx = 40;  by = yD + 220;  Wb = 720;  Hb = 470;
+if usb
+    usb_panel(m, [bx yD+130]); % §H — 버튼 셋과 안내문. 스틱은 조종기에 있다
+else
 S = struct( ...                                   % 이름, 채널, 위치 (몸체 기준)
   'name', {'LY  left up-down', 'LX  left left-right', 'RY  right up-down', 'RX  right left-right'}, ...
   'ch',   {'LY', 'LX', 'RY', 'RX'}, ...
@@ -298,13 +319,17 @@ note(m, [bx by+Hb+30 bx+Wb by+Hb+560], strjoin({ ...
 '  orange dot    delivered tau_a'
 '  apart = saturated: the sticks ask for more than the'
 '  two propellers can give (sec. G, appendix A1-6)'}, newline));
+end
 
 %% ---- 모델을 열 때 경로를 스스로 잡는다 · 실행마다 탭을 비운다 -----------
 set_param(m, 'PostLoadFcn', strjoin({ ...
     'p_ = fileparts(get_param(bdroot,''FileName''));' ...
     'addpath(p_, fullfile(fileparts(fileparts(p_)),''_tools''));' ...
     'mss_path(); clear p_'}, ' '));
-set_param(m, 'StartFcn', 'if isappdata(0,''W01rc_tap''), rmappdata(0,''W01rc_tap''); end');
+%  StartFcn : 지난 실행의 탭 값을 지우고, 실시간 화면이 한계값을 읽을 모델 이름을 맡긴다
+%  (W01rc_animate 는 W01_rc 와 W01_rc_usb 가 함께 쓴다).
+set_param(m, 'StartFcn', ['if isappdata(0,''W01rc_tap''), rmappdata(0,''W01rc_tap''); end; ' ...
+                          'setappdata(0,''W01rc_model'',bdroot);']);
 set_param(m, 'ReturnWorkspaceOutputs', 'off');
 
 fprintf('  overlapping lines : %d\n', check_overlaps(m));
@@ -319,6 +344,82 @@ function as_vector(sys, name, pos)
 %  2x1 행렬 신호를 1-D 벡터로 편다. 로그의 Mux 는 벡터만 받는다 (W01_openloop 과 같은 규약).
 add_block('simulink/Math Operations/Reshape', [sys '/' name], ...
           'OutputDimensionality','1-D array', 'Position', pos);
+end
+
+function usb_receiver(tx)
+%  §H — 실물 조종기. Joystick Input 이 축 벡터를 내고, USB receiver 가 그 가운데
+%  스로틀 축과 러더 축을 골라 [s_T; s_R] 로 바꾼다. 모드(Mode 1, 2)는 조종기 안에서
+%  이미 적용되어 채널로 오므로 MODE 스위치가 없다. 버튼 출력은 쓰지 않는다.
+jb = [tx '/Joystick Input'];
+add_block('vrlib/Joystick Input', jb, 'joyid','1', 'Position',[40 80 130 170]);
+add_block('simulink/User-Defined Functions/MATLAB Function', [tx '/USB receiver'], ...
+          'Position', [210 90 330 150]);
+set_mlfcn([tx '/USB receiver'], { ...
+'function stick = usb_receiver(a, js_thr, js_rud, js_sgn)'
+'%#codegen'
+'%USB_RECEIVER  Two axes of a USB transmitter to [s_T; s_R], each -1..+1.'
+'%'
+'%   A transmitter in USB joystick mode sends its CHANNELS, not its sticks:'
+'%   the mode (1 or 2) is applied inside the transmitter, so the throttle is'
+'%   the same axis whichever hand moves it. js_thr and js_rud say which axis'
+'%   is which, js_sgn which way is positive. W01_H_usb_setup finds all three.'
+'%'
+'%   Each axis, -1..+1, is turned into the 0..100 channel of the on-screen'
+'%   model and passed through the same neutral zone, so the two models give'
+'%   the same stick deflection for the same stick position.'
+'db = 3;                                   % neutral zone [% of travel]'
+'stick = zeros(2,1);'
+'k = [js_thr; js_rud];'
+'for i = 1:2'
+'    if k(i) >= 1 && k(i) <= numel(a)'
+'        d = 50 * js_sgn(i) * double(a(k(i)));'
+'        stick(i) = sign(d) * max(abs(d) - db, 0) / (50 - db);'
+'    end'
+'end'
+'stick = min(max(stick, -1), 1);'}, 'stick', '[2 1]');
+as_param([tx '/USB receiver'], {'js_thr','js_rud','js_sgn'});
+as_vector(tx, 'as vector', [390 100 430 140]);
+add_line(tx, 'Joystick Input/1', 'USB receiver/1', 'autorouting','smart');
+add_line(tx, 'USB receiver/1',   'as vector/1',    'autorouting','smart');
+add_line(tx, 'as vector/1',      'stick/1',        'autorouting','smart');
+ph  = get_param(jb, 'PortHandles');
+lab = {'', 'buttons unused', 'POVs unused'};
+for k = 2:numel(ph.Outport)
+    add_block('simulink/Sinks/Terminator', [tx '/' lab{min(k,3)}], ...
+              'Position', [200 150+40*k 220 170+40*k]);
+    add_line(tx, sprintf('Joystick Input/%d', k), [lab{min(k,3)} '/1'], 'autorouting','smart');
+end
+end
+
+function usb_panel(m, p)
+%  §H 의 캔버스 — 버튼 셋과 안내문. 스틱은 조종기에 있으므로 슬라이더가 없고,
+%  모드도 조종기 안에서 정하므로 MODE 스위치가 없다. 스프링이 있으니 CENTRE 도 없다.
+x = p(1);  y = p(2);
+image_button(m, 'START', 'throttle must be centred', [x y x+230 y+75], ...
+             [0.30 0.69 0.31], [0.12 0.40 0.12], 'W01rc_control(''start'', ''W01_rc_usb'')');
+image_button(m, 'STOP', 'end the run', [x+245 y x+475 y+75], ...
+             [0.85 0.26 0.20], [0.50 0.10 0.08], 'W01rc_control(''stop'', ''W01_rc_usb'')');
+image_button(m, 'CALIBRATE', 'once per transmitter', [x+490 y x+720 y+75], ...
+             [0.55 0.40 0.75], [0.30 0.18 0.45], 'W01_H_usb_setup');
+note(m, [x y+110 x+720 y+560], strjoin({ ...
+'WEEK 1  -  A REAL RC TRANSMITTER OVER USB'
+''
+'1  Connect the transmitter by USB and select its'
+'   USB joystick (HID) mode.'
+'2  Click CALIBRATE once per transmitter. It asks for one'
+'   stick movement at a time and stores which axis is the'
+'   throttle, which is the rudder, and which way is positive.'
+'3  Centre the throttle, then click START. START refuses to'
+'   run with the throttle off centre, or with no transmitter.'
+'4  THROTTLE forward = ahead, back = astern, centre = stop.'
+'   RUDDER left = turn to port, right = turn to starboard.'
+''
+'The MODE (1 or 2) is set in the transmitter itself.'
+'Over USB it sends channels - throttle, rudder - not sticks,'
+'so this model has no MODE switch.'
+''
+'Everything after the RC transmitter block is the same as'
+'W01_rc.slx (sec. G), and so is the live view.'}, newline));
 end
 
 function as_param(blk, names)

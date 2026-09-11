@@ -25,7 +25,8 @@ W     = 120;                                    % 궤적 창의 한 변 [m]
 every = 0.25;                                   % 다시 그리는 간격 [시뮬레이션 초]
 span  = 60;                                     % 시간축에 보이는 길이 [s]
 name  = 'W01 RC transmitter';
-m     = 'W01_rc';
+m     = 'W01_rc';                               % 모델의 StartFcn 이 자기 이름을 맡겨 둔다
+if isappdata(0, 'W01rc_model'), m = getappdata(0, 'W01rc_model'); end   % W01_rc_usb (§H)
 
 %  t = 0 의 첫 부름은 값이 맡겨지기 전에 온다. StartFcn 이 지난 실행의 값을 지우므로
 %  아직 없으면 NaN 이다 (그 점은 그려지지 않는다).
