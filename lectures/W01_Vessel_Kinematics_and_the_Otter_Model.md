@@ -1536,7 +1536,7 @@ Expected output:
 
 - Each laboratory section is one script. Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
 - Sections C, D and E build the model they need if it is missing, so any one of them can be run first.
-- The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_cur_plot.m`, `W01_animate.m`, `W01c_animate.m`, `W01i_animate.m` — are called **by** the scripts above and by the models. They are never run by hand.
+- The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_cur_plot.m`, `W01_animate.m`, `W01c_animate.m`, `W01i_animate.m`, `W01i_control.m` — are called **by** the scripts above and by the models. They are never run by hand.
 - `W01_frames.m` is not called by anything. It drew a figure that was withdrawn for repeating what §1-4 already worked through with the same numbers; the file is kept so the figure can be brought back without rewriting it. The same applies to the three-panel and drift-rose drawings inside `W01_cur_plot.m` — that file is still the current model's `StopFcn`, but §E no longer calls those two drawings.
 - The laboratory of the second hour lives in `W01_simulink/problems/` and `solutions/`, and is separate from these.
 
@@ -1820,8 +1820,9 @@ W01_E_current_run
 ## F. Drive it yourself (15 min)
 
 - Sections C to E each ran a command fixed in advance. This section hands the command over: one model, five buttons, two sliders, and the same live view as §B.
-- Open `W01_interactive.slx` and press **Run**. No setup script is needed. Every variable the model reads is stored in its own model workspace, and the model puts `_tools` and MSS on the path by itself when it is opened.
-- The simulation runs at real time — Simulation Pacing at rate 1 — and does not stop on its own. Press **Stop** to end it.
+- Open `W01_interactive.slx` and press **START** on the canvas; the toolstrip's Run does the same. No setup script is needed. Every variable the model reads is stored in its own model workspace, and the model puts `_tools` and MSS on the path by itself when it is opened.
+- The simulation runs at real time — Simulation Pacing at rate 1 — and does not stop on its own. **STOP** ends it. **START** always begins again from the origin: a run in progress is stopped first, and the vessel, its track and the plots return to their initial state. The toolstrip's Pause and Continue hold the state instead of resetting it.
+- START also places the two windows side by side, the model on the left half of the screen and the live view on the right. A click on any button brings the model window forward; if the two overlapped, every click would hide the plots.
 
 ```matlab
 W01_F_build_interactive      % only if W01_interactive.slx is missing or broken
@@ -1842,6 +1843,7 @@ W01_F_build_interactive      % only if W01_interactive.slx is missing or broken
 | `Drive command` (white) | the three Constants and one MATLAB Function that turns a button into $[n_L;\ n_R]$ |
 | `Otter USV`, `Measurements` | the plant and the live view of `W01_openloop.slx`, unchanged, except that the track window follows the vessel |
 | `n now` | the two shaft speeds the plant is receiving at this instant |
+| START, STOP | two annotations with a click callback; a single click calls `W01i_control('start')` or `W01i_control('stop')` |
 
 - Each button applies one rule — the same rule as the timetable of §D:
 
@@ -2026,7 +2028,7 @@ W01_check(1)                 % run this whenever, as often as needed
 - `W01_simulink/W01_C_terminal_speed.m` · `W01_D_the_manoeuvre.m` · `W01_E_current_run.m` — one script per laboratory section
 - `W01_simulink/W01_vars.m` · `W01_read.m` — the same numbers as a struct, and the log with named fields
 - `W01_simulink/W01_animate.m` — the live view, called by the model's `Animate` block
-- `W01_simulink/W01_F_build_interactive.m` · `W01_interactive.slx` · `W01i_animate.m` · `W01_F_button_check.m` — the model driven by buttons, its live view with a following window, and the headless check behind the table of §F
+- `W01_simulink/W01_F_build_interactive.m` · `W01_interactive.slx` · `W01i_animate.m` · `W01i_control.m` · `W01_F_button_check.m` — the model driven by buttons, its live view with a following window, the handler of its START and STOP buttons, and the headless check behind the table of §F
 - `W01_simulink/W01_plot.m` — the summary figure, called by the models' `StopFcn`; `W01_cur_plot.m` is the same for the current model
 - `_tools/otter_config.m`, `_tools/otter_B.m` — the actuator configuration and the column rule
 - `_tools/verify_w01_theory.m` — rebuilds $\mathbf{M}$ and $\mathbf{C}$ from `otter.m` and reproduces every number of the quaternion part of §1-5, of §1-11 and of §1-12

@@ -714,6 +714,8 @@ bash _tools/md2pdf.sh lectures/W01_simulink/problems/README.md \
 | 슬라이더 | `simulink_hmi_blocks/Slider`. `Limits` 는 `[최소 눈금 최대]`, 눈금 `-1` 은 자동 | — |
 | 묶기 | `Simulink.HMI.ParamSourceInfo` 에 `BlockPath` · `ParamName='Value'` 를 넣어 `set_param(dash,'Binding',b)` | — |
 | 실시간 | `EnablePacing on`, `PacingRate 1`, `StopTime inf` | — |
+| 처음부터 다시 | 캔버스의 **클릭 주석** START(`Simulink.Annotation` 의 `ClickFcn`)가 `W01i_control('start')` 를 부른다 — 돌고 있으면 stop, 완전히 멈출 때까지 기다린 뒤 start. Dashboard 의 Callback Button 은 코드로 넣은 `ClickFcn` 과 글자가 저장 뒤 사라져서 쓰지 않는다(R2024b 확인). 주석 배경색은 `'green'` 같은 이름 색만 저장된다. Stop 뒤 시작은 t = 0, x0 에서 다시 하므로 배·궤적·그래프가 초기화된다 | 사용자 요청 "중지하고 다시 하면 시작 위치가 초기화" |
+| 창 두 개 | 버튼은 모델 창, 그래프는 따로 뜬 figure 다. **겹치면 버튼을 누를 때마다 모델 창이 앞으로 나와 그래프를 가린다.** 사용자는 이것을 "Run 이 안 눌리고 그래프도 안 뜬다" 로 보고했다 — 실제로는 돌고 있었다. START 가 모델을 화면 왼쪽 절반, `W01i_animate` 가 그래프를 오른쪽 절반에 둔다 | 2026-09-11 |
 | 궤적 창 | 경로를 미리 모르므로 창이 배를 **따라가게** 한다 (`W01i_animate.m`). 크기는 고정 — 축척이 바뀌면 선체 그림으로 속도를 가늠할 수 없다 | — |
 | 문서의 수 | 사람이 누른 실행은 재현되지 않는다. **버튼마다 한 번씩 돌리는 확인 스크립트**(`W01_F_button_check.m`)가 표를 만든다 | AHEAD 1.0286 = §1-11, ASTERN −0.5983 = $k_{neg}$ 예측 |
 

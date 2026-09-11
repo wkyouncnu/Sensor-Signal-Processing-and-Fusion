@@ -127,7 +127,14 @@ add_block('simulink/Sinks/Display', [m '/n now  (left ; right)'], ...
 L('Drive command/1', 'n now  (left ; right)/1');
 
 %% ---- the dashboard : 버튼 다섯, 슬라이더 둘 --------------------------------
-y0 = yD + 100;
+y0 = yD + 170;
+
+%  START · STOP — 한 번 누르면 처음부터 / 멈춤 (W01i_control).
+%  Dashboard 의 Callback Button 은 코드로 넣은 ClickFcn 과 글자가 저장 뒤
+%  사라진다 (R2024b 에서 확인). 그래서 클릭 콜백이 있는 주석 상자를 버튼으로 쓴다.
+%  주석 배경색은 이름 색만 저장된다 ('[r g b]' 문자열은 흰색으로 돌아간다).
+button(m, 'START  (from the beginning)', [40  y0-100 330 y0-45], 'green',  'W01i_control(''start'')');
+button(m, 'STOP',                        [360 y0-100 600 y0-45], 'orange', 'W01i_control(''stop'')');
 add_block('simulink_hmi_blocks/Radio Button', [m '/DRIVE'], ...
           'Position', [40 y0 230 y0+160]);
 set_param([m '/DRIVE'], 'States', struct('Value', {0, 1, 2, 3, 4}, ...
@@ -151,7 +158,8 @@ bind_to([m '/TURN  dn  (rad per s)'], [cmd '/dn']);
 note(m, [640 y0-20 1180 y0+300], strjoin({ ...
 'WEEK 1  -  DRIVE IT YOURSELF'
 ''
-'1  Press Run. The live view opens and the vessel moves ahead.'
+'1  Click START (or press Run). The live view opens on the right'
+'   half of the screen and the vessel moves ahead.'
 '2  Click a button while it runs:'
 '      STOP        both propellers stop'
 '      AHEAD       n = [ n0 ;  n0 ]'
@@ -159,7 +167,7 @@ note(m, [640 y0-20 1180 y0+300], strjoin({ ...
 '      PORT        n = [n0-dn ; n0+dn]   the LEFT one slows'
 '      STARBOARD   n = [n0+dn ; n0-dn]   the RIGHT one slows'
 '3  Drag SPEED and TURN to change n0 and dn.'
-'4  Press Stop to end the run.'
+'4  Click STOP to end the run. START again begins from the origin.'
 ''
 'The simulation runs at real time (Simulation Pacing),'
 'and never stops on its own.'
@@ -193,6 +201,17 @@ b = Simulink.HMI.ParamSourceInfo;
 b.BlockPath = Simulink.BlockPath(target);
 b.ParamName = 'Value';
 set_param(dash, 'Binding', b);
+end
+
+function button(m, txt, pos, bg, fcn)
+%  한 번 누르면 fcn 이 도는 주석 상자 — 캔버스 위의 버튼.
+h = Simulink.Annotation([m '/' txt]);
+h.Position            = pos;
+h.FontSize            = 18;
+h.FontWeight          = 'bold';
+h.BackgroundColor     = bg;
+h.HorizontalAlignment = 'center';
+h.ClickFcn            = fcn;
 end
 
 function note(m, pos, txt)

@@ -26,12 +26,25 @@ o.every = 0.25;                             % 다시 그리는 간격 [시뮬레
 
 live_dash(u, v, r, N, E, psi, t, o);
 
+%  새 실행인가 — 처음 부르거나 시간이 뒤로 갔으면 (Stop 뒤 다시 Run).
+newRun = isempty(tLast) || t < tLast;
+
 %  창 옮기기도 다시 그리는 간격에 맞춘다. 매 스텝 찾으면 느려진다.
-if ~isempty(tLast) && t >= tLast && t - tLast < o.every, return; end
+if ~newRun && t - tLast < o.every, return; end
 tLast = t;
 
 f = findall(0, 'Type','figure', 'Name', o.name);
 if isempty(f), return; end
+
+%  새 실행의 첫 화면 : 화면 오른쪽 절반에 두고 앞으로 가져온다.
+%  모델 창(왼쪽 절반, W01i_control 이 둔다)과 겹치지 않아야, 버튼을 누를 때
+%  모델 창이 앞으로 나와도 그래프가 가려지지 않는다.
+if newRun
+    ss = get(groot, 'ScreenSize');
+    set(f(1), 'Position', [round(0.5*ss(3))+5, 50, round(0.5*ss(3))-15, ss(4)-130]);
+    figure(f(1));
+    drawnow;
+end
 ax = findobj(f(1), 'Type','axes');
 for k = 1:numel(ax)
     %  궤적 축은 x 축 이름이 'East  [m]' 인 하나뿐이다 (live_dash 가 그렇게 짓는다).
