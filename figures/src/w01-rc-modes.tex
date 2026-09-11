@@ -1,0 +1,78 @@
+% figures/w01-rc-modes.svg — RC 조종기의 Mode 1 과 Mode 2. 어느 스틱이 스로틀인가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-rc-modes.tex figures/w01-rc-modes.svg
+%
+% 강의 W01 §G. 모형 항공기에서 온 규약 그대로다:
+%   Mode 1 : 왼쪽 = elevator(상하) · rudder(좌우),   오른쪽 = throttle(상하) · aileron(좌우)
+%   Mode 2 : 왼쪽 = throttle(상하) · rudder(좌우),   오른쪽 = elevator(상하) · aileron(좌우)
+% 배에서 쓰는 둘 — 스로틀(= 전후 힘 X)과 러더(= 선회 모멘트 N) — 만 accent 로 칠하고,
+% 쓰지 않는 둘은 회색으로 둔다. 러더는 두 모드 모두 왼쪽 스틱 좌우다.
+% 바뀌는 것은 스로틀 하나뿐이라는 것이 이 그림의 요점이다.
+% 채널 이름 LY LX RY RX 는 W01_rc.slx 의 슬라이더 이름과 같다.
+%
+% 배치: 상하 기능은 짐벌 **위**, 좌우 기능은 짐벌 **아래**에 ↕ ↔ 표시와 함께 둔다.
+% 처음에는 좌우 기능을 짐벌 옆에 두었는데, 글이 화살촉과 몸체 테두리에 걸리고
+% 그림 폭이 230 mm 가 되어 본문 폭 186 mm 에서 글자가 줄어들었다 (2026-09-11).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\tikzset{dbl/.style = {line width=1.1pt,
+         {Stealth[length=3.6pt,width=3.2pt]}-{Stealth[length=3.6pt,width=3.2pt]}}}
+
+% \stick{중심 x}{중심 y}{상하 기능}{상하 색}{좌우 기능}{좌우 색}{채널}
+\newcommand{\stick}[7]{%
+  \draw[ink, line width=0.5pt, fill=white] (#1,#2) circle (8);
+  \draw[soft, line width=0.3pt, densely dotted]
+        ({#1-8},#2) -- ({#1+8},#2)  (#1,{#2-8}) -- (#1,{#2+8});
+  \draw[#4, dbl] (#1,{#2-11}) -- (#1,{#2+11});
+  \draw[#6, dbl] ({#1-11},#2) -- ({#1+11},#2);
+  \fill[ink] (#1,#2) circle (2.0);
+  \node[font=\scriptsize, #4, anchor=south, align=center, inner sep=1pt] at (#1,{#2+12}) {#3};
+  \node[font=\scriptsize, #6, anchor=north, align=center, inner sep=1pt] at (#1,{#2-12}) {#5};
+  \node[note, anchor=north] at (#1,{#2-23.5}) {#7};
+}
+
+% \txbody{모드 이름} — 몸체와 안테나. 몸체 왼쪽 아래가 (0,0).
+\newcommand{\txbody}[1]{%
+  \draw[ink, line width=0.6pt, fill=ink!7, rounded corners=7pt] (0,0) rectangle (80,66);
+  \draw[ink, line width=1.0pt] (62,66) -- (62,75);
+  \fill[ink] (62,75) circle (1.1);
+  \node[ink, font=\small\bfseries, anchor=south] at (40,68) {#1};
+}
+
+\newcommand{\ud}{$\updownarrow$\,}
+\newcommand{\lr}{$\leftrightarrow$\,}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[ink, font=\small\bfseries, anchor=north west] at (0,92)
+     {Mode 1 and Mode 2 — the same four functions, on different hands};
+\node[anchor=north west, align=left, text width=170mm, font=\scriptsize, soft] at (0,86) {%
+  Purple: the two functions a boat uses. Grey: the two aircraft functions with nothing to act on.};
+
+% ---- Mode 1 ------------------------------------------------------------------
+\begin{scope}
+  \txbody{Mode 1}
+  \stick{20}{35}{\ud elevator\\ not used}{soft}%
+        {\lr\textbf{rudder}\\ yaw moment $N$}{accent}{LY $\cdot$ LX}
+  \stick{60}{35}{\ud\textbf{throttle}\\ surge force $X$}{accent}%
+        {\lr aileron\\ not used}{soft}{RY $\cdot$ RX}
+\end{scope}
+
+% ---- Mode 2 ------------------------------------------------------------------
+\begin{scope}[shift={(94,0)}]
+  \txbody{Mode 2}
+  \stick{20}{35}{\ud\textbf{throttle}\\ surge force $X$}{accent}%
+        {\lr\textbf{rudder}\\ yaw moment $N$}{accent}{LY $\cdot$ LX}
+  \stick{60}{35}{\ud elevator\\ not used}{soft}%
+        {\lr aileron\\ not used}{soft}{RY $\cdot$ RX}
+\end{scope}
+
+% ---- 아래 : 이 모델에서의 방향 -------------------------------------------------
+\node[anchor=north, align=center, font=\scriptsize, ink] at (87,-4) {%
+  Throttle: forward = ahead, centre = stop, back = astern; it has no spring and stays where it is left.\\
+  Rudder: left = turn to port, right = turn to starboard; a spring returns it to the centre.};
+
+\end{tikzpicture}
+\end{document}

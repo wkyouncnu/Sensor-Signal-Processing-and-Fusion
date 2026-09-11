@@ -1916,6 +1916,16 @@ W01_F_button_check
 | right, up–down | `RY` | **throttle** | elevator — not used on a boat | as `LY`, with the modes swapped |
 | right, left–right | `RX` | aileron — not used on a boat | aileron — not used on a boat | a spring returns it to the centre |
 
+![Mode 1 and Mode 2](../figures/w01-rc-modes.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| purple arrows and labels | the two functions a boat uses: the throttle, which becomes the surge force $X$, and the rudder, which becomes the yaw moment $N$ |
+| grey arrows and labels | elevator and aileron, the aircraft functions that have nothing to act on in a boat |
+| `LY · LX`, `RY · RX` | the channels under each stick, named as the sliders of `W01_rc.slx` |
+
 - The rudder is the left stick left–right in **both** modes. Only the throttle changes hands.
 - The throttle of this model is centred: stick forward drives ahead, stick back drives astern, centre stops both propellers. This is how a boat transmitter drives a reversible speed controller; an aircraft throttle has no reverse and starts at the bottom instead.
 - Rudder left turns the vessel to port, rudder right turns it to starboard.

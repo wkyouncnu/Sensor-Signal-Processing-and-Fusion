@@ -1,6 +1,6 @@
 ---
 name: simulink-gnc-models
-description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLAB 코드로 생성하고, 블록 배치와 신호선을 읽기 좋게 정리한다. 사용자가 "시뮬링크 모델 만들어줘", "Simulink 모델 생성", "블록 배치 정리", "선 정리", "선이 복잡해", "겹치지 않게", "블록 색", "LOS 유도", "웨이포인트 추종", "로이터링", "Stateflow 미션", "VRX", "WAM-V", "추력 배분", "운동모델", "build_wXX_models" 를 언급하거나, 강의용 Simulink 자료를 만들거나 고칠 때 사용하라. MATLAB MCP 로 실제 실행해 검증하는 절차까지 포함한다.
+description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLAB 코드로 생성하고, 블록 배치와 신호선을 읽기 좋게 정리한다. 사용자가 "시뮬링크 모델 만들어줘", "Simulink 모델 생성", "블록 배치 정리", "선 정리", "선이 복잡해", "겹치지 않게", "블록 색", "LOS 유도", "웨이포인트 추종", "로이터링", "Stateflow 미션", "VRX", "WAM-V", "추력 배분", "운동모델", "build_wXX_models", "대시보드", "슬라이더", "버튼", "실시간", "조종기", "RC", "조이스틱", "Joystick Input", "USB" 를 언급하거나, 강의용 Simulink 자료를 만들거나 고칠 때 사용하라. MATLAB MCP 로 실제 실행해 검증하는 절차까지 포함한다.
 ---
 
 # Simulink GNC 모델 — 코드로 만들고, 코드로 정리한다
@@ -109,3 +109,4 @@ pkill -f "vrx_gz|vrx_ros|ros_gz_bridge|gz sim|ruby|parameter_bridge"
 | `references/build-models.md` | 새 모델을 만들 때마다 |
 | `references/gnc-conventions.md` | 제어기·유도법칙을 쓸 때 |
 | `references/verify.md` | 수치를 문서에 싣기 전에 |
+| `references/interactive-models.md` | **사람이 조작하는 모델** — 버튼·슬라이더·조종기 스틱, 실시간 화면, 실물 USB 조종기(Joystick Input), 장치 없이 검증하는 법 |

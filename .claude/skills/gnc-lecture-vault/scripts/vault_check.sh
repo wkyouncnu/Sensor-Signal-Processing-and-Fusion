@@ -343,6 +343,28 @@ check_legend() {
   return 0
 }
 
+check_clear() {
+  head2 "17. 러너 · 확인 스크립트의 맨 clear"
+  # 2026-09-11: W01_H_usb_check.m 맨 앞의 clear 가 기본 작업공간을 비워서,
+  # 기본 작업공간 변수를 읽는 W01_openloop · W01_current 빌더가 다음 실행에서
+  # "SampleTime 설정이 유효하지 않다" 로 멈췄다. MCP 로 돌리는 스크립트는
+  # 기본 작업공간에서 돈다. 제 변수만 이름으로 지운다 — clear m cfg y …
+  #
+  # 예외: WXX_0_setup.m. 작업공간을 처음부터 채우는 것이 그 파일의 일이다.
+  # 같은 규칙을 PostToolUse 훅 _tools/hook_matlab_rules.sh 가 쓰는 순간에 잡는다.
+  local n=0 hit
+  while IFS= read -r hit; do
+    [ -z "$hit" ] && continue
+    echo "     [맨 clear] $hit"
+    n=$((n+1))
+  done < <(find lectures -name '*.m' -type f 2>/dev/null | grep -vE "$VENDOR" \
+             | grep -v '_0_setup\.m$' \
+             | xargs -r grep -nE '^\s*(clear|clearvars)\s*(;|%|$)|^\s*clear\s+all\b' 2>/dev/null)
+  note "맨 clear 가 있는 스크립트" "$n"
+  FAIL=$((FAIL+n))
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
@@ -350,8 +372,9 @@ case "$MODE" in
   --links) check_links ;;
   --figs)  check_figs ;;
   --code)  check_code ;;
+  --clear) check_clear ;;
   *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks; check_code
-           check_legend ;;
+           check_legend; check_clear ;;
 esac
 
 echo

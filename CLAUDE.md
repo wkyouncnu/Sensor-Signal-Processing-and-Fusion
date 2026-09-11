@@ -72,7 +72,7 @@
 │                            verify_guidance.m · verify_alos.m        (W04 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · verify_w01_theory.m · live_track.m · base_var.m
-│                            git_autopush.sh
+│                            git_autopush.sh · hook_matlab_rules.sh  (PostToolUse 훅: 맨 clear 금지)
 │                            svg2png.sh · svgzoom.sh                 (렌더해서 눈으로 보기)
 │                            tikz2svg.sh                             (그림 조판. 지금 쓰는 것)
 │                            w01_euler_R.m · w04_track_curves.awk     (그림 기하 계산)
