@@ -1841,9 +1841,10 @@ W01_F_build_interactive      % only if W01_interactive.slx is missing or broken
 | `n0` slider | bound to the Constant `n0` — the common shaft speed, $0$ to $100$ rad/s |
 | `dn` slider | bound to the Constant `dn` — the difference between the two propellers in a turn, $0$ to $30$ rad/s |
 | `Drive command` (white) | the three Constants and one MATLAB Function that turns a button into $[n_L;\ n_R]$ |
-| `Otter USV`, `Measurements` | the plant and the live view of `W01_openloop.slx`, unchanged, except that the track window follows the vessel |
+| `Otter USV`, `Measurements` | the plant and the measurement stage of `W01_openloop.slx`, unchanged. The live view is drawn by `W01i_animate.m`: the track window follows the vessel, and the bottom-right panel plots $n_L$ and $n_R$ |
 | `n now` | the two shaft speeds the plant is receiving at this instant |
-| START, STOP | two annotations with a click callback; a single click calls `W01i_control('start')` or `W01i_control('stop')` |
+| `n to live view` | hands $[n_L;\ n_R]$ to the live view at every step, so the command is plotted beside the motion it causes |
+| START, STOP | two images of buttons placed as annotations, each with a click callback; a single click calls `W01i_control('start')` or `W01i_control('stop')` |
 
 - Each button applies one rule — the same rule as the timetable of §D:
 
@@ -1854,6 +1855,9 @@ W01_F_build_interactive      % only if W01_interactive.slx is missing or broken
 | ASTERN | $[-n_0;\ -n_0]$ | goes astern, and more slowly, because $k_{\text{neg}} < k_{\text{pos}}$ (§1-10) |
 | PORT | $[n_0 - dn;\ n_0 + dn]$ | turns left — the **left** propeller slows |
 | STARBOARD | $[n_0 + dn;\ n_0 - dn]$ | turns right |
+
+- The two sliders are **bound** to the Constants `n0` and `dn` inside `Drive command`. Dragging one rewrites that Constant, and the next integration step already uses the new value — during a run as well as before one. Changing `n0` from $60$ to $30$ in the middle of a run moves the logged command from $[60;\ 60]$ to $[30;\ 30]$ within one step.
+- TURN has no visible effect while AHEAD, ASTERN or STOP is selected, because `dn` enters only the two turning rules. The bottom-right panel of the live view shows $n_L$ and $n_R$, so every movement of either slider is visible there at once.
 
 ### Measured
 
@@ -2028,7 +2032,7 @@ W01_check(1)                 % run this whenever, as often as needed
 - `W01_simulink/W01_C_terminal_speed.m` · `W01_D_the_manoeuvre.m` · `W01_E_current_run.m` — one script per laboratory section
 - `W01_simulink/W01_vars.m` · `W01_read.m` — the same numbers as a struct, and the log with named fields
 - `W01_simulink/W01_animate.m` — the live view, called by the model's `Animate` block
-- `W01_simulink/W01_F_build_interactive.m` · `W01_interactive.slx` · `W01i_animate.m` · `W01i_control.m` · `W01_F_button_check.m` — the model driven by buttons, its live view with a following window, the handler of its START and STOP buttons, and the headless check behind the table of §F
+- `W01_simulink/W01_F_build_interactive.m` · `W01_interactive.slx` · `W01i_animate.m` · `W01i_control.m` · `W01_F_button_check.m` — the model driven by buttons, its live view with a following window and a shaft-speed panel, the handler of its START and STOP buttons, and the headless check behind the table of §F
 - `W01_simulink/W01_plot.m` — the summary figure, called by the models' `StopFcn`; `W01_cur_plot.m` is the same for the current model
 - `_tools/otter_config.m`, `_tools/otter_B.m` — the actuator configuration and the column rule
 - `_tools/verify_w01_theory.m` — rebuilds $\mathbf{M}$ and $\mathbf{C}$ from `otter.m` and reproduces every number of the quaternion part of §1-5, of §1-11 and of §1-12

@@ -126,15 +126,42 @@ add_block('simulink/Sinks/Display', [m '/n now  (left ; right)'], ...
           'Position', [P.plant(1) yD P.plant(3) yD+50]);
 L('Drive command/1', 'n now  (left ; right)/1');
 
+%% ---- n 을 실시간 화면으로 ------------------------------------------------
+%  Measurements 의 Animate 블록은 선체 상태(u v r N E psi)만 받는다. 두 프로펠러
+%  속도도 같은 창에 그리려고, n 을 받아 MATLAB 쪽에 맡겨 두는 블록을 따로 둔다
+%  (setappdata). 그리는 것은 W01i_animate 가 한다. 슬라이더와 버튼이 실제로 무엇을
+%  바꾸었는지는 이 그래프로 본다.
+add_block('simulink/User-Defined Functions/MATLAB Function', [m '/n to live view'], ...
+          'Position', [P.measurement(1) yD P.measurement(3) yD+50]);
+set_mlfcn([m '/n to live view'], { ...
+'function ok = n_to_live_view(n)'
+'%#codegen'
+'%N_TO_LIVE_VIEW  Hand the two shaft speeds to the live view.'
+'%'
+'%   The Animate block inside Measurements receives only the vessel states.'
+'%   W01i_animate reads the latest n from here and plots n_L and n_R.'
+'coder.extrinsic(''setappdata'');'
+'setappdata(0, ''W01i_n'', n);'
+'ok = 1;'}, 'ok', '1');
+add_block('simulink/Sinks/Terminator', [m '/n tap end'], ...
+          'Position', [P.measurement(3)+40 yD+15 P.measurement(3)+60 yD+35]);
+L('Drive command/1',  'n to live view/1');
+L('n to live view/1', 'n tap end/1');
+
 %% ---- the dashboard : 버튼 다섯, 슬라이더 둘 --------------------------------
-y0 = yD + 170;
+y0 = yD + 230;
 
 %  START · STOP — 한 번 누르면 처음부터 / 멈춤 (W01i_control).
-%  Dashboard 의 Callback Button 은 코드로 넣은 ClickFcn 과 글자가 저장 뒤
-%  사라진다 (R2024b 에서 확인). 그래서 클릭 콜백이 있는 주석 상자를 버튼으로 쓴다.
-%  주석 배경색은 이름 색만 저장된다 ('[r g b]' 문자열은 흰색으로 돌아간다).
-button(m, 'START  (from the beginning)', [40  y0-100 330 y0-45], 'green',  'W01i_control(''start'')');
-button(m, 'STOP',                        [360 y0-100 600 y0-45], 'orange', 'W01i_control(''stop'')');
+%  버튼 모양은 둥근 버튼 그림(PNG)을 넣은 주석으로 만든다. 그림 주석도 ClickFcn 을
+%  가질 수 있고, 그림은 모델 파일 안에 함께 저장된다.
+%  쓰지 않은 두 방법 (둘 다 R2024b 에서 확인) —
+%    Dashboard 의 Callback Button : 코드로 넣은 ClickFcn 과 글자가 저장 뒤 사라진다
+%    글자 주석                     : 클릭 콜백이 있으면 배경색이 저장되지 않아
+%                                   파란 링크 글씨로만 보인다
+image_button(m, 'START', 'from the beginning', [40  yD+70 300 yD+150], ...
+             [0.30 0.69 0.31], [0.12 0.40 0.12], 'W01i_control(''start'')');
+image_button(m, 'STOP',  'end the run',        [340 yD+70 600 yD+150], ...
+             [0.85 0.26 0.20], [0.50 0.10 0.08], 'W01i_control(''stop'')');
 add_block('simulink_hmi_blocks/Radio Button', [m '/DRIVE'], ...
           'Position', [40 y0 230 y0+160]);
 set_param([m '/DRIVE'], 'States', struct('Value', {0, 1, 2, 3, 4}, ...
@@ -166,13 +193,15 @@ note(m, [640 y0-20 1180 y0+300], strjoin({ ...
 '      ASTERN      n = [-n0 ; -n0 ]   (astern thrust is weaker)'
 '      PORT        n = [n0-dn ; n0+dn]   the LEFT one slows'
 '      STARBOARD   n = [n0+dn ; n0-dn]   the RIGHT one slows'
-'3  Drag SPEED and TURN to change n0 and dn.'
+'3  Drag SPEED and TURN while it runs. TURN acts only in PORT'
+'   and STARBOARD, because dn enters only the turning rules.'
 '4  Click STOP to end the run. START again begins from the origin.'
 ''
 'The simulation runs at real time (Simulation Pacing),'
 'and never stops on its own.'
 ''
 'WHAT TO WATCH'
+'  n_L, n_R       : bottom right of the live view - the command itself'
 '  terminal speed : u settles where thrust = damping   (sec. 1-11)'
 '  in a turn      : v is not zero although Y is       (sec. 1-12)'
 '  in a turn      : the bow points off the track      (crab angle)'}, newline));
@@ -184,6 +213,9 @@ set_param(m, 'PostLoadFcn', strjoin({ ...
     'p_ = fileparts(get_param(bdroot,''FileName''));' ...
     'addpath(p_, fullfile(fileparts(fileparts(p_)),''_tools''));' ...
     'mss_path(); clear p_'}, ' '));
+
+%  지난 실행의 n 을 지운다. 남아 있으면 새 실행의 t = 0 에 옛 n 이 한 점 찍힌다.
+set_param(m, 'StartFcn', 'if isappdata(0,''W01i_n''), rmappdata(0,''W01i_n''); end');
 
 set_param(m, 'ReturnWorkspaceOutputs', 'off');
 
@@ -203,15 +235,26 @@ b.ParamName = 'Value';
 set_param(dash, 'Binding', b);
 end
 
-function button(m, txt, pos, bg, fcn)
-%  한 번 누르면 fcn 이 도는 주석 상자 — 캔버스 위의 버튼.
-h = Simulink.Annotation([m '/' txt]);
-h.Position            = pos;
-h.FontSize            = 18;
-h.FontWeight          = 'bold';
-h.BackgroundColor     = bg;
-h.HorizontalAlignment = 'center';
-h.ClickFcn            = fcn;
+function image_button(m, label, sub, pos, face, edge, fcn)
+%  둥근 버튼 그림을 만들어 주석에 넣고, 한 번 누르면 fcn 이 돌게 한다.
+%  그림은 임시 파일로 만든 뒤 모델 파일 안으로 들어가므로 따로 남기지 않는다.
+w = pos(3) - pos(1);   hgt = pos(4) - pos(2);
+f = figure('Visible','off', 'Color','w', 'Units','pixels', 'Position',[100 100 w hgt]);
+ax = axes(f, 'Position',[0 0 1 1]);
+axis(ax,'off');  hold(ax,'on');  xlim(ax,[0 1]);  ylim(ax,[0 1]);
+rectangle(ax, 'Position',[0.03 0.07 0.94 0.86], 'Curvature',[0.35 0.8], ...
+          'FaceColor',face, 'EdgeColor',edge, 'LineWidth',2.5);
+text(ax, 0.5, 0.60, label, 'HorizontalAlignment','center', ...
+     'FontSize',20, 'FontWeight','bold', 'Color','w');
+text(ax, 0.5, 0.27, sub,   'HorizontalAlignment','center', 'FontSize',10, 'Color','w');
+png = [tempname '.png'];
+exportgraphics(f, png, 'Resolution', 96);
+close(f);
+h = Simulink.Annotation([m '/' label]);
+h.Position = pos;
+h.setImage(png);
+h.ClickFcn = fcn;
+delete(png);
 end
 
 function note(m, pos, txt)
