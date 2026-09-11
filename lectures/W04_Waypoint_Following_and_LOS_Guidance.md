@@ -58,7 +58,7 @@ After this week the learner should be able to:
 |---|---|
 | Week 1 §1-3 | $\boldsymbol{\eta} = [x^n\ y^n\ \psi]^\top$, $\boldsymbol{\nu} = [u\ v\ r]^\top$, and the rotation $\mathbf{R}(\psi)$ |
 | Week 1 §1-4 | body velocity is not the rate of change of position — the same rotation reappears in §4-3 |
-| Week 1 §1-9 | the ocean current enters as a velocity, so the vessel's speed **through the water** differs from its speed over ground |
+| Week 1 §1-13 | the ocean current enters as a velocity, so the vessel's speed **through the water** differs from its speed over ground |
 | Week 3 §3-4 | the crab angle and the course $\chi = \psi + \beta$, with $\beta = \operatorname{atan2}(v,u)$. The same symbol is used here, and §4-9 adds $\hat\beta$ for the estimate of it and $\tilde\beta$ for the estimation error |
 | Week 3 §3-5 | the P–D heading autopilot, used here **unchanged** so that the only difference between the four vessels is the guidance law |
 | Appendix A1 | the column rule and the allocation $\boldsymbol{\tau} = \mathbf{B}\mathbf{f}$ |

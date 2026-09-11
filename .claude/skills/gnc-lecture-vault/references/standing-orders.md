@@ -596,6 +596,31 @@ Ig_CG(3,3) 13.7500  →  Ig(3,3) 15.1021  →  MRB(6,6) 16.9779  →  +25.6736  
 기호가 어느 점 둘레인지 밝히지 않으면 **맞는 식이 틀린 식처럼 보인다.**
 부정하지 말고 **어느 점 둘레인지를 적는다.**
 
+### 7-2-2. W01 §1-11·§1-12 재검토에서 나온 것 — 2026-09-11
+
+사용자가 §1-11 의 유도를 보강하라고 했고, 그 김에 §1-12 도 유도하라고 했다.
+`otter.m` 을 다시 세워 대조하니 셋이 나왔다.
+
+| 무엇 | 문서에 있던 것 | 실제 | 어떻게 찾았나 |
+|---|---|---|---|
+| sway Coriolis 계수 | $(m - X_{\dot u})\,ur$ | $(m + m_p - X_{\dot u})\,ur = M_{11}ur = 85.50\,ur$ | $\mathbf{C}\boldsymbol\nu$ 를 `otter.m` 104–126 행대로 다시 세워 단위 속도로 계수를 뽑았다. §1-9 가 $m = 55$ kg 을 선체만으로 정의해 두었으므로 문서 식은 60.5 kg 이 되었다 |
+| §1-11 의 63.2 % 시각 | 1.1064 s | 1.1057 s (Simulink ode4) · 1.1056 s (ode45) | **어떤 러너도 그 수를 찍지 않았다.** `grep` 으로 러너를 찾다가 없어서 다시 쟀다 |
+| 절 번호 | "§1-5 established $Y \equiv 0$" 외 여덟 곳 | §1-10, §1-11 등 | 절을 옮긴 뒤 본문 참조를 안 고쳤다 (§6-4 와 같은 지뢰) |
+
+**규칙 둘을 더한다.**
+
+- 문서의 수를 고칠 때 **그 수를 찍는 러너부터 찾는다.** 없으면 러너를 만든 뒤에 고친다.
+  `_tools/verify_w01_theory.m` 이 그렇게 생겼다
+- 교과서 식을 옮길 때 **기호의 정의가 이 문서의 정의와 같은지** 본다. Fossen 의 $m$ 은
+  강체 전체 질량이고 이 문서의 $m$ 은 선체만이다
+
+**MSS 릴리스는 계수만이 아니라 동작도 갈린다.** 2021 판 `GNC/q2euler.m` 은
+$\lvert R_{31}\rvert$ 가 round-off 로 1 을 넘으면 `theta` 를 계산하지 않고 끝나서
+*Output argument "theta" not assigned* 로 멈춘다. 2022-04-15 수정본(2022+ 의
+`LIBRARY/kinematics/`)은 고쳐져 있다. 디스크의 2021~2026-08 사본 열네 벌이 전부
+같은 파일이었으므로, 벤더링된 사본이 많다고 해서 최신이라는 뜻이 아니다.
+`verify_w01_theory` 가 그 분기를 실제로 밟아 확인한다.
+
 ### 7-3. 검증을 러너에 남긴다
 
 대조는 한 번 하고 마는 것이 아니라 파일로 남긴다 — `_tools/verify_alos.m`.
@@ -672,6 +697,29 @@ bash _tools/md2pdf.sh lectures/W01_simulink/problems/README.md \
 자리를 미리 비워 두고, 무엇을 찍어야 하는지 한 줄로 적어 둔다.
 
 ---
+
+### 8-4. 스크립트 없이 도는 모델 — 버튼으로 모는 예제 (2026-09-11)
+
+> 사용자 원문: **"실시간 궤적과 3 자유도 플랏을 유지 하면서 real-time 으로 set pace 넣어서
+> 천천히 실행시키고... 버튼으로 직진 후진 좌회전 우회전... 시뮬링크만 돌릴 수 있는 것"**
+
+`W01_interactive.slx` (`W01_F_build_interactive.m`) 가 첫 예다. 다른 주차에 같은 것을
+만들 때 그대로 따른다.
+
+| 요구 | 방법 | 확인한 것 |
+|---|---|---|
+| 스크립트 없이 Run | 변수를 **모델 작업공간**에 넣고(`assignin(get_param(m,'ModelWorkspace'),…)`) 모델과 함께 저장 | `Simulink.findVars` 가 전부 `model workspace` 로 해석 |
+| 탐색기에서 열어도 경로 | `PostLoadFcn` 이 `get_param(bdroot,'FileName')` 에서 폴더를 얻어 `_tools` 를 얹고 `mss_path` | `_tools` 를 `rmpath` 한 뒤 `load_system` → 되살아남 |
+| 버튼 | `simulink_hmi_blocks/Radio Button`. `States` 에 `struct('Value',…,'Label',…)`, 캡션은 `ButtonGroupName` | Constant `mode` 에 묶임, 저장 후 다시 열어도 유지 |
+| 슬라이더 | `simulink_hmi_blocks/Slider`. `Limits` 는 `[최소 눈금 최대]`, 눈금 `-1` 은 자동 | — |
+| 묶기 | `Simulink.HMI.ParamSourceInfo` 에 `BlockPath` · `ParamName='Value'` 를 넣어 `set_param(dash,'Binding',b)` | — |
+| 실시간 | `EnablePacing on`, `PacingRate 1`, `StopTime inf` | — |
+| 궤적 창 | 경로를 미리 모르므로 창이 배를 **따라가게** 한다 (`W01i_animate.m`). 크기는 고정 — 축척이 바뀌면 선체 그림으로 속도를 가늠할 수 없다 | — |
+| 문서의 수 | 사람이 누른 실행은 재현되지 않는다. **버튼마다 한 번씩 돌리는 확인 스크립트**(`W01_F_button_check.m`)가 표를 만든다 | AHEAD 1.0286 = §1-11, ASTERN −0.5983 = $k_{neg}$ 예측 |
+
+- Dashboard 블록은 `simulink/Dashboard/...` 경로로는 **추가되지 않는다.** 그 이름은
+  `open_system('simulink_hmi_blocks')` 를 부르는 껍데기다
+- `mss_style` 은 모든 블록의 크기를 바꾸므로 Dashboard 블록은 **그 뒤에** 넣는다
 
 ## 9. 강의자료는 **소리 내어 읽어서 가르칠 수 있어야** 한다
 

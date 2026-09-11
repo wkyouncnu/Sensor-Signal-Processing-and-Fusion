@@ -1,11 +1,21 @@
-%% W01 · section D — one manoeuvre: straight, port, straight, starboard, straight
+%% W01 · 절 D — 한 번의 조종 : 직진, 좌선회, 직진, 우선회, 직진
 %
 %      W01_0_setup
 %      W01_D_the_manoeuvre
 %
-%  Nothing reverses. A turn is a small DIFFERENCE between two propellers that
-%  both run ahead, because N = y_p (T_left - T_right).
-%  Produces img/W01_result_track.png
+%  이 스크립트가 하는 일 — 세 단계
+%    1. W01_openloop.slx 를 150 s 한 번 돌린다. 제어기는 없다. 두 프로펠러
+%       속도가 시간표를 따를 뿐이다 — 좌선회는 왼쪽을 3.5 rad/s 느리게, 우선회는 반대로
+%    2. 다섯 구간마다 u, v, r, beta 를 표로 찍는다 (각 구간 마지막 5분의 1 의 평균)
+%    3. 궤적 그림과 "선수각 대 항로각" 그림을 그린다
+%
+%  무엇을 보라는 것인가
+%    - 두 프로펠러 속도의 작은 차이만으로 배가 돈다. 후진하는 프로펠러는 없다
+%      (N = y_p (T_left - T_right) 이므로 좌선회는 왼쪽을 느리게 한다)
+%    - 옆으로 미는 힘 Y 는 0 인데 옆 속도 v 는 0 이 아니다 — 강의 §1-12
+%    - 선회 중에는 선수가 가리키는 방향과 실제로 가는 방향이 7° 다르다 — 크랩각
+%
+%  만드는 것 : img/W01_result_track.png
 
 clear V cfg y_p o y tp PH seg i k u v r nL nR dpsi N_cmd Ymax nn kP kS f Ls b ax
 here = fileparts(mfilename('fullpath'));

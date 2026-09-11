@@ -1,10 +1,21 @@
-%% W01 · section C — predict on paper, then measure
+%% W01 · 절 C — 종이로 먼저 예측하고, 그다음 재 본다
 %
 %      W01_0_setup
 %      W01_C_terminal_speed
 %
-%  Quadratic thrust against linear damping.
-%  Produces img/W01_result_speed.png
+%  이 스크립트가 하는 일 — 세 단계
+%    1. 두 프로펠러를 같은 속도 n 으로 돌려 곧게 달리게 한다 (n = 20, 40, 60, 80 rad/s)
+%    2. 각 n 에서 종단속도를 두 가지로 구해 나란히 찍는다
+%         예측 : 2 k_pos n|n| / |X_u|    강의 §1-11 의 식. 시뮬레이션 없이
+%         실측 : W01_openloop.slx 를 돌려 마지막 속도를 읽는다
+%    3. 프로펠러 곡선과 "n 대 종단속도" 그림을 그린다
+%
+%  무엇을 보라는 것인가
+%    예측과 실측이 네 자리까지 같다. 그리고 n 을 두 배로 하면 속도는 네 배가 된다 —
+%    추력은 n 의 제곱으로 크고 감쇠는 속도에 비례해 크기 때문이다
+%    (quadratic thrust against linear damping).
+%
+%  만드는 것 : img/W01_result_speed.png
 
 clear V cfg Xu NS u_pred u_meas i X o y f nn TT
 here = fileparts(mfilename('fullpath'));

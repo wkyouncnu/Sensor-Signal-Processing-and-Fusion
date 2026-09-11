@@ -51,11 +51,12 @@ status: done
 Upon completion of this week, the learner is able to:
 
 1. State what each of the twelve states of `otter.m` represents, and in which reference frame it is expressed.
-2. Write the 6-DOF equation of motion and identify which physical effect each term models.
-3. Reduce that equation to the three horizontal degrees of freedom used for the remainder of the course, and justify what is discarded.
-4. Predict the terminal surge speed of the vessel from the propeller curve and the linear damping coefficient, before running any simulation.
-5. Explain why the sway force of this vessel is identically zero, and distinguish that from the non-zero sway *velocity* observed during a turn.
-6. Rebuild the week's Simulink model from its builder script after breaking it.
+2. Convert an attitude between Euler angles and a unit quaternion with MSS `euler2q` and `q2euler`, and state where each representation is singular.
+3. Write the 6-DOF equation of motion and identify which physical effect each term models.
+4. Reduce that equation to the three horizontal degrees of freedom used for the remainder of the course, and justify what is discarded.
+5. Predict the terminal surge speed of the vessel from the propeller curve and the linear damping coefficient, before running any simulation.
+6. Explain why the sway force of this vessel is identically zero, and derive the Coriolis term that produces a non-zero sway *velocity* during a turn.
+7. Rebuild the week's Simulink model from its builder script after breaking it.
 
 ## Prerequisites and Setup
 
@@ -125,7 +126,7 @@ A reader short of time can go 1-1 → 1-3 → 1-4 → 1-9 and still follow the l
 >
 > | | |
 > |---|---|
-> | $N$ is already taken | $N$ is the **yaw moment** in $\boldsymbol{\tau} = [X\ \ Y\ \ N]^{\!\top}$, used from §1-5 onward and in every week after. One letter cannot be both a position and a moment in the same document |
+> | $N$ is already taken | $N$ is the **yaw moment** in $\boldsymbol{\tau} = [X\ \ Y\ \ N]^{\!\top}$, used from §1-7 onward and in every week after. One letter cannot be both a position and a moment in the same document |
 > | frames must be visible | By Week 4 three frames appear in one equation — $\{n\}$, $\{b\}$ and the path frame $\{p\}$ — and a symbol with no superscript cannot say which one it belongs to |
 >
 > This is Fossen's notation, so the Handbook and the lecture agree symbol for symbol. The **superscript** marks the frame; subscripts are already spoken for by components and coefficients, as in $x_g$, $y_{\text{pont}}$ and $N_r$.
@@ -405,6 +406,266 @@ $$
 > [!note] Two simplifications that hold for this vessel, and are stated rather than assumed
 > For a surface craft $\phi$ and $\theta$ stay within a few degrees, so $\mathbf{T}_{\Theta} \approx \mathbf{I}$ and $\dot\psi \approx r$. Week 3 controls $\psi$ by integrating $r$ on exactly that basis. The twelve-state plant does **not** make the approximation; only the design equations do.
 
+### Unit quaternions — attitude without the singularity
+
+- **Why a second representation.** The singularity of $\mathbf{T}_\Theta$ belongs to the three angles, not to the vessel. A four-parameter description of the same attitude, the **unit quaternion**, has no such point (Fossen 2021, §2.2.2).
+- This course keeps Euler angles, because a surface craft never pitches near $90°$. The quaternion is introduced because MSS uses it wherever that assumption fails — its inertial navigation filter `ins_mekf.m` and its attitude estimator `quest.m` — as strapdown inertial navigation generally does.
+- The principle is Euler's rotation theorem: any change of attitude can be produced by a single rotation through an angle $\beta$ about one fixed unit axis $\boldsymbol{\lambda}$. The quaternion stores that one rotation as the cosine and the sine of half its angle:
+
+$$
+\mathbf{q} = \begin{bmatrix} \eta \\ \boldsymbol{\varepsilon} \end{bmatrix}
+= \begin{bmatrix} \cos(\beta/2) \\ \boldsymbol{\lambda}\,\sin(\beta/2) \end{bmatrix},
+\qquad
+\boldsymbol{\varepsilon} = \begin{bmatrix} \varepsilon_1 & \varepsilon_2 & \varepsilon_3 \end{bmatrix}^{\!\top},
+\qquad
+\mathbf{q}^{\!\top}\mathbf{q} = \eta^2 + \boldsymbol{\varepsilon}^{\!\top}\boldsymbol{\varepsilon} = 1
+$$
+
+| Symbol | Quantity | Note |
+|---|---|---|
+| $\mathbf{q}$ | unit quaternion, from $\{b\}$ to $\{n\}$ | bold — not the pitch rate $q$ of the table above |
+| $\eta$ | scalar part | $\cos(\beta/2)$ |
+| $\boldsymbol{\varepsilon}$ | vector part | $\boldsymbol{\lambda}\sin(\beta/2)$ |
+| $\beta$, $\boldsymbol{\lambda}$ | angle and unit axis of the single equivalent rotation | $\boldsymbol{\lambda}^{\!\top}\boldsymbol{\lambda} = 1$ |
+| $\mathbf{S}(\mathbf{a})$ | skew-symmetric matrix, $\mathbf{S}(\mathbf{a})\,\mathbf{b} = \mathbf{a}\times\mathbf{b}$ | MSS `Smtrx` |
+
+- Four numbers bound by one constraint leave three free — the same three degrees of freedom that $\boldsymbol{\Theta}$ carries. The unit norm is automatic, since $\cos^2 + \sin^2 = 1$.
+
+> [!caution] In MSS the scalar goes first
+> MSS stores $\mathbf{q} = [\eta\ \ \varepsilon_1\ \ \varepsilon_2\ \ \varepsilon_3]^{\!\top}$. ROS messages list the scalar last, as $x, y, z, w$. A quaternion copied between the two without reordering describes a different attitude, and nothing reports an error.
+
+### The rotation matrix, from the axis and the half-angle
+
+- Start from the axis–angle form of a rotation (Fossen 2021, §2.2.2) and turn each trigonometric factor into half-angles, one operation per line:
+
+$$
+\begin{aligned}
+\mathbf{R} &= \mathbf{I}_3 + \sin\beta\;\mathbf{S}(\boldsymbol{\lambda}) + (1 - \cos\beta)\,\mathbf{S}^2(\boldsymbol{\lambda}) && \text{axis–angle form} \\
+&= \mathbf{I}_3 + 2\sin\tfrac{\beta}{2}\cos\tfrac{\beta}{2}\;\mathbf{S}(\boldsymbol{\lambda}) + 2\sin^2\tfrac{\beta}{2}\;\mathbf{S}^2(\boldsymbol{\lambda}) && \sin\beta = 2\sin\tfrac{\beta}{2}\cos\tfrac{\beta}{2},\ \ 1-\cos\beta = 2\sin^2\tfrac{\beta}{2} \\
+&= \mathbf{I}_3 + 2\cos\tfrac{\beta}{2}\;\mathbf{S}\!\left(\boldsymbol{\lambda}\sin\tfrac{\beta}{2}\right) + 2\,\mathbf{S}^2\!\left(\boldsymbol{\lambda}\sin\tfrac{\beta}{2}\right) && \mathbf{S}(\cdot)\ \text{is linear} \\
+&= \mathbf{I}_3 + 2\eta\,\mathbf{S}(\boldsymbol{\varepsilon}) + 2\,\mathbf{S}^2(\boldsymbol{\varepsilon}) && \text{definition of } \eta \text{ and } \boldsymbol{\varepsilon}
+\end{aligned}
+$$
+
+- Written out, with $\eta^2 + \boldsymbol{\varepsilon}^{\!\top}\boldsymbol{\varepsilon} = 1$ used on the diagonal:
+
+$$
+\mathbf{R}(\mathbf{q}) =
+\begin{bmatrix}
+1 - 2(\varepsilon_2^2 + \varepsilon_3^2) & 2(\varepsilon_1\varepsilon_2 - \varepsilon_3\eta) & 2(\varepsilon_1\varepsilon_3 + \varepsilon_2\eta) \\
+2(\varepsilon_1\varepsilon_2 + \varepsilon_3\eta) & 1 - 2(\varepsilon_1^2 + \varepsilon_3^2) & 2(\varepsilon_2\varepsilon_3 - \varepsilon_1\eta) \\
+2(\varepsilon_1\varepsilon_3 - \varepsilon_2\eta) & 2(\varepsilon_2\varepsilon_3 + \varepsilon_1\eta) & 1 - 2(\varepsilon_1^2 + \varepsilon_2^2)
+\end{bmatrix}
+$$
+
+- Every entry is a product of two components. $\mathbf{R}(\mathbf{q})$ contains no trigonometric function at all.
+- $\mathbf{R}(-\mathbf{q}) = \mathbf{R}(\mathbf{q})$, because every entry is quadratic in $\mathbf{q}$. The quaternion $-\mathbf{q}$ is the rotation by $2\pi - \beta$ about $-\boldsymbol{\lambda}$ — the same rotation, reached the other way round — so each attitude has exactly two quaternions.
+- This is MSS `Rquat`, line for line:
+
+```matlab
+% MSS, GNC/Rquat.m (2021 release) — LIBRARY/kinematics/Rquat.m in 2022 and later
+% Author: Thor I. Fossen. MIT License.
+tol = 1e-6;
+if abs(norm(q)-1)>tol; error('norm(q) must be equal to 1'); end
+
+eta = q(1);
+eps = q(2:4);
+
+S = Smtrx(eps);
+R = eye(3) + 2*eta*S + 2*S^2;
+```
+
+- Measured by `_tools/verify_w01_theory.m` at $\phi = 10°$, $\theta = 7°$, $\psi = 50°$, the attitude of §1-3:
+
+| Check | Result |
+|---|---|
+| $\mathbf{q}$ from `euler2q` | $[0.903424,\ 0.053141,\ 0.091883,\ 0.415403]^{\!\top}$ |
+| $\lVert\mathbf{q}\rVert - 1$ | $2.2\times10^{-16}$ |
+| $\max\lvert\mathbf{R}(\mathbf{q}) - \mathbf{R}_b^n(\boldsymbol{\Theta})\rvert$, `Rquat` against `Rzyx` | $2.2\times10^{-16}$ |
+| $\max\lvert\mathbf{R}(-\mathbf{q}) - \mathbf{R}(\mathbf{q})\rvert$ | $0$ |
+
+### Quaternion kinematics — the rate equation without a division
+
+- The quaternion changes at half the product of $\mathbf{q}$ with the angular velocity written as a quaternion of zero scalar part (Fossen 2021, §2.2.2). The product of two quaternions, MSS `quatprod`, is
+
+$$
+\mathbf{q}_1 \otimes \mathbf{q}_2 =
+\begin{bmatrix}
+\eta_1\eta_2 - \boldsymbol{\varepsilon}_1^{\!\top}\boldsymbol{\varepsilon}_2 \\
+\eta_1\boldsymbol{\varepsilon}_2 + \eta_2\boldsymbol{\varepsilon}_1 + \mathbf{S}(\boldsymbol{\varepsilon}_1)\,\boldsymbol{\varepsilon}_2
+\end{bmatrix}
+$$
+
+- Substituting $\mathbf{q}_2 = [0\ \ \boldsymbol{\omega}^{\!\top}]^{\!\top}$, with $\boldsymbol{\omega} = \boldsymbol{\omega}^b_{b/n} = [p\ \ q\ \ r]^{\!\top}$ the gyro rates of this section:
+
+$$
+\begin{aligned}
+\dot{\mathbf{q}} &= \tfrac12\,\mathbf{q} \otimes \begin{bmatrix} 0 \\ \boldsymbol{\omega} \end{bmatrix} && \text{the kinematic equation} \\
+&= \tfrac12 \begin{bmatrix} \eta\cdot 0 - \boldsymbol{\varepsilon}^{\!\top}\boldsymbol{\omega} \\ \eta\,\boldsymbol{\omega} + 0\cdot\boldsymbol{\varepsilon} + \mathbf{S}(\boldsymbol{\varepsilon})\,\boldsymbol{\omega} \end{bmatrix} && \text{product rule with } \eta_2 = 0,\ \boldsymbol{\varepsilon}_2 = \boldsymbol{\omega} \\
+&= \underbrace{\tfrac12 \begin{bmatrix} -\boldsymbol{\varepsilon}^{\!\top} \\ \eta\,\mathbf{I}_3 + \mathbf{S}(\boldsymbol{\varepsilon}) \end{bmatrix}}_{\mathbf{T}_q(\mathbf{q})} \boldsymbol{\omega} && \text{factor out } \boldsymbol{\omega}
+\end{aligned}
+$$
+
+$$
+\mathbf{T}_q(\mathbf{q}) = \frac12
+\begin{bmatrix}
+-\varepsilon_1 & -\varepsilon_2 & -\varepsilon_3 \\
+\eta & -\varepsilon_3 & \varepsilon_2 \\
+\varepsilon_3 & \eta & -\varepsilon_1 \\
+-\varepsilon_2 & \varepsilon_1 & \eta
+\end{bmatrix}
+$$
+
+- This is MSS `Tquat` for a four-element input. Given a three-element $\boldsymbol{\omega}$ instead, `Tquat` returns the $4\times4$ matrix $\mathbf{T}_\omega$ with $\dot{\mathbf{q}} = \mathbf{T}_\omega\,\mathbf{q}$ — the same equation arranged the other way.
+
+```matlab
+% MSS, GNC/Tquat.m (2021 release) — the branch taken when the input is q
+% Author: Thor I. Fossen. MIT License.
+eta  = u(1); eps1 = u(2); eps2 = u(3); eps3 = u(4);
+
+T = 0.5 * [...
+    -eps1 -eps2 -eps3
+     eta  -eps3  eps2
+     eps3  eta  -eps1
+    -eps2  eps1  eta   ];
+```
+
+- Set beside $\mathbf{T}_\Theta$ of this section, with the largest entries measured by `verify_w01_theory` at $\phi = \psi = 0$:
+
+| | $\mathbf{T}_\Theta(\boldsymbol{\Theta})$, Euler angles | $\mathbf{T}_q(\mathbf{q})$, unit quaternion |
+|---|---|---|
+| entries | contain $1/\cos\theta$ and $\tan\theta$ | $\pm\tfrac12$ times a component of $\mathbf{q}$ |
+| where it fails | $\theta = \pm 90°$ | nowhere: $\mathbf{T}_q^{\!\top}\mathbf{T}_q = \tfrac14\mathbf{I}_3$ for every unit $\mathbf{q}$ |
+| largest entry, $\theta = 0°$ | $1.00$ | $0.5000$ |
+| largest entry, $\theta = 89°$ | $57.30$ | $0.3566$ |
+| largest entry, $\theta = 89.9°$ | $572.96$ | $0.3539$ |
+| work per step | trigonometric functions | products and sums only |
+
+- Measured: $\tfrac12\,\mathbf{q}\otimes[0\ \ \boldsymbol{\omega}^{\!\top}]^{\!\top}$ against `Tquat(q)*w` agrees to $3.5\times10^{-18}$; $\mathbf{T}_q^{\!\top}\mathbf{T}_q - \tfrac14\mathbf{I}_3$ is $5.6\times10^{-17}$; and differentiating `euler2q` numerically along an Euler-angle path reproduces `Tquat(q)*w` to $2.4\times10^{-9}$, against $\lVert\dot{\mathbf{q}}\rVert = 5.68\times10^{-2}$.
+- **The price is the constraint.** Once discretised, nothing in $\dot{\mathbf{q}} = \mathbf{T}_q\boldsymbol{\omega}$ holds $\mathbf{q}^{\!\top}\mathbf{q}$ at one. Forward Euler at $h = 0.02$ s for $100$ s with $\boldsymbol{\omega} = [0.3,\ -0.2,\ 0.5]$ rad/s leaves $\lVert\mathbf{q}\rVert - 1 = 0.0997$, and `Rquat` refuses any quaternion more than $10^{-6}$ from unit length. Three remedies are in use:
+
+| Remedy | How | Where |
+|---|---|---|
+| renormalise after each step | $\mathbf{q} \leftarrow \mathbf{q}/\lVert\mathbf{q}\rVert$ | the first line of `q2euler` |
+| a restoring term in the equation | $\dot{\mathbf{q}} = \mathbf{T}_q(\mathbf{q})\boldsymbol{\omega} + \tfrac{\gamma}{2}\left(1 - \mathbf{q}^{\!\top}\mathbf{q}\right)\mathbf{q}$ with $\gamma \ge 0$; the norm error decays with time constant $1/\gamma$ | Fossen (2021), §2.2.2 |
+| exact discretisation | $\mathbf{q}_{k+1} = \exp(\mathbf{T}_\omega h)\,\mathbf{q}_k$. $\mathbf{T}_\omega$ is skew-symmetric, so its exponential is orthogonal and keeps the norm | `ins_mekf.m`, line 157 |
+
+### Euler angles to a quaternion — `euler2q`
+
+- The zyx order of §1-3, $\mathbf{R}_b^n = \mathbf{R}_z(\psi)\mathbf{R}_y(\theta)\mathbf{R}_x(\phi)$, carries over directly, because the quaternion product composes rotations in the same order as the matrices: $\mathbf{R}(\mathbf{q}_1\otimes\mathbf{q}_2) = \mathbf{R}(\mathbf{q}_1)\,\mathbf{R}(\mathbf{q}_2)$, measured to $2.2\times10^{-16}$. Each elementary rotation is a half-angle about one coordinate axis (Fossen 2021, §2.2.3):
+
+$$
+\mathbf{q} = \mathbf{q}_z(\psi) \otimes \mathbf{q}_y(\theta) \otimes \mathbf{q}_x(\phi),
+\qquad
+\mathbf{q}_x = \begin{bmatrix} \bar c_\phi \\ \bar s_\phi \\ 0 \\ 0 \end{bmatrix},\quad
+\mathbf{q}_y = \begin{bmatrix} \bar c_\theta \\ 0 \\ \bar s_\theta \\ 0 \end{bmatrix},\quad
+\mathbf{q}_z = \begin{bmatrix} \bar c_\psi \\ 0 \\ 0 \\ \bar s_\psi \end{bmatrix}
+$$
+
+with the bar marking a **half** angle, $\bar c_\phi = \cos(\phi/2)$ and $\bar s_\phi = \sin(\phi/2)$ — not the $c\phi = \cos\phi$ of §1-3.
+
+- The first product. Its cross term is $\mathbf{S}(\boldsymbol{\varepsilon}_z)\,\boldsymbol{\varepsilon}_y = [0\ \ 0\ \ \bar s_\psi]^{\!\top} \times [0\ \ \bar s_\theta\ \ 0]^{\!\top} = [-\bar s_\psi\bar s_\theta\ \ 0\ \ 0]^{\!\top}$, so
+
+$$
+\mathbf{q}_z \otimes \mathbf{q}_y =
+\begin{bmatrix}
+\bar c_\psi\,\bar c_\theta \\
+-\bar s_\psi\,\bar s_\theta \\
+\bar c_\psi\,\bar s_\theta \\
+\bar s_\psi\,\bar c_\theta
+\end{bmatrix}
+$$
+
+- The second product, with $\mathbf{q}_x$, one component per line:
+
+$$
+\begin{aligned}
+\eta &= \bar c_\psi\bar c_\theta\bar c_\phi + \bar s_\psi\bar s_\theta\bar s_\phi \\
+\varepsilon_1 &= \bar c_\psi\bar c_\theta\bar s_\phi - \bar s_\psi\bar s_\theta\bar c_\phi \\
+\varepsilon_2 &= \bar s_\psi\bar c_\theta\bar s_\phi + \bar c_\psi\bar s_\theta\bar c_\phi \\
+\varepsilon_3 &= \bar s_\psi\bar c_\theta\bar c_\phi - \bar c_\psi\bar s_\theta\bar s_\phi
+\end{aligned}
+$$
+
+- At the attitude of §1-3 the intermediate product is $[0.904617,\ -0.025800,\ 0.055329,\ 0.421830]^{\!\top}$, and the final one matches `euler2q` to $1.1\times10^{-16}$. The four lines are MSS `euler2q` exactly, with `cy` $= \bar c_\psi$, `cp` $= \bar c_\theta$ and `cr` $= \bar c_\phi$:
+
+```matlab
+% MSS, GNC/euler2q.m (2021 release) — LIBRARY/kinematics/euler2q.m in 2022 and later
+% Author: Thor I. Fossen. MIT License. Algorithm after NASA Mission Planning and
+% Analysis Division, "Euler Angles, Quaternions, and Transformation Matrices".
+cy = cos(psi * 0.5);
+sy = sin(psi * 0.5);
+cp = cos(theta * 0.5);
+sp = sin(theta * 0.5);
+cr = cos(phi * 0.5);
+sr = sin(phi * 0.5);
+
+q = [cy * cp * cr + sy * sp * sr
+     cy * cp * sr - sy * sp * cr
+     sy * cp * sr + cy * sp * cr
+     sy * cp * cr - cy * sp * sr];
+
+q = q/(q'*q);
+```
+
+- The last line divides by $\mathbf{q}^{\!\top}\mathbf{q}$, the **squared** norm. It changes nothing here, because the four lines already give a unit quaternion to round-off, but it is not a normaliser; `q/norm(q)` is.
+
+### A quaternion to Euler angles — `q2euler`
+
+- The conversion back reads five entries of $\mathbf{R}(\mathbf{q})$ and inverts the zyx matrix written out in §1-3 (Fossen 2021, §2.2.4):
+
+$$
+\begin{aligned}
+R_{31} = -\sin\theta \quad &\Longrightarrow\quad \theta = -\arcsin R_{31} \\
+\frac{R_{32}}{R_{33}} = \frac{\cos\theta\,\sin\phi}{\cos\theta\,\cos\phi} \quad &\Longrightarrow\quad \phi = \operatorname{atan2}\!\left(R_{32},\ R_{33}\right) \\
+\frac{R_{21}}{R_{11}} = \frac{\sin\psi\,\cos\theta}{\cos\psi\,\cos\theta} \quad &\Longrightarrow\quad \psi = \operatorname{atan2}\!\left(R_{21},\ R_{11}\right)
+\end{aligned}
+$$
+
+- The entries come from $\mathbf{R}(\mathbf{q})$ above, and `atan2` keeps the correct quadrant because $\cos\theta > 0$ whenever $\lvert\theta\rvert < 90°$. Euler to quaternion and back returns the starting angles to $6.4\times10^{-15}$ degrees.
+- **The singularity comes back here.** At $\theta = \pm 90°$ the four entries $R_{11}$, $R_{21}$, $R_{32}$ and $R_{33}$ all vanish, `atan2(0,0)` has no meaning, and only the combination $\phi \mp \psi$ is defined. The quaternion never had the singularity; the angles it is converted into do. The working rule follows: integrate in $\mathbf{q}$, and convert to $\boldsymbol{\Theta}$ only to display or to command.
+- The 2021 release this course runs:
+
+```matlab
+% MSS, GNC/q2euler.m (2021 release)
+% Author: Thor I. Fossen. MIT License.
+q = q / norm(q);            % normalize q, handle round-off errors
+R = Rquat(q);
+
+phi = atan2(R(3,2),R(3,3));
+
+if (abs( R(3,1 )) > 1)      % handle NaN due to round-off errors
+    R(3,1) = sign(R(3,1));
+else
+    theta = -asin(R(3,1));
+end
+
+psi = atan2(R(2,1),R(1,1));
+```
+
+> [!warning] The 2021 `q2euler` fails at $\theta = \pm 90°$
+> When round-off pushes $\lvert R_{31}\rvert$ past one, the `if` branch clamps $R_{31}$ and then **never computes** `theta`, and MATLAB stops with *Output argument "theta" not assigned*. `verify_w01_theory` meets $R_{31} = 1.0000000000000002$ on its fourth random attitude at $\theta = 90°$. The revision of 2022-04-15 moves `theta = -asin(R(3,1));` below the `end`, so that it runs after the clamp. A surface craft never reaches this branch; an AUV script on the 2021 release can.
+
+### The MSS functions, and where each one lives
+
+| Function | Computes | Call | 2021 release (this course) | 2022 and later |
+|---|---|---|---|---|
+| `euler2q` | $\boldsymbol{\Theta} \to \mathbf{q}$, Fossen §2.2.3 | `q = euler2q(phi,theta,psi)` | `GNC/euler2q.m` | `LIBRARY/kinematics/` |
+| `q2euler` | $\mathbf{q} \to \boldsymbol{\Theta}$, Fossen §2.2.4 | `[phi,theta,psi] = q2euler(q)` | `GNC/q2euler.m` | `LIBRARY/kinematics/`, round-off branch fixed |
+| `Rquat` | $\mathbf{R}(\mathbf{q})$ | `R = Rquat(q)` | `GNC/Rquat.m` | `LIBRARY/kinematics/` |
+| `Tquat` | $\mathbf{T}_q(\mathbf{q})$, $4\times3$; or $\mathbf{T}_\omega(\boldsymbol{\omega})$, $4\times4$ | `T = Tquat(q)` | `GNC/Tquat.m` | `LIBRARY/kinematics/` |
+| `quatprod` | $\mathbf{q}_1 \otimes \mathbf{q}_2$ | `q = quatprod(q1,q2)` | `GNC/quatprod.m` | `LIBRARY/kinematics/` |
+| `quatern` | $\operatorname{blkdiag}\!\left(\mathbf{R}(\mathbf{q}),\ \mathbf{T}_q(\mathbf{q})\right)$, $7\times6$ | `[J,J1,J2] = quatern(q)` | `GNC/quatern.m` | `LIBRARY/kinematics/` |
+
+| | Euler angles $\boldsymbol{\Theta}$ | Unit quaternion $\mathbf{q}$ |
+|---|---|---|
+| parameters | three | four, bound by $\mathbf{q}^{\!\top}\mathbf{q} = 1$ |
+| singular | at $\theta = \pm 90°$ | never |
+| one attitude is | one triple, within the angle ranges | two quaternions, $\mathbf{q}$ and $-\mathbf{q}$ |
+| readable at a glance | yes — roll, pitch, heading | no — an axis and a half-angle |
+| numerical care | none | the norm must be restored |
+| in this course | the plant and every controller: `otter.m` calls `eulerang` (line 200) | MSS's inertial navigation and attitude estimation, and any vehicle that pitches steeply |
+
 ## 1-6. Kinematics and kinetics
 
 - The word **dynamics** covers two different questions, and separating them is what makes the model tractable.
@@ -489,7 +750,7 @@ $$
 | $\mathbf{C}_{RB}$, $\mathbf{C}_{A}$ | Coriolis and centripetal | a consequence of writing $\boldsymbol{\nu}$ in a rotating frame |
 | $\mathbf{D}$ | damping — skin friction, then cross-flow drag | measured, or estimated from strip theory |
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | weight and buoyancy acting at different points |
-| $\boldsymbol{\tau}$ | control force | $\mathbf{B}\mathbf{f}$, §1-9 and Appendix A1 |
+| $\boldsymbol{\tau}$ | control force | $\mathbf{B}\mathbf{f}$, §1-10 and Appendix A1 |
 
 - $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces feel relative velocity, not ground velocity. Dormant this week ($V_c = 0$); §1-13 shows exactly where it enters `otter.m`.
 
@@ -813,48 +1074,191 @@ tau = [Thrust(1) + Thrust(2)  0 0 0 0  -l1*Thrust(1) - l2*Thrust(2)]';
 
 ## 1-11. Surge alone — a first-order system
 
-- Retaining only the surge equation, with no rotation and no current:
+- The speed controller of Week 2 is designed on one scalar equation. This section derives that equation from the surge row of the full model, states every term discarded on the way, and measures what the discarding costs.
+
+### The surge row, as `otter.m` integrates it
+
+- Row 1 of the 6-DOF equation (`otter.m` line 203, 2021 release), with the entries of $\mathbf{M}$ and $\mathbf{C}$ read from the matrices rebuilt line by line by `_tools/verify_w01_theory.m`:
 
 $$
-M_{11}\,\dot{u} = X + X_u u,
+M_{11}\,\dot u + M_{15}\,\dot q + \left[\mathbf{C}(\boldsymbol{\nu}_r)\boldsymbol{\nu}_r\right]_1
+= X + X_u\,u_r + \tau_{\text{cross},1} - \left[\mathbf{G}\boldsymbol{\eta}\right]_1 - g_{0,1}
+$$
+
+$$
+\left[\mathbf{C}\boldsymbol{\nu}\right]_1 = -M_{22}\,v\,r - M_{26}\,r^2 + (\text{terms in } p,\ q,\ w)
+$$
+
+| Symbol | Value | Source |
+|---|---|---|
+| $M_{11} = (m+m_p) - X_{\dot u}$ | $85.50$ kg | `M(1,1)`; lines 108, 112, 125 |
+| $M_{15} = (m+m_p)\,z_g$ | $-19.75$ kg·m — surge–pitch, because the CG sits $0.247$ m **above** the origin ($z$ points down) | `M(1,5)` |
+| $X$ | $T_1 + T_2$ | line 181, §1-10 |
+| $X_u$ | $-77.554$ N per m/s | line 157, $-24.4\,g/U_{\max}$ |
+| $\tau_{\text{cross},1}$ | $0$ — `crossFlowDrag` returns sway and yaw only | line 194 |
+| $[\mathbf{G}\boldsymbol{\eta}]_1$, $g_{0,1}$ | $0$ — no restoring in surge | §1-7 |
+
+- The other entries of the surge row of $\mathbf{M}$ are zero. $M_{16} = -(m+m_p)\,y_g$ vanishes because the hull is port–starboard symmetric, and $M_{12}$, $M_{13}$, $M_{14}$ are zero by the structure of $\mathbf{M}_{RB}$.
+
+| Dropped term | Size in a straight run from rest, $n = [60, 60]$ | Why it goes | When it returns |
+|---|---|---|---|
+| $M_{15}\,\dot q$ | peak $9.14$ N against $X = 79.78$ N | it acts only while the hull pitches, by at most $0.39°$; it is the only dropped term that is not identically zero here | never in the design models — it is the whole residue measured below |
+| $-M_{22}\,v\,r - M_{26}\,r^2$ | $0$ exactly | equal thrust on a symmetric hull gives $v = r = 0$ | every turn — Week 3 |
+| terms in $p$, $q$, $w$ of $\mathbf{C}$ | peak $0.012$ N | products of two small transients | not for this hull |
+| $X_u\,(u_r - u)$ | $0$ | $V_c = 0$ | §1-13 and Week 4 |
+
+### The first-order model, one step at a time
+
+$$
+\begin{aligned}
+M_{11}\,\dot u &= X + X_u\,u && \text{the terms that survive} \\
+M_{11}\,\dot u &= X - \lvert X_u\rvert\,u && X_u < 0\ \text{because it is damping} \\
+M_{11}\,\dot u + \lvert X_u\rvert\,u &= X && \text{collect the terms in } u \\
+\frac{M_{11}}{\lvert X_u\rvert}\,\dot u + u &= \frac{1}{\lvert X_u\rvert}\,X && \text{divide by } \lvert X_u\rvert \\
+T_u\,\dot u + u &= K_u\,X && \text{the standard first-order form}
+\end{aligned}
+$$
+
+- Two numbers describe it completely:
+
+$$
+T_u = \frac{M_{11}}{\lvert X_u\rvert} = \frac{85.50}{77.55} = 1.1025\ \text{s},
 \qquad
-M_{11} = (m + m_p) - X_{\dot u}
+K_u = \frac{1}{\lvert X_u\rvert} = 0.012894\ \frac{\text{m/s}}{\text{N}}
 $$
 
-- This is a first-order lag. Two numbers describe it completely:
+- As a transfer function, and as the step response from rest:
 
 $$
-T_u = \frac{M_{11}}{|X_u|} = \frac{85.50}{77.55} = 1.1025\ \text{s},
+\frac{u(s)}{X(s)} = \frac{K_u}{T_u\,s + 1},
 \qquad
-K_u = \frac{1}{|X_u|} = 0.012894\ \frac{\text{m/s}}{\text{N}}
+u(t) = K_u X\left(1 - e^{-t/T_u}\right)
 $$
 
-- The prediction is checkable. Integrating the full twelve-state plant from rest under $n = [60, 60]$ and reading the instant at which $u$ reaches $63.2\%$ of its terminal value gives **1.1064 s**, which is $0.35\%$ above the first-order figure. The residue is the surge-pitch coupling in $\mathbf{M}$, retained by the plant and discarded by this equation.
+- At $t = T_u$ the bracket equals $1 - e^{-1} = 0.632$. That is why the check below reads the instant at which $u$ reaches $63.2\%$ of its final value: that instant **is** $T_u$, measured.
 
-- Setting $\dot u = 0$ gives the terminal speed for a constant command:
+| Check | Result |
+|---|---|
+| dimension | $M_{11}/\lvert X_u\rvert$: kg ÷ (N·s/m) = s. $K_u$: (m/s) per N |
+| limit $X_u \to 0$ | $T_u \to \infty$ and $M_{11}\dot u = X$: Newton's law alone, and the speed grows without bound |
+| limit $M_{11} \to 0$ | $u = K_u X$ at once — no inertia, no lag |
+| sign | with $X = 0$ and $u > 0$, $\dot u = -\lvert X_u\rvert u / M_{11} < 0$: the hull slows down |
+| against the plant | $63.2\%$ reached at $1.1057$ s in `W01_openloop.slx` (ode4, $h = 0.02$ s) and at $1.1056$ s from `otter.m` with ode45 — $0.29\%$ above $T_u$. The largest difference between the plant's $u(t)$ and the first-order curve is $0.0063$ m/s |
+
+- The residue is the $M_{15}\dot q$ term, and the first instant shows it directly. A surge force on this hull also pitches it, so the plant's initial acceleration is $X$ divided by $76.71$ kg, not by $85.50$ kg. The $76.71$ kg is $1/[\mathbf{M}^{-1}]_{11}$ — the inertia left once the pitch coupling has taken its share. The pitch angle never exceeds $0.39°$, and once it has settled the first-order model takes over.
+
+### Terminal speed
+
+- **Terminal speed** is the speed at which the vessel stops accelerating under a constant command, because the thrust is then exactly absorbed by damping. The same quantity is called the steady-state or settled speed. Setting $\dot u = 0$:
 
 $$
-u_{ss} = \frac{X}{|X_u|} = \frac{2\,k_{\text{pos}}\, n|n|}{|X_u|}
+u_{ss} = K_u\,X = \frac{X}{\lvert X_u\rvert} = \frac{2\,k_{\text{pos}}\, n\lvert n\rvert}{\lvert X_u\rvert}
 $$
 
-- **Quadratic thrust against linear damping.** Doubling the shaft speed quadruples the force and therefore quadruples the terminal speed. This is the prediction tested in Part 2.
+| $n$ [rad/s] | $X$ [N] | $u_{ss}$ [m/s] | $u_{ss}$ [kn] |
+|---|---|---|---|
+| 30 | 19.944 | 0.2572 | 0.500 |
+| 60 | 79.776 | 1.0286 | 2.000 |
+| 90 | 179.496 | 2.3145 | 4.499 |
+| $n_{\max} = 103.93$ | 239.364 | 3.0864 | 6.000 |
+
+- The vessel approaches it asymptotically and is within $2\%$ after $4T_u = 4.41$ s.
+- The last row is exact by construction. `otter.m` defines $n_{\max}$ by $2k_{\text{pos}}n_{\max}^2 = 24.4\,g$ (line 95) and $X_u$ by $\lvert X_u\rvert = 24.4\,g/U_{\max}$ (line 157), so full thrust ends at $u_{ss} = U_{\max} = 6$ knots. The linear damping coefficient was calibrated so that the full travel of the throttle spans exactly the design speed.
+
+> [!important] Quadratic thrust against linear damping
+> The two sides of the balance grow at different rates. Thrust grows with the **square** of shaft speed, $X = 2k_{\text{pos}}n\lvert n\rvert$ (§1-10); damping grows only in **proportion** to speed, $\lvert X_u\rvert u$. The balance therefore gives $u_{ss} \propto n\lvert n\rvert$, and doubling $n$ quadruples the terminal speed: $30 \to 60$ rad/s gives $0.2572 \to 1.0286$ m/s. A hull whose resistance were quadratic, $X_{\lvert u\rvert u}\lvert u\rvert u$, would instead give $u_{ss} \propto n$; the 2021 `otter.m` has only the linear term (line 184). Part 2 §C tests the prediction.
 
 ## 1-12. Sway velocity without sway force
 
-- Section 1-5 established $Y \equiv 0$. Nevertheless the simulation of a turning vessel shows $v \neq 0$. The two statements are not in conflict.
-- The sway equation contains a Coriolis term. Writing only the terms that survive in the horizontal plane:
+- §1-10 established $Y \equiv 0$. Nevertheless the simulation of a turning vessel shows $v \neq 0$. The two statements are not in conflict, and the sway row of the equation of motion shows why.
+
+### The sway row, as `otter.m` integrates it
+
+- Row 2 of the 6-DOF equation (`otter.m` line 203, 2021 release), with every term written:
 
 $$
-M_{22}\,\dot{v} + \underbrace{(m - X_{\dot u})\,u\,r}_{\text{Coriolis}} + \underbrace{Y_{\text{cf}}(v, r)}_{\text{cross-flow drag}} = Y = 0
+M_{22}\,\dot v + M_{24}\,\dot p + M_{26}\,\dot r + \left[\mathbf{C}(\boldsymbol{\nu}_r)\boldsymbol{\nu}_r\right]_2
+= Y + Y_v\,v_r + Y_{\text{cf}} - \left[\mathbf{G}\boldsymbol{\eta}\right]_2
 $$
 
-- A vessel that is moving forward **and** rotating acquires a lateral velocity even with no lateral force, because the velocity vector is being rotated within the body frame.
+| Symbol | Value | Source |
+|---|---|---|
+| $M_{22} = (m+m_p) - Y_{\dot v}$ | $162.50$ kg | `M(2,2)`; lines 108, 113, 125 |
+| $M_{24}$ | $19.75$ kg·m — sway–roll, through the CG height $z_g$ | `M(2,4)` |
+| $M_{26} = (m+m_p)\,x_g$ | $12.25$ kg·m — sway–yaw, through $x_g = 0.153$ m | `M(2,6)` |
+| $\left[\mathbf{C}\boldsymbol{\nu}\right]_2$ | $85.50\,u\,r$, plus terms in $p$, $q$, $w$ | lines 104–126, derived below |
+| $Y$ | $0$ for every command | §1-10, the empty row of $\mathbf{B}$ |
+| $Y_v$ | $0$ in the 2021 release this course runs | line 158 |
+| $Y_{\text{cf}}(v, r)$ | cross-flow drag, a force returned by `crossFlowDrag` | line 194 |
+| $\left[\mathbf{G}\boldsymbol{\eta}\right]_2$ | $0$ — nothing restores a sideways position | §1-7 |
+
+- The entries of $\mathbf{M}$ are read from the matrix rebuilt line by line by `_tools/verify_w01_theory.m`, not measured by finite difference.
+
+| Dropped term | Why it goes | When it returns |
+|---|---|---|
+| $M_{24}\,\dot p$ | roll is not actuated and is restored by buoyancy (§1-7) | a 4-DOF model, when roll must be damped |
+| terms in $p$, $q$, $w$ of $\mathbf{C}$ | products with roll, pitch and heave rates; the steady-turn balance below closes to $2.6\times10^{-5}$ N without them | not for this hull |
+| $Y_v\,v_r$ | $Y_v = 0$ in the 2021 `otter.m` | the 2024 recalibration of MSS uses $Y_v = -M_{22}/T_{\text{sway}}$ |
+| $Y$ | zero by the geometry of $\mathbf{B}$ | an actuator with a sideways component — Appendix A1 |
+
+- What remains is the planar sway equation:
+
+$$
+\boxed{\ M_{22}\,\dot v + M_{26}\,\dot r + M_{11}\,u\,r = Y_{\text{cf}}(v, r)\ }
+$$
+
+### Where $M_{11}\,u\,r$ comes from
+
+- The Coriolis coefficient in sway is the **surge inertia** $M_{11}$ itself. Each of its two parts comes from one matrix.
+- **Rigid body** (`otter.m` lines 104 and 107–109). $\mathbf{C}_{RB}$ is built at the centre of gravity and then moved to the origin. With $\boldsymbol{\nu}_2 = [0\ \ 0\ \ r]^{\!\top}$ and $\mathbf{r}_g = [x_g\ \ 0\ \ z_g]^{\!\top}$:
+
+$$
+\begin{aligned}
+\boldsymbol{\nu}_1 + \boldsymbol{\nu}_2 \times \mathbf{r}_g
+&= \begin{bmatrix} u \\ v \\ 0 \end{bmatrix} + \begin{bmatrix} 0 \\ x_g\,r \\ 0 \end{bmatrix}
+= \begin{bmatrix} u \\ v + x_g r \\ 0 \end{bmatrix}
+&& \text{velocity of the CG} \\[4pt]
+(m + m_p)\,\boldsymbol{\nu}_2 \times \begin{bmatrix} u \\ v + x_g r \\ 0 \end{bmatrix}
+&= (m + m_p)\begin{bmatrix} -r\,(v + x_g r) \\ u\,r \\ 0 \end{bmatrix}
+&& \text{Coriolis force at the CG}
+\end{aligned}
+$$
+
+- Moving to the origin with $\mathbf{H}^{\!\top}$ leaves the three force rows unchanged, so the sway row keeps $(m+m_p)\,u\,r = 80.00\,u\,r$.
+- **Added mass** (`otter.m` lines 120–122). `m2c` builds $\mathbf{C}_A$ from $\mathbf{M}_A$, and its sway row is $-X_{\dot u}\,u\,r + Z_{\dot w}\,w\,p$. Only the two yaw entries `CA(6,1)` and `CA(6,2)` are zeroed, so this term survives: $5.50\,u\,r$ in the plane.
+- Together:
+
+$$
+\left[\mathbf{C}\boldsymbol{\nu}\right]_2 = \left(m + m_p - X_{\dot u}\right) u\,r = M_{11}\,u\,r = 85.50\,u\,r
+$$
+
+- The reading: the vessel carries forward momentum $M_{11}u$. A body frame that turns at $r$ sees that momentum change direction at the rate $M_{11}u\,r$, and in the body frame that change appears as a sideways force. A vessel moving forward **and** turning therefore acquires a sway velocity with no sway force anywhere.
+
+> [!warning] The coefficient is $m + m_p - X_{\dot u}$, not $m - X_{\dot u}$
+> Textbook 3-DOF forms write $m$ for the whole rigid-body mass. On this vessel that is $m + m_p = 80.0$ kg, because §1-9 reserves $m = 55$ kg for the hull alone; reading $m$ as the hull mass gives $60.5$ kg instead of $85.50$ kg. The 3-DOF matrix $\mathbf{C}(\boldsymbol{\nu})$ printed in §1-7 is the rigid-body part only, and $\mathbf{C}_A$ adds the remaining $5.50$ kg.
+
+### The steady turn
+
+- In a steady turn $\dot v = \dot r = 0$, so $\mathbf{M}$ leaves the equation and the balance is
+
+$$
+Y_{\text{cf}}(v, r) = M_{11}\,u\,r
+$$
+
+- Cross-flow drag is the only term that opposes the drift, so $v$ grows until the drag it generates equals $M_{11}ur$. Measured by `_tools/verify_w01_theory.m` in the steady port turn of §D, $n = [56.5,\ 63.5]$ rad/s:
+
+| Quantity | Value |
+|---|---|
+| $u$, $v$, $r$ | $1.0218$ m/s, $0.1264$ m/s, $-2.2941$ deg/s |
+| $M_{11}\,u\,r$ | $-3.4980$ N |
+| $Y_{\text{cf}}$ from `crossFlowDrag` at the same state | $-3.4980$ N |
+| residual | $2.6\times10^{-5}$ N |
 
 > [!note] There is no linear sway damping in this hull
-> `otter.m` sets `Yv = 0`. Everything that resists sideways motion comes from the cross-flow drag integral `crossFlowDrag`, which is quadratic in the local transverse velocity and therefore vanishes to second order at small $v$. The steady sway velocity is the point where Coriolis and cross-flow drag balance, and no linear term participates.
+> The 2021 `otter.m` sets `Yv = 0`. Everything that resists sideways motion comes from the cross-flow drag integral `crossFlowDrag`, which is quadratic in the local transverse velocity $v + x\,r$ along the hull. The steady sway velocity is the point where the Coriolis force and cross-flow drag balance, and no linear term participates.
 
-- A second mechanism produces sideways motion, and it acts even at rest. The mass matrix is not diagonal: $M_{26} = 12.25$ kg·m, because the payload places the centre of gravity forward of the origin of $\{b\}$. A **pure yaw moment therefore produces a sway acceleration**, $\dot{v} = -1.305 \times 10^{-3}$ m/s² per N·m, with no sway force anywhere in the problem. Appendix A1 measures this directly.
-- The two mechanisms occupy different regimes. The mass coupling acts on $\dot v$ and dominates the first instants; the Coriolis term acts on $v$ and sets the steady value, since $\dot v = 0$ removes $\mathbf{M}$ from the balance entirely.
+- The remaining term, $M_{26}\,\dot r$, acts only while $r$ is changing — at the entry to and the exit from each turn. The payload places the centre of gravity $0.153$ m forward of the origin, so a **pure yaw moment produces a sway acceleration**, $\dot v = [\mathbf{M}^{-1}]_{26}\,N = -1.305\times10^{-3}$ m/s² per N·m, with no sway force anywhere. Appendix A1 measures this directly.
+- The two therefore occupy different regimes: $M_{26}\dot r$ shapes the first instants of a turn, and $M_{11}ur$ sets the steady drift.
 - The angle between where the vessel points and where it actually travels is the **crab angle**
 
 $$
@@ -1127,10 +1531,12 @@ Expected output:
 | D | `W01_D_the_manoeuvre.m` | D | `img/W01_result_track.png` |
 | E | `W01_E_build_current.m` | E | `W01_current.slx` and `img/W01_current.png` |
 | E | `W01_E_current_run.m` | E | `img/W01_result_current.png` |
+| F | `W01_F_build_interactive.m` | F | `W01_interactive.slx` and `img/W01_interactive.png` |
+| F | `W01_F_button_check.m` | F | the table of §F — one headless run per button |
 
 - Each laboratory section is one script. Running a section leaves exactly the numbers and the figures that section discusses, so a class can work through the week a page at a time.
 - Sections C, D and E build the model they need if it is missing, so any one of them can be run first.
-- The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_cur_plot.m`, `W01_animate.m`, `W01c_animate.m` — are called **by** the scripts above and by the model. They are never run by hand.
+- The remaining files in the folder — `W01_vars.m`, `W01_read.m`, `W01_plot.m`, `W01_cur_plot.m`, `W01_animate.m`, `W01c_animate.m`, `W01i_animate.m` — are called **by** the scripts above and by the models. They are never run by hand.
 - `W01_frames.m` is not called by anything. It drew a figure that was withdrawn for repeating what §1-4 already worked through with the same numbers; the file is kept so the figure can be brought back without rewriting it. The same applies to the three-panel and drift-rose drawings inside `W01_cur_plot.m` — that file is still the current model's `StopFcn`, but §E no longer calls those two drawings.
 - The laboratory of the second hour lives in `W01_simulink/problems/` and `solutions/`, and is separate from these.
 
@@ -1189,7 +1595,7 @@ $$
 | the track | **where** the hull went |
 | the hull outline and the line leaving its bow | **where the hull was pointing** while it went there |
 
-- Those are not the same question. A marine vehicle carries a sway velocity, so its heading $\psi$ and its course over ground differ by the crab angle $\beta = \operatorname{atan2}(v, u)$. In the turning run of §D they differ by more than 20°, and no track drawn on its own can show that. Week 4 has to steer around exactly this difference.
+- Those are not the same question. A marine vehicle carries a sway velocity, so its heading $\psi$ and its course over ground differ by the crab angle $\beta = \operatorname{atan2}(v, u)$. In the turns of §D they differ by $7.05°$, and in the beam current of §E by $25.8°$; no track drawn on its own can show either. Week 4 has to steer around exactly this difference.
 - A MATLAB Function block cannot plot. The drawing function is therefore declared extrinsic, which makes Simulink hand the call back to MATLAB instead of generating code for it:
 
 ```matlab
@@ -1223,7 +1629,7 @@ xdot = otter(x, u_thr, mp, rp, V_c, beta_c);
 
 ### Step 1 — predict on paper
 
-- Before running anything, compute the terminal surge speed for $n = 60$ rad/s on both propellers, using §1-6.
+- Before running anything, compute the terminal surge speed for $n = 60$ rad/s on both propellers, using §1-11.
 
 $$
 X = 2\,k_{\text{pos}}\,n|n| = 2 \times 0.011080 \times 60^2 = 79.776\ \text{N}
@@ -1277,7 +1683,15 @@ Nothing here involves a controller, because there is none yet. These four points
 
 ## D. One manoeuvre: straight, port, straight, starboard, straight (30 min)
 
-- The vessel runs the manoeuvre a real USV would be given first: hold a course, turn left, hold, turn right, hold. It takes 150 s.
+- The vessel runs the manoeuvre a real USV would be given first: hold a course, turn left, hold, turn right, hold. It takes 150 s, and nothing in it is controlled — the two shaft speeds simply follow a timetable.
+- The run exists to answer four questions, none of which a straight run can answer:
+
+| Question | Where the answer is read | Answer from this run |
+|---|---|---|
+| does a small difference in shaft speed turn the vessel? | $\psi$ in the live dashboard | yes — $-70.2°$ and $+70.6°$ from a difference of $3.5$ rad/s |
+| which propeller slows for a turn to port? | the timetable below | the **left** one |
+| can the hull move sideways with no sideways force? | $v$ against $Y$ | $v = \pm 0.1264$ m/s while $Y = 0$ exactly — §1-12 |
+| does the bow point where the vessel goes? | the hull outlines along the track | no — the two differ by the crab angle, $7.05°$ in each turn |
 - **Nothing reverses.** Both propellers turn ahead for the whole run. A turn is a small difference between them, because the yaw moment is
 
 $$
@@ -1344,7 +1758,7 @@ The turn itself is nearly free. Surge falls from $1.0286$ to $1.0218$ m/s — se
 Raising `dn` in `W01_0_setup.m` widens the crab angle, because $\beta$ grows with turn rate. Week 3 §3-4 has to steer around it, and Week 4's line-of-sight guidance is where it finally has to be paid for.
 
 > [!important] The sway force is zero and the sway velocity is not
-> $\max\lvert Y\rvert = 0.0 \times 10^{0}$ N over every command in the manoeuvre — not small, but **structurally** zero, because both propellers face forward and $\mathbf{B}$ of §1-5 has no sway row. The vessel sways anyway, at $\pm 0.1264$ m/s, and $v$ **changes sign** between the two turns. That sway is the Coriolis term of §1-7 acting while the hull rotates, not a force. Reporting $Y \approx 0$ and $Y = 0$ as the same observation loses the entire content of §1-5.
+> $\max\lvert Y\rvert = 0.0 \times 10^{0}$ N over every command in the manoeuvre — not small, but **structurally** zero, because both propellers face forward and $\mathbf{B}$ of §1-10 has no sway row. The vessel sways anyway, at $\pm 0.1264$ m/s, and $v$ **changes sign** between the two turns. That sway is the Coriolis term $M_{11}\,u\,r$ of §1-12 acting while the hull rotates, not a force. Reporting $Y \approx 0$ and $Y = 0$ as the same observation loses the entire content of §1-10.
 
 ## E. The same command in four currents (25 min)
 
@@ -1380,26 +1794,97 @@ W01_E_current_run
 | beam, $\beta_c = 90°$ | $1.1091$ | $21.80$ | $-4.00$ |
 | head, $\beta_c = 180°$ | $0.5286$ | $-0.00$ | $-0.00$ |
 
-![One command, four currents](W01_simulink/img/W01_result_current.png)
+![One command, three currents, one panel each](W01_simulink/img/W01_result_current.png)
 
 **Reading the figure**
 
 | Element | Meaning |
 |---|---|
-| four tracks | the same command — both propellers at $n_0$, no steering — in four different currents |
-| grey, blue, purple | still water, following and head current. All three run **due north** and lie on top of one another; they differ only in how far the vessel got in $150$ s |
-| orange | the beam current, the only one that leaves the meridian |
-| hull outlines | the vessel drawn along each track. On the orange track the bow still points **north** while the track leans east |
+| three panels | one current each — following ($\beta_c = 0°$), beam ($90°$), head ($180°$) — drawn on **identical axes**, so distances compare directly from panel to panel |
+| grey track | still water, the same in every panel: the reference the coloured track is measured against |
+| coloured track | the same command in that panel's current, over the same $120$ s |
+| blue arrow, top left | the current. It points where the water **goes**, and its length is to scale, $50$ m per 1 m/s |
+| hull outlines | the vessel along each track. In the beam panel the bow still points north while the track leans east |
+| panel titles | ground speed, track angle and heading over the last fifth of the run — the rows of the table above |
 
 **What the figure says**
 
 - **One command, four answers.** The shaft speeds are identical in all four runs and nothing steers. Every difference in the picture was produced by the water.
-- **Fore-and-aft currents change only the speed.** Three tracks run due north; they differ in how far the vessel got, which is why the hull silhouettes are spaced differently along them. A following current adds exactly $V_c = 0.5$ m/s to the ground speed and a head current takes the same amount away.
+- **Fore-and-aft currents change only the speed.** In the left and right panels the coloured track lies on the grey one and runs due north; it only ends further along or further back, which is why the hull outlines are spaced differently. A following current adds exactly $V_c = 0.5$ m/s to the ground speed and a head current takes the same amount away.
 - **A beam current changes the direction.** The orange track leaves the meridian and ends about $50$ m to the east — **while its bow still points north.** The track and the heading differ by $25.8°$, and no force pushed the hull sideways.
 - **Why that happens** is §1-13 in one line: `otter.m` computes every force from $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$, the velocity through the water, but integrates the position with $\boldsymbol{\nu}$, the velocity over the ground. **Forces feel the water; the track is over the ground.**
 
 > [!note] This is the problem Week 4 exists to solve
 > A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 4 §4-7 measures the resulting path error and §4-8 and §4-9 remove it.
+
+## F. Drive it yourself (15 min)
+
+- Sections C to E each ran a command fixed in advance. This section hands the command over: one model, five buttons, two sliders, and the same live view as §B.
+- Open `W01_interactive.slx` and press **Run**. No setup script is needed. Every variable the model reads is stored in its own model workspace, and the model puts `_tools` and MSS on the path by itself when it is opened.
+- The simulation runs at real time — Simulation Pacing at rate 1 — and does not stop on its own. Press **Stop** to end it.
+
+```matlab
+W01_F_build_interactive      % only if W01_interactive.slx is missing or broken
+```
+
+> [!note] To produce this figure
+> `W01_F_build_interactive` writes `W01_simulink/img/W01_interactive.png` at the end of the build, as every builder in this course does.
+
+![The interactive model](W01_simulink/img/W01_interactive.png)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| `DRIVE` buttons | a Dashboard Radio Button bound to the Constant `mode` inside `Drive command`; a click changes that Constant while the simulation runs |
+| `n0` slider | bound to the Constant `n0` — the common shaft speed, $0$ to $100$ rad/s |
+| `dn` slider | bound to the Constant `dn` — the difference between the two propellers in a turn, $0$ to $30$ rad/s |
+| `Drive command` (white) | the three Constants and one MATLAB Function that turns a button into $[n_L;\ n_R]$ |
+| `Otter USV`, `Measurements` | the plant and the live view of `W01_openloop.slx`, unchanged, except that the track window follows the vessel |
+| `n now` | the two shaft speeds the plant is receiving at this instant |
+
+- Each button applies one rule — the same rule as the timetable of §D:
+
+| Button | $[n_L;\ n_R]$ | What the vessel does |
+|---|---|---|
+| STOP | $[0;\ 0]$ | coasts to rest; only damping acts |
+| AHEAD | $[n_0;\ n_0]$ | settles at the terminal speed of §1-11 |
+| ASTERN | $[-n_0;\ -n_0]$ | goes astern, and more slowly, because $k_{\text{neg}} < k_{\text{pos}}$ (§1-10) |
+| PORT | $[n_0 - dn;\ n_0 + dn]$ | turns left — the **left** propeller slows |
+| STARBOARD | $[n_0 + dn;\ n_0 - dn]$ | turns right |
+
+### Measured
+
+```matlab
+W01_F_button_check
+```
+
+- A person pressing buttons never produces the same run twice, so the numbers below come from `W01_F_button_check.m`. It starts the model from rest once per button, holds that button for $40$ s, and switches pacing and the live view off. The sliders stay at their initial values, $n_0 = 60$ and $dn = 10$ rad/s.
+
+| Button | $n_L$, $n_R$ [rad/s] | $u$ [m/s] | $v$ [m/s] | $r$ [deg/s] | $\beta$ [deg] |
+|---|---|---|---|---|---|
+| AHEAD | $60,\ 60$ | $1.0286$ | $0.0000$ | $0.000$ | — |
+| ASTERN | $-60,\ -60$ | $-0.5983$ | $0.0000$ | $0.000$ | — |
+| PORT | $50,\ 70$ | $1.0251$ | $+0.1827$ | $-4.989$ | $+10.11$ |
+| STARBOARD | $70,\ 50$ | $1.0251$ | $-0.1827$ | $+4.989$ | $-10.11$ |
+| STOP | $0,\ 0$ | $0.0000$ | $0.0000$ | $0.000$ | — |
+
+- AHEAD reproduces the terminal speed of §1-11, $1.0286$ m/s. ASTERN reproduces $-2k_{\text{neg}}n_0^2/\lvert X_u\rvert = -0.5983$ m/s, so the vessel backs away at under $60\%$ of its forward speed.
+- PORT and STARBOARD are mirror images. With $dn = 10$ rather than the $3.5$ of §D, the turn is about twice as fast and the crab angle $\beta$ grows from $7.05°$ to $10.11°$.
+
+### Things to try, in this order
+
+| Do this | Watch | Section |
+|---|---|---|
+| AHEAD, then wait five seconds | $u$ settles at $1.03$ m/s and stays there | §1-11 |
+| drag SPEED from $60$ to $30$ | $u$ falls to a quarter, $0.26$ m/s, not to a half | §1-11, quadratic thrust against linear damping |
+| PORT, then STARBOARD | $v$ changes sign; the bow points off the track by $\beta$ | §1-12 and §D |
+| PORT, then drag TURN to $0$ | the vessel runs straight: a turn is only the difference between the propellers | §1-10 |
+| ASTERN from rest | $u$ reaches only $-0.60$ m/s | §1-10 |
+| STOP at full speed | $u$ decays with the time constant $T_u = 1.10$ s | §1-11 |
+
+> [!tip] The track window follows the vessel
+> `W01_openloop.slx` knows its route in advance, so its window is fixed before the run. A vessel driven by hand can go anywhere, so `W01i_animate.m` moves the window whenever the hull comes within $20\%$ of an edge. The size of the window never changes, so the outline keeps one scale and its speed across the page can be judged by eye.
 
 ---
 
@@ -1410,10 +1895,14 @@ W01_E_current_run
 | Step | What was done | How it was verified |
 |---|---|---|
 | 1 | Identified the twelve states and their frames | listed against `otter.m` and the selector blocks |
-| 2 | Reduced the 6-DOF equation to first-order surge | $T_u = 1.1025$ s against $1.1064$ s measured from the plant |
-| 3 | Predicted terminal speed before simulating | four commands, agreement to four decimals |
-| 4 | Ran a port-then-starboard manoeuvre with both propellers ahead | heading changed $-70.2°$ then $+70.6°$, symmetric to $0.41°$ |
-| 5 | Separated sway force from sway velocity | $Y = 0$ exactly, $v = \pm 0.1264$ m/s, sign reversing between the turns |
+| 2 | Related Euler angles to the unit quaternion | round trip to $6.4\times10^{-15}$ deg; `Rquat` against `Rzyx` to $2.2\times10^{-16}$ |
+| 3 | Reduced the 6-DOF equation to first-order surge | $T_u = 1.1025$ s against $1.1057$ s measured from the plant |
+| 4 | Predicted terminal speed before simulating | four commands, agreement to four decimals |
+| 5 | Ran a port-then-starboard manoeuvre with both propellers ahead | heading changed $-70.2°$ then $+70.6°$, symmetric to $0.41°$ |
+| 6 | Separated sway force from sway velocity, and derived the Coriolis term | $Y = 0$ exactly; $M_{11}ur = -3.4980$ N against $Y_{\text{cf}} = -3.4980$ N in the steady turn |
+| 7 | Drove the vessel with buttons, at real time, from Simulink alone | AHEAD $1.0286$ m/s and ASTERN $-0.5983$ m/s, both equal to the hand prediction |
+
+- Rows 2, 3 and 6 are reproduced by `_tools/verify_w01_theory.m`.
 
 ---
 
@@ -1425,6 +1914,9 @@ W01_E_current_run
 
 - [ ] Able to state which of the twelve states are expressed in $\{b\}$ and which in $\{n\}$
 - [ ] Able to write $\dot{\boldsymbol{\eta}} = \mathbf{J}_{\Theta}(\boldsymbol{\eta})\boldsymbol{\nu}$ and say why $\mathbf{T}_{\Theta}$ is not a rotation matrix
+- [ ] Able to convert $\boldsymbol{\Theta}$ to $\mathbf{q}$ and back with `euler2q` and `q2euler`, and to say why $\dot{\mathbf{q}} = \mathbf{T}_q(\mathbf{q})\boldsymbol{\omega}$ has no singularity while the conversion back to Euler angles does
+- [ ] Able to derive the first-order surge model from row 1 of the 6-DOF equation, naming each dropped term
+- [ ] Able to show that the sway Coriolis coefficient is $M_{11}$, and which part of it comes from $\mathbf{C}_{RB}$ and which from $\mathbf{C}_A$
 - [ ] Able to compute $u_{ss}$ for a given $n$ without running a simulation
 - [ ] Able to explain why $Y = 0$ while $v \neq 0$ during a turn, and why $v$ reverses sign between a port and a starboard turn
 
@@ -1433,6 +1925,7 @@ W01_E_current_run
 - [ ] `W01_0_setup` printed `rank(B) = 2`
 - [ ] `W01_1_build_openloop` regenerated the model after it was deliberately broken
 - [ ] Sections C, D and E were run in that order and together wrote six result PNG files into `W01_simulink/img/`
+- [ ] `W01_interactive.slx` was opened and run from Simulink alone, with each of the five buttons used at least once
 
 ### Recorded observations
 
@@ -1521,9 +2014,10 @@ W01_check(1)                 % run this whenever, as often as needed
 
 ### Primary
 
-- Fossen, T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. Chapters 2 (kinematics) and 3 (rigid-body dynamics).
-- MSS toolbox, `Tools/MSS/VESSELS/otter.m` — the plant used unchanged in this week's model.
+- Fossen, T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. Chapters 2 (kinematics), 3 (rigid-body dynamics) and 6 (manoeuvring models, including the cross-flow drag model). §2.2.2 unit quaternions, §2.2.3 quaternions from Euler angles, §2.2.4 Euler angles from quaternions. The section numbers were checked against the 1st edition and the 2020 manuscript of the 2nd edition, because the printed 2nd edition available to this course is a scan without searchable text.
+- MSS toolbox, `Tools/MSS/VESSELS/otter.m` — the plant used unchanged in this week's model. Line numbers in this document refer to the 2021 release that `mss_path` puts on the path.
 - MSS toolbox, `Tools/MSS/GNC/` — `Rzyx`, `Tzyx`, `Smtrx`, `m2c`, `crossFlowDrag`, called internally by `otter.m`.
+- MSS toolbox, `Tools/MSS/GNC/` — `euler2q`, `q2euler`, `Rquat`, `Tquat`, `quatprod`, `quatern` for §1-5; `LIBRARY/kinematics/` in the 2022 and later releases. MIT License, © Thor I. Fossen.
 
 ### Course files
 
@@ -1532,8 +2026,10 @@ W01_check(1)                 % run this whenever, as often as needed
 - `W01_simulink/W01_C_terminal_speed.m` · `W01_D_the_manoeuvre.m` · `W01_E_current_run.m` — one script per laboratory section
 - `W01_simulink/W01_vars.m` · `W01_read.m` — the same numbers as a struct, and the log with named fields
 - `W01_simulink/W01_animate.m` — the live view, called by the model's `Animate` block
+- `W01_simulink/W01_F_build_interactive.m` · `W01_interactive.slx` · `W01i_animate.m` · `W01_F_button_check.m` — the model driven by buttons, its live view with a following window, and the headless check behind the table of §F
 - `W01_simulink/W01_plot.m` — the summary figure, called by the models' `StopFcn`; `W01_cur_plot.m` is the same for the current model
 - `_tools/otter_config.m`, `_tools/otter_B.m` — the actuator configuration and the column rule
+- `_tools/verify_w01_theory.m` — rebuilds $\mathbf{M}$ and $\mathbf{C}$ from `otter.m` and reproduces every number of the quaternion part of §1-5, of §1-11 and of §1-12
 - `_tools/draw_ship.m`, `_tools/track_ships.m`, `_tools/ship_marks.m` — the hull silhouette drawn on every track in this course
 
 ### Acknowledgement
@@ -1545,9 +2041,9 @@ W01_check(1)                 % run this whenever, as often as needed
 ## Next Week
 
 - **Week 2 — Surge Speed Control**
-- The first closed loop. The surge equation of §1-6 becomes a plant, a controller is placed around it, and the settled speed is predicted before it is measured — as in this week, but now with feedback.
-- The propeller curve of §1-5 is inverted, so that a demanded **force** becomes a shaft speed.
-- Preparation: bring $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-6, and the derivation of $u_{ss}(n)$ from Assignment 1.
+- The first closed loop. The surge equation of §1-11 becomes a plant, a controller is placed around it, and the settled speed is predicted before it is measured — as in this week, but now with feedback.
+- The propeller curve of §1-10 is inverted, so that a demanded **force** becomes a shaft speed.
+- Preparation: bring $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-11, and the derivation of $u_{ss}(n)$ from Assignment 1.
 
 > [!note] Appendix A1 is available but not required yet
 > The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 2 and 3 quote its two results where they need them. It becomes required reading before Week 5.
