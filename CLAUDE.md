@@ -72,6 +72,9 @@
 │                            verify_guidance.m · verify_alos.m        (W04 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · verify_w01_theory.m · live_track.m · base_var.m
+│                            vault_runall.m · vault_number_audit.m · verify_review_math.m  (전체 검토:
+│                              전 스크립트 실행 → 문서 수치를 실행 로그와 대조 → 검토에서 실은 수치 재현)
+│                            vault_rename_tau_u.m · vault_unify_ypont.m · w04_beta_fix.m   (기호 통일 변환기)
 │                            git_autopush.sh · hook_matlab_rules.sh  (PostToolUse 훅: 맨 clear 금지)
 │                            svg2png.sh · svgzoom.sh                 (렌더해서 눈으로 보기)
 │                            tikz2svg.sh                             (그림 조판. 지금 쓰는 것)
