@@ -56,6 +56,13 @@ fprintf(['\n    ILOS AND ALOS BOTH REMOVE IT, AND NOT IN THE SAME WAY.\n' ...
          mean(y.aux(k,3)), rad2deg(mean(y.aux(k,4))), mean(y.beta(k,4)), ...
          abs(rad2deg(mean(y.aux(k,4))) - mean(y.beta(k,4))));
 
+%  대지속력 U. 강의 4-9 기호표가 인용한다 — 2026-09-14 검토 전에는 거기 근거 없이
+%  "약 1.31 m/s" 라고 적혀 있었다. 이 줄이 그 값의 출처다.
+kU = y.t > y.t(end) - 100;
+fprintf(['\n    speed over ground U = sqrt(u^2+v^2), ALOS vessel, last 100 s: %.3f m/s\n' ...
+         '    (still water would give X_ff/|X_u| = %.3f m/s)\n'], ...
+         mean(hypot(y.trkU(kU,4), y.trkV(kU,4))), V.X_ff/77.5544);
+
 %% ---- and the same thing swept over current direction -------------------
 VC = 0:0.1:0.5;
 B  = zeros(numel(VC), 3);

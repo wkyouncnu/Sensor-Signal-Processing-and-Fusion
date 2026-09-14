@@ -1027,7 +1027,7 @@ $$
 | $\beta$ | the true crab angle, $\operatorname{atan2}(v,u)$ — the same $\beta$ as §4-7 and §4-8, and as Week 1 §1-12 and Week 3 §3-4 | rad | unknown to the law; measured only for verification |
 | $\tilde\beta$ | estimation error $\beta - \hat\beta$ | rad | appears only in the analysis |
 | $\gamma$ | adaptation gain | **rad/(m·s)** | §4-9-8; $0.005$, from the sweep of section H. `ALOSpsi.m` suggests $\gamma_h \approx 0.001$ and $\Delta_h = 5$–$20$ m as typical; the sweep of section H picks a faster gain for this hull and mission |
-| $U$ | speed over ground | m/s | $\approx 1.31$ m/s for the Otter at this thrust |
+| $U$ | speed over ground, $\sqrt{u^2+v^2}$ | m/s | $0.774$ m/s in still water, which is exactly $X_{\text{ff}}/\lvert X_u\rvert = 60/77.55$. In a current it depends on the current's angle to the leg: `W04_guidance.slx` measures $0.956$ m/s averaged over the last $100$ s of section G's run. The derivation treats $U$ as constant; the §H script uses the logged value |
 
 - **The unit of $\gamma$ is worth checking**, because it is the one number a reader is likely to carry across from another vehicle. $\dot{\hat\beta}$ is rad/s. The fraction $\Delta y_e^{\,p}/\sqrt{\Delta^2+y_e^2}$ has metres times metres over metres, so it is a **length**. For the product to be rad/s, $\gamma$ must be $\text{rad}/(\text{m}\cdot\text{s})$. It is not dimensionless, and a value tuned on a vehicle of a different size is not transferable without rescaling.
 
@@ -1137,10 +1137,31 @@ $$
 | Term | Sign | Size |
 |---|---|---|
 | second | negative for $\lvert\tilde\beta\rvert < 90°$ | order $y_e^2$ |
-| first | either sign | order $\tilde\beta^3/6$, since $\sin\tilde\beta - \tilde\beta = -\tilde\beta^3/6 + O(\tilde\beta^5)$ |
+| first | either sign | order $y_e\,\tilde\beta^3/6$ — a **cross** term, since $\sin\tilde\beta - \tilde\beta = -\tilde\beta^3/6 + O(\tilde\beta^5)$ |
 
-- The first term is **third order** in the estimation error while the second is second order in $y_e^{\,p}$, so for small enough $\tilde\beta$ the negative term dominates and $\dot V < 0$. This is why the result is **uniform semiglobal exponential stability** and not a global one: the region of attraction is a ball whose size depends on how large an initial crab-angle error is admitted, and it does not extend to $\lvert\tilde\beta\rvert \ge 90°$.
-- The linear-in-$\tilde\beta$ step above is the only approximation in the derivation, and it is the reason for the word *semiglobal*. Fossen's own treatment reaches the same law and the same USGES conclusion.
+> [!warning] What this sketch proves, and what it does not
+> It is tempting to argue that the first term is "third order" and the second only "second order", so the negative term wins. **That comparison is not valid**, because the two terms are of different order in *different variables*. The first is linear in $y_e^{\,p}$; the second is quadratic. Near the path, where $y_e^{\,p}$ is small, a linear term beats a quadratic one — so for **any** $\tilde\beta \neq 0$ there is a thin band of small $y_e^{\,p}$, of the opposite sign to $\tilde\beta$, in which $\dot V > 0$.
+>
+> Setting the sum above positive and dividing by $\lvert y_e^{\,p}\rvert$ gives the band exactly: $0 < \lvert y_e^{\,p}\rvert < \Delta\,\lvert\tilde\beta - \sin\tilde\beta\rvert/\cos\tilde\beta$. With $\Delta = 8$ m:
+>
+> | $\tilde\beta$ | width of the band where $\dot V > 0$ |
+> |---|---|
+> | $5°$ | $0.9$ mm |
+> | $17°$ | $3.6$ cm |
+> | $40°$ | $0.58$ m |
+>
+> The $17°$ row is not hypothetical: $\hat\beta$ starts at $0$ and the true crab angle in section G is $15.74°$, so the run begins at about that error. Evaluated there, $\tilde\beta = 17°$ and $y_e^{\,p} = -1$ cm give $\dot V = +2.4\times10^{-5}$.
+>
+> So the derivation above establishes three things, and not a fourth:
+>
+> | Established here | |
+> |---|---|
+> | **the adaptation law** | forced by cancelling the $\tilde\beta$ group, exactly as shown |
+> | **the small-angle model** | with $\sin\tilde\beta = \tilde\beta$ and $\cos\tilde\beta = 1$ the residual vanishes and $\dot V = -U y_e^2/\sqrt{\Delta^2+y_e^2} \le 0$ exactly |
+> | **what $\dot V \le 0$ gives even then** | boundedness of $(y_e^{\,p}, \tilde\beta)$ and, by Barbalat's lemma, $y_e^{\,p} \to 0$. It says nothing directly about $\tilde\beta \to 0$, because $\dot V$ contains no $\tilde\beta^2$ term; convergence of the estimate needs a further argument |
+> | **not established here** | stability of the full nonlinear loop, and the uniform semiglobal exponential stability (USGES) class. Those are the results of Fossen (2023), whose proof this section does not reproduce; the sketch above shows where the law comes from, not that the nonlinear loop is stable |
+>
+> Section H's measured $V(t)$ is empirical evidence consistent with that result on this vessel. It is not a substitute for the proof either.
 
 #### Verification
 
@@ -1187,7 +1208,7 @@ $$
 | Assumption | Used where | What fails if it does not hold |
 |---|---|---|
 | $\dot\beta = 0$ — constant current | $\dot{\tilde\beta} = -\dot{\hat\beta}$, §4-9-4 | a time-varying current leaves a term $\frac{U}{\gamma}\tilde\beta\dot\beta$ in $\dot V$ with no sign; the estimate lags and $V$ need not decrease |
-| $\lvert\tilde\beta\rvert$ small | the linearisation of $\sin\tilde\beta$, §4-9-6 | the cubic term can dominate; this is what makes the result semiglobal rather than global |
+| $\lvert\tilde\beta\rvert$ small | the linearisation of $\sin\tilde\beta$, §4-9-6 | the neglected cross term $U\Delta y_e(\sin\tilde\beta - \tilde\beta)/\sqrt{\Delta^2+y_e^2}$ makes $\dot V$ positive in a thin band near the path; the stability class that survives this is Fossen's (2023) result, not something §4-9-6 proves |
 | $\lvert\tilde\beta\rvert < 90°$ | $\cos\tilde\beta > 0$ | the leading negative term changes sign |
 | $\psi = \psi_d$ — no autopilot lag | $\chi - \pi_p = \tilde\beta - \arctan(y_e^{\,p}/\Delta)$ | **this one is violated in every real system**, including this week's, and the consequence is visible below |
 | $U > 0$ and roughly constant | $V$'s weight, and the differentiation of $V$ | a decelerating vessel adds a $\dot U$ term to $\dot V$ |
@@ -1746,9 +1767,9 @@ Choosing $\gamma$ is choosing between two failures. At $\gamma = 0.0005$ the est
 
 The right panel reports something less comfortable. $V$ starts at $5.80$, **rises to $12.94$ at $t = 17.5$ s**, and only then falls, to $0.5588$ — down $23.2\times$ from its peak, but with just $62.2\%$ of samples decreasing.
 
-That rise is not a contradiction of §4-9-6, and it is worth being precise about why. The proof gives $\dot V < 0$ *on the assumption that $\psi = \psi_d$ exactly*. Between the guidance law and the water sits a Week 3 autopilot with its own settling time, and while the heading is still catching up the error dynamics the proof describes are not yet the dynamics the vessel has.
+That rise is not a contradiction of §4-9-6, and it is worth being precise about why. The small-angle model there gives $\dot V \le 0$ *on the assumption that $\psi = \psi_d$ exactly*. Between the guidance law and the water sits a Week 3 autopilot with its own settling time, and while the heading is still catching up the error dynamics the proof describes are not yet the dynamics the vessel has.
 
-This is reported rather than smoothed away deliberately. A monotone $V$ was available — plot the kinematic subsystem on its own and it decreases everywhere — but that would have been a picture of an assumption rather than of a vessel. What the reference actually supports is that the guidance subsystem is USGES and that its cascade with a stable autopilot is stable. It does **not** claim that $V$ of the outer loop falls at every instant of a real run, and this figure is what the difference looks like.
+This is reported rather than smoothed away deliberately. A monotone $V$ was available: integrate the kinematic subsystem on its own, from the same start and with the same current, and $V$ falls at every one of $50\,001$ samples (`_tools/verify_review_math.m`). (The band of §4-9-6 where $\dot V > 0$ exists, but that trajectory never enters it. The first time $y_e^{\,p}$ turns negative, at $t = 80.2$ s, $\tilde\beta$ has already changed sign; later, in the convergence tail, the two do disagree in sign again, but by then $\tilde\beta$ is so small that the band is under $10^{-11}$ m wide.) Plotting that would have been a picture of an assumption rather than of a vessel. What the reference actually supports is that the guidance subsystem is USGES and that its cascade with a stable autopilot is stable. It does **not** claim that $V$ of the outer loop falls at every instant of a real run, and this figure is what the difference looks like.
 
 ---
 

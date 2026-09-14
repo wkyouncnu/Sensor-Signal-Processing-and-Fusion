@@ -155,14 +155,14 @@ $$
 $$
 \boldsymbol{\tau} = \mathbf{B}\mathbf{f},
 \qquad
-\mathbf{B} = \begin{bmatrix} 1 & 1 \\ 0 & 0 \\ y_p & -y_p \end{bmatrix},
+\mathbf{B} = \begin{bmatrix} 1 & 1 \\ 0 & 0 \\ y_{\text{pont}} & -y_{\text{pont}} \end{bmatrix},
 \qquad
 \mathbf{f} = \begin{bmatrix} T \\ T \end{bmatrix}
 \;\Longrightarrow\;
 \boldsymbol{\tau} = \begin{bmatrix} 2T \\ 0 \\ 0 \end{bmatrix}
 $$
 
-- The speed controller splits its demand **equally** between the two propellers, so $N = y_p(T - T) = 0$ exactly. With $N = 0$ and $r(0) = 0$ the yaw equation gives $r \equiv 0$, and with $r \equiv 0$ the sway equation gives $v \equiv 0$.
+- The speed controller splits its demand **equally** between the two propellers, so $N = y_{\text{pont}}(T - T) = 0$ exactly. With $N = 0$ and $r(0) = 0$ the yaw equation gives $r \equiv 0$, and with $r \equiv 0$ the sway equation gives $v \equiv 0$.
 - Therefore both discarded terms are **exactly zero for the whole run**, not small. This is the rare case where a 1-DOF reduction is not an approximation.
 
 $$
@@ -505,7 +505,7 @@ $$
 
 Both schemes tap the same two points — just before the saturation and just after it — and subtract them. When the actuator is following its command those two points carry the same signal, so $\varepsilon = 0$ and neither violet block does anything at all. That is the shared property, and it is visible as the fact that the violet ink only ever *adds* to the black diagram.
 
-Where they part is a single block. Clamping opens a switch, so the integrator stops dead and keeps whatever it was holding. Back-calculation subtracts a number proportional to the excess, so the integrator keeps moving but is pulled steadily toward the value that would make the demand equal the limit. **One stops the memory; the other steers it.**
+Where they part is a single block. Clamping opens a switch, so the integrator stops dead and keeps whatever it was holding. Back-calculation subtracts a number proportional to the excess, so the integrator keeps moving until that subtraction balances the integral action — a fixed point derived below, at which the demand still sits **above** the limit by an amount that shrinks as $K_{\text{aw}}$ grows. **One stops the memory; the other steers it.**
 
 That difference is why raising $K_{\text{aw}}$ never turns back-calculation into clamping: a switch and a pull are not two settings of one thing.
 
@@ -527,21 +527,36 @@ $$
 K_{\text{aw}} = \frac{1}{T_u} .
 $$
 
-- Back-calculation has a fixed point worth naming. While the actuator is saturated, $\dot I \to 0$ requires
+- Back-calculation has a fixed point worth naming. While the actuator is saturated, $\dot I = 0$ requires $K_i e = K_{\text{aw}}\,\varepsilon$. Substituting $\varepsilon = X_{\text{cmd}} - X_{\text{sat}} = K_p e + I - X_{\text{sat}}$ and solving for $I$:
 
 $$
-I \to \frac{K_i}{K_{\text{aw}}}e + X_{\text{sat}} - K_p e ,
+I^\star = X_{\text{sat}} - K_p e + \frac{K_i}{K_{\text{aw}}}\,e ,
+\qquad
+\varepsilon^\star = X_{\text{cmd}}^\star - X_{\text{sat}} = \frac{K_i}{K_{\text{aw}}}\,e .
 $$
 
-- which is the integrator value that would make the demand equal to what the actuator can give. The scheme does not merely stop the integrator; it **steers it to the boundary**.
+- The second expression is the one to read. At the fixed point the demand is **not** equal to the limit: it exceeds it by $(K_i/K_{\text{aw}})\,e$. The excess is exactly what keeps the subtraction $K_{\text{aw}}\varepsilon$ large enough to cancel $K_i e$ — if the demand came down to the limit, $\varepsilon$ would vanish and the integrator would start winding up again.
+- So the scheme does not merely stop the integrator; it **steers it to $I^\star$**, and $I^\star$ approaches the boundary $X_{\text{cmd}} = X_{\text{sat}}$ only in the limit $K_{\text{aw}} \to \infty$.
+
+> [!note] Checked on the plant of §H
+> $K_p = 1.8$, $K_i = 4$, a limit of $\pm 1$, and a reference of $2$ the plant cannot reach, so $e = 1$ while saturated. Integrating the loop to steady state:
+>
+> | $K_{\text{aw}}$ | $I^\star$ predicted | $I$ simulated | settled demand $X_{\text{cmd}}$ | excess $\varepsilon^\star = (K_i/K_{\text{aw}})e$ |
+> |---|---|---|---|---|
+> | $0.5$ | $7.200$ | $7.200$ | $9.00$ | $8.00$ |
+> | $2$ | $1.200$ | $1.200$ | $3.00$ | $2.00$ |
+> | $5$ | $0.000$ | $0.000$ | $1.80$ | $0.80$ |
+> | $20$ | $-0.600$ | $-0.600$ | $1.20$ | $0.20$ |
+>
+> At the value this course uses, $K_{\text{aw}} = 2$, the settled demand is **three times** the limit. The fixed point is right; reading it as "demand equals limit" is not. `_tools/verify_review_math.m` reproduces this table.
 
 | | Clamping | Back-calculation |
 |---|---|---|
-| mechanism | logical, the integrator is switched off | continuous, the integrator is pulled to the boundary |
+| mechanism | logical, the integrator is switched off | continuous, the integrator is steered to a fixed point |
 | tuning | none | one gain, $K_{\text{aw}}$ |
 | behaviour at the boundary | discontinuous | smooth |
-| where the integrator ends up | wherever it was when saturation began | at the value that makes $X_{\text{cmd}} = X_{\text{sat}}$ |
-| large-gain limit | — | **not** clamping; §H measures the difference |
+| where the integrator ends up | wherever it was when saturation began | at $I^\star = X_{\text{sat}} - K_p e + (K_i/K_{\text{aw}})e$, with the demand still $(K_i/K_{\text{aw}})e$ above the limit |
+| large-gain limit | — | $I^\star \to X_{\text{sat}} - K_p e$, the demand approaches the limit — and it is still **not** clamping, whose integrator is frozen at an unrelated value; §H measures the difference |
 
 > [!note] Neither is a fix for the integrator
 > Both schemes exist because the loop was opened by the actuator. The correct engineering response to persistent saturation is a reference the vessel can actually follow — which is what Week 7's reference model provides. Anti-windup limits the damage; it does not make an unreachable setpoint reachable.
@@ -855,7 +870,7 @@ So $\zeta$ and $\omega_n$ describe only the **poles**, and a PI controller place
 The damping ratio was designed correctly. The prediction made from it was not.
 
 > [!tip] What to do about it
-> Pushing the zero further from the poles — a smaller $K_i/K_p$ — makes the textbook figure accurate again, and costs a slower recovery from a load change. Week 8's reference model is the general remedy: shape the setpoint rather than argue with the closed-loop zeros.
+> Pushing the zero further from the poles — a smaller $K_i/K_p$ — makes the textbook figure accurate again, and costs a slower recovery from a load change. Week 7's reference model is the general remedy: shape the setpoint rather than argue with the closed-loop zeros.
 
 ### Derivative
 
@@ -915,7 +930,7 @@ The conclusion is not that derivative action is useless — it is that a term ha
 |---|---|---|---|
 | none | $3438.2$ | $3480.0$ | $13.980$ |
 | clamping | $197.8$ | $355.9$ | $3.400$ |
-| back-calculation | $339.0$ | $464.1$ | $3.640$ |
+| back-calculation | $213.1$ | $356.2$ | $3.440$ |
 
 - **Recovery** is measured from $t = 40$ s to the last instant at which $|u - 1.5| > 0.03$ m/s, that is, a $2\%$ band on the new setpoint. The averaging window is the whole interval $[40,\ 90]$ s.
 
@@ -943,7 +958,7 @@ The top-right panel is the whole diagnosis. While the demand is impossible the e
 
 Now compare the two bottom panels, because that pair carries the lesson. The bottom-left shows demands differing by a factor of fourteen. The bottom-right shows that the water felt **exactly the same force** in all three. A demand above saturation is not a control action; it is a number in a register. The loop was open, and no gain chosen from a closed-loop analysis can account for a loop that is not closed.
 
-The two remedies both work here and work differently. Clamping stops the integrator wherever it happens to be; back-calculation steers it toward the value that would make the demand equal the limit. They settle at different integrator values, which is why raising the back-calculation gain never turns one into the other. Section H measures that on a plant simple enough to see it happen.
+The two remedies both work here and work differently. Clamping stops the integrator wherever it happens to be; back-calculation steers it to the fixed point $I^\star$ of §2-6, where the demand still exceeds the limit by $(K_i/K_{\text{aw}})\,e$. They settle at different integrator values, which is why raising the back-calculation gain never turns one into the other. Section H measures that on a plant simple enough to see it happen.
 
 > [!important] Nothing was wrong with the integrator
 > It did exactly what an integrator does. The loop had been opened by the actuator, and no gain chosen inside a closed-loop analysis can account for a loop that is not closed. Every one of the four experiments this week was predicted correctly by the linear model **except** where saturation intervened, and that is the boundary of linear design.
@@ -991,7 +1006,7 @@ The same plant, the same gains and the same setpoint, controlled twice — once 
 
 In the left panel, with $K_d = 0$, the two traces are **one curve**. The largest difference anywhere in the run is $2.2\times10^{-16}$ m/s, which is machine precision. Nine blocks and one block compute the same thing, and that agreement is what licenses using the library block for the rest of the course: it is not a different algorithm, only a shorter way of writing the same one.
 
-In the right panel, with $K_d = 60$, they part company. The hand-built path peaks at $1.76$ m/s and the block at $1.68$ — overshoots of $16.88\%$ against $11.54\%$ — before converging again on the same $1.5$ m/s.
+In the right panel, with $K_d = 60$, they part company. The hand-built path peaks at $1.75$ m/s and the block at $1.67$ — overshoots of $16.88\%$ against $11.54\%$ of the $1.5$ m/s step — before converging again on the same $1.5$ m/s.
 
 The cause is one design choice, not a defect in either. The library block differentiates its **input**, which here is the error. The hand-built path differentiates the **measurement**. A step in $u_d$ therefore passes straight through the block's derivative and produces a kick, while a measurement never steps, so the hand-built path sees nothing. **Both are correct implementations of a PID controller, which settles the more useful point: "a PID controller" is not a specific enough phrase to distinguish them.**
 
@@ -1087,7 +1102,7 @@ The setpoint here is deliberately impossible. A scheme that is invisible for $14
 > [!important] Choosing $K_{\text{aw}}$
 > The usual starting point is $K_{\text{aw}} = 1/\tau$, which on this plant is $1$ and gives a $3.49$ s recovery. Sweeping it finds a shallow minimum near $K_{\text{aw}} = 5$ at $2.375$ s: below that the integrator is not emptied fast enough, above it the loop leaves the limit so abruptly that undershoot grows from $4.60\%$ to $43.96\%$. The rule of thumb is a reasonable default and it is not the optimum.
 >
-> Raising $K_{\text{aw}}$ does **not** turn back-calculation into clamping. Clamping stops the integrator wherever it happens to be; back-calculation steers it to the value that makes the demand equal the limit. Those are different fixed points, not two ends of one scale — which is why the swept curve dips *below* clamping's $2.380$ s and comes back up rather than approaching it as an asymptote.
+> Raising $K_{\text{aw}}$ does **not** turn back-calculation into clamping. Clamping stops the integrator wherever it happens to be; back-calculation steers it to $I^\star = X_{\text{sat}} - K_p e + (K_i/K_{\text{aw}})e$, which moves as $K_{\text{aw}}$ changes. Those are different fixed points, not two ends of one scale — which is why the swept curve dips *below* clamping's $2.380$ s and comes back up rather than approaching it as an asymptote.
 
 ## I. The pseudo-derivative, on a plant that wants one (25 min)
 

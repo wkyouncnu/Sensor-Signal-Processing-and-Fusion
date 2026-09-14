@@ -369,7 +369,7 @@ $$
 - $\mathbf{M}$ is **not diagonal**. The payload places the centre of gravity at $x_g = 0.153$ m rather than at the origin of $\{b\}$, and transferring the rigid-body inertia from the CG to the origin fills in the sway-yaw entry:
 
 $$
-M_{26} = M_{62} = (m + m_p)\,x_g = 80 \times 0.153 = 12.25\ \text{kg}\!\cdot\!\text{m}.
+M_{26} = M_{62} = (m + m_p)\,x_g = 80 \times 0.153125 = 12.25\ \text{kg}\!\cdot\!\text{m}.
 $$
 
 - A pure yaw moment therefore produces a sway **acceleration**, with no sway force anywhere in the problem:
@@ -515,7 +515,7 @@ Three views of the same limit. The left panel is one propeller on its own, shaft
 
 The left curve is flat near the origin and steepens away from it because thrust is quadratic in shaft speed: doubling from $50$ to $100$ rad/s multiplies thrust by four, $27.70$ to $110.80$ N. It is also **not symmetric**. At the two saturation limits one propeller gives $+119.68$ N ahead but only $-66.71$ N astern, a ratio of $k_{\text{pos}}/k_{\text{neg}} = 1.7192$. Astern is simply weaker, and the centre panel inherits that lopsidedness exactly: $239.36$ N ahead against $-133.42$ N astern.
 
-The centre panel is a **diamond**, and its shape is not decoration. A square goes in — every combination of the two shaft speeds between their limits — and a diamond comes out, because $\mathbf{B}$ maps those two speeds onto axes at $45°$ to them: $X$ is the *sum* of the thrusts and $N$ is $y_p$ times their *difference*. The four corners of the diamond are the four saturated corners of the square.
+The centre panel is a **diamond**, and its shape is not decoration. A square goes in — every combination of the two shaft speeds between their limits — and a diamond comes out, because $\mathbf{B}$ maps those two speeds onto axes at $45°$ to them: $X$ is the *sum* of the thrusts and $N$ is $y_{\text{pont}}$ times their *difference*. The four corners of the diamond are the four saturated corners of the square.
 
 Now compare the centre and right panels. The centre one has area; the right one has none — it is a line. That is not a plotting choice. The middle row of $\mathbf{B}$ is exactly zero, so **the sway coordinate of every attainable point is exactly zero**, and the attainable set is a flat sheet in $(X, Y, N)$ space rather than a solid body. Every controller written in the rest of this course must choose its demand from inside that sheet.
 

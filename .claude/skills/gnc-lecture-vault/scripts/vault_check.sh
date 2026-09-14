@@ -206,7 +206,11 @@ check_figs() {
 check_style() {
   head2 "9. 금지 표현 (배포 문서)"
   # \b 로 단어 경계를 잡아 in-you-endo 류의 오탐을 막는다
-  local words=('\byou\b' '\byour\b' "\byou're\b" '\bwe\b' '\bour\b' "\bwe'll\b" \
+  #  yourself · yourselves · ours · ourselves 는 2026-09-14 에 추가했다.
+  #  W01 에 "Drive it yourself" 와 "How to convince yourself" 가 있었는데 \byou\b 는
+  #  yourself 의 일부를 단어로 보지 않으므로 이 검사를 그대로 통과했다.
+  local words=('\byou\b' '\byour\b' "\byou're\b" '\byours\b' '\byourself\b' '\byourselves\b' \
+               '\bwe\b' '\bour\b' '\bours\b' '\bourselves\b' "\bwe'll\b" "\bwe're\b" \
                '\btoday\b' '\blet us\b' "\blet's\b" '\bnowadays\b')
   local w n total=0 f hits
   for w in "${words[@]}"; do

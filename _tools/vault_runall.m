@@ -1,4 +1,10 @@
-function vault_runall()
+function vault_runall(logfile)
+%  logfile 을 주면 모든 스크립트의 콘솔 출력을 그 파일에 모은다.
+%  vault_number_audit 가 이 파일로 문서의 수치를 대조한다.
+%  diary 는 쓰지 않는다 — MCP 로 부른 MATLAB 에서는 거의 잡히지 않았다
+%  (실제로 2026-09-14 에 44 개를 돌리고 26 bytes 가 남았다). evalc 로 직접 받는다.
+if nargin < 1, logfile = ''; end
+LOG = {};
 %VAULT_RUNALL  모든 주차의 절 스크립트를 실제로 돌려 본다.
 %
 %      vault_runall
@@ -18,7 +24,11 @@ root = fileparts(fileparts(mfilename('fullpath')));
 addpath(fullfile(root,'_tools'));  mss_path();
 
 WK   = {'W01','W02','W03','W04','A1'};
-SKIP = {'_start','_check','_plot','_read','_vars','_animate','_cols','_expected'};
+%  '_check' 는 빼지 않는다. 학생용 채점기(problems/WXX_check.m)는 하위 폴더에 있어
+%  이 목록(최상위 WXX_*.m)에 원래 안 잡히고, 최상위의 W01_F_button_check 같은 것은
+%  **강의 절 스크립트**다 — 2026-09-14 까지 잘못 빼고 있었다.
+%  '_usb_setup' 은 뺀다: 대화창을 띄워 실물 조종기 입력을 기다리므로 무인 실행에서 멈춘다.
+SKIP = {'_start','_plot','_read','_vars','_animate','_cols','_expected','_usb_setup'};
 
 names = {};  weeks = {};  stat = {};  msg = {};
 for i = 1:numel(WK)
@@ -38,7 +48,10 @@ for i = 1:numel(WK)
             %  base 워크스페이스에서 돌린다. run() 을 여기서 부르면 스크립트
             %  첫 줄의 `clear` 가 **이 함수의** 누적 변수를 지운다 — 실제로
             %  그렇게 한 번 깨졌다. evalin 이면 지워지는 것은 base 쪽뿐이다.
-            evalin('base', sprintf('run(''%s'');', fullfile(d, S(k).name)));
+            cmd = sprintf('run(''%s'');', fullfile(d, S(k).name)); %#ok<NASGU>
+            out = evalc('evalin(''base'', cmd)');
+            LOG{end+1} = sprintf('\n===== %s =====\n%s', nm, out); %#ok<AGROW>
+            if isempty(logfile), fprintf('%s', out); end   % 로그 파일을 주면 화면엔 요약만
             weeks{end+1} = WK{i};  names{end+1} = nm; %#ok<AGROW>
             stat{end+1}  = 'OK';   msg{end+1}   = '';  %#ok<AGROW>
         catch ME
@@ -62,4 +75,52 @@ for i = 1:numel(names)
     end
 end
 fprintf('\n  %d개 실행, 실패 %d개\n\n', numel(names), nf);
+
+%% ---- 검증 도구: 강의에 적힌 상수·유도를 원천과 대조한다 ----------------
+V = {'verify_constants','verify_w01_theory','verify_guidance','verify_alos','verify_review_math'};
+fprintf('  ================ 검증 도구 ================\n\n');
+for i = 1:numel(V)
+    if ~exist(V{i}, 'file'), fprintf('  %-22s 없음\n', V{i}); continue; end
+    try
+        %  반환값이 있는 검증 함수는 그 값을 본다. verify_alos 는 대조 대상을
+        %  못 찾으면 **오류 없이 false** 를 돌려준다 — 오류만 보면 OK 로 찍힌다.
+        okv = true;
+        if nargout(V{i}) > 0
+            out = evalc('okv = feval(V{i});');
+        else
+            out = evalc('feval(V{i});');
+        end
+        LOG{end+1} = sprintf('\n===== %s =====\n%s', V{i}, out); %#ok<AGROW>
+        if isequal(okv, false)
+            fprintf('  %-22s FAIL  -> 함수가 false 를 반환했다 (대조 대상을 못 찾았거나 검사 불통과)\n', V{i});
+            continue
+        end
+        fprintf('  %-22s OK\n', V{i});
+    catch ME
+        m = strrep(ME.message, newline, ' ');
+        fprintf('  %-22s FAIL  -> %s\n', V{i}, m(1:min(140,end)));
+    end
+    close all
+end
+fprintf('\n');
+
+%% ---- 그림 생성기 : 강의가 그 수치를 인용한다 ---------------------------
+G = {'w01_euler_R','w03_ssa','w03_second_order','w04_losgeo'};
+for i = 1:numel(G)
+    if ~exist(G{i}, 'file'), continue; end
+    try
+        cmd = sprintf('%s;', G{i}); %#ok<NASGU>
+        out = evalc('evalin(''base'', cmd)');
+        LOG{end+1} = sprintf('\n===== %s =====\n%s', G{i}, out); %#ok<AGROW>
+    catch ME
+        fprintf('  %-22s FAIL  -> %s\n', G{i}, ME.message);
+    end
+end
+
+if ~isempty(logfile)
+    fid = fopen(logfile, 'w', 'n', 'UTF-8');
+    fwrite(fid, strjoin(LOG, newline));  fclose(fid);
+    d = dir(logfile);
+    fprintf('  로그 -> %s  (%d bytes)\n\n', logfile, d.bytes);
+end
 end

@@ -95,7 +95,7 @@
 \begin{scope}[shift={(104,0)}]
   \node[font=\small\bfseries, anchor=west, text=ink] at (-10,14) {(b)\quad back-calculation};
   \node[note, anchor=west, text width=76mm] at (-10,10)
-       {feed the excess \emph{back} so the integrator is pulled to the limit};
+       {feed the excess \emph{back} to steer the integrator};
 
   \node[nblk] (kp)  at (8,4)    {$K_p$};
   \node[nblk] (ki)  at (8,-8)   {$K_i$};
@@ -137,7 +137,7 @@
   \node[anote, anchor=east] at (24.6,-11.5) {$-$};
   \node[anote, anchor=north, align=center, text width=54mm] at (26,-26)
        {$\dot I = K_i e - K_{\text{aw}}\varepsilon$, a continuous pull\\
-        towards the value that makes $X_{\text{cmd}} = X_{\text{sat}}$};
+        that settles with $\varepsilon = (K_i/K_{\text{aw}})\,e$, not zero};
 \end{scope}
 
 \end{tikzpicture}

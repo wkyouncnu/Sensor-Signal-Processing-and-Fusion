@@ -340,7 +340,7 @@ So the design splits cleanly in two. **Pick $\zeta$ for the shape wanted and $\o
 >
 > applies exactly. `_tools/w03_second_order.m` checks this before drawing: computed against formula, the overshoots agree at every $\zeta$ in the figure — $37.23$, $16.30$, $4.60$, $0.15$ per cent.
 >
-> Week 2 §2-5 got $8.15\%$ where the same formula predicted $4.60\%$, because a **PI** controller puts $K_i/s$ in the forward path and that leaves a zero at $s = -K_i/K_p$ in the closed loop. The controller here is **PD**: $K_d$ contributes to the denominator only. The formula did not become more accurate; the loop became simpler.
+> Week 2 §2-3 and its section E got $8.15\%$ where the same formula predicted $4.60\%$, because a **PI** controller puts $K_i/s$ in the forward path and that leaves a zero at $s = -K_i/K_p$ in the closed loop. The controller here is **PD**: $K_d$ contributes to the denominator only. The formula did not become more accurate; the loop became simpler.
 
 > [!important] The same term, the opposite effect
 > In Week 2 the controlled variable was a velocity, so $K_d$ multiplied an **acceleration** and landed beside the mass: $\left(M_{11} + K_d\right)\dot u$. Here the controlled variable is an angle, so $K_d$ multiplies a **rate** and lands beside the damping: $\left(|N_r| + K_d\right)\dot\psi$. Nothing about the controller changed. The axis did.
@@ -430,7 +430,7 @@ $$
 
 ### Where the two equations come from
 
-- Each propeller produces a thrust $T_i$ directed **along the hull**, applied at its own pontoon. Appendix A1 §A1-3 built the general statement of this as $\boldsymbol{\tau} = \mathbf{B}\mathbf{T}$, with one column of $\mathbf{B}$ per thruster. Restricted to the two demands this week uses:
+- Each propeller produces a thrust $T_i$ directed **along the hull**, applied at its own pontoon. Appendix A1 §A1-3 built the general statement of this as $\boldsymbol{\tau} = \mathbf{B}\mathbf{f}$, with $\mathbf{f} = [T_1\ \ T_2]^{\!\top}$ the vector of thrusts and one column of $\mathbf{B}$ per thruster. Restricted to the two demands this week uses:
 
 $$
 \begin{bmatrix} X \\[2pt] N \end{bmatrix}
@@ -443,7 +443,14 @@ $$
 | Row | Reads | Why |
 |---|---|---|
 | $X = T_1 + T_2$ | both propellers push forward, so surge forces **add** | both columns of the first row are $+1$: neither thruster is tilted |
-| $N = y_{\text{pont}}(T_1 - T_2)$ | a moment is force times lever arm, and the two arms point **opposite ways** | thruster 1 sits at $y = +y_{\text{pont}}$, thruster 2 at $y = -y_{\text{pont}}$ |
+| $N = y_{\text{pont}}(T_1 - T_2)$ | a moment is force times lever arm, and the two arms point **opposite ways** | thruster 1 is the **port** propeller, at $y = -y_{\text{pont}}$; thruster 2 is starboard, at $y = +y_{\text{pont}}$ — `otter.m:91–92` |
+
+> [!important] Where the sign of the moment row comes from
+> A thrust $T_i$ along $x_b$, applied at lateral position $y_i$, produces the yaw moment $N_i = x_i F_{y,i} - y_i F_{x,i} = -y_i\,T_i$ — the $z$ component of $\mathbf{r}_i \times \mathbf{F}_i$. With $y$ pointing to **starboard**:
+>
+> $$N = -(-y_{\text{pont}})\,T_1 - (+y_{\text{pont}})\,T_2 = y_{\text{pont}}\,(T_1 - T_2) .$$
+>
+> So **more thrust on the port side gives a positive $N$**, which turns the bow to starboard. That matches W01 §D: a turn to port slows the port propeller. `otter.m:181` writes exactly this, `-l1*Thrust(1) - l2*Thrust(2)` with `l1 = -y_pont` and `l2 = +y_pont`. Placing thruster 1 on the starboard side would reverse every turn in the model.
 
 - Two equations, two unknowns. Solving is ordinary elimination — add the rows to remove $T_2$, subtract to remove $T_1$:
 

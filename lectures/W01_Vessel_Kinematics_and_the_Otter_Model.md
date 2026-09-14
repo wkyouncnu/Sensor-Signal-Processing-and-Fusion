@@ -396,10 +396,10 @@ $$
 - Measured with MSS `Tzyx` at $\phi = 10°$, $\theta = 7°$ and $[p, q, r] = [2, 5, 10]$ rad/s:
 
 $$
-\dot{\boldsymbol{\Theta}} = [3.3157,\ 3.1877,\ 10.7967]^{\!\top}\ \text{rad/s} .
+\dot{\boldsymbol{\Theta}} = [3.3158,\ 3.1876,\ 10.7968]^{\!\top}\ \text{rad/s} .
 $$
 
-- Note that $\dot\psi = 10.7967 \neq r = 10$. **The yaw rate and the rate of change of heading are different numbers** whenever the vessel is rolled or pitched.
+- Note that $\dot\psi = 10.7968 \neq r = 10$. **The yaw rate and the rate of change of heading are different numbers** whenever the vessel is rolled or pitched.
 
 > [!warning] $\mathbf{T}_{\Theta}$ is singular at $\theta = \pm 90°$
 > The $1/\cos\theta$ entries blow up: at $\theta = 89.9°$ the largest entry of $\mathbf{T}_{\Theta}$ is already $573$. This is **gimbal lock**, and it is a property of the Euler-angle representation, not of the vessel. A surface craft never approaches it, which is why this course uses Euler angles throughout. An AUV performing a vertical manoeuvre does approach it, and that is where quaternions earn their place.
@@ -427,7 +427,7 @@ $$
 | $\mathbf{q}$ | unit quaternion, from $\{b\}$ to $\{n\}$ | bold — not the pitch rate $q$ of the table above |
 | $\eta$ | scalar part | $\cos(\beta/2)$ |
 | $\boldsymbol{\varepsilon}$ | vector part | $\boldsymbol{\lambda}\sin(\beta/2)$ |
-| $\beta$, $\boldsymbol{\lambda}$ | angle and unit axis of the single equivalent rotation | $\boldsymbol{\lambda}^{\!\top}\boldsymbol{\lambda} = 1$ |
+| $\beta$, $\boldsymbol{\lambda}$ | angle and unit axis of the single equivalent rotation | $\boldsymbol{\lambda}^{\!\top}\boldsymbol{\lambda} = 1$. This $\beta$ is Fossen's symbol and lives **only in this subsection**; from §1-12 onward, and in every later week, $\beta$ is the crab angle $\operatorname{atan2}(v,u)$ |
 | $\mathbf{S}(\mathbf{a})$ | skew-symmetric matrix, $\mathbf{S}(\mathbf{a})\,\mathbf{b} = \mathbf{a}\times\mathbf{b}$ | MSS `Smtrx` |
 
 - Four numbers bound by one constraint leave three free — the same three degrees of freedom that $\boldsymbol{\Theta}$ carries. The unit norm is automatic, since $\cos^2 + \sin^2 = 1$.
@@ -803,6 +803,19 @@ m\left(x_g r + v\right) & -m u & 0
 \end{bmatrix}
 $$
 
+> [!important] Reading these three matrices on the Otter
+> They are Fossen's general 3-DOF maneuvering matrices (Fossen 2021, *Handbook*, 2nd ed., the 3-DOF maneuvering model), and three of their symbols need pinning down before a number is put into them. The numbers below come from `otter.m` and are checked by `verify_constants` and `verify_w01_theory`.
+>
+> | Symbol in the matrix | Means here | Otter value |
+> |---|---|---|
+> | $m$ | the **total** rigid-body mass — hull plus payload, $m + m_p$ in the table of §1-9 | $80.0$ kg |
+> | $I_z$ | yaw inertia about the **origin of $\{b\}$**, not about the CG. The table of §1-9 lists the CG value; the callout below it adds the transfer term | $16.9779$ kg·m² about the origin, against $15.1021$ about the CG |
+> | $\mathbf{C}(\boldsymbol{\nu})$ | as printed, only the **rigid-body** part $\mathbf{C}_{RB}$. `otter.m` adds the added-mass part $\mathbf{C}_A$ as well | — |
+>
+> The last row is why §1-12 finds $[\mathbf{C}\boldsymbol{\nu}]_2 = M_{11}\,u\,r = 85.50\,u\,r$ and not the $m\,u\,r = 80.00\,u\,r$ that the matrix above would give on its own: the extra $5.50\,u\,r = -X_{\dot u}\,u\,r$ is $\mathbf{C}_A$. `verify_w01_theory` prints the split, $80.00 + 5.50$.
+>
+> With those readings the $(3,3)$ entry checks: $I_z - N_{\dot r} = 16.9779 + 25.6736 = 42.6515$ kg·m² $= M_{66}$.
+
 - Note the structure: surge decouples from sway and yaw, while **sway and yaw stay coupled** through $x_g$ — the centre of gravity being off the origin. Appendix A1 measures exactly that coupling on this vessel.
 - $\mathbf{g}(\boldsymbol{\eta})$ disappears: a surface craft has no restoring force in surge, sway or yaw. Nothing pushes it back to a preferred heading or position.
 
@@ -932,8 +945,8 @@ All values below are read directly from `Tools/MSS/VESSELS/otter.m`.
 |---|---|---|---|
 | $m + m_p$ | $80.0$ kg | hull mass plus payload | `otter.m`, `m = 55`, `mp = 25` |
 | $L$ | $2.00$ m | length | `otter.m` |
-| $B$ | $1.08$ m | beam | `otter.m` |
-| $T$ | $0.195$ m | draft, computed from displacement | `otter.m` |
+| beam | $1.08$ m | overall width | `otter.m`, `B` |
+| draft | $0.195$ m | depth below the waterline, computed from displacement | `otter.m`, `T` |
 | $y_{\text{pont}}$ | $0.395$ m | half distance between pontoons | `otter.m` |
 | $-X_{\dot u}$ | $5.50$ kg | surge added mass | `Xudot = -0.1*m`, with $m = 55$ **hull only** |
 | $M_{11}$ | $85.50$ kg | surge mass including added mass | $(m + m_p) - X_{\dot u}$ |
@@ -942,11 +955,13 @@ All values below are read directly from `Tools/MSS/VESSELS/otter.m`.
 | $M_{66}$ | $42.65$ kg·m² | yaw inertia about the origin, including added mass | `M(6,6)` |
 | $X_u$ | $-77.55$ N per m/s | linear surge damping | $-24.4\,g / U_{\max}$ |
 | $Y_v$ | $0$ | linear sway damping — **there is none** | `Yv = 0` |
-| $N_r$ | $-42.65$ | linear yaw damping | $-M_{66}/T_{\text{yaw}}$, $T_{\text{yaw}} = 1$ s |
+| $N_r$ | $-42.65$ N·m per rad/s | linear yaw damping | $-M_{66}/T_{\text{yaw}}$, $T_{\text{yaw}} = 1$ s |
 | $U_{\max}$ | $3.086$ m/s | design speed, 6 knots | `otter.m` |
 
 > [!caution] $M_{66}$ is not $I_z - N_{\dot r}$
-> Adding the two inertia entries gives $15.10 + 25.67 = 40.78$ kg·m², which is **not** the value `otter.m` uses. The rigid-body matrix is built at the centre of gravity and then transferred to the origin of $\{b\}$, and the payload puts the CG at $x_g = 0.153$ m rather than at the origin. The transfer adds $(m + m_p)x_g^2 = 1.87$ kg·m². The correct figure is $42.65$, and it propagates into $N_r$ as well. Week 3 sizes a controller from this number, so the 4.6% difference is not cosmetic.
+> Adding the two inertia entries gives $15.1021 + 25.6736 = 40.7757$ kg·m², which is **not** the value `otter.m` uses. The rigid-body matrix is built at the centre of gravity and then transferred to the origin of $\{b\}$, and the payload puts the CG at $x_g = (55 \times 0.2 + 25 \times 0.05)/80 = 0.153125$ m — exactly — rather than at the origin. The transfer adds $(m + m_p)x_g^2 = 80 \times 0.153125^2 = 1.8758$ kg·m², and $40.7757 + 1.8758 = 42.6515$ kg·m² is the figure `otter.m` uses. It propagates into $N_r$ as well. Week 3 sizes a controller from this number, so the $4.6\%$ difference is not cosmetic.
+>
+> Four decimals are kept here on purpose. Rounded to two, the same arithmetic reads $15.10 + 25.67 = 40.77$ and $40.78 + 1.88 = 42.66$ — neither closes, because each term was rounded separately. Week 3 §3-1 builds $M_{66}$ step by step from the same four numbers.
 
 > [!note] One damping term is not linear
 > The yaw damping applied in `otter.m` is $N_h = N_r\!\left(1 + 10|r|\right) r$, not $N_r r$. The extra factor is dormant at low turn rates and dominant at high ones. It is recorded here and exploited in Week 3, where it makes large heading changes overshoot **less** than small ones — behaviour a linear model cannot produce.
@@ -1038,14 +1053,14 @@ $$
 $$
 \begin{bmatrix} X \\ Y \\ N \end{bmatrix}
 =
-\begin{bmatrix} 1 & 1 \\ 0 & 0 \\ y_p & -y_p \end{bmatrix}
+\begin{bmatrix} 1 & 1 \\ 0 & 0 \\ y_{\text{pont}} & -y_{\text{pont}} \end{bmatrix}
 \begin{bmatrix} k_1 & 0 \\ 0 & k_2 \end{bmatrix}
 \begin{bmatrix} n_1|n_1| \\ n_2|n_2| \end{bmatrix}
 =
 \begin{bmatrix}
 k_1 n_1|n_1| + k_2 n_2|n_2| \\
 0 \\
-y_p\left(k_1 n_1|n_1| - k_2 n_2|n_2|\right)
+y_{\text{pont}}\left(k_1 n_1|n_1| - k_2 n_2|n_2|\right)
 \end{bmatrix}
 $$
 
@@ -1053,7 +1068,7 @@ $$
 |---|---|---|
 | $\mathbf{B}$ | where the thrusters are and which way they point | the **geometry** — fixed for a given hull |
 | $\mathbf{K}$ | how much thrust a unit of $n\lvert n\rvert$ buys | the **propellers** — and $k_i$ switches with the sign of $n_i$ |
-| $\mathbf{u}$ | the squared-with-sign shaft speed | the **command** — the only thing a controller changes |
+| $\mathbf{u}$ | the squared-with-sign shaft speed — **bold**, and not the surge velocity $u$; the name is Fossen's and is used only in this subsection | the **command** — the only thing a controller changes |
 
 > [!note] Why $n\lvert n\rvert$ and not $n^2$
 > $n^2$ throws the sign away and a reversed propeller would still push forward. The product $n\lvert n\rvert$ keeps the quadratic magnitude and the sign of $n$, which is why it, and not $n$ itself, is called the control variable.
@@ -1065,13 +1080,13 @@ $$
 | **the map is nonlinear** | doubling $n$ quadruples the thrust. A controller that assumes a linear actuator will be twice as aggressive at high speed as at low |
 | **the map is not odd** | $k_1 \neq k_2$ when the signs differ, so $n = [+60, -60]$ does **not** give $X = 0$ |
 
-- The MSS source states the same thing in one line, with the moment arms $l_1 = -y_p$ and $l_2 = +y_p$ (`otter.m` line 181):
+- The MSS source states the same thing in one line, with the moment arms $l_1 = -y_{\text{pont}}$ and $l_2 = +y_{\text{pont}}$ (`otter.m` line 181):
 
 ```matlab
 tau = [Thrust(1) + Thrust(2)  0 0 0 0  -l1*Thrust(1) - l2*Thrust(2)]';
 ```
 
-- Substituting the arms gives $N = y_p T_1 - y_p T_2$, which is the third row above. The lecture and the source agree term by term.
+- Substituting the arms gives $N = y_{\text{pont}} T_1 - y_{\text{pont}} T_2$, which is the third row above. The lecture and the source agree term by term.
 
 ## 1-11. Surge alone — a first-order system
 
@@ -1461,7 +1476,7 @@ xdot = [ M \ ( tau + tau_damp + tau_crossflow - C * nu_r - G * eta - g_0)
 - **Read the two rows of `xdot` against each other.** The top row — the forces — contains `nu_r`. The bottom row — the position — contains `nu`. One file, one line apart, two different velocities.
 - That single asymmetry produces every result of §E: the hull settles at the same speed *through the water* in all four runs, and ends up in four different places.
 
-> [!note] How to convince yourself in one command
+> [!note] The whole mechanism, checked in one command
 > ```matlab
 > x = zeros(12,1); x(1) = 1.0286;              % 1 m/s ahead, no current yet
 > a = otter(x, [60;60], 25, [0.05 0 -0.35]', 0.0, 0);
@@ -1696,7 +1711,7 @@ Nothing here involves a controller, because there is none yet. These four points
 - **Nothing reverses.** Both propellers turn ahead for the whole run. A turn is a small difference between them, because the yaw moment is
 
 $$
-N = y_p\left(T_{\text{left}} - T_{\text{right}}\right), \qquad y_p = 0.395\ \text{m}
+N = y_{\text{pont}}\left(T_{\text{left}} - T_{\text{right}}\right), \qquad y_{\text{pont}} = 0.395\ \text{m}
 $$
 
 | Phase | $t$ [s] | $n_L$ | $n_R$ | Turn |
@@ -1818,7 +1833,7 @@ W01_E_current_run
 > [!note] This is the problem Week 4 exists to solve
 > A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 4 §4-7 measures the resulting path error and §4-8 and §4-9 remove it.
 
-## F. Drive it yourself (15 min)
+## F. Driving the vessel by hand (15 min)
 
 - Sections C to E each ran a command fixed in advance. This section hands the command over: one model, five buttons, two sliders, and the same live view as §B.
 - Open `W01_interactive.slx` and press **START** on the canvas; the toolstrip's Run does the same. No setup script is needed. Every variable the model reads is stored in its own model workspace, and the model puts `_tools` and MSS on the path by itself when it is opened.
@@ -1895,7 +1910,7 @@ W01_F_button_check
 
 ## G. An RC transmitter, and the allocation behind it (25 min)
 
-- In §F the operator commanded shaft speeds. To drive straight at a chosen speed, the operator had to know the propeller curve $T = k\,n\lvert n\rvert$; to turn, the operator had to know that the yaw moment is $N = y_p(T_L - T_R)$. A real operator — a person on a transmitter, the joystick of a dynamic-positioning console, or the autopilot of later weeks — asks instead for a **force and a moment**. Turning that request into shaft speeds is **control allocation**.
+- In §F the operator commanded shaft speeds. To drive straight at a chosen speed, the operator had to know the propeller curve $T = k\,n\lvert n\rvert$; to turn, the operator had to know that the yaw moment is $N = y_{\text{pont}}(T_L - T_R)$. A real operator — a person on a transmitter, the joystick of a dynamic-positioning console, or the autopilot of later weeks — asks instead for a **force and a moment**. Turning that request into shaft speeds is **control allocation**.
 - This section puts an RC transmitter in front of the allocation. The throttle stick asks for a surge force, the rudder stick asks for a yaw moment, and the model works out $n_L$ and $n_R$ by inverting the two maps of §1-10 in reverse order.
 
 | | §F `W01_interactive.slx` | §G `W01_rc.slx` |
@@ -1956,7 +1971,7 @@ $$
 \qquad
 X_{\max} = 2\,T_{\max},
 \qquad
-N_{\max} = 2\,y_p\,\lvert T_{\min}\rvert
+N_{\max} = 2\,y_{\text{pont}}\,\lvert T_{\min}\rvert
 $$
 
 | Symbol | Quantity | Value | Source |
@@ -1965,7 +1980,7 @@ $$
 | $T_{\min} = -k_{\text{neg}}\,n_{\min}^2$ | largest reverse thrust of one propeller | $-66.71$ N | `otter.m` lines 93–96 |
 | $X_{\max}$ | full throttle: both propellers at full ahead | $239.36$ N | `W01_G_rc_check` |
 | $N_{\max}$ | full rudder: the largest yaw moment with $X = 0$, one propeller at full reverse and the other matching it ahead | $52.70$ N·m | `W01_G_rc_check` |
-| $y_p$ | moment arm of each propeller, $y_{\text{pont}}$ | $0.395$ m | `otter.m` line 69 |
+| $y_{\text{pont}}$ | moment arm of each propeller — the lateral distance from the centreline to a pontoon | $0.395$ m | `otter.m` line 69, `y_pont` |
 
 ### Allocation, step 1 — invert the configuration matrix
 
@@ -1974,33 +1989,33 @@ $$
 $$
 \begin{bmatrix} X \\ N \end{bmatrix}
 =
-\underbrace{\begin{bmatrix} 1 & 1 \\ y_p & -y_p \end{bmatrix}}_{\mathbf{B}_{XN}}
+\underbrace{\begin{bmatrix} 1 & 1 \\ y_{\text{pont}} & -y_{\text{pont}} \end{bmatrix}}_{\mathbf{B}_{XN}}
 \begin{bmatrix} T_L \\ T_R \end{bmatrix}
 $$
 
-- $\mathbf{B}_{XN}$ is square with $\det \mathbf{B}_{XN} = -2y_p \neq 0$, so it has exactly one inverse. For a $2\times 2$ matrix, swap the diagonal, negate the off-diagonal and divide by the determinant:
+- $\mathbf{B}_{XN}$ is square with $\det \mathbf{B}_{XN} = -2y_{\text{pont}} \neq 0$, so it has exactly one inverse. For a $2\times 2$ matrix, swap the diagonal, negate the off-diagonal and divide by the determinant:
 
 $$
 \mathbf{B}_{XN}^{-1}
-= \frac{1}{-2y_p}\begin{bmatrix} -y_p & -1 \\ -y_p & 1 \end{bmatrix}
-= \begin{bmatrix} \tfrac12 & \tfrac{1}{2y_p} \\[3pt] \tfrac12 & -\tfrac{1}{2y_p} \end{bmatrix}
+= \frac{1}{-2y_{\text{pont}}}\begin{bmatrix} -y_{\text{pont}} & -1 \\ -y_{\text{pont}} & 1 \end{bmatrix}
+= \begin{bmatrix} \tfrac12 & \tfrac{1}{2y_{\text{pont}}} \\[3pt] \tfrac12 & -\tfrac{1}{2y_{\text{pont}}} \end{bmatrix}
 = \begin{bmatrix} 0.5000 & 1.2658 \\ 0.5000 & -1.2658 \end{bmatrix}
 $$
 
 - Written row by row, this is the whole allocation law of a twin-screw vessel:
 
 $$
-T_L = \frac{X_d}{2} + \frac{N_d}{2y_p},
+T_L = \frac{X_d}{2} + \frac{N_d}{2y_{\text{pont}}},
 \qquad
-T_R = \frac{X_d}{2} - \frac{N_d}{2y_p}
+T_R = \frac{X_d}{2} - \frac{N_d}{2y_{\text{pont}}}
 $$
 
 | Term | What it does |
 |---|---|
 | $X_d/2$ | splits the surge demand equally, as in Week 2 §2-5 |
-| $+N_d/(2y_p)$ on the left, $-N_d/(2y_p)$ on the right | makes the difference $T_L - T_R = N_d/y_p$, which is exactly the moment asked for. The difference does not change $X$ |
+| $+N_d/(2y_{\text{pont}})$ on the left, $-N_d/(2y_{\text{pont}})$ on the right | makes the difference $T_L - T_R = N_d/y_{\text{pont}}$, which is exactly the moment asked for. The difference does not change $X$ |
 
-- Check the sign against §1-10: a starboard demand $N_d > 0$ gives $T_L > T_R$, and $N = y_p(T_L - T_R) > 0$. The model's block `B inverse` is this matrix, computed in `W01_G_build_rc.m` as `inv(Bxn)` from the $\mathbf{B}$ of `_tools/otter_B.m`.
+- Check the sign against §1-10: a starboard demand $N_d > 0$ gives $T_L > T_R$, and $N = y_{\text{pont}}(T_L - T_R) > 0$. The model's block `B inverse` is this matrix, computed in `W01_G_build_rc.m` as `inv(Bxn)` from the $\mathbf{B}$ of `_tools/otter_B.m`.
 - The same answer comes from the Moore–Penrose pseudo-inverse of the full $3\times 2$ matrix, $\mathbf{f} = \mathbf{B}^{+}[X;\ 0;\ N]$, the unconstrained allocation of Fossen (2021, §11.2). For $X = 100$ N and $N = 20$ N·m the two differ by $4.3\times10^{-14}$ N. The $2\times 2$ inverse is used here because it can be written down by hand.
 
 ### Allocation, step 2 — invert the propeller curve
@@ -2289,7 +2304,7 @@ W01_check(1)                 % run this whenever, as often as needed
 
 1. Derive the terminal surge speed relation $u_{ss}(n)$ from the surge equation, showing each step.
 2. Determine, by hand, the shaft speed $n^\star$ (equal on both propellers) that produces a terminal speed of exactly $1.500$ m/s.
-3. Determine, by hand, the differential $dn^\star$ that produces a commanded yaw moment of exactly $N = 5.000$ N·m at $n_0 = 60$ rad/s, using $N = y_p(T_L - T_R)$ with $y_p = 0.395$ m and $T = k_{\text{pos}} n|n|$. Both propellers must stay ahead — state the resulting $n_L$ and $n_R$ and confirm both are positive.
+3. Determine, by hand, the differential $dn^\star$ that produces a commanded yaw moment of exactly $N = 5.000$ N·m at $n_0 = 60$ rad/s, using $N = y_{\text{pont}}(T_L - T_R)$ with $y_{\text{pont}} = 0.395$ m and $T = k_{\text{pos}} n|n|$. Both propellers must stay ahead — state the resulting $n_L$ and $n_R$ and confirm both are positive.
 
 ### ② Verification — mandatory
 
@@ -2322,7 +2337,7 @@ W01_check(1)                 % run this whenever, as often as needed
 |---|---|---|
 | `Undefined function 'otter'` | MSS is not on the path | run `W01_0_setup`, which adds `Tools/MSS` with `genpath` |
 | `Undefined variable 'n0'` when pressing Run in Simulink | the model reads base-workspace variables that the setup script defines | run `W01_0_setup` first, or run any section script, which sets its own variables |
-| The vessel turns right when the port turn was expected | the yaw moment is $N = y_p(T_L - T_R)$, so slowing the **right** propeller turns the bow right | for a port turn slow the **left** propeller: $n = [n_0 - dn;\ n_0 + dn]$ |
+| The vessel turns right when the port turn was expected | the yaw moment is $N = y_{\text{pont}}(T_L - T_R)$, so slowing the **right** propeller turns the bow right | for a port turn slow the **left** propeller: $n = [n_0 - dn;\ n_0 + dn]$ |
 | The exported block diagram is thousands of pixels wide | an annotation was edited into one long line; Simulink does not wrap annotation text | keep the manual line breaks in `W01_1_build_openloop.m` |
 | Terminal speed differs from the prediction by a few percent | the simulation was stopped before the transient finished | `T_final` must exceed roughly $5T_u \approx 5.5$ s; the default is 120 s |
 | Heading reads more than 360° | $\psi$ is an unwrapped integral of $r$ and nothing in this model wraps it | expected. Week 3 introduces the wrapping and shows what happens without it |
