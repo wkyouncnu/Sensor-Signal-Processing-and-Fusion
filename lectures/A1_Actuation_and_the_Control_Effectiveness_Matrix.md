@@ -302,7 +302,7 @@ $$
 X = k_{\text{pos}}\,n_1^2 + k_{\text{neg}}\,(-n_1)|-n_1| = \left(k_{\text{pos}} - k_{\text{neg}}\right) n_1^2 \; \ne \; 0 .
 $$
 
-- With $n_1 = 60$ rad/s this leaves $X\6.686$ N, and the vessel creeps forward while it turns.
+- With $n_1 = 60$ rad/s this leaves $X = 16.686$ N, and the vessel creeps forward while it turns.
 - Requiring $X = 0$ instead of assuming it gives the pair that does produce a pure turn:
 
 $$
