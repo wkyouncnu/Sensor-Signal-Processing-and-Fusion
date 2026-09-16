@@ -1,23 +1,48 @@
 function W01rc_animate(u, v, r, N, E, psi, t) %#ok<INUSL>
 %W01RC_ANIMATE  W01_rc.slx 의 실시간 화면 — 궤적, 도달 가능 집합, 속도, 프로펠러.
+%               Live view for W01_rc.slx: the track, the attainable set, the
+%               velocities and the propellers.
 %
 %   W01_rc.slx 의 Animate 블록이 매 스텝 부른다. 손으로 부를 일은 없다.
+%   Called at every step by the Animate block of W01_rc.slx.
 %
-%   화면 구성 (4 x 4 칸)
-%     왼쪽 절반          North-East 궤적과 선체. 창이 배를 따라간다 (W01i_animate 와 같다)
-%     오른쪽 위 2 x 2    도달 가능 집합. 가로 tau_N, 세로 tau_X — 조종기 스틱과 같은 방향
-%                        (위 = 전진, 오른쪽 = 우현 선회). 회색 영역이 두 프로펠러로 낼 수
-%                        있는 힘 전부이고, 점선 사각형이 스틱이 요구할 수 있는 범위다.
-%                        빈 원 = 요구한 힘, 주황 점 = 실제로 낸 힘. 둘이 떨어지면 포화다
-%     오른쪽 셋째 줄     u (실선) 와 예측 종단속도 tau_X / |X_u| (점선), 그리고 r
-%     오른쪽 맨 아래     n_L, n_R 과 포화 한계
+%   화면 구성 (4 x 4 칸) / the layout, a 4-by-4 grid
+%     왼쪽 절반        NED 평면의 궤적과 선체. 창이 배를 따라간다 (W01i_animate 와 같다)
+%                      the track with the hull, the window following the
+%                      vessel, as in W01i_animate
+%     오른쪽 위 2 x 2  도달 가능 집합. 가로축이 tau_N, 세로축이 tau_X 이며, 조종기
+%                      스틱과 방향을 맞추었다 — 위가 전진, 오른쪽이 우현 선회이다.
+%                      회색 영역은 두 프로펠러로 낼 수 있는 힘 전부이고, 점선
+%                      사각형은 스틱이 요구할 수 있는 범위이다. 빈 원이 요구한 힘,
+%                      주황색 점이 실제로 낸 힘이며, 둘이 떨어지면 포화된 것이다.
 %
-%   값은 어디서 오는가
-%     선체 상태는 인수로 받는다. 요구한 힘, 낸 힘, n 은 모델 최상위의 'to live view'
-%     블록이 매 스텝 setappdata(0,'W01rc_tap',[tau_d; tau_a; n]) 로 맡겨 둔다.
-%     한계값(k_pos, n_max, X_max …)은 모델 작업공간에서 읽는다 — 모델과 같은 수다.
+%                      the attainable set, with tau_N across and tau_X up so
+%                      that the axes match the stick: up is ahead and right is
+%                      a turn to starboard. The grey region is every force the
+%                      two propellers can produce and the dashed rectangle is
+%                      the range the stick can demand. The open circle is the
+%                      demand and the orange dot the force delivered; when
+%                      they separate, the allocation has saturated.
+%     오른쪽 셋째 줄   u 를 실선으로, 예측 종단속도 tau_X / |X_u| 를 점선으로, 그리고 r
+%                      u as a solid line against the predicted terminal speed
+%                      tau_X / |X_u| dashed, together with r
+%     오른쪽 맨 아래   n_L, n_R 과 그 포화 한계
+%                      the two propeller speeds and their saturation limits
 %
-%   INPUTS  otter.m 의 단위 그대로 (u, v [m/s], r [rad/s], N, E [m], psi [rad], t [s])
+%   값은 어디서 오는가 / where the values come from
+%     선체 상태는 인수로 들어온다. 요구한 힘, 실제로 낸 힘, 회전수는 모델 최상위의
+%     'to live view' 블록이 매 스텝 setappdata(0,'W01rc_tap',[tau_d; tau_a; n]) 로
+%     맡겨 둔다. 한계값(k_pos, n_max, X_max 등)은 모델 작업공간에서 읽으므로 모델이
+%     쓰는 값과 언제나 같다.
+%
+%     The vessel states arrive as arguments. The demanded force, the delivered
+%     force and the propeller speeds are deposited at every step by the 'to
+%     live view' block at the top level. The limits are read from the model
+%     workspace, so they are always the numbers the model itself uses.
+%
+%   입력 / inputs
+%     otter.m 의 단위 그대로 / in the units otter.m works in:
+%     u, v [m/s], r [rad/s], N, E [m], psi [rad], t [s]
 
 persistent fig A H D tDraw
 

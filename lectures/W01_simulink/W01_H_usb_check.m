@@ -1,22 +1,58 @@
 %% W01 · 절 H — 실물 조종기 없이 확인할 수 있는 것 전부
+%  W01 · Section H — everything that can be checked without a transmitter
 %
+%  실행 / to run
 %      W01_H_usb_check
 %
-%  이 스크립트가 하는 일
-%    조종기가 없는 PC 에서도 §H 의 모델이 옳은지 본다. 조종기에서 모델로 들어오는
-%    것은 Joystick Input 블록이 내는 축(axes) 벡터 하나뿐이다. 그래서 그 블록만 같은
-%    모양의 Constant 로 바꾼 사본(임시 폴더)을 만들어 돌린다. 나머지는
-%    W01_rc_usb.slx 그대로다.
+%  강의에서의 위치 / place in the lecture
+%      Part 2 절 H 에 딸린 확인 절차이다. 실습실에 조종기가 없는 학생도 모델이
+%      옳은지 확인할 수 있어야 하므로, 하드웨어에 의존하는 부분과 그렇지 않은
+%      부분을 갈라 놓는다.
 %
-%    1. 축 찾기 — W01rc_usb_axis 에 가짜 조종기의 읽기 값을 준다
-%    2. 방향    — 스로틀 앞 = 전진, 뒤 = 후진, 러더 왼쪽 = 좌회전, 오른쪽 = 우회전
-%    3. §G 와 같은가 — 같은 스틱이면 §G 표의 경우 7 과 같은 배여야 한다
-%    4. 조종기가 달라도 — 축 순서가 다르거나(TAER) 방향이 뒤집힌 조종기도 설정만
-%       맞으면 같은 배
+%      This accompanies section H of Part 2. A student without a transmitter
+%      must still be able to check that the model is correct, so the parts
+%      that depend on hardware are separated from those that do not.
 %
-%  확인하지 못하는 것
-%    Joystick Input 블록이 실제 조종기를 읽는 부분. 조종기를 꽂고 CALIBRATE 뒤
-%    START 로 확인한다 (강의 §H 의 판정 기준).
+%  방법 / method
+%      조종기에서 모델로 들어오는 것은 Joystick Input 블록이 내는 축 벡터 하나
+%      뿐이다. 따라서 그 블록만 같은 모양의 Constant 로 바꾼 사본을 임시 폴더에
+%      만들어 돌린다. 나머지는 W01_rc_usb.slx 그대로이므로, 이 사본이 옳게
+%      동작하면 조종기를 뺀 전부가 옳다는 뜻이 된다.
+%
+%      The only thing a transmitter contributes to the model is the axis
+%      vector produced by the Joystick Input block. A copy of the model is
+%      therefore made in a temporary folder with that one block replaced by a
+%      Constant of the same shape. Everything else is W01_rc_usb.slx
+%      unchanged, so if the copy behaves correctly then everything except the
+%      transmitter is correct.
+%
+%  확인하는 것 넷 / the four checks
+%      1. 축 찾기. 가짜 조종기의 읽기 값을 W01rc_usb_axis 에 주고, 스로틀 축과
+%         러더 축을 제대로 골라내는지 본다.
+%      2. 방향. 스로틀을 앞으로 밀면 전진, 뒤로 당기면 후진, 러더를 왼쪽으로
+%         밀면 좌회전, 오른쪽으로 밀면 우회전이어야 한다.
+%      3. 절 G 와의 일치. 같은 스틱 위치를 주면 절 G 표의 경우 7 과 같은 배가
+%         나와야 한다. 입력 장치를 바꾸어도 배는 달라지지 않는다는 뜻이다.
+%      4. 조종기가 달라도 같은가. 축 순서가 다르거나(TAER) 방향이 뒤집힌
+%         조종기라도 설정만 맞추면 같은 배가 나와야 한다.
+%
+%      1. Axis identification: given the readings of a synthetic transmitter,
+%         W01rc_usb_axis must pick out the throttle and rudder axes.
+%      2. Direction: throttle forward must be ahead and back astern, rudder
+%         left must turn to port and right to starboard.
+%      3. Agreement with section G: the same stick position must produce the
+%         same vessel as case 7 of the section G table. Changing the input
+%         device must not change the vessel.
+%      4. Independence of the transmitter: a unit with a different channel
+%         order (TAER) or reversed directions must give the same vessel once
+%         it is configured.
+%
+%  확인하지 못하는 것 / what cannot be checked here
+%      Joystick Input 블록이 실제 조종기를 읽는 부분. 이것은 조종기를 꽂고
+%      CALIBRATE 를 거친 뒤 START 로 확인한다. 판정 기준은 강의노트 절 H 에 있다.
+%      The part in which the Joystick Input block reads a real transmitter.
+%      That requires the transmitter to be connected, CALIBRATE to be run, and
+%      START to be pressed; the acceptance criteria are given in section H.
 
 %  제 변수만 지운다. 그냥 clear 는 기본 작업공간을 비워서, 기본 작업공간 변수를 읽는
 %  W01_openloop · W01_current 모델이 다음 실행에서 멈춘다 (실제로 겪었다).

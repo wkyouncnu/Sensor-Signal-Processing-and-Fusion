@@ -1,20 +1,32 @@
 function W01_S_expected()
-%W01_S_EXPECTED  The result graphs a correct Week 1 submission must produce.
+%W01_S_EXPECTED  올바른 1주차 제출물이 내야 하는 결과 그래프를 만든다.
+%                Produce the result graphs a correct Week 1 submission must give.
 %
 %   >> W01_S_expected
 %
+%   모범답안 세 개를 실제로 돌려 문제마다 PNG 를 하나씩 ../problems/img/ 에 쓴다.
+%   문제지가 그 그림을 싣기 때문에, 학생은 숫자만이 아니라 그림과 그림을 견주어
+%   볼 수 있다.
+%
 %   Runs the three reference solutions and writes one PNG per problem into
-%   ../problems/img/. The problem sheet shows those, so a student can compare
-%   a plot against the plot rather than against a number alone.
+%   ../problems/img/. The problem sheet shows those, so that a plot can be
+%   compared against a plot rather than against a number alone.
 %
-%   WHY THE PROBLEM SHEET GETS THE PICTURES AND NOT THE CODE
+%   왜 문제지에는 그림만 가고 코드는 가지 않는가
+%   why the problem sheet receives the pictures and not the code
+%       숫자는 답이 맞았는지를 알려 준다. 그림은 아직 만드는 중일 때 "맞은 모습"
+%       이 어떤 것인지를 알려 준다. 반대쪽으로 휘는 궤적, 끝내 정착하지 않는 속도,
+%       축 위로 달아나는 선수방위는 채점기를 돌리기 훨씬 전에 눈에 띈다. 그래서
+%       모범답안 스크립트는 이 폴더에 남고, 그 출력만 problems/ 로 건너간다.
 %
-%   A number tells a student whether the answer is right. A picture tells them
-%   what "right" looks like while they are still building — a track that bends
-%   the wrong way, a speed that never settles, a heading that runs off the top
-%   of the axis are all visible long before any checker is run. The solution
-%   scripts stay in this folder; only their OUTPUT crosses into problems/.
+%       A number tells whether the answer is right. A picture tells what right
+%       looks like while the model is still being built: a track that bends
+%       the wrong way, a speed that never settles, a heading that runs off the
+%       top of the axis are all visible long before any checker is run. The
+%       solution scripts stay in this folder; only their output crosses into
+%       problems/.
 %
+%   그림은 모범답안 모델을 실제로 돌려 만든 것이므로, 채점기가 재는 것과 어긋날 수 없다.
 %   The figures are produced by running the solution models, so they cannot
 %   drift from what the checker measures.
 %

@@ -1,13 +1,30 @@
 function f = W01_cur_plot(R, LBL, V, ttl)
-%W01_CUR_PLOT  Draw the current runs: where the vessel went, and what it felt.
+%W01_CUR_PLOT  조류 실행 결과를 그린다 — 배가 어디로 갔는지, 그리고 무엇을 느꼈는지.
+%              Draw the current runs: where the vessel went, and what it felt.
 %
-%   W01_cur_plot                     the run in the base workspace
-%   W01_cur_plot(R, LBL, V, ttl)     a cell array of runs, for W01_E_current_run
+%   W01_cur_plot                     기본 작업공간에 있는 실행 결과
+%                                    the run in the base workspace
+%   W01_cur_plot(R, LBL, V, ttl)     실행 결과들의 셀 배열. 절 E 가 이렇게 부른다
+%                                    a cell array of runs, as used by section E
 %
-%   Called by the model's StopFcn and by the runner, so the figure on screen
-%   and the figure in the note come from one piece of code.
+%   모델의 StopFcn 과 절 스크립트가 모두 이 함수를 부르므로, 화면의 그림과
+%   강의노트의 그림이 같은 코드에서 나온다.
+%   Both the model's StopFcn and the section script call this, so the figure
+%   on screen and the figure in the note come from one piece of code.
 %
-%   The log is  [u v r N E psi | u_c v_c u_r v_r].
+%   로그의 열 구성 / the columns of the log
+%       [u v r N E psi | u_c v_c u_r v_r]
+%       앞의 여섯은 모든 주차가 공유하는 규약이고, 뒤의 넷은 조류 모델만 남긴다.
+%       u_c, v_c 는 선체좌표계로 옮긴 조류이고, u_r, v_r 은 물에 대한 상대속도이다.
+%       배가 실제로 지나간 자리는 앞의 것으로, 유체력이 느낀 것은 뒤의 것으로
+%       그려야 §1-13 의 갈라짐이 그림에 드러난다.
+%
+%       The first six columns are the contract shared by every week; the last
+%       four are produced by the current model alone. u_c and v_c are the
+%       current resolved in the body frame, and u_r and v_r the velocity
+%       relative to the water. The track is drawn from the former and the
+%       forces from the latter, which is how the split of §1-13 becomes
+%       visible in a figure.
 
 if nargin < 1 || isempty(R)
     if evalin('base', '~exist(''W01c'',''var'')'), return; end

@@ -1,32 +1,54 @@
 function pass = W01_check(problem, mdl)
-%W01_CHECK  Run a student's Week 1 model and check it against the lecture.
+%W01_CHECK  학생이 만든 1주차 모델을 돌려 강의의 측정값과 대조한다.
+%           Run a student's Week 1 model and check it against the lecture.
 %
-%   W01_check(1)                checks W01_P1.slx
-%   W01_check(2, 'W01_P1_kim')  checks another model
-%   pass = W01_check(3, mdl)    returns true when every test passed
+%   W01_check(1)                W01_P1.slx 를 검사한다 / checks W01_P1.slx
+%   W01_check(2, 'W01_P1_kim')  다른 모델을 검사한다 / checks another model
+%   pass = W01_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   WHAT IS BEING CHECKED, AND WHY THESE NUMBERS
+%   무엇을 검사하며, 이 수치들은 어디서 왔는가
+%   what is being checked, and where these numbers come from
 %
-%   Every target below was MEASURED by the lecture's own section scripts, not
-%   chosen. A model that reproduces them is doing the same physics as the one
-%   in the lecture, whatever it looks like on the canvas.
+%       아래의 목표값은 모두 강의의 절 스크립트가 실제로 측정한 것이며, 적당히
+%       고른 값이 아니다. 이 값들을 재현하는 모델은 도면이 어떻게 생겼든 강의의
+%       모델과 같은 물리를 하고 있다는 뜻이다. 정답 도면을 하나로 정해 두지 않고
+%       물리로 채점하려는 것이 이 방식의 목적이다.
 %
-%     Problem 1   terminal surge speed at n = 60 rad/s          1.0286 m/s
-%                 and the sway row: v stays at zero              §1-C, §1-D
-%     Problem 2   yaw rate in the port turn                     -2.2942 deg/s
-%                 heading change, port then starboard        -70.2 / +70.6 deg
-%     Problem 3   drift of track from heading, beam current      25.81 deg
-%                 ground speed in that current                  1.1091 m/s
+%       Every target below was measured by the lecture's own section scripts
+%       rather than chosen. A model that reproduces them is doing the same
+%       physics as the one in the lecture, whatever it looks like on the
+%       canvas. The intention is to grade the physics rather than to fix a
+%       single correct diagram.
 %
-%   WHAT THE MODEL MUST CONTAIN
+%     문제 1  n = 60 rad/s 에서의 종단 전진속력              1.0286 m/s
+%             그리고 좌우 속도 v 가 0 에 머무는지             §1-C, §1-D
+%     Problem 1   terminal surge speed at n = 60 rad/s        1.0286 m/s
+%                 and the sway row: v stays at zero
+%     문제 2  좌선회 중의 요 각속도                          -2.2942 deg/s
+%             좌선회와 우선회의 선수방위 변화량          -70.2 / +70.6 deg
+%     Problem 2   yaw rate in the port turn                   -2.2942 deg/s
+%                 heading change, port then starboard      -70.2 / +70.6 deg
+%     문제 3  옆 조류에서 항적이 선수방위에서 벗어난 각       25.81 deg
+%             그 조류에서의 대지속력                         1.1091 m/s
+%     Problem 3   drift of track from heading, beam current    25.81 deg
+%                 ground speed in that current                1.1091 m/s
 %
-%   One To Workspace block named  xlog , format 'Structure With Time', fed by
-%   the plant's twelve-state output. Nothing else is prescribed: the wiring,
-%   the block positions and any scopes are the student's own.
+%   모델이 갖추어야 하는 것 / what the model must contain
+%       이름이 xlog 인 To Workspace 블록 하나를 두고, 형식을 'Structure With
+%       Time' 으로 하며, 플랜트의 열두 상태 출력을 연결한다. 그 밖에는 아무것도
+%       규정하지 않는다. 배선도, 블록 위치도, 스코프를 두는지도 학생의 몫이다.
 %
-%   Requiring the raw twelve states rather than a tidy six-column log is
-%   deliberate. Picking u, v, r, x, y and psi out of the vector is the part of
-%   Week 1 worth being able to do from memory.
+%       One To Workspace block named xlog, with format 'Structure With Time',
+%       fed by the plant's twelve-state output. Nothing else is prescribed:
+%       the wiring, the block positions and any scopes are the student's own.
+%
+%       정돈된 여섯 열짜리 로그가 아니라 날것의 열두 상태를 요구하는 것은 의도한
+%       것이다. 그 벡터에서 u, v, r, x, y, psi 를 골라낼 수 있는 것이 1주차에서
+%       외워 둘 만한 부분이기 때문이다.
+%
+%       Requiring the raw twelve states rather than a tidy six-column log is
+%       deliberate: picking u, v, r, x, y and psi out of that vector is the
+%       part of Week 1 worth being able to do from memory.
 %
 %   See also W01_P1_START, W01_0_SETUP.
 

@@ -1,30 +1,46 @@
 function W01_P1_start(mdl)
-%W01_P1_START  Create the starting model for the Week 1 laboratory problems.
+%W01_P1_START  1주차 실습 문제의 출발 모델을 만든다.
+%              Create the starting model for the Week 1 laboratory problems.
 %
-%   >> W01_P1_start                 creates W01_P1.slx
-%   >> W01_P1_start('W01_P1_kim')   creates a model under another name
+%   >> W01_P1_start                 W01_P1.slx 를 만든다 / creates W01_P1.slx
+%   >> W01_P1_start('W01_P1_kim')   다른 이름으로 만든다 / another name
 %
-%   WHAT THIS SCRIPT GIVES, AND WHAT IT DELIBERATELY WITHHOLDS
+%   무엇을 주고 무엇을 일부러 주지 않는가
+%   what this script gives, and what it deliberately withholds
 %
-%   It creates a model containing ONE block: the Otter hull. Everything else —
-%   the command, the wiring, the logging, the scope — is the exercise.
+%       블록 하나만 든 모델을 만든다. 그 하나는 Otter 선체이다. 명령, 배선, 로깅,
+%       스코프 등 나머지 전부가 문제이다.
 %
-%   The hull is given rather than built because integrating otter.m is not the
-%   lesson of Week 1 and cannot be assembled from library blocks in an hour.
-%   Everything that Week 1 IS about — what the command is, what the twelve
-%   states mean, which of them matter for a surface craft — is left open.
+%       선체를 만들게 하지 않고 주는 이유는, otter.m 을 적분하는 일이 1주차의
+%       교육 내용이 아니고 라이브러리 블록으로 한 시간 안에 조립할 수 있는 것도
+%       아니기 때문이다. 반대로 1주차가 실제로 다루는 것들 — 명령이 무엇인지,
+%       열두 개의 상태가 각각 무엇을 뜻하는지, 그중 수상정에 필요한 것이 무엇인지
+%       — 은 모두 열어 둔다.
 %
-%   THE BLOCK THAT IS PROVIDED
+%       The model contains one block: the Otter hull. Everything else — the
+%       command, the wiring, the logging, the scope — is the exercise. The
+%       hull is given rather than built because integrating otter.m is not the
+%       lesson of Week 1 and cannot be assembled from library blocks in an
+%       hour, whereas everything Week 1 is about is left open.
 %
-%     Otter USV        Inport  1 : n, the two shaft speeds [rad/s], 2 x 1
+%   주어지는 블록 / the block that is provided
+%
+%     Otter USV        입력 1 : n, 두 축의 회전수 [rad/s], 2 x 1
+%                      출력 1 : x, 열두 개의 상태
+%                      Inport  1 : n, the two shaft speeds [rad/s], 2 x 1
 %                      Outport 1 : x, the twelve states
 %
 %                      x = [ u v w  p q r  x y z  phi theta psi ]'
+%                          |_ 속도 _||_ 위치 _||_ 자세각 _|
 %                          |_ velocities _||_ position _||_ angles _|
 %
-%   The solver is already set to the values the week uses: fixed step, ode4,
-%   h = 0.02 s. Those come from W01_0_setup.m and must not be changed, because
-%   the numbers the checker compares against were measured with them.
+%   솔버 설정 / the solver
+%       이번 주가 쓰는 값으로 이미 맞추어 두었다. 고정 스텝, ode4, h = 0.02 s 이며
+%       W01_0_setup 에서 온 값이다. 채점기가 대조하는 수치들이 이 설정에서 측정된
+%       것이므로 바꾸지 않는다.
+%       Already set to the values this week uses — fixed step, ode4, h = 0.02 s
+%       — taken from W01_0_setup. They must not be changed, because the numbers
+%       the checker compares against were measured with them.
 %
 %   See also W01_CHECK, W01_0_SETUP.
 

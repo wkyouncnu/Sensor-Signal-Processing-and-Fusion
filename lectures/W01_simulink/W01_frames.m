@@ -1,25 +1,42 @@
 function [f, T] = W01_frames(R)
-%W01_FRAMES  Body velocity against NED velocity, worked and drawn.
+%W01_FRAMES  선체고정 속도와 NED 속도를 손으로 계산하고 그림으로 확인한다.
+%            Body-frame velocity against NED velocity, worked and drawn.
 %
-%   [f, T] = W01_frames(R)      R is one run from section D, or omitted
+%   [f, T] = W01_frames(R)      R 은 절 D 의 실행 결과 하나. 생략할 수 있다
+%                               R is one run from section D, or omitted
 %
-%   The one confusion this week exists to remove:
+%   이번 주가 없애려는 단 하나의 혼동 / the one confusion this week exists to remove
 %
-%       u and v are components along axes that TURN WITH THE VESSEL.
-%       Ndot and Edot are components along axes that never move.
+%       u 와 v 는 배와 함께 도는 축을 따라 잰 성분이다.
+%       x^n 과 y^n 의 시간변화율은 결코 움직이지 않는 축을 따라 잰 성분이다.
 %
+%       u and v are components along axes that turn with the vessel.
+%       The rates of change of the NED coordinates are components along axes
+%       that never move.
+%
+%   둘은 같은 물리적 벡터를 두 번 표현한 것이며, 평면 회전행렬로 이어진다.
 %   They are the same physical vector expressed twice, related by the planar
 %   rotation matrix
 %
-%       [Ndot; Edot] = R(psi) [u; v],   R(psi) = [cos psi, -sin psi
-%                                                 sin psi,  cos psi]
+%       [xn_dot; yn_dot] = R(psi) [u; v],  R(psi) = [cos psi, -sin psi
+%                                                    sin psi,  cos psi]
 %
-%   The turning run of Week 1 makes the point by itself: u and v are CONSTANT
-%   while Ndot and Edot sweep through full sinusoids, because the vessel is
-%   rotating. Anyone who has integrated u to get a north position sees the
-%   error here and nowhere else.
+%       xn_dot, yn_dot 은 강의의 x^n, y^n 의 시간변화율이다. 로그의 열 이름
+%       N, E 가 가리키는 것과 같은 양이다.
+%       xn_dot and yn_dot are the rates of the lecture's x^n and y^n, the same
+%       quantities the log columns named N and E carry.
 %
-%   T is a table of the hand-worked example printed by section C.
+%   1주차의 선회 실행이 그 자체로 이 점을 보인다. 배가 회전하고 있으므로 u 와 v 는
+%   일정한데 NED 속도 성분은 완전한 사인파를 그린다. u 를 그대로 적분해서 북쪽
+%   위치를 얻으려 한 적이 있는 사람은 자기 실수를 바로 여기서 보게 된다.
+%
+%   The turning run of Week 1 makes the point by itself: u and v are constant
+%   while the NED velocity components sweep through full sinusoids, because
+%   the vessel is rotating. Anyone who has integrated u to obtain a north
+%   position sees the error here and nowhere else.
+%
+%   T 는 절 C 가 출력하는 손계산 예제의 표이다.
+%   T is the table of the hand-worked example printed by section C.
 
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)),'_tools'), here);

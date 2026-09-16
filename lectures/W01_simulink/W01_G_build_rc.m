@@ -1,35 +1,70 @@
 function W01_G_build_rc(src)
-%W01_G_BUILD_RC  W01_rc.slx 를 코드로 만든다 — RC 조종기로 모는 Otter, 추력 배분을 거쳐.
+%W01_G_BUILD_RC  RC 조종기로 모는 모델을 생성한다 — 추력 배분을 거쳐 힘을 지시한다.
+%                Generate the RC-driven model, in which a force is commanded
+%                and control allocation turns it into propeller speeds.
 %
-%   >> W01_G_build_rc            화면 조종기   -> W01_rc.slx      (강의 §G)
-%   >> W01_G_build_rc('usb')     실물 USB 조종기 -> W01_rc_usb.slx (강의 §H,
-%                                W01_H_build_rc_usb 가 이렇게 부른다)
+%   실행 / to run
+%       W01_G_build_rc            화면 안의 조종기    -> W01_rc.slx      (절 G)
+%                                 the on-screen transmitter
+%       W01_G_build_rc('usb')     실물 USB 조종기     -> W01_rc_usb.slx  (절 H,
+%                                 W01_H_build_rc_usb 가 이렇게 부른다)
+%                                 a real USB transmitter, as called by
+%                                 W01_H_build_rc_usb
 %
-%   두 모델은 맨 앞 RC transmitter 블록 하나만 다르다. 그 뒤는 같은 코드가 만든다.
+%       두 모델은 맨 앞의 RC transmitter 블록 하나만 다르며, 그 뒤는 같은 코드가
+%       만든다. 그래서 두 모델은 같은 스틱 입력에 같은 배로 답한다.
+%       The two models differ only in the RC transmitter block at the front;
+%       everything behind it is built by the same code, which is why they
+%       answer the same stick input with the same vessel.
 %
-%   무엇을 만드는가
-%     W01_interactive.slx (§F) 는 두 프로펠러 속도 n 을 직접 명령했다. 이 모델은
-%     사람이 RC 조종기 스틱으로 "힘" 을 요구하고, 추력 배분(control allocation)이
-%     그 힘을 n 으로 바꾼다. 신호 사슬은 MSS 데모와 같은 순서다 (gnc_chain).
+%   강의에서의 위치 / place in the lecture
+%       Part 2 절 G 가 쓰는 모델이다. 절 F 까지는 프로펠러 회전수 n 을 직접
+%       명령했으나, 이 모델에서는 사람이 원하는 힘을 요구하고 추력 배분이 그
+%       힘을 n 으로 바꾼다. 무인수상정을 실제로 조종할 때의 구조가 이것이며,
+%       배분을 본격적으로 다루는 것은 부록 A1 과 5주차이다.
+%
+%       This is the model used by section G of Part 2. Through section F the
+%       propeller speeds were commanded directly; here a force is demanded and
+%       control allocation converts it into propeller speeds. This is the
+%       structure a real USV is driven with, and allocation itself is treated
+%       in Appendix A1 and in Week 5.
+%
+%   신호의 흐름 / the chain (gnc_chain, MSS 데모와 같은 순서 / the MSS order)
 %
 %       RC transmitter --> Joystick --> Control allocation --> Otter USV --> Measurements
-%       채널 넷 + 모드      스틱 -> 힘    힘 -> 추력 -> n        otter.m      로그, 실시간 화면
+%       채널 넷 + 모드      스틱 -> 힘    힘 -> 추력 -> n        otter.m      로그·실시간 화면
+%       four channels       stick to      force to thrust                    logging and
+%       and a mode switch   force         to shaft speed                     the live display
 %       stick = [s_T; s_R]  tau_d = [X; N]  n = [n_L; n_R]
 %
-%   조종기 (강의 §G)
-%     Mode 1 : 오른쪽 스틱 상하 = 스로틀,  왼쪽 스틱 좌우 = 러더
-%     Mode 2 : 왼쪽 스틱 상하 = 스로틀,    왼쪽 스틱 좌우 = 러더
-%     스로틀은 가운데가 정지, 위가 전진, 아래가 후진이다 (역회전 되는 ESC 와 같다).
-%     슬라이더 하나가 조종기 채널 하나이고, 값 0 ~ 100 은 수신기 펄스 1000 ~ 2000 us 와
-%     같은 역할을 한다. 50 이 가운데다.
+%   조종기 / the transmitter (절 G / section G)
+%       Mode 1 : 오른쪽 스틱 상하가 스로틀, 왼쪽 스틱 좌우가 러더
+%       Mode 2 : 왼쪽 스틱 상하가 스로틀,   왼쪽 스틱 좌우가 러더
+%       스로틀은 가운데가 정지, 위가 전진, 아래가 후진이다. 역회전이 가능한 ESC 를
+%       단 기체와 같은 규칙이다. 슬라이더 하나가 조종기 채널 하나에 해당하며,
+%       값 0 ~ 100 은 수신기 펄스 1000 ~ 2000 us 와 같은 역할을 한다. 가운데는 50 이다.
 %
-%   추력 배분 (강의 §G, §1-10, 부록 A1)
-%     [X; N] = Bxn [T_L; T_R],  Bxn = [1 1; y_p -y_p]   ->   T = Bxn^-1 tau_d
-%     n = sign(T) sqrt(|T|/k),  k = k_pos (T >= 0), k_neg (T < 0)
-%     n 을 [n_min, n_max] 로 자르고, 실제로 낸 힘 tau_a = Bxn k n|n| 을 함께 내보낸다
+%       In Mode 1 the throttle is the right-hand stick's vertical axis; in
+%       Mode 2 it is the left-hand stick's. The rudder is the left-hand
+%       stick's horizontal axis in both. Throttle centre is stop, up is ahead
+%       and down is astern, as on a craft fitted with a reversing ESC. Each
+%       slider is one transmitter channel, and the range 0 to 100 stands for
+%       the receiver pulse width of 1000 to 2000 us, with 50 at centre.
 %
-%   스크립트 없이 돈다. 변수는 모두 모델 작업공간에 있다 (standing-orders §8-4).
-%   다시 만들어도 안전하다. 기존 W01_rc.slx 는 덮어쓴다.
+%   추력 배분 / the allocation (절 G, §1-10, 부록 A1 / section G, §1-10, Appendix A1)
+%       [X; N] = Bxn [T_L; T_R],  Bxn = [1 1; y_pont -y_pont]  ->  T = Bxn^-1 tau_d
+%       n = sign(T) sqrt(|T|/k),  k = k_pos (T >= 0), k_neg (T < 0)
+%       회전수를 [n_min, n_max] 로 자른 뒤, 실제로 낸 힘 tau_a = Bxn k n|n| 을 함께
+%       내보낸다. 요구한 힘과 실현된 힘을 나란히 볼 수 있어야 포화를 설명할 수 있다.
+%       The shaft speeds are clipped to [n_min, n_max], and the force actually
+%       delivered, tau_a = Bxn k n|n|, is output alongside the demand, so that
+%       saturation can be seen rather than inferred.
+%
+%   준비 스크립트 없이 동작한다. 변수는 모두 모델 작업공간에 있다.
+%   The model runs without a setup script: its variables live in the model
+%   workspace.
+%   다시 생성해도 안전하다. 기존 W01_rc.slx 는 덮어쓴다.
+%   Regenerating is safe: any existing W01_rc.slx is overwritten.
 
 if nargin < 1, src = 'screen'; end
 usb  = strcmp(src, 'usb');

@@ -1,23 +1,37 @@
 function y = W01_read(o)
-%W01_READ  This week's log, with named fields and the angles in degrees.
+%W01_READ  이번 주의 로그를 이름 붙은 필드로 바꾸고, 각도를 도 단위로 맞춘다.
+%          Convert this week's log into named fields, with the angles in degrees.
 %
 %   y = W01_read(run_sim('W01_openloop', V))
 %   plot(y.t, y.psi)
 %
-%   WHY A CONVERSION AND NOT JUST COLUMN NAMES
+%   왜 열 이름만 붙이지 않고 변환까지 하는가
+%   why a conversion and not merely column names
+%       add_measurement 은 이 강의 전체가 공유하는 규약
 %
-%   add_measurement logs the course-wide contract
+%           [u v r N E psi | ...]
 %
-%       [u v r N E psi | ...]
+%       에 따라 로그를 남기되, 단위는 모델이 쓰는 그대로이다. psi 는
+%       add_measurement 이 이미 도로 바꾸어 주지만 r 은 rad/s 로 남는다.
+%       otter.m 이 라디안으로 계산하기 때문이다. 1주차는 처음부터 끝까지 도로
+%       읽으므로, 그 변환을 이 한 곳에서 한 번만 한다. 변환이 여러 곳에 흩어지면
+%       그림마다 단위가 달라질 수 있다.
 %
-%   in the units the MODEL works in: psi already in degrees (add_measurement
-%   converts it) but r in rad/s, because otter.m works in radians. Week 1 is
-%   read in degrees throughout, so the conversion happens ONCE, here.
+%       add_measurement logs the contract shared by the whole course in the
+%       units the model itself works in: psi has already been converted to
+%       degrees, but r remains in rad/s because otter.m computes in radians.
+%       Week 1 is read in degrees throughout, so the conversion is done once,
+%       here. Scattered across several scripts it would eventually let two
+%       figures disagree.
 %
-%   The current model adds four columns of its own. They are present only
-%   when that model produced the log, so the fields appear only then and a
-%   script that asks for y.u_r on an open-loop run gets a clear error rather
-%   than a wrong number.
+%   조류 모델의 추가 열 / the extra columns of the current model
+%       조류 모델은 자기 몫의 네 열을 덧붙인다. 그 열들은 그 모델이 남긴 로그에만
+%       있으므로 필드도 그때만 생긴다. 따라서 개루프 실행 결과에서 y.u_r 을 찾으면
+%       잘못된 값이 아니라 분명한 오류가 난다.
+%       The current model appends four columns of its own. They exist only in
+%       logs that model produced, so the corresponding fields appear only
+%       then, and asking for y.u_r after an open-loop run raises a clear error
+%       rather than returning a wrong number.
 
 y.u   = o.y(:,1);                % surge velocity, over ground   [m/s]
 y.v   = o.y(:,2);                % sway velocity,  over ground   [m/s]

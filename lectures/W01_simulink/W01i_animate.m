@@ -1,28 +1,49 @@
 function W01i_animate(u, v, r, N, E, psi, t)
-%W01I_ANIMATE  W01_interactive.slx 의 실시간 화면 — 궤적, 상태, 그리고 두 프로펠러 속도.
+%W01I_ANIMATE  W01_interactive.slx 의 실시간 화면 — 궤적, 상태, 두 프로펠러 회전수.
+%              Live view for W01_interactive.slx: the track, the states, and
+%              the two propeller speeds.
 %
 %   W01_interactive.slx 의 Animate 블록이 매 스텝 부른다. 손으로 부를 일은 없다.
+%   Called at every step by the Animate block of W01_interactive.slx. There is
+%   no reason to call it by hand.
 %
-%   화면 구성 (4 x 4 칸)
-%     왼쪽 절반        North-East 궤적과 선체. 창이 배를 따라간다
+%   화면 구성 (4 x 4 칸) / the layout, a 4-by-4 grid
+%     왼쪽 절반        NED 평면의 궤적과 선체. 창이 배를 따라간다
+%                      the track in the NED plane with the hull drawn on it;
+%                      the window follows the vessel
 %     오른쪽 위 두 줄  u, v, r, psi
-%     오른쪽 셋째 줄   North, East 위치
-%     오른쪽 맨 아래   n_L, n_R — 버튼과 슬라이더가 실제로 만든 명령
+%     오른쪽 셋째 줄   북쪽·동쪽 위치 / the north and east positions
+%     오른쪽 맨 아래   n_L, n_R — 버튼과 슬라이더가 실제로 만들어 낸 명령
+%                      the command the buttons and sliders actually produced
 %
-%   왜 _tools/live_dash 를 쓰지 않는가
+%   왜 공용 화면 _tools/live_dash 를 쓰지 않는가 / why the shared live_dash is not used
 %     live_dash 는 모든 주차가 함께 쓰는 여섯 칸 화면이다. 이 모델에는 두 가지가
-%     더 필요하다 — 프로펠러 속도 칸, 그리고 배를 따라가는 궤적 창. 공용 함수를
-%     바꾸면 다른 주차의 그림이 함께 바뀌므로, 이 모델의 화면은 여기서 따로 그린다.
+%     더 필요하다 — 프로펠러 회전수를 보여 줄 칸, 그리고 배를 따라가는 궤적 창이다.
+%     공용 함수를 고치면 다른 주차의 그림이 함께 바뀌므로, 이 모델의 화면만 여기서
+%     따로 그린다.
 %
-%   n 은 어디서 오는가
+%     live_dash is the six-panel display every week shares. This model needs
+%     two things it does not provide: a panel for the propeller speeds, and a
+%     track window that follows the vessel. Editing the shared function would
+%     change the figures of every other week, so this model draws its own.
+%
+%   n 은 어디서 오는가 / where n comes from
 %     Animate 블록은 선체 상태만 받는다. 모델 최상위의 'n to live view' 블록이
-%     매 스텝 setappdata(0,'W01i_n',n) 로 n 을 맡겨 두고, 여기서 꺼내 쓴다.
+%     매 스텝 setappdata(0,'W01i_n',n) 로 회전수를 맡겨 두고, 이 함수가 꺼내 쓴다.
+%     The Animate block receives only the vessel states. The 'n to live view'
+%     block at the top level deposits the propeller speeds at every step with
+%     setappdata(0,'W01i_n',n), and this function collects them.
 %
-%   창 위치
-%     새 실행마다 화면 오른쪽 절반에 연다. 모델 창은 W01i_control 이 왼쪽 절반에
+%   창 위치 / window placement
+%     실행할 때마다 화면 오른쪽 절반에 연다. 모델 창은 W01i_control 이 왼쪽 절반에
 %     둔다. 둘이 겹치면 버튼을 누를 때마다 모델 창이 앞으로 나와 그래프를 가린다.
+%     The display opens on the right half of the screen at each run, while
+%     W01i_control places the model window on the left. Overlapping, the model
+%     window would come to the front at every button press and hide the plots.
 %
-%   INPUTS  otter.m 의 단위 그대로 (u, v [m/s], r [rad/s], N, E [m], psi [rad], t [s])
+%   입력 / inputs
+%     otter.m 의 단위 그대로 / in the units otter.m works in:
+%     u, v [m/s], r [rad/s], N, E [m], psi [rad], t [s]
 
 persistent fig A H D tDraw
 

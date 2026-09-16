@@ -77,7 +77,8 @@ end
 fprintf('\n  %d개 실행, 실패 %d개\n\n', numel(names), nf);
 
 %% ---- 검증 도구: 강의에 적힌 상수·유도를 원천과 대조한다 ----------------
-V = {'verify_constants','verify_w01_theory','verify_guidance','verify_alos','verify_review_math'};
+V = {'verify_constants','verify_w01_theory','verify_guidance','verify_alos', ...
+     'verify_review_math','verify_w02_derivative'};
 fprintf('  ================ 검증 도구 ================\n\n');
 for i = 1:numel(V)
     if ~exist(V{i}, 'file'), fprintf('  %-22s 없음\n', V{i}); continue; end

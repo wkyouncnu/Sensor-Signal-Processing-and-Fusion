@@ -258,18 +258,33 @@ $$
 X = K_p e + K_i\!\int\! e\,\mathrm{d}t \;\underbrace{-}_{\text{not a typo}}\; K_d\,\frac{N s}{s + N}\,u .
 $$
 
-> [!important] Why that third sign is a minus while the other two are plus
-> The textbook PID is written $X = K_p e + K_i\!\int\! e\,\mathrm{d}t + K_d\,\dot e$ — three plus signs. The minus appears here because the last term is no longer built from $e$. Substituting $e = u_d - u$ into the derivative,
+> [!important] Why that third sign is a minus, and what the minus is not
+> The textbook PID is written $X = K_p e + K_i\!\int\! e\,\mathrm{d}t + K_d\,\dot e$ — three plus signs. Substituting $e = u_d - u$ into the last term gives
 >
-> $$\dot e = \dot u_d - \dot u ,$$
+> $$K_d\,\dot e = -K_d\,\dot u \;+\; K_d\,\dot u_d .$$
 >
-> and on a setpoint that is held constant between steps $\dot u_d = 0$, which leaves
->
-> $$K_d\,\dot e = -K_d\,\dot u .$$
->
-> So the minus **is** the plus of the textbook form, rewritten in terms of the measurement. Nothing about the controller changed; only which signal is differentiated. Writing $+K_d\dot u$ instead would apply damping with the wrong sign and drive the loop unstable, so the sign is worth checking rather than copying.
->
-> The two forms differ in exactly one respect: at the instant of a setpoint step, $\dot u_d$ is an impulse, and the textbook form passes it to the actuator. That is the derivative kick the next row of the table refers to.
+> The form written above keeps the first piece and **discards the second**. So the minus is not the textbook plus rewritten in another variable; it is the textbook plus with a term deleted, and the deleted term is $K_d\dot u_d$. The two are different controllers, and it is worth being exact about how they differ and how they do not.
+
+- Restoring the filter, the difference between the two is
+
+$$
+X_{\text{textbook}} - X_{\text{above}} \;=\; K_d\,\frac{N s}{s + N}\,u_d ,
+$$
+
+- which is driven by the **setpoint alone** and never by the measurement. That fact settles both questions below. `verify_w02_derivative` confirms it on signals: over a 40 s run in which $u_d$ and $u$ were given deliberately unrelated waveforms and the loop was left open, the two commands differed by this expression and by nothing else, to $9\times10^{-11}$ N.
+
+| Setpoint | $\dot u_d$ | The two forms |
+|---|---|---|
+| held constant between steps, as everywhere in this week | $0$ | identical |
+| at the instant of a step | an impulse | the textbook form passes it to the actuator — the derivative kick of the table below |
+| moving continuously, as from the reference model of Week 7 or the guidance law of Week 4 | finite and non-zero | differ permanently by $K_d\dot u_d$ |
+
+- The last row is the case the phrase "held constant between steps" quietly excludes, and it is not a corner case: from Week 4 onward the heading command is produced by a guidance law and moves at every instant. A setpoint climbing at $0.1$ m/s² separates the two demands by $K_d \times 0.1$ N — $0.20$ N at $K_d = 2$, and $15.00$ N at $K_d = 150$.
+
+> [!note] What the deleted term cannot change
+> $K_d\dot u_d$ acts on the setpoint only, so it never appears in the loop around the plant. Both forms therefore share one characteristic polynomial,
+> $$1 + \frac{K_u}{T_u s + 1}\left(K_p + \frac{K_i}{s} + K_d\frac{Ns}{s+N}\right) = 0 ,$$
+> and with it the same poles, the same damping ratio and the same stability margin — identical to $2\times10^{-14}$ over $K_d \in \{2, 20, 60, 150\}$. What does differ is the closed-loop **zeros**. Those of the textbook form move with $K_d$; those of the form written above sit at $-K_i/K_p = -1.886$ and $-N = -20$ for every $K_d$. The choice between the two is a choice about the reference path, which is exactly what the table below weighs.
 
 - Two reasons, and only the second is about this week.
 
@@ -366,6 +381,20 @@ $$
 > The controlled variable is a velocity, so its derivative is an **acceleration**, and $K_d$ enters the equation of motion in exactly the place occupied by the mass. The effective time constant becomes $\tau_{\text{eff}} = T_u + K_u K_d$, so
 > $$\omega_n = \sqrt{\frac{K_u K_i}{T_u + K_u K_d}}\ \downarrow, \qquad \zeta = \frac{1 + K_u K_p}{2\sqrt{(T_u + K_u K_d)K_u K_i}}\ \downarrow .$$
 > Adding derivative action to this loop makes it **less** damped, not more. Section E measures it.
+
+> [!warning] The sign matters, but not for the reason usually given
+> The usual warning is that writing $+K_d$ in front of the measurement derivative applies damping backwards and destabilises the loop immediately. On this axis that warning is wrong twice over. The term is not a damper, and the loop does not fail immediately.
+>
+> Since $K_d$ sits where the mass sits, reversing its sign turns $M_{11} + K_d$ into $M_{11} - K_d$: the wrong sign **subtracts** mass from the hull. The loop survives for as long as there is mass left to subtract, and fails when the effective mass reaches zero — that is, near $K_d = M_{11} = 85.5$ kg.
+>
+> | $K_d$ | closed-loop poles with the sign reversed | |
+> |---|---|---|
+> | $2$ | $-19.48$, $-1.08 \pm 1.07j$ | stable |
+> | $20$ | $-14.60$, $-1.41 \pm 1.05j$ | stable |
+> | $60$ | $-1.26$, $-3.40 \pm 4.91j$ | stable |
+> | $150$ | $-0.81$, $+6.90 \pm 2.80j$ | **unstable** |
+>
+> A bisection puts the threshold at $K_d = 90.13$ kg, $5.4\%$ above $M_{11}$; the offset is the derivative filter, which delivers slightly less than $K_d$ at the frequencies that matter. The reversed sign is still a defect at every gain — it moves the poles somewhere they were not designed to be — but the claim that it destabilises the loop on its own does not survive the arithmetic. `verify_w02_derivative` produces this table.
 
 - This is a property of the **axis**, not of PID. Week 3 controls a heading, whose derivative is a rate rather than an acceleration, and there the same term supplies genuine damping. The lesson is to substitute the control law into the equation of motion before assuming what a term does.
 

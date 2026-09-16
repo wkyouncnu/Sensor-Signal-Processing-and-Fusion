@@ -1,14 +1,24 @@
 function f = W01_plot(R, LBL, ttl)
-%W01_PLOT  Draw the states and the track of one or more W01 runs.
+%W01_PLOT  1주차 실행 결과의 상태량과 궤적을 그린다.
+%          Draw the states and the track of one or more Week 1 runs.
 %
-%   W01_plot                      the run sitting in the base workspace
-%   W01_plot(R, LBL, ttl)         a cell array of runs, for W01_D_the_manoeuvre
-%   f = W01_plot(...)             the figure handle
+%   W01_plot                      기본 작업공간에 있는 실행 결과
+%                                 the run sitting in the base workspace
+%   W01_plot(R, LBL, ttl)         실행 결과들의 셀 배열. 절 D 가 이렇게 부른다
+%                                 a cell array of runs, as used by section D
+%   f = W01_plot(...)             그림 핸들 / the figure handle
 %
-%   Called automatically by the model's StopFcn, so pressing Run in Simulink
-%   produces the figure without any further command. Section D calls the same
-%   function, so the figure a student sees on screen and the figure embedded
-%   in the lecture note are produced by one piece of code.
+%   어디서 불리는가 / where this is called from
+%       모델의 StopFcn 이 자동으로 부른다. 따라서 Simulink 에서 Run 을 누르면
+%       다른 명령 없이 그림이 뜬다. 절 D 도 같은 함수를 부르므로, 학생이 화면에서
+%       보는 그림과 강의노트에 실린 그림이 같은 코드에서 나온다. 둘이 어긋날 수
+%       없게 하려는 것이다.
+%
+%       The model's StopFcn calls this automatically, so pressing Run in
+%       Simulink produces the figure without any further command. Section D
+%       calls the same function, which means the figure seen on screen and the
+%       figure printed in the lecture note come from one piece of code and
+%       cannot disagree.
 %
 %   R is a cell array of structs with fields
 %     t   time

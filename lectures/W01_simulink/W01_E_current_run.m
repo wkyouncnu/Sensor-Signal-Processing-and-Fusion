@@ -1,24 +1,63 @@
-%% W01 · 절 E — 같은 명령, 세 가지 조류
+%% W01 · 절 E — 하나의 명령을 네 가지 조류에서 반복한다
+%  W01 · Section E — one command, repeated in four ocean currents
 %
+%  실행 순서 / order of execution
 %      W01_0_setup
 %      W01_E_current_run
 %
-%  이 스크립트가 하는 일 — 세 단계
-%    1. W01_current.slx 를 네 번 돌린다. 명령은 네 번 모두 같다:
-%       두 프로펠러 모두 n0, 조향 없음. 바뀌는 것은 물뿐이다.
-%         잔잔한 물 · 0.5 m/s 조류가 뒤에서 · 옆에서 · 앞에서
-%    2. 각 실행의 대지속도 · 항적각 · 선수각을 표로 찍는다
-%    3. 조류마다 한 칸씩, 세 칸을 한 줄에 그린다. 세 칸의 축은 똑같고,
-%       잔잔한 물의 궤적을 회색으로 깔고, 조류의 방향과 크기를 화살표로 둔다
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 E 이며, Part 1 의 §1-13 을 실험으로 옮긴 자리이다. §1-13 은
+%      조류가 오른편에 더해지는 힘이 아니라 속도에서 빼는 양이라는 점을 유도했다.
+%      이 절은 그 결과가 궤적에서 어떻게 보이는지를 확인한다.
 %
-%  무엇을 보라는 것인가
-%    명령은 한 번도 바뀌지 않았는데 궤적은 바뀐다. 차이는 전부 물이 만든 것이다.
-%    뒤 · 앞 조류는 속도만 바꾸고, 옆 조류만 방향을 바꾼다 — 선수는 여전히 북쪽인데.
+%      This is section E of Part 2, and it turns §1-13 of Part 1 into an
+%      experiment. There it was derived that a current is not a force added to
+%      the right-hand side but a velocity subtracted from the hull's own; here
+%      that result is observed in the tracks themselves.
 %
-%  만드는 것 : img/W01_result_current.png
+%  절차 / procedure
+%      1. W01_current.slx 를 네 번 돌린다. 명령은 네 번 모두 완전히 같다 — 두
+%         프로펠러를 모두 n0 으로 돌리고 조향은 하지 않는다. 바뀌는 것은 물뿐이며,
+%         잔잔한 물, 뒤에서 오는 0.5 m/s 조류, 옆에서 오는 조류, 앞에서 오는
+%         조류의 네 경우이다.
+%      2. 각 실행의 대지속력, 항적각, 선수각을 표로 낸다.
+%      3. 조류마다 한 칸씩 세 칸을 한 줄에 그린다. 세 칸의 축 범위를 똑같이 맞추고,
+%         잔잔한 물에서의 궤적을 회색으로 깔아 비교 기준으로 삼으며, 조류의 방향과
+%         크기를 화살표로 표시한다.
 %
-%  2026-09-11 — 네 궤적을 한 칸에 겹쳐 그리던 것을 세 칸으로 나눴다 (교수자 요청).
-%  겹쳐 그리면 북쪽으로 가는 세 궤적이 한 선 위에 포개져서 구별되지 않았다.
+%      1. Run W01_current.slx four times with an identical command each time:
+%         both propellers at n0 and no steering. Only the water changes —
+%         still water, then a 0.5 m/s current from astern, from the beam, and
+%         from ahead.
+%      2. Tabulate the speed over ground, the course angle and the heading for
+%         each run.
+%      3. Draw one panel per current, three across a row, with identical axes
+%         in every panel, the still-water track underlaid in grey as a
+%         reference, and an arrow giving the direction and size of the current.
+%
+%  결과를 읽는 법 / how to read the result
+%      명령은 한 번도 바뀌지 않았는데 궤적은 네 번 모두 다르다. 그 차이는 전부
+%      물이 만든 것이다. 뒤에서 오는 조류와 앞에서 오는 조류는 속력만 바꾸는 반면,
+%      옆에서 오는 조류는 진행 방향 자체를 바꾼다. 선수는 여전히 북쪽을 향하고
+%      있는데도 그렇다는 점이 요점이며, 이것이 선수방위와 침로를 구별해야 하는
+%      이유이다.
+%
+%      The command never changes, yet no two tracks are alike, and the whole
+%      of the difference is made by the water. A current from astern or ahead
+%      changes only the speed, whereas a current on the beam changes the
+%      direction of travel — while the bow continues to point north. That is
+%      the reason heading and course must be distinguished.
+%
+%  만드는 것 / what it produces
+%      img/W01_result_current.png, 그리고 강의노트 §E 의 표.
+%      img/W01_result_current.png and the table of section E.
+%
+%  이력 / history
+%      2026-09-11 — 네 궤적을 한 칸에 겹쳐 그리던 것을 세 칸으로 나누었다.
+%      겹쳐 그리면 북쪽으로 향하는 세 궤적이 한 선 위에 포개져 구별되지 않았다.
+%      2026-09-11 — the four tracks, formerly overlaid in a single panel, were
+%      separated into three: overlaid, the three northbound tracks fell on one
+%      another and could not be told apart.
 
 clear V CASES R M i o y f k ax L0 tl allN allE pad bc Lc x0 y0 GREY COL
 here = fileparts(mfilename('fullpath'));

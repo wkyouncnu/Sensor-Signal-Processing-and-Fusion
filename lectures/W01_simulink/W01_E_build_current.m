@@ -1,47 +1,73 @@
 function W01_E_build_current()
-%W01_E_BUILD_CURRENT  Generate W01_current.slx — what an ocean current does.
+%W01_E_BUILD_CURRENT  조류 실험용 모델 W01_current.slx 를 코드로 생성한다.
+%                     Generate W01_current.slx — the model in which the water moves.
 %
-%   >> W01_E_build_current
+%   실행 / to run
+%       W01_E_build_current
 %
-%   WHY A SECOND MODEL
+%   강의에서의 위치 / place in the lecture
+%       Part 2 절 E 가 쓰는 모델이며, Part 1 §1-13 의 유도를 눈으로 볼 수 있게
+%       만든 것이다.
+%       This is the model used by section E of Part 2, built so that the
+%       derivation of §1-13 in Part 1 can be seen rather than only read.
 %
-%   W01_openloop.slx answers "what does a propeller command do". This one
-%   answers "what does the WATER do", and it is the first model in the course
-%   in which the vessel goes somewhere it was never told to go.
+%   왜 모델이 하나 더 필요한가 / why a second model
+%       W01_openloop.slx 는 "프로펠러 명령이 무엇을 하는가" 에 답한다. 이 모델은
+%       "물이 무엇을 하는가" 에 답하며, 선박이 한 번도 지시받지 않은 곳으로 가는
+%       이 강의 최초의 모델이다.
 %
-%   The command is the simplest possible: both propellers at n0, held for the
-%   whole run, no steering. With still water the track is a straight line to
-%   the north. Switch the current on and it is not.
+%       명령은 가능한 한 단순하게 둔다. 두 프로펠러를 모두 n0 으로 놓고 실행이
+%       끝날 때까지 유지하며 조향은 하지 않는다. 잔잔한 물에서는 궤적이 북쪽으로
+%       곧게 뻗는다. 조류를 켜면 그렇지 않다.
 %
-%   THE CHAIN
+%       W01_openloop.slx answers the question of what a propeller command
+%       does. This model answers what the water does, and it is the first
+%       model in the course in which the vessel goes somewhere it was never
+%       told to go. The command is as simple as it can be: both propellers at
+%       n0, held for the whole run, no steering. In still water the track is a
+%       straight line to the north. With the current switched on it is not.
+%
+%   신호의 흐름 / the chain
 %
 %     Speed command --> [ Otter USV ] --> x (12) --> [ Measurements ]
 %                            ^
 %                            |  V_c, beta_c
-%                     [ Ocean current ]  <-- computes what the plant does
-%                                            internally, so it can be SEEN
+%                     [ Ocean current ]  <-- 플랜트가 내부에서 하는 계산을
+%                                            밖으로 꺼내 보이기 위한 단계
 %
-%   The plant already takes V_c and beta_c; otter.m does the work. The Ocean
-%   current stage does not drive anything - it recomputes the same two lines
-%   otter.m runs on line 79-81 and logs them, so the relative velocity that
-%   the hydrodynamics actually feels becomes a signal on the diagram instead
-%   of a hidden intermediate.
+%       플랜트는 이미 V_c 와 beta_c 를 받으며, 계산은 otter.m 이 한다. Ocean
+%       current 단계는 아무것도 구동하지 않는다. otter.m 이 79~81 행에서 수행하는
+%       것과 같은 계산을 다시 하고 그 결과를 기록할 뿐이며, 그렇게 해야 유체력이
+%       실제로 느끼는 상대속도가 숨은 중간값이 아니라 도면 위의 신호가 된다.
 %
-%   WHAT otter.m DOES WITH THE CURRENT   (lines 79-81, then 184-203)
+%       The plant already accepts V_c and beta_c, and otter.m does the work.
+%       The Ocean current stage drives nothing: it repeats the computation
+%       otter.m performs on lines 79-81 and logs it, so that the relative
+%       velocity the hydrodynamics actually feels appears as a signal on the
+%       diagram instead of remaining a hidden intermediate.
 %
-%     u_c  = V_c cos(beta_c - psi)        the current, rotated into the body
-%     v_c  = V_c sin(beta_c - psi)        frame; psi is the vessel's heading
-%     nu_r = nu - [u_c v_c 0 0 0 0]'      relative (through-the-water) velocity
+%   otter.m 이 조류를 다루는 방식 / what otter.m does with the current
+%   (79~81 행, 그리고 184~203 행)
 %
-%   and then, crucially:
+%     u_c  = V_c cos(beta_c - psi)        조류를 선체고정좌표계로 회전시킨 것.
+%     v_c  = V_c sin(beta_c - psi)        psi 는 선박의 선수방위이다.
+%     nu_r = nu - [u_c v_c 0 0 0 0]'      물에 대한 상대속도
 %
-%     tau_damp, tau_crossflow, C   all use  nu_r     <- forces feel the WATER
-%     the kinematics  J * nu       uses     nu       <- position moves over GROUND
+%   그리고 결정적으로 / and then, crucially:
 %
-%   That split is the whole physics. A vessel is pushed sideways by a current
-%   without any sideways force acting on it, because the force balance and the
-%   position integral are written in different velocities.
+%     tau_damp, tau_crossflow, C  는 모두  nu_r 을 쓴다  <- 힘은 물을 느낀다
+%     운동학  J * nu              는       nu  를 쓴다   <- 위치는 지면 위에서 움직인다
 %
+%       이 갈라짐이 물리의 전부이다. 옆으로 미는 힘이 전혀 없는데도 선박이 옆으로
+%       밀려가는 것은, 힘의 균형과 위치의 적분이 서로 다른 속도로 쓰여 있기
+%       때문이다.
+%
+%       That split is the whole of the physics. A vessel is carried sideways
+%       by a current without any sideways force acting on it, because the
+%       force balance and the position integral are written in two different
+%       velocities.
+%
+%   다시 생성해도 안전하다. 기존 W01_current.slx 는 덮어쓴다.
 %   Regenerating is safe: any existing W01_current.slx is overwritten.
 
 m    = 'W01_current';

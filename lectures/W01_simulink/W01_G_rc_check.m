@@ -1,20 +1,68 @@
-%% W01 · 절 G — 스틱 위치마다 요구한 힘, 낸 힘, 두 프로펠러, 그리고 배의 응답
+%% W01 · 절 G — 스틱 위치마다 요구한 힘, 실제로 낸 힘, 두 프로펠러, 그리고 응답
+%  W01 · Section G — for each stick position: the force demanded, the force
+%                    delivered, the two propellers, and the vessel's response
 %
+%  실행 / to run
 %      W01_G_rc_check
 %
-%  이 스크립트가 하는 일
-%    1. 추력 배분의 행렬을 출력한다 — Bxn, 그 역행렬, 그리고 pinv(B) 로 푼 답과 같은지
-%    2. 스틱 위치 일곱 가지로 W01_rc.slx 를 60 s 씩 돌린다 (Pacing, 실시간 화면 끔).
-%       정지 상태에서 출발해 스틱을 그 자리에 60 s 동안 두었을 때와 같다.
-%       요구한 힘 tau_d, 두 축 속도 n, 실제로 낸 힘 tau_a, 정상상태 u, r 을 표로 낸다
-%    3. 같은 스틱을 Mode 1 과 Mode 2 로 돌려 로그가 같은지 본다
-%    4. 도달 가능 집합 위에 일곱 경우를 그린다 : img/W01_result_attainable.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 G 이다. 절 F 까지는 프로펠러 회전수를 직접 지시했으나,
+%      여기서부터는 원하는 힘을 지시하고 그 힘을 낼 회전수를 계산하게 한다.
+%      이 계산이 추력 배분이며, 부록 A1 과 5주차가 본격적으로 다루는 주제이다.
 %
-%  무엇을 보라는 것인가
-%    - 집합 안의 요구는 그대로 나온다 (tau_a = tau_d). 밖의 요구는 잘린다
-%    - 전진만 할 때 u = tau_X / |X_u| — 스틱에 비례한다. §F 처럼 n 에 비례하는 게 아니다
+%      This is section G of Part 2. Up to section F the propeller speeds were
+%      commanded directly; from here on a force is commanded and the propeller
+%      speeds that produce it are computed. That computation is control
+%      allocation, the subject of Appendix A1 and of Week 5.
 %
-%  학생은 이 스크립트를 돌릴 필요가 없다. 모델을 열고 START 를 누르면 된다.
+%  절차 / procedure
+%      1. 추력 배분의 행렬을 출력한다. B 행렬과 그 역행렬을 보이고, 의사역행렬
+%         pinv(B) 로 푼 해가 같은 답을 주는지 확인한다. 추진기가 둘이고 독립적으로
+%         지시할 수 있는 축도 둘이므로, 이 경우 두 해가 일치해야 한다.
+%      2. 스틱 위치 일곱 가지에 대해 W01_rc.slx 를 60 s 씩 돌린다. 실시간 페이싱과
+%         실시간 화면은 끈다. 정지 상태에서 출발해 스틱을 그 자리에 60 s 동안
+%         두고 있는 것과 같으며, 요구한 힘 tau_d, 두 축의 회전수 n, 실제로 낸 힘
+%         tau_a, 그리고 정상상태의 u 와 r 을 표로 낸다.
+%      3. 같은 스틱 입력을 Mode 1 과 Mode 2 로 각각 돌려 로그가 일치하는지 본다.
+%      4. 도달 가능한 힘의 집합 위에 일곱 경우를 찍어 그린다.
+%
+%      1. Print the allocation arithmetic: the matrix B, its inverse, and a
+%         check that the pseudo-inverse pinv(B) gives the same answer. With
+%         two thrusters and two independently commandable axes the two
+%         solutions must coincide.
+%      2. For seven stick positions, run W01_rc.slx for 60 s each with pacing
+%         and the live display disabled, which is equivalent to holding the
+%         stick still for 60 s from rest. Tabulate the demanded force tau_d,
+%         the two propeller speeds n, the force actually delivered tau_a, and
+%         the steady-state u and r.
+%      3. Run one stick position in Mode 1 and again in Mode 2 and compare the
+%         logs.
+%      4. Plot the seven cases on the attainable set of forces.
+%
+%  결과를 읽는 법 / how to read the result
+%      - 도달 가능 집합 안에 있는 요구는 그대로 실현된다, 즉 tau_a = tau_d 이다.
+%        집합 바깥의 요구는 잘려 나가고, 그때 두 값이 갈라진다.
+%      - 전진만 지시했을 때 정상상태 속력은 u = tau_X / |X_u| 이다. 이것은
+%        스틱 위치에 비례한다. 절 F 에서 회전수를 직접 지시했을 때 속력이 n 의
+%        제곱을 따랐던 것과 대비된다. 지시하는 양이 힘으로 바뀌면 관계가 선형이 된다.
+%
+%      - A demand inside the attainable set is delivered unchanged, so that
+%        tau_a equals tau_d. A demand outside it is clipped, and the two part
+%        company.
+%      - Under a pure ahead command the steady speed is u = tau_X / |X_u|,
+%        which is proportional to the stick position. This contrasts with
+%        section F, where the propeller speed was commanded directly and the
+%        speed followed n squared. Commanding a force makes the relation
+%        linear.
+%
+%  실습 시간에는 이 스크립트를 돌리지 않아도 된다. 모델을 열고 START 를 누른 뒤
+%  스틱을 직접 움직여 보는 것이 절 G 의 본래 순서이다.
+%  Running this script is not part of the laboratory exercise itself: section G
+%  asks for the model to be opened, started, and driven with the stick.
+%
+%  만드는 것 / what it produces
+%      img/W01_result_attainable.png, 그리고 강의노트 §G 의 표 둘.
+%      img/W01_result_attainable.png and the two tables of section G.
 
 clear m tx cfg C in y e i k s c dm Mv row lg f ax V Tc P
 here = fileparts(mfilename('fullpath'));

@@ -1,32 +1,65 @@
 function W01_F_build_interactive()
-%W01_F_BUILD_INTERACTIVE  W01_interactive.slx 를 코드로 만든다 — 버튼으로 모는 Otter.
+%W01_F_BUILD_INTERACTIVE  버튼으로 조종하는 모델 W01_interactive.slx 를 생성한다.
+%                         Generate W01_interactive.slx, the Otter driven by buttons.
 %
-%   >> W01_F_build_interactive
+%   실행 / to run
+%       W01_F_build_interactive
 %
-%   무엇을 만드는가
-%     W01_openloop.slx 와 같은 선체, 같은 실시간 화면(궤적 + u v r x y psi)에
-%     시간표 대신 버튼 다섯 개와 슬라이더 두 개를 붙인 모델이다.
+%   강의에서의 위치 / place in the lecture
+%       Part 2 절 F 가 쓰는 모델이다. 절 D 까지는 기동이 미리 정해진 시간표였고,
+%       여기서 처음으로 사람이 조종간을 쥔다. 조종해 보아야 느낌이 남는 양들이
+%       있다 — 정지 거리, 선회에 걸리는 시간, 크랩각의 크기가 그렇다.
 %
-%       버튼      STOP · AHEAD · ASTERN · PORT · STARBOARD
-%       슬라이더  SPEED  n0   0 ~ 100 rad/s   두 프로펠러의 공통 속도
-%                 TURN   dn   0 ~  30 rad/s   선회할 때 두 프로펠러 속도의 차이
+%       This is the model used by section F of Part 2. Up to section D the
+%       manoeuvre followed a fixed schedule; here the vessel is driven by
+%       hand for the first time. Some quantities are only understood by
+%       driving: the distance needed to stop, the time a turn takes, and the
+%       size of the crab angle.
 %
-%     실행 속도를 실제 시간에 맞추고(Simulation Pacing, 1 배) Stop 을 누를
-%     때까지 멈추지 않는다. 시뮬레이션이 도는 동안 버튼을 눌러 조종한다.
+%   무엇을 만드는가 / what is built
+%       W01_openloop.slx 와 같은 선체와 같은 실시간 화면(궤적과 u v r x y psi)을
+%       쓰되, 시간표 대신 버튼 다섯 개와 슬라이더 두 개를 붙인 모델이다.
 %
-%   왜 스크립트 없이 도는가
-%     W01_openloop 은 W01_0_setup 이 기본 작업공간에 변수를 채워야 돈다.
-%     이 모델은 필요한 변수를 **모델 작업공간**에 담아 함께 저장하고, 경로는
-%     모델을 열 때 PostLoadFcn 이 스스로 잡는다. .slx 를 열고 Run 만 누르면 된다.
+%         버튼      STOP · AHEAD · ASTERN · PORT · STARBOARD
+%         슬라이더  SPEED  n0   0 ~ 100 rad/s   두 프로펠러의 공통 회전수
+%                   TURN   dn   0 ~  30 rad/s   선회할 때 두 프로펠러의 회전수 차이
 %
-%   명령 규칙 — W01_openloop 의 시간표와 같은 규칙이다 (강의 §1-10, §D)
+%       실행 속도를 실제 시간에 맞추고(Simulation Pacing, 1 배) Stop 을 누를
+%       때까지 멈추지 않는다. 시뮬레이션이 도는 동안 버튼을 눌러 조종한다.
+%
+%       The same hull and the same live display as W01_openloop.slx — the
+%       track together with u, v, r, x, y and psi — but with five buttons and
+%       two sliders in place of the schedule. Simulation pacing is set to real
+%       time and the run does not end until Stop is pressed, so the buttons
+%       are pressed while the simulation is running.
+%
+%   왜 준비 스크립트 없이 도는가 / why no setup script is needed
+%       W01_openloop 은 W01_0_setup 이 기본 작업공간을 채워야 돈다. 이 모델은
+%       필요한 변수를 모델 작업공간에 담아 모델과 함께 저장하고, 경로는 모델을
+%       열 때 PostLoadFcn 이 스스로 잡는다. 따라서 .slx 를 열고 Run 을 누르는
+%       것만으로 동작한다.
+%
+%       W01_openloop requires W01_0_setup to have populated the base
+%       workspace. This model stores its variables in the model workspace and
+%       saves them with the model, and its PostLoadFcn sets the path when the
+%       model is opened, so opening the .slx and pressing Run is sufficient.
+%
+%   명령 규칙 / the command rule
+%   W01_openloop 의 시간표와 같은 규칙이다 (강의 §1-10 과 절 D).
+%   The same rule the schedule of W01_openloop uses (§1-10 and section D).
 %       AHEAD      n = [ n0     ;  n0    ]
-%       ASTERN     n = [-n0     ; -n0    ]   후진 추력은 k_neg 라서 더 약하다
-%       PORT       n = [ n0-dn  ;  n0+dn ]   왼쪽을 느리게 -> 선수가 좌현으로
+%       ASTERN     n = [-n0     ; -n0    ]   후진 추력 계수 k_neg 가 작아 더 느리다
+%                                            k_neg is the smaller coefficient, so
+%                                            astern is slower than ahead
+%       PORT       n = [ n0-dn  ;  n0+dn ]   왼쪽을 느리게 하면 선수가 좌현으로 돈다
+%                                            slowing the port propeller turns the bow to port
 %       STARBOARD  n = [ n0+dn  ;  n0-dn ]
-%       STOP       n = [ 0      ;  0     ]   추력이 없으니 감쇠로 서서히 선다
+%       STOP       n = [ 0      ;  0     ]   추력이 사라지고 감쇠만 남아 서서히 선다
+%                                            thrust is removed and damping alone
+%                                            brings the vessel to rest
 %
-%   다시 만들어도 안전하다. 기존 W01_interactive.slx 는 덮어쓴다.
+%   다시 생성해도 안전하다. 기존 W01_interactive.slx 는 덮어쓴다.
+%   Regenerating is safe: any existing W01_interactive.slx is overwritten.
 
 m    = 'W01_interactive';
 here = fileparts(mfilename('fullpath'));

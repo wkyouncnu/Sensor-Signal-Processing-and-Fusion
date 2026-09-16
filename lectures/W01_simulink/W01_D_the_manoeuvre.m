@@ -1,21 +1,64 @@
-%% W01 · 절 D — 한 번의 조종 : 직진, 좌선회, 직진, 우선회, 직진
+%% W01 · 절 D — 한 번의 기동 : 직진, 좌선회, 직진, 우선회, 직진
+%  W01 · Section D — one manoeuvre: straight, port, straight, starboard, straight
 %
+%  실행 순서 / order of execution
 %      W01_0_setup
 %      W01_D_the_manoeuvre
 %
-%  이 스크립트가 하는 일 — 세 단계
-%    1. W01_openloop.slx 를 150 s 한 번 돌린다. 제어기는 없다. 두 프로펠러
-%       속도가 시간표를 따를 뿐이다 — 좌선회는 왼쪽을 3.5 rad/s 느리게, 우선회는 반대로
-%    2. 다섯 구간마다 u, v, r, beta 를 표로 찍는다 (각 구간 마지막 5분의 1 의 평균)
-%    3. 궤적 그림과 "선수각 대 항로각" 그림을 그린다
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 D 이며, Part 1 의 §1-12 가 예고한 두 가지를 실제로 보이는
+%      자리이다. 하나는 옆으로 미는 힘이 전혀 없는데도 옆 속도가 생긴다는 것이고,
+%      다른 하나는 선수가 가리키는 방향과 배가 실제로 가는 방향이 다르다는 것이다.
+%      뒤의 것이 크랩각이며, 4주차의 유도법칙이 정면으로 다루게 될 양이다.
 %
-%  무엇을 보라는 것인가
-%    - 두 프로펠러 속도의 작은 차이만으로 배가 돈다. 후진하는 프로펠러는 없다
-%      (N = y_p (T_left - T_right) 이므로 좌선회는 왼쪽을 느리게 한다)
-%    - 옆으로 미는 힘 Y 는 0 인데 옆 속도 v 는 0 이 아니다 — 강의 §1-12
-%    - 선회 중에는 선수가 가리키는 방향과 실제로 가는 방향이 7° 다르다 — 크랩각
+%      This is section D of Part 2, and it demonstrates the two consequences
+%      announced in §1-12 of Part 1: that a sway velocity appears although no
+%      sway force is ever applied, and that the direction the bow points
+%      differs from the direction the vessel travels. The second of these is
+%      the crab angle, the quantity the guidance laws of Week 4 must confront.
 %
-%  만드는 것 : img/W01_result_track.png
+%  절차 / procedure
+%      1. W01_openloop.slx 를 150 s 동안 한 번 돌린다. 제어기는 없으며, 두
+%         프로펠러의 회전수가 미리 정해진 시간표를 따를 뿐이다. 좌선회 구간에서는
+%         왼쪽 프로펠러를 3.5 rad/s 느리게 돌리고, 우선회 구간에서는 그 반대로 한다.
+%      2. 다섯 구간 각각에 대해 u, v, r 과 크랩각 beta 를 표로 낸다. 값은 각
+%         구간의 마지막 5분의 1 을 평균한 것이며, 이렇게 하면 구간이 바뀔 때의
+%         과도응답이 섞이지 않는다.
+%      3. 궤적 그림과, 선수각과 항로각을 함께 그린 그림을 만든다.
+%
+%      1. Run W01_openloop.slx once for 150 s. There is no controller: the two
+%         propeller speeds simply follow a schedule, the port propeller turned
+%         down by 3.5 rad/s for the turn to port and the reverse for the turn
+%         to starboard.
+%      2. Tabulate u, v, r and the crab angle beta for each of the five
+%         segments, averaged over the final fifth of the segment so that the
+%         transient at each change of command is excluded.
+%      3. Plot the track, and plot heading against course.
+%
+%  결과를 읽는 법 / how to read the result
+%      - 두 프로펠러 회전수의 작은 차이만으로 선박이 선회한다. 어느 프로펠러도
+%        후진하지 않는다. 요 모멘트가 N = y_pont (T_left - T_right) 이므로,
+%        좌선회를 위해서는 왼쪽을 느리게 하는 것으로 충분하다.
+%      - 옆으로 미는 힘 Y 는 0 인데도 옆 속도 v 는 0 이 아니다. 선회로 생긴
+%        회전이 Coriolis 항을 통해 옆 방향 운동을 만들기 때문이며, §1-12 가
+%        유도한 그대로이다.
+%      - 선회 중에는 선수가 가리키는 방향과 실제로 나아가는 방향이 약 7° 어긋난다.
+%        이 차이가 크랩각이고, 제어기가 선수각을 완벽하게 맞추더라도 남는 양이다.
+%
+%      - A small difference between the two propeller speeds is enough to turn
+%        the vessel, and neither propeller ever runs astern. The yaw moment is
+%        N = y_pont (T_left - T_right), so turning to port requires only that
+%        the port propeller be slowed.
+%      - The sway force Y is zero throughout, yet the sway velocity v is not.
+%        The rotation set up by the turn produces lateral motion through the
+%        Coriolis terms, exactly as derived in §1-12.
+%      - During a turn the bow points some 7 degrees away from the direction
+%        of travel. That difference is the crab angle, and it remains even
+%        when the heading is controlled perfectly.
+%
+%  만드는 것 / what it produces
+%      img/W01_result_track.png, 그리고 강의노트 §D 의 구간별 표.
+%      img/W01_result_track.png and the per-segment table of section D.
 
 clear V cfg y_p o y tp PH seg i k u v r nL nR dpsi N_cmd Ymax nn kP kS f Ls b ax
 here = fileparts(mfilename('fullpath'));

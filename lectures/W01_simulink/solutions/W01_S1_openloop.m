@@ -1,38 +1,56 @@
 function W01_S1_openloop(mdl)
-%W01_S1_OPENLOOP  Solution to Week 1, Problem 1 — the open loop, wired by hand.
+%W01_S1_OPENLOOP  1주차 문제 1 의 모범답안 — 개루프 모델을 손으로 배선한다.
+%                 Solution to Week 1, Problem 1: the open loop, wired by hand.
 %
-%   >> W01_S1_openloop        builds W01_S1.slx
-%   >> W01_check(1,'W01_S1')  checks it
+%   >> W01_S1_openloop        W01_S1.slx 를 만든다 / builds W01_S1.slx
+%   >> W01_check(1,'W01_S1')  채점한다 / checks it
 %
-%   WHAT THE PROBLEM ASKED
+%   문제가 요구한 것 / what the problem asked
+%       선체에 상수 명령을 주어 구동하고 열두 개의 상태를 기록할 것.
+%       Drive the hull with a constant command and log the twelve states.
 %
-%   Drive the hull with a constant command and log the twelve states.
+%   세 가지 판단과 그 근거 / the three decisions, and why each goes that way
 %
-%   THE THREE DECISIONS, AND WHY EACH ONE GOES THAT WAY
+%   1  명령은 스칼라가 아니라 2 차원 벡터이다.
+%      Otter 는 프로펠러가 둘이고 otter.m 은 n = [n_left ; n_right] 를 기대한다.
+%      스칼라를 주면 Constant 블록은 받아 주지만 플랜트가 거절하며, 그때 나오는
+%      오류 메시지는 차원을 말할 뿐 무엇을 잘못했는지는 말해 주지 않는다.
 %
-%   1  THE COMMAND IS A 2-VECTOR, NOT A SCALAR. The Otter has two propellers
-%      and otter.m expects n = [n_left ; n_right]. A scalar would be accepted
-%      by the Constant block and rejected by the plant, and the error message
+%      The command is a 2-vector, not a scalar. The Otter has two propellers
+%      and otter.m expects n = [n_left ; n_right]. A scalar is accepted by the
+%      Constant block and rejected by the plant, and the resulting message
 %      names a dimension rather than the mistake.
 %
-%   2  BOTH ENTRIES ARE EQUAL. The yaw moment is N = y_p (T_left - T_right),
-%      so equal shaft speeds produce no turn. That is what makes Problem 1 a
-%      test of surge alone: one number to predict, one to measure.
+%   2  두 성분이 같다.
+%      요 모멘트가 N = y_pont (T_left - T_right) 이므로 두 회전수가 같으면
+%      선회가 생기지 않는다. 그래서 문제 1 은 전진축만의 시험이 된다. 예측할
+%      숫자 하나와 측정할 숫자 하나가 있을 뿐이다.
 %
-%   3  THE LOG CARRIES ALL TWELVE STATES. Selecting u, v and psi in the model
-%      would work, but Week 1 is partly about knowing which index is which,
-%      and a full log lets the same model answer Problems 2 and 3 without
-%      being rewired.
+%      Both entries are equal. The yaw moment is N = y_pont (T_left - T_right),
+%      so equal shaft speeds produce no turn, which is what makes Problem 1 a
+%      test of surge alone: one number to predict and one to measure.
 %
-%   THE NUMBER TO PREDICT BEFORE RUNNING
+%   3  로그가 열두 상태를 모두 담는다.
+%      모델 안에서 u, v, psi 만 골라내도 동작은 한다. 그러나 어느 자리가 어느
+%      상태인지 아는 것도 1주차의 내용이고, 전체를 기록해 두면 같은 모델로
+%      문제 2 와 문제 3 을 배선을 바꾸지 않고 풀 수 있다.
 %
-%   At steady state thrust balances linear surge damping,
+%      The log carries all twelve states. Selecting u, v and psi inside the
+%      model would work, but knowing which index is which is itself part of
+%      Week 1, and a full log lets the same model answer Problems 2 and 3
+%      without being rewired.
+%
+%   돌리기 전에 예측할 숫자 / the number to predict before running
+%       정상상태에서는 추력과 선형 전진감쇠가 균형을 이룬다.
+%       At steady state thrust balances linear surge damping,
 %
 %       2 k_pos n |n| = X_u u        ->  u = 2 (0.01108)(60)(60) / 77.554
 %                                          = 1.0286 m/s
 %
-%   Section C of the lecture measures 1.0286 m/s. The agreement is exact to
-%   four decimals because surge damping in otter.m really is linear.
+%       강의 절 C 의 측정값도 1.0286 m/s 이다. 소수 넷째 자리까지 맞는 것은
+%       otter.m 의 전진감쇠가 실제로 선형이기 때문이다.
+%       Section C of the lecture measures 1.0286 m/s. The agreement is exact
+%       to four decimals because surge damping in otter.m really is linear.
 %
 %   See also W01_CHECK, W01_S2_MANOEUVRE, W01_S3_CURRENT.
 

@@ -1,41 +1,68 @@
 function W01_1_build_openloop()
-%W01_1_BUILD_OPENLOOP  Generate W01_openloop.slx from code.
+%W01_1_BUILD_OPENLOOP  개루프 모델 W01_openloop.slx 를 코드로 생성한다.
+%                      Generate the open-loop model W01_openloop.slx from code.
 %
-%   >> W01_1_build_openloop
+%   실행 / to run
+%       W01_1_build_openloop
 %
-%   THE SIGNAL CHAIN
+%   강의에서의 위치 / place in the lecture
+%       Part 2 의 절 B 이다. 이번 주 실습이 쓰는 모델을 만드는 자리이며,
+%       모델을 손으로 그리지 않고 스크립트로 만드는 이유도 여기서 설명된다.
+%       This is section B of Part 2. It produces the model used by the rest of
+%       the week, and is where the practice of generating models by script
+%       rather than drawing them by hand is introduced.
 %
-%   Every model in this course is laid out left to right in the same stages,
-%   in the order used by the MSS demonstration models
-%   (Tools/MSS/SIMULINK/mssSimulinkDemos/demoOtterUSVHeadingControl.slx):
+%   신호의 흐름 / the signal chain
+%       이 강의의 모든 모델은 MSS 데모 모델
+%       (Tools/MSS/SIMULINK/mssSimulinkDemos/demoOtterUSVHeadingControl.slx)
+%       과 같은 순서로, 왼쪽에서 오른쪽으로 배치한다.
 %
-%     command -> [reference] -> [controller] -> [allocation] -> plant -> measurement
+%         command -> [reference] -> [controller] -> [allocation] -> plant -> measurement
 %
-%   Week 1 has no controller and no allocation, because there is no loop yet.
-%   The stages that do exist keep their standard positions, so the plant sits
-%   where the plant sits in every other week of the course.
+%       1주차에는 되먹임 고리가 아직 없으므로 controller 와 allocation 단계가
+%       비어 있다. 그러나 남은 단계들은 표준 위치를 그대로 지키므로, 플랜트는
+%       다른 모든 주차에서와 같은 자리에 놓인다. 매주 같은 자리에서 같은 것을
+%       찾을 수 있게 하려는 것이다.
 %
-%     [ Manoeuvre command ] --> n --> [ Otter USV ] --> x (12) --> [ Measurements ]
-%       straight, port, starboard        otter.m, unchanged
+%       Every model in this course is laid out left to right in the stages
+%       above, in the order used by the MSS demonstration models. Week 1 has
+%       no controller and no allocation because there is no loop yet, but the
+%       stages that do exist keep their standard positions, so the plant sits
+%       where the plant sits in every other week.
 %
-%   THE MANOEUVRE
+%         [ Manoeuvre command ] --> n --> [ Otter USV ] --> x (12) --> [ Measurements ]
+%           직진·좌선회·우선회                otter.m 를 고치지 않고 그대로
 %
-%   The command is a function of time, not a constant: run straight, turn to
-%   port, run straight, turn to starboard, run straight. Both propellers turn
-%   ahead throughout - nothing goes astern - and the turns are made by a small
-%   difference between them.
+%   기동의 내용 / the manoeuvre
+%       명령은 상수가 아니라 시간의 함수이다. 직진 — 좌선회 — 직진 — 우선회 —
+%       직진의 순서로 S 자를 그린다. 두 프로펠러 모두 전진 방향으로만 돌고,
+%       선회는 둘 사이의 작은 회전수 차이로 만든다.
 %
-%   A single constant command cannot show what this week is about. A straight
-%   run alone never separates heading from course, and never exercises the
-%   rotation matrix, because psi never changes. The S-shape does both, and it
-%   is also the first thing anyone would drive a real USV through.
+%       상수 명령 하나로는 이번 주의 주제를 보일 수 없다. 직진만 해서는 psi 가
+%       변하지 않으므로 선수방위와 침로가 갈라지지 않고, 회전행렬도 쓰이지
+%       않는다. S 자 기동은 그 둘을 모두 드러내며, 실제 무인수상정을 처음
+%       물에 띄웠을 때 시켜 보는 기동이기도 하다.
 %
-%   Setting dn = 0 in W01_0_setup.m collapses the manoeuvre back to a constant
-%   command, which is how section C performs its terminal-speed sweep.
+%       The command is a function of time rather than a constant: straight,
+%       port, straight, starboard, straight. Both propellers turn ahead
+%       throughout, and the turns are made by a small difference between them.
+%       A single constant command could not show what this week is about: with
+%       psi held fixed, heading is never separated from course and the
+%       rotation matrix is never exercised. The S-shape does both, and is also
+%       the first manoeuvre anyone would drive a real USV through.
 %
-%   Each stage is a subsystem. The top level shows the chain and nothing else;
-%   everything that makes a stage work lives inside it.
+%       W01_0_setup 에서 dn = 0 으로 두면 이 기동은 상수 명령으로 되돌아간다.
+%       절 C 의 종단속도 스윕이 바로 그 상태를 쓴다.
+%       Setting dn = 0 in W01_0_setup collapses the manoeuvre back to a
+%       constant command, which is the state section C sweeps in.
 %
+%   모델의 구조 / how the model is organised
+%       각 단계는 서브시스템이다. 최상위 화면에는 사슬만 보이고, 각 단계를
+%       실제로 동작시키는 것들은 모두 그 안에 들어 있다.
+%       Each stage is a subsystem. The top level shows the chain and nothing
+%       else; everything that makes a stage work lives inside it.
+%
+%   다시 생성해도 안전하다. 기존 W01_openloop.slx 는 덮어쓴다.
 %   Regenerating is safe: any existing W01_openloop.slx is overwritten.
 
 m    = 'W01_openloop';
