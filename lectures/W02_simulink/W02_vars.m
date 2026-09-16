@@ -32,6 +32,14 @@ V.Kp_d = (2*zeta_d*sqrt(V.T_u*V.K_u*V.Ki_d) - 1)/V.K_u;
 
 %  ---- controller, as the model reads it ----------------------------------
 V.Kp = V.Kp_d;  V.Ki = V.Ki_d;  V.Kd = 0;  V.Nf = 20;
+
+%  미분항의 설정값 가중 / the setpoint weight of the derivative term
+%    c_d = 0  측정값을 미분한다 (이 강의의 기본값)
+%    c_d = 1  오차를 미분한다 (교과서형, Simulink PID 블록과 같다)
+%    c_d = 0  differentiate the measurement, which is this course's default
+%    c_d = 1  differentiate the error, the textbook form and the one
+%             Simulink's PID Controller block uses
+V.c_d = 0;
 V.aw_mode = 2;  V.K_aw = 5;
 
 %  ---- command -------------------------------------------------------------

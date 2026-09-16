@@ -1,12 +1,40 @@
-%% W02 · section G — the hand-built PID against Simulink's PID Controller block
+%% W02 · 절 G — 손으로 조립한 PID 와 Simulink 의 PID Controller 블록
+%  W02 · Section G — the hand-built PID against Simulink's PID Controller block
 %
+%  실행 순서 / order of execution
 %      W02_0_setup
 %      W02_G_block_vs_handbuilt
 %
-%  Both controllers are inside W02_surge_control.slx and pid_mode chooses.
-%  The claim under test: they are the same controller. The qualification:
-%  they stop being the same once the derivative is switched on.
-%  Produces img/W02_result_block.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 G 이다. 절 D 부터 F 까지는 제어기를 블록 아홉 개로 직접
+%      조립해 썼다. 라이브러리 블록 하나로도 같은 일을 할 수 있으므로, 그 둘이
+%      정말로 같은 제어기인지를 확인하는 자리이다.
+%
+%      This is section G of Part 2. Sections D to F used a controller
+%      assembled from nine blocks by hand, although one library block can do
+%      the same work. Here the two are compared to establish whether they are
+%      in fact the same controller.
+%
+%  시험하는 주장과 그 단서 / the claim under test, and its qualification
+%      주장  두 제어기는 같다.
+%      단서  미분을 켜는 순간부터는 같지 않다.
+%
+%      두 경로가 갈라지는 지점은 §2-4 가 다룬 바로 그 자리이다. 라이브러리
+%      블록은 자기 입력을 미분하는데 그 입력이 오차이고, 손으로 조립한 경로는
+%      측정값을 미분한다. 두 형태는 되먹임 경로가 같아 극점이 같고, 설정값
+%      경로가 달라 영점이 다르다.
+%
+%      The claim is that the two controllers are the same, and the
+%      qualification is that they cease to be the same once the derivative is
+%      switched on. The point at which they part is the one §2-4 examined: the
+%      library block differentiates its own input, which here is the error,
+%      whereas the hand-built path differentiates the measurement. The two
+%      share a feedback path, and therefore their poles, but not their
+%      setpoint path, and therefore not their zeros.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W02_result_block.png
+%      One table and img/W02_result_block.png
 
 clear RB CASES i gap ex
 here = fileparts(mfilename('fullpath'));

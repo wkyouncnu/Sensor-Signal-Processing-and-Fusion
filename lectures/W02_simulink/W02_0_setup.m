@@ -50,6 +50,15 @@ Ki = 192.38;                 % integral gain     [N per m]
 Kd = 0;                      % derivative gain   [N per m/s^2]
 Nf = 20;                     % derivative filter bandwidth [rad/s]
 
+%  미분항은 (c_d*u_d - u) 를 미분한다. c_d 가 그 설정값 가중이다.
+%    c_d = 0  측정값을 미분한다. 설정값이 계단으로 변해도 미분 킥이 없다
+%    c_d = 1  오차를 미분한다. 교과서형이며 Simulink PID 블록과 같아진다
+%  The derivative acts on (c_d*u_d - u), and c_d is its setpoint weight:
+%    c_d = 0  differentiate the measurement, so a step in u_d produces no kick
+%    c_d = 1  differentiate the error, the textbook form, which is what
+%             Simulink's PID Controller block does
+c_d = 0;
+
 %% ---- anti-windup --------------------------------------------------------
 %  aw_mode  0  none            the integrator never stops
 %           1  clamping        integration is frozen while the actuator is

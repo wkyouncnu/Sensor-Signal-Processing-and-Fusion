@@ -87,58 +87,193 @@ add_sum(c, 'error', '+-', [280 90]);
 add_block('simulink/Math Operations/Gain', [c '/Kp'], 'Gain','Kp', ...
           'Position',[380 40 430 76]);
 
-%  All three anti-windup schemes are the same block with a different mode, so
-%  the comparison in section F changes one number and nothing else.
-blk = [c '/anti-windup'];
-%  Six inputs 52 px apart, so the three constants that feed it can sit on
-%  their own rows with their names underneath: H = 5*52 + 40 = 300.
-add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
-          'Position',[380 140 530 440]);
-set_mlfcn(blk, { ...
-'function di = antiwindup(e, X_cmd, X_sat, mode, Ki, K_aw)'
-'%#codegen'
-'% What reaches the integrator.'
-'%'
-'%   mode 0  none'
-'%        1  clamping  - integration is frozen while the actuator is'
-'%                       saturated AND the error drives it further in'
-'%        2  back-calculation - the excess is fed back through K_aw'
-'%'
-'% Windup is not a fault of the integrator. It is what an integrator does'
-'% when it is asked to close a loop that the actuator has already opened.'
-'di = Ki * e;'
-'sat = X_cmd - X_sat;'
-'if Ki ~= 0'
-'    if mode == 1'
-'        if abs(sat) > 1e-9 && sign(e) == sign(sat)'
-'            di = 0;'
-'        end'
-'    elseif mode == 2'
-'        di = di - K_aw * sat;'
-'    end'
-'end'
-'% With Ki = 0 there is no integrator to protect, and back-calculation would'
-'% otherwise charge the integrator during a saturation it can never discharge.'
-'end'}, 'di', '[1 1]');
+%  적분기에 실제로 들어가는 양을, 표준 블록만으로 만든다.
+%
+%  2026-09-16 이전에는 이 자리가 MATLAB Function 블록 하나였다. 도면은 깔끔했지만
+%  세 가지 안티와인드업 방식의 차이가 블록 안에 숨어 있어서, 더블클릭해 코드를
+%  읽기 전에는 무엇이 다른지 볼 수 없었다. §2-6 이 설명하는 것이 바로 그 차이이므로,
+%  그것만은 도면 위에 있어야 한다. 그래서 Sum·Product·Switch 로 풀어 썼다.
+%  수치는 예전 블록과 같아야 하며, verify_w02_antiwindup 이 세 방식 모두에 대해
+%  그것을 확인한다.
+%
+%  Until 2026-09-16 this was a single MATLAB Function block. The diagram was
+%  tidier, but the difference between the three anti-windup schemes was hidden
+%  inside it and could not be seen without opening the block and reading code.
+%  That difference is precisely what §2-6 is about, so it belongs on the
+%  canvas. It is therefore assembled here from sums, products and switches.
+%  The arithmetic must match the block it replaces, and
+%  verify_w02_antiwindup checks that for all three schemes.
+%
+%  들어가는 식 / the expression being built
+%      sat = X_cmd - X_sat          작동기가 거절한 부분 / the part refused
+%      mode 0  di = Ki e
+%      mode 1  di = 0  while  |sat| > 1e-9  and  e and sat have one sign,
+%              otherwise Ki e                        클램핑 / clamping
+%      mode 2  di = Ki e - K_aw sat               역계산 / back-calculation
+%
+%  Ki = 0 이면 보호할 적분기가 없다. 그런데 역계산 항은 Ki 와 무관하므로 그대로
+%  두면 존재하지도 않는 적분기를 충전한다. 그래서 'Ki live' 가 그 항을 막는다.
+%  With Ki = 0 there is no integrator to protect, yet the back-calculation
+%  term does not contain Ki and would charge an integrator that is not there.
+%  'Ki live' gates it off.
+%  입력은 셋뿐이다. 게인과 모드는 상수이므로 이 안에 둔다. 예전에는 셋을 모두
+%  바깥에서 Constant 로 넣어 주었는데, 그러면 최상위 화면에 블록 셋과 선 셋이
+%  늘어날 뿐 얻는 것이 없었다.
+%  There are three inputs. The gains and the mode are constants, so they live
+%  inside. They used to be supplied from outside as Constant blocks, which put
+%  three more blocks and three more lines on the parent canvas for nothing.
+aw_blk = add_subsys(c, 'anti-windup', [380 150 530 330], ...
+                    {'e','X_cmd','X_sat'}, {'di'});
 
-for i = 1:3
-    add_block('simulink/Sources/Constant', [c '/' AW{i}], ...
-              'Value', AW{i}, 'Position', [150 265+60*i 205 295+60*i]);
-end
+set_param([aw_blk '/e'],     'Position',[ 60  80  90 100]);
+set_param([aw_blk '/X_cmd'], 'Position',[ 60 140  90 160]);
+set_param([aw_blk '/X_sat'], 'Position',[ 60 200  90 220]);
+set_param([aw_blk '/di'],    'Position',[980 290 1010 310]);
+
+%  ---- 이 안에서만 쓰는 상수 / the constants used only here ---------------
+add_block('simulink/Sources/Constant', [aw_blk '/Ki'],      'Value','Ki', ...
+          'Position',[150 300 200 330]);
+add_block('simulink/Sources/Constant', [aw_blk '/K_aw'],    'Value','K_aw', ...
+          'Position',[150 360 200 390]);
+add_block('simulink/Sources/Constant', [aw_blk '/zero'],    'Value','0', ...
+          'Position',[150 440 200 470]);
+add_block('simulink/Sources/Constant', [aw_blk '/tol'],     'Value','1e-9', ...
+          'Position',[150 500 200 530]);
+add_block('simulink/Sources/Constant', [aw_blk '/aw_mode'], 'Value','aw_mode', ...
+          'Position',[150 560 210 590]);
+
+%  ---- 무엇이 거절되었는가 / what the actuator refused --------------------
+add_sum(aw_blk, 'sat', '+-', [280 180]);
+
+%  ---- 보호가 없을 때 적분기에 들어가는 양 / the unprotected integrand -----
+add_block('simulink/Math Operations/Product', [aw_blk '/Ki e'], ...
+          'Position',[280 70 320 130]);
+
+%  ---- 역계산 / back-calculation ------------------------------------------
+add_block('simulink/Math Operations/Product', [aw_blk '/K_aw sat'], ...
+          'Position',[400 150 440 210]);
+add_sum(aw_blk, 'back-calculation', '+-', [520 120]);
+
+%  Ki = 0 이면 역계산 항을 통째로 건너뛰고 Ki e 를 그대로 내보낸다. 곱셈이 아니라
+%  스위치로 막는데, Relational Operator 의 출력이 boolean 이고 Product 블록이
+%  boolean 을 곱하지 않기 때문이며, 스위치가 의도도 더 분명히 드러낸다.
+%  With Ki = 0 the back-calculation term is bypassed and Ki e passes through
+%  unchanged. The guard is a switch rather than a multiplication because a
+%  Relational Operator outputs a boolean and a Product block will not multiply
+%  one; the switch also states the intent more plainly.
+add_block('simulink/Logic and Bit Operations/Relational Operator', ...
+          [aw_blk '/Ki live'], 'Operator','~=', 'Position',[400 290 440 340]);
+add_block('simulink/Signal Routing/Switch', [aw_blk '/aw gate'], ...
+          'Criteria','u2 ~= 0', 'Position',[600 80 640 180]);
+
+%  ---- 클램핑 / clamping ---------------------------------------------------
+%  얼어붙이는 조건 두 가지를 각각 블록으로 만든다.
+%    ① 실제로 포화되어 있는가           |sat| > 1e-9
+%    ② 오차가 그 포화를 더 깊게 미는가   e 와 sat 의 부호가 같은가, 즉 e*sat > 0
+%  Each of the two conditions for freezing is built as its own block:
+%    (1) is the actuator actually saturated,  |sat| > 1e-9
+%    (2) is the error driving it further in,  e and sat of one sign, e*sat > 0
+add_block('simulink/Math Operations/Abs', [aw_blk '/|sat|'], ...
+          'Position',[400 380 440 410]);
+add_block('simulink/Logic and Bit Operations/Relational Operator', ...
+          [aw_blk '/saturated'], 'Operator','>', 'Position',[520 370 560 420]);
+add_block('simulink/Math Operations/Product', [aw_blk '/e sat'], ...
+          'Position',[400 620 440 680]);
+add_block('simulink/Logic and Bit Operations/Relational Operator', ...
+          [aw_blk '/driving in'], 'Operator','>', 'Position',[520 610 560 660]);
+add_block('simulink/Logic and Bit Operations/Logical Operator', ...
+          [aw_blk '/freeze'], 'Operator','AND', 'Position',[640 490 680 540]);
+%  얼어붙어 있으면 0 을, 아니면 Ki e 를 그대로 통과시킨다.
+%  Pass zero while frozen, and Ki e otherwise.
+add_block('simulink/Signal Routing/Switch', [aw_blk '/clamping'], ...
+          'Criteria','u2 ~= 0', 'Position',[740 420 780 520]);
+
+%  ---- 세 방식 중 하나를 고른다 / select one of the three ------------------
+%  aw_mode 는 0, 1, 2 이므로 0 기준 인덱싱으로 둔다. 1 을 더하는 블록을 두지 않는다.
+%  aw_mode takes the values 0, 1 and 2, so the switch uses zero-based indexing
+%  rather than having a block added to shift it by one.
+add_block('simulink/Signal Routing/Multiport Switch', [aw_blk '/scheme'], ...
+          'DataPortOrder','Zero-based contiguous', 'Inputs','3', ...
+          'Position',[860 80 900 520]);
+
+%  ---- 배선 / the wiring ---------------------------------------------------
+%  세로로 내려가는 구간마다 서로 다른 x 를 준다. 자동 배선에 맡기면 여러 신호가
+%  같은 세로줄을 공유해 도면에서 구별되지 않는다 (check_overlaps 가 그것을 센다).
+%  Each vertical run is given an x of its own. Left to autorouting, several
+%  signals share one column and become indistinguishable in print, which is
+%  what check_overlaps counts.
+Lw = @(src, sp, dst, dp, x) lane_line(aw_blk, src, sp, dst, dp, x);
+Lw('X_cmd', 1, 'sat', 1, 240);
+Lw('X_sat', 1, 'sat', 2, 250);
+Lw('e',     1, 'Ki e', 1, 230);
+Lw('Ki',    1, 'Ki e', 2, 260);
+Lw('K_aw',  1, 'K_aw sat', 1, 360);
+Lw('sat',   1, 'K_aw sat', 2, 370);
+Lw('Ki e',      1, 'back-calculation', 1, 480);
+Lw('K_aw sat',  1, 'back-calculation', 2, 490);
+Lw('Ki',   1, 'Ki live', 1, 370);
+Lw('zero', 1, 'Ki live', 2, 380);
+Lw('back-calculation', 1, 'aw gate', 1, 570);
+Lw('Ki live',          1, 'aw gate', 2, 580);
+Lw('Ki e',             1, 'aw gate', 3, 560);
+Lw('sat',   1, '|sat|', 1, 390);
+Lw('|sat|', 1, 'saturated', 1, 480);
+Lw('tol',   1, 'saturated', 2, 490);
+Lw('e',     1, 'e sat', 1, 230);
+Lw('sat',   1, 'e sat', 2, 390);
+Lw('e sat', 1, 'driving in', 1, 480);
+Lw('zero',  1, 'driving in', 2, 500);
+Lw('saturated',  1, 'freeze', 1, 600);
+Lw('driving in', 1, 'freeze', 2, 610);
+Lw('zero',   1, 'clamping', 1, 700);
+Lw('freeze', 1, 'clamping', 2, 710);
+Lw('Ki e',   1, 'clamping', 3, 720);
+Lw('aw_mode',  1, 'scheme', 1, 830);
+Lw('Ki e',     1, 'scheme', 2, 840);
+Lw('clamping', 1, 'scheme', 3, 810);
+Lw('aw gate',  1, 'scheme', 4, 820);
+add_line(aw_blk, 'scheme/1', 'di/1', 'autorouting','on');
+
+note(aw_blk, [150 700 980 800], strjoin({ ...
+ 'WINDUP IS NOT A FAULT OF THE INTEGRATOR.'
+ 'It is what an integrator does when it is asked to close a loop that the actuator has already opened.'
+ 'Every scheme on this canvas works by telling the integrator that the loop was opened. sat = X_cmd - X_sat'
+ 'is the part of the demand that never reached the plant, and it is zero whenever nothing was refused, so'
+ 'none of the three schemes does anything at all until the actuator saturates.'}, newline));
+
+%  aw_mode · Ki · K_aw 를 넣어 주던 Constant 블록 셋은 2026-09-16 에 없앴다.
+%  상수이므로 anti-windup 안에 두는 편이 낫고, 그만큼 이 화면이 조용해진다.
+%  The three Constant blocks that used to supply aw_mode, Ki and K_aw were
+%  removed on 2026-09-16. They are constants, so they belong inside
+%  anti-windup, and this canvas is quieter without them.
 
 %  The integrator on the row of the anti-windup output that feeds it.
 q = port_xy(c, 'anti-windup', 'Outport', 1);
 add_block('simulink/Continuous/Integrator', [c '/I state'], ...
           'InitialCondition','0', 'Position',[600 q(2)-15 630 q(2)+15]);
 
-%  Derivative on the MEASUREMENT, not on the error. Differentiating the error
-%  puts a step through the derivative at every setpoint change; a measurement
-%  never steps.
+%  미분항은 일반형으로 둔다. 설정값 가중 c_d 를 두고 (c_d*u_d - u) 를 미분한다.
+%  c_d = 0 이면 측정값을 미분하는 형태, c_d = 1 이면 오차를 미분하는 교과서
+%  형태가 되며, 둘은 특수한 경우일 뿐 서로 다른 제어기가 아니다. 예전에는
+%  u 만 미분하고 합산기에서 부호를 뒤집었는데, 그러면 u_d 가 시간에 따라 변할 때
+%  왜 마이너스인지 설명할 수 없었다 (§2-4).
+%
+%  The derivative is built in its general form: a setpoint weight c_d is
+%  introduced and (c_d*u_d - u) is differentiated. c_d = 0 gives the
+%  derivative on the measurement and c_d = 1 the textbook derivative on the
+%  error; neither is a separate controller. The earlier arrangement
+%  differentiated u alone and reversed the sign at the summing junction, which
+%  left no way to say what the minus meant once u_d began to move (§2-4).
+add_block('simulink/Math Operations/Gain', [c '/c_d'], 'Gain','c_d', ...
+          'Position',[260 475 310 511]);
+add_sum(c, 'D input', '+-', [380 483]);
 add_block('simulink/Continuous/Transfer Fcn', [c '/D filter'], ...
           'Numerator','[Kd*Nf 0]', 'Denominator','[1 Nf]', ...
-          'Position',[380 490 440 526]);
+          'Position',[470 475 530 511]);
 
-add_sum(c, 'X_pid', '++-', [690 170]);
+%  세 항이 모두 + 로 들어온다. 부호는 D input 합산기 안에 있다.
+%  All three terms now enter with a plus: the sign lives inside D input.
+add_sum(c, 'X_pid', '+++', [690 170]);
 
 %  loop_closed = 0 disconnects the controller and applies a constant force, so
 %  the same model performs the open-loop identification of section C.
@@ -193,17 +328,31 @@ Lc('u_d/1','error/1');   Lc('u/1','error/2');
 Lc('error/1','Kp/1');
 Lc('error/1','anti-windup/1');
 
-%  Ports 3 to 6 of the anti-windup block are fed from blocks that exist only
-%  to feed them, so each is moved onto its own port's row and the connection
-%  becomes one straight line. Ports 1 and 2 come from elsewhere in the diagram
-%  and are wired above and below.
-row_feed(c, 'anti-windup', [{'',''} {'X_sat'} AW]);
+%  X_sat 은 이 서브시스템 바깥에서 들어오는 신호이고 그것만 공급하는 인포트가
+%  있으므로, 그 인포트를 해당 포트의 행으로 옮겨 선 하나가 곧게 지나가게 한다.
+%  포트 1 과 2 는 도면의 다른 곳에서 오므로 위아래로 따로 배선한다.
+%  X_sat arrives from outside this subsystem through an inport that feeds
+%  nothing else, so the inport is moved onto that port's row and the line
+%  becomes straight. Ports 1 and 2 come from elsewhere and are wired
+%  separately, above and below.
+row_feed(c, 'anti-windup', {'', '', 'X_sat'});
 
 lane_line(c, 'anti-windup', 1, 'I state', 1, 570);
-Lc('u/1','D filter/1');
+
+%  미분 경로 : u_d 에 c_d 를 곱한 것에서 u 를 빼고, 그 차이를 미분한다.
+%  The derivative path: u_d weighted by c_d, less u, and that difference
+%  differentiated.
+Lc('u_d/1','c_d/1');
+%  세로 구간을 각각 다른 x 에 둔다. 335 는 포화된 지령이 되돌아오는 선이 쓴다.
+%  Each vertical run gets its own x; 335 belongs to the saturated command
+%  coming back round the bottom.
+lane_line(c, 'c_d', 1, 'D input', 1, 350);
+lane_line(c, 'u',   1, 'D input', 2, 360);
+Lc('D input/1','D filter/1');
+
 lane_line(c, 'Kp',       1, 'X_pid', 1, 645);
 lane_line(c, 'I state',  1, 'X_pid', 2, 660);
-lane_line(c, 'D filter', 1, 'X_pid', 3, 480);
+lane_line(c, 'D filter', 1, 'X_pid', 3, 560);
 
 Lc('error/1','PID block/1');
 
@@ -226,7 +375,10 @@ lane_line(c, 'I state', 1, 'I', 1, 745);
 %  drawn along the lines it is meant to be distinguished from.
 qa = port_xy(c, 'open or closed', 'Outport', 1);
 qb = port_xy(c, 'anti-windup',    'Inport',  2);
-add_line(c, [qa; 1020 qa(2); 1020 780; 350 780; 350 qb(2); qb]);
+%  세로 구간을 x = 335 에 둔다. 350 은 u 에서 D input 으로 내려가는 선이 쓴다.
+%  The vertical run is placed at x = 335: the line from u down to D input uses
+%  350, and two different signals on one column cannot be told apart.
+add_line(c, [qa; 1020 qa(2); 1020 780; 335 780; 335 qb(2); qb]);
 
 %% =====================================================================
 %  3. Control allocation

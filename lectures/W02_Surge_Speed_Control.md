@@ -252,45 +252,59 @@ $$
 
 ## 2-4. Where the derivative term actually goes
 
-- The derivative is taken on the **measurement**, not on the error:
+- A PID controller is under no obligation to differentiate the same signal it integrates. Written so that this freedom is visible, the derivative term carries a weight $c_d$ on the setpoint:
 
 $$
-X = K_p e + K_i\!\int\! e\,\mathrm{d}t \;\underbrace{-}_{\text{not a typo}}\; K_d\,\frac{N s}{s + N}\,u .
+X = K_p e + K_i\!\int\! e\,\mathrm{d}t + K_d\,\frac{N s}{s + N}\,\bigl(c_d\,u_d - u\bigr) ,
+\qquad e = u_d - u .
 $$
 
-> [!important] Why that third sign is a minus, and what the minus is not
-> The textbook PID is written $X = K_p e + K_i\!\int\! e\,\mathrm{d}t + K_d\,\dot e$ — three plus signs. Substituting $e = u_d - u$ into the last term gives
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $c_d$ | setpoint weight of the derivative term, dimensionless | $0$ in this week, `W02_0_setup.m` |
+| $N$ | derivative filter bandwidth | $20$ rad/s, `W02_0_setup.m` |
+| $K_d$ | derivative gain | N per m/s², swept in §E |
+
+- All three terms now enter with a plus sign. Two values of $c_d$ have names of their own, and every other value is a blend of the two.
+
+| $c_d$ | What is differentiated | Name |
+|---|---|---|
+| $1$ | $u_d - u = e$ | the textbook PID, and what Simulink's PID Controller block computes |
+| $0$ | $-u$ | the derivative on the **measurement**, which is the form used this week |
+
+> [!important] Where the minus sign in front of $K_d$ comes from
+> Setting $c_d = 0$ in the expression above leaves $K_d\,F(s)\,(-u)$, which is usually written as a minus in front of the gain. That minus is not a sign convention to be memorised and it is not a correction: it is the general expression evaluated at a particular weight. Nothing is being negated — the bracket is simply empty on its setpoint side.
 >
-> $$K_d\,\dot e = -K_d\,\dot u \;+\; K_d\,\dot u_d .$$
->
-> The form written above keeps the first piece and **discards the second**. So the minus is not the textbook plus rewritten in another variable; it is the textbook plus with a term deleted, and the deleted term is $K_d\dot u_d$. The two are different controllers, and it is worth being exact about how they differ and how they do not.
+> Stating it this way also removes a claim that cannot be sustained. The minus is sometimes explained as the textbook plus rewritten in terms of the measurement, on the grounds that $\dot e = \dot u_d - \dot u$ reduces to $-\dot u$ when the setpoint is held constant. That reasoning holds only while $\dot u_d = 0$. It says nothing about a setpoint that moves, and from Week 4 onward the command is produced by a guidance law and moves at every instant.
 
-- Restoring the filter, the difference between the two is
+- The difference between the two named cases is exact, and it is worth writing down because it settles what follows:
 
 $$
-X_{\text{textbook}} - X_{\text{above}} \;=\; K_d\,\frac{N s}{s + N}\,u_d ,
+X\big|_{c_d = 1} - X\big|_{c_d = 0} \;=\; K_d\,\frac{N s}{s + N}\,u_d .
 $$
 
-- which is driven by the **setpoint alone** and never by the measurement. That fact settles both questions below. `verify_w02_derivative` confirms it on signals: over a 40 s run in which $u_d$ and $u$ were given deliberately unrelated waveforms and the loop was left open, the two commands differed by this expression and by nothing else, to $9\times10^{-11}$ N.
+- The difference is driven by the **setpoint alone** and never by the measurement. `verify_w02_derivative` confirms this on signals rather than on algebra: over a $40$ s run in which $u_d$ and $u$ were given deliberately unrelated waveforms and the loop was left open, the two commands differed by this expression and by nothing else, to $9\times10^{-11}$ N.
 
-| Setpoint | $\dot u_d$ | The two forms |
+| Setpoint | $\dot u_d$ | The two cases |
 |---|---|---|
 | held constant between steps, as everywhere in this week | $0$ | identical |
-| at the instant of a step | an impulse | the textbook form passes it to the actuator — the derivative kick of the table below |
+| at the instant of a step | an impulse | $c_d = 1$ passes it to the actuator — the derivative kick of the table below |
 | moving continuously, as from the reference model of Week 7 or the guidance law of Week 4 | finite and non-zero | differ permanently by $K_d\dot u_d$ |
 
-- The last row is the case the phrase "held constant between steps" quietly excludes, and it is not a corner case: from Week 4 onward the heading command is produced by a guidance law and moves at every instant. A setpoint climbing at $0.1$ m/s² separates the two demands by $K_d \times 0.1$ N — $0.20$ N at $K_d = 2$, and $15.00$ N at $K_d = 150$.
+- The last row is the case the phrase "held constant between steps" quietly excludes. A setpoint climbing at $0.1$ m/s² separates the two demands by $K_d \times 0.1$ N — $0.20$ N at $K_d = 2$, and $15.00$ N at $K_d = 150$.
 
-> [!note] What the deleted term cannot change
-> $K_d\dot u_d$ acts on the setpoint only, so it never appears in the loop around the plant. Both forms therefore share one characteristic polynomial,
+> [!note] What $c_d$ cannot change
+> The weighted term $K_d F(s)\,c_d u_d$ acts on the setpoint only, so it never appears in the loop around the plant. Every value of $c_d$ therefore shares one characteristic polynomial,
 > $$1 + \frac{K_u}{T_u s + 1}\left(K_p + \frac{K_i}{s} + K_d\frac{Ns}{s+N}\right) = 0 ,$$
-> and with it the same poles, the same damping ratio and the same stability margin — identical to $2\times10^{-14}$ over $K_d \in \{2, 20, 60, 150\}$. What does differ is the closed-loop **zeros**. Those of the textbook form move with $K_d$; those of the form written above sit at $-K_i/K_p = -1.886$ and $-N = -20$ for every $K_d$. The choice between the two is a choice about the reference path, which is exactly what the table below weighs.
+> and with it the same poles, the same damping ratio and the same stability margin — identical to $2\times10^{-14}$ over $K_d \in \{2, 20, 60, 150\}$. What $c_d$ does change is the closed-loop **zeros**: at $c_d = 1$ they move with $K_d$, and at $c_d = 0$ they sit at $-K_i/K_p = -1.886$ and $-N = -20$ whatever $K_d$ is. Choosing $c_d$ is choosing a reference path, not a stability margin.
 
-- Two reasons, and only the second is about this week.
+- The model carries $c_d$ as a variable rather than as a wiring decision, which makes the equivalence testable. Setting $c_d = 1$ and $K_d = 60$ brings the hand-built controller of §2-7 to within $4\times10^{-16}$ m/s of Simulink's PID Controller block over the whole run; at $c_d = 0$ the same two differ by $0.70$ m/s. The library block is the $c_d = 1$ member of this family, and §G measures both.
+
+- Two reasons for the choice made here, and only the second is about this week.
 
 | Choice | Reason |
 |---|---|
-| on the measurement, not the error | a step in $u_d$ differentiates to an impulse; the measurement never steps |
+| $c_d = 0$, so the derivative acts on the measurement | a step in $u_d$ differentiates to an impulse; the measurement never steps |
 | filtered by $Ns/(s+N)$ | pure differentiation has unbounded high-frequency gain and amplifies sensor noise without limit |
 
 ### The pseudo-derivative
@@ -597,7 +611,7 @@ $$
 
 | `pid_mode` | Path |
 |---|---|
-| 0 | the hand-built controller — nine blocks |
+| 0 | the hand-built controller — every term a block of its own |
 | 1 | the library block — one block |
 
 - The reason for having both is not indecision. A learner who has only used the block does not know what is inside it; a learner who has only built it by hand does not know the block exists, and will rebuild it on every project.
@@ -717,17 +731,28 @@ Opening the folder shows about fifteen files. Only the ones in this table are ev
 
 ### Inside `Surge controller`
 
-- Opening it shows the three terms, the anti-windup block that decides what reaches the integrator, and one switch:
+- Opening it shows the three terms, the anti-windup subsystem that decides what reaches the integrator, and one switch:
 
 | Block | Meaning |
 |---|---|
 | `Kp` | the proportional term |
+| `c_d` and `D input` | form $c_d u_d - u$, the signal the derivative acts on (§2-4) |
+| `D filter` | $K_d N s/(s+N)$, applied to that signal |
 | `anti-windup` | `aw_mode` selects one of the three schemes of §2-6 |
 | `I state` | the integrator, and the only state in the controller |
-| `D filter` | $K_d N s/(s+N)$ acting on the **measurement**, not on the error |
+| `X_pid` | sums the three terms, all with a plus |
 | `open or closed` | `loop_closed = 0` applies `X_open` instead of the controller |
 
+- The summing junction takes all three terms with a plus sign. The minus that a PID diagram usually carries in front of the derivative branch has moved into `D input`, where it is the consequence of $c_d = 0$ rather than a convention to be remembered.
+
 - The switch is not decoration. `loop_closed = 0` turns this model into the open-loop rig of §C, so the plant that is identified is provably the plant the controller then drives.
+
+> [!note] Why `anti-windup` is a subsystem of ordinary blocks and not one MATLAB Function
+> A single MATLAB Function block would express all three schemes in nine lines and leave the diagram tidier. It would also put the one thing §2-6 is about — how the three schemes differ — behind a double-click, where a reader comparing them has to read code rather than follow signals.
+>
+> Opening `anti-windup` therefore shows the arithmetic itself: `sat` forms $X_{\text{cmd}} - X_{\text{sat}}$, which is the part of the demand the actuator refused; `Ki e` forms what an unprotected integrator would receive; `clamping` and `back-calculation` each modify that in their own way; and `scheme` selects between them. The schemes can be compared by looking at three paths side by side.
+>
+> The change is presentational and must not alter any measurement. `verify_w02_antiwindup` re-measures the three rows of the §F table against the values recorded there, and also checks that the guard on $K_i = 0$ still holds and that the clamping condition on the canvas agrees with the one it replaced over a grid that includes the zeros and the tolerance boundary.
 
 ## C. Identifying the plant from the plant (15 min)
 
@@ -1026,14 +1051,15 @@ The same two runs, with `pid_mode = 0` and `pid_mode = 1`:
 | left panel | $K_d = 0$: the thick and dashed traces are one curve |
 | right panel | $K_d = 60$: they separate, and the library block overshoots less |
 
-- With $K_d = 0$ the two agree to **machine precision**. Nine blocks and one library block compute the same thing, and the back-calculation written by hand in §2-6 is the back-calculation the block implements.
-- With $K_d = 60$ they differ by $0.70$ m/s at the peak. Neither is wrong. The library block differentiates the **error**, so a step in $u_d$ passes through its derivative and produces a kick that the hand-built path — which differentiates the **measurement** — never sees.
+- With $K_d = 0$ the two agree to **machine precision**. The assembled controller and the library block compute the same thing, and the back-calculation written by hand in §2-6 is the back-calculation the block implements.
+- With $K_d = 60$ they differ by $0.70$ m/s at the peak. Neither is wrong, and §2-4 names the single parameter that separates them: the library block is the $c_d = 1$ case, which differentiates the **error**, so a step in $u_d$ passes through its derivative and produces a kick that the $c_d = 0$ path — differentiating the **measurement** — never sees.
+- Setting `c_d = 1` in `W02_0_setup.m` closes the gap entirely. With $K_d = 60$ and $c_d = 1$ the two paths agree to $4\times10^{-16}$ m/s over the whole run, which is the strongest available statement that they are one controller written twice: the difference measured in the right panel is not an implementation difference at all, but a difference of setpoint weight.
 
 **What the figure says**
 
-The same plant, the same gains and the same setpoint, controlled twice — once by nine blocks assembled from the equations of §2-4, once by Simulink's PID Controller block. The two panels differ only in whether the derivative term is switched on.
+The same plant, the same gains and the same setpoint, controlled twice — once by a controller assembled term by term from the equations of §2-4, once by Simulink's PID Controller block. The two panels differ only in whether the derivative term is switched on.
 
-In the left panel, with $K_d = 0$, the two traces are **one curve**. The largest difference anywhere in the run is $2.2\times10^{-16}$ m/s, which is machine precision. Nine blocks and one block compute the same thing, and that agreement is what licenses using the library block for the rest of the course: it is not a different algorithm, only a shorter way of writing the same one.
+In the left panel, with $K_d = 0$, the two traces are **one curve**. The largest difference anywhere in the run is $2.2\times10^{-16}$ m/s, which is machine precision. The assembled controller and the single block compute the same thing, and that agreement is what licenses using the library block for the rest of the course: it is not a different algorithm, only a shorter way of writing the same one.
 
 In the right panel, with $K_d = 60$, they part company. The hand-built path peaks at $1.75$ m/s and the block at $1.67$ — overshoots of $16.88\%$ against $11.54\%$ of the $1.5$ m/s step — before converging again on the same $1.5$ m/s.
 
