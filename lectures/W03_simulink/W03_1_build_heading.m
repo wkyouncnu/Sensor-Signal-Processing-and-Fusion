@@ -44,7 +44,7 @@ KK = {'k_pos','k_neg','n_max','n_min','y_pont'};
 %  =====================================================================
 %  Two steps in degrees, summed, then converted to radians once. Every angle
 %  after this point is in radians; every angle a human types is in degrees.
-s = add_subsys(m, 'Heading command', P.command, {}, {'psi_d','X_ff'}, ...
+s = add_subsys(m, 'Heading command', P.command, {}, {'psi_d','X_ff','r_d'}, ...
                gnc_colour('command'));
 add_block('simulink/Sources/Step', [s '/step 1'], ...
           'Time','t_up', 'Before','0', 'After','psi_1', 'Position',[90 60 130 100]);
@@ -55,26 +55,48 @@ add_block('simulink/Math Operations/Gain', [s '/deg2rad'], ...
           'Gain','pi/180', 'Position',[310 100 365 140]);
 add_block('simulink/Sources/Constant', [s '/forward force'], ...
           'Value','X_ff', 'Position',[310 220 400 250]);
+
+%  명령한 요 각속도 r_d. 이번 주의 명령은 계단이므로 계단이 일어나는 순간을 빼면
+%  r_d = 0 이고, 그 순간은 미분할 수 없다. 그래서 0 을 내보낸다. 이것을 신호로
+%  두는 이유는 오토파일럿이 무엇을 필요로 하는지 인터페이스에 적어 두기 위해서다
+%  — 7주차의 기준모델과 4주차의 유도법칙이 이 자리를 실제 값으로 채운다.
+%
+%  The commanded yaw rate r_d. This week's command is a step, so r_d is zero
+%  everywhere except at the step itself, where it is not differentiable, and
+%  zero is what is emitted. It is carried as a signal to state in the
+%  interface what the autopilot wants: the reference model of Week 7 and the
+%  guidance law of Week 4 fill this port with a real value.
+add_block('simulink/Sources/Constant', [s '/commanded rate'], ...
+          'Value','0', 'Position',[310 300 400 330]);
+
 set_param([s '/psi_d'], 'Position',[440 110 470 130]);
 set_param([s '/X_ff'],  'Position',[440 225 470 245]);
+set_param([s '/r_d'],   'Position',[440 305 470 325]);
 add_line(s, 'step 1/1','sum/1','autorouting','on');
 add_line(s, 'step 2/1','sum/2','autorouting','on');
 add_line(s, 'sum/1','deg2rad/1','autorouting','on');
 add_line(s, 'deg2rad/1','psi_d/1','autorouting','on');
 add_line(s, 'forward force/1','X_ff/1','autorouting','on');
+add_line(s, 'commanded rate/1','r_d/1','autorouting','on');
 
 %% =====================================================================
 %  2. Heading autopilot
 %  =====================================================================
 c = add_subsys(m, 'Heading autopilot', P.controller, ...
-               {'psi_d','x'}, {'tau_N','psi_d out'}, gnc_colour('controller'));
+               {'psi_d','x','r_d'}, {'tau_N','psi_d out'}, gnc_colour('controller'));
 
 add_block('simulink/Signal Routing/Selector', [c '/psi'], ...
           'IndexOptions','Index vector (dialog)', 'Indices','12', ...
           'InputPortWidth','12', 'Position',[170 150 220 170]);
+%  r 을 260 행에서 내려 둔다. 그 높이는 rate input 합산기의 왼쪽 포트가 쓰는
+%  높이이고, 거기에는 c_d 에서 오는 선이 곧게 지나간다. 둘을 같은 높이에 두면
+%  도면에서 구별되지 않는다 (check_overlaps).
+%  The r selector is moved off the 260 row. That height belongs to the left
+%  port of the rate input sum, where the line from c_d runs straight in; two
+%  signals at one height cannot be told apart in print.
 add_block('simulink/Signal Routing/Selector', [c '/r'], ...
           'IndexOptions','Index vector (dialog)', 'Indices','6', ...
-          'InputPortWidth','12', 'Position',[170 250 220 270]);
+          'InputPortWidth','12', 'Position',[170 380 220 400]);
 
 %  The heading error, wrapped. This is the only place in the model where an
 %  angle is subtracted from an angle, and it is the only place a wrap is
@@ -103,12 +125,26 @@ add_block('simulink/Sources/Constant', [c '/use_ssa'], ...
 
 add_block('simulink/Math Operations/Gain', [c '/Kp'], 'Gain','Kp', ...
           'Position',[540 100 590 140]);
+%  미분항도 W02 §2-4 의 일반형으로 둔다. 미분게인이 곱하는 것은 r 이 아니라
+%  (c_d*r_d - r) 이다. c_d = 0 이면 측정한 요 각속도만 되먹임하는 지금까지의
+%  형태이고, c_d = 1 이면 명령한 각속도와의 차이를 되먹임하는 형태가 된다.
+%  이렇게 두면 Kd 앞의 마이너스가 규약이 아니라 c_d = 0 의 결과가 된다.
+%
+%  The derivative is written in the general form of §2-4 in Week 2. What the
+%  derivative gain multiplies is not r but (c_d*r_d - r). At c_d = 0 this is
+%  the rate feedback used so far; at c_d = 1 it is the error in rate. Written
+%  this way the minus in front of Kd is a consequence of c_d = 0 rather than a
+%  convention to be remembered.
+add_block('simulink/Math Operations/Gain', [c '/c_d'], 'Gain','c_d', ...
+          'Position',[300 300 350 340]);
+add_sum(c, 'rate input', '+-', [440 260]);
 add_block('simulink/Math Operations/Gain', [c '/Kd'], 'Gain','Kd', ...
           'Position',[540 240 590 280]);
-add_sum(c, 'tau', '+-', [692 190]);
+add_sum(c, 'tau', '++', [692 190]);
 
 set_param([c '/psi_d'],     'Position',[ 60 110  90 130]);
 set_param([c '/x'],         'Position',[ 60 200  90 220]);
+set_param([c '/r_d'],       'Position',[ 60 310  90 330]);
 set_param([c '/tau_N'],     'Position',[770 180 800 200]);
 %  The pass-through of psi_d runs ABOVE the heading error block. Sent straight
 %  across it would be drawn through the block, and left to autorouting it is
@@ -122,7 +158,31 @@ row_feed(c, 'heading error', {'psi_d','psi','use_ssa'});
 Lc = @(x,y) add_line(c, x, y, 'autorouting','on');
 Lc('x/1','psi/1');   Lc('x/1','r/1');
 Lc('heading error/1','Kp/1');
-Lc('r/1','Kd/1');
+Lc('r_d/1','c_d/1');
+%  c_d 의 출력 높이를 자기가 먹이는 포트에 정확히 맞춘다. 그러면 그 연결이 곧은
+%  선 하나가 되고, r 쪽만 통로를 타고 내려온다. 두 입력을 모두 자동 배선에
+%  맡기면 같은 높이로 들어와 도면에서 구별되지 않는다.
+%  row_feed 를 쓰지 않는 이유는 그것이 합산기를 92 px 로 키우라고 요구하기
+%  때문이다. Sum 은 MSS 치수의 20 x 20 원이어야 한다 (CLAUDE.md §5).
+%
+%  The output of c_d is aligned exactly with the port it feeds, so that
+%  connection is a single straight segment and only r descends through a lane.
+%  Left to autorouting both inputs arrive at the same height and cannot be told
+%  apart. row_feed is not used here because it asks for a 92 px sum, and a Sum
+%  must stay the 20 x 20 circle of the MSS dimensions (CLAUDE.md §5).
+%  MSS 규약의 둥근 Sum 은 첫 입력을 왼쪽 가장자리에, 둘째 입력을 아래쪽
+%  가장자리에 둔다. 그래서 c_d 는 왼쪽에서 곧게 들어오게 하고, r 은 아래에서
+%  올라오게 한다. 되먹임이 아래에서 들어오는 것도 MSS 데모와 같은 모양이다.
+%  The round Sum of the MSS convention puts its first input on the left edge
+%  and its second on the bottom edge, so c_d enters straight from the left and
+%  r comes up from below. Feedback entering from underneath is also how the
+%  MSS demonstration models draw it.
+q = port_xy(c, 'rate input', 'Inport', 1);
+set_param([c '/c_d'], 'Position', [300 q(2)-20 350 q(2)+20]);
+Lc('c_d/1','rate input/1');
+q2 = port_xy(c, 'rate input', 'Inport', 2);
+lane_line(c, 'r', 1, 'rate input', 2, q2(1));
+Lc('rate input/1','Kd/1');
 lane_line(c, 'Kp', 1, 'tau', 1, 640);
 lane_line(c, 'Kd', 1, 'tau', 2, 660);
 Lc('tau/1','tau_N/1');
@@ -223,6 +283,7 @@ add_measurement(m, P.measurement, 'W03', {'psi_d','tau_N','n1','n2'}, ...
 L = @(x,y) add_line(m, x, y, 'autorouting','smart');
 L('Heading command/1',   'Heading autopilot/1');
 L('Otter USV/1',         'Heading autopilot/2');
+L('Heading command/3',   'Heading autopilot/3');
 
 L('Heading autopilot/1', 'Control allocation/1');
 L('Heading command/2',   'Control allocation/2');

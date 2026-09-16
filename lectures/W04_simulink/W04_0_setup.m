@@ -1,19 +1,32 @@
-%% W04_0_setup.m — the only file to edit this week
+%% W04_0_setup — 이번 주에 학생이 고치는 유일한 파일
+%  W04_0_setup — the only file to be edited in Week 4
 %
-%     >> W04_0_setup
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 A 이다. 웨이포인트 목록, 전방주시거리 Delta, 전환반경,
+%      조류, 그리고 ILOS 와 ALOS 의 적응 게인이 모두 여기에 있다.
+%      This is section A of Part 2. The waypoint list, the look-ahead distance
+%      Delta, the switching radius, the current, and the adaptive gains of
+%      ILOS and ALOS are all defined here.
 %
-%  Then work through the laboratory one section at a time:
+%  실행 / to run
+%      W04_0_setup
 %
-%     >> W04_C_aim_at_the_waypoint     C — why atan2 is not path following
-%     >> W04_D_line_of_sight           D — the LOS law, and what it fixes
-%     >> W04_E_lookahead_distance      E — what Delta trades against what
-%     >> W04_F_waypoint_switching      F — the two switching criteria
-%     >> W04_G_current_and_integral    G — the current, ILOS and ALOS
-%     >> W04_H_adaptive_and_stability  H — the gains, and the Lyapunov function
+%  그다음 절을 하나씩 / then, one laboratory section at a time
+%      W04_C_aim_at_the_waypoint     절 C — atan2 가 경로추종이 아닌 이유
+%                                    why atan2 is not path following
+%      W04_D_line_of_sight           절 D — LOS 법칙과 그것이 고치는 것
+%                                    the LOS law, and what it repairs
+%      W04_E_lookahead_distance      절 E — Delta 가 맞바꾸는 것
+%                                    what Delta trades against what
+%      W04_F_waypoint_switching      절 F — 두 가지 전환 판정
+%                                    the two switching criteria
+%      W04_G_current_and_integral    절 G — 조류, ILOS, ALOS
+%                                    the current, ILOS and ALOS
+%      W04_H_adaptive_and_stability  절 H — 적응 게인과 Lyapunov 함수
+%                                    the gains, and the Lyapunov function
 %
-%  To restore a model that has been broken:
-%
-%     >> W04_1_build_guidance
+%  모델이 망가졌을 때 / to rebuild a model that has been damaged
+%      W04_1_build_guidance
 
 clear; close all; bdclose('all');
 

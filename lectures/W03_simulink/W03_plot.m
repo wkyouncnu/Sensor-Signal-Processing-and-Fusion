@@ -1,11 +1,16 @@
 function f = W03_plot(R, LBL, ttl)
-%W03_PLOT  Heading, yaw rate, yaw moment and track of one or more W03 runs.
+%W03_PLOT  W03 실행 결과의 선수방위·요 각속도·요 모멘트·궤적을 그린다.
+%          Heading, yaw rate, yaw moment and track of one or more Week 3 runs.
 %
-%   W03_plot                      the run sitting in the base workspace
-%   W03_plot(R, LBL, ttl)         a cell array of runs, for W03_run
+%   W03_plot                      기본 작업공간에 있는 실행 결과
+%                                 the run sitting in the base workspace
+%   W03_plot(R, LBL, ttl)         실행 결과들의 셀 배열 / a cell array of runs
 %
+%   모델의 StopFcn 이 자동으로 부르므로 Run 을 누르면 다른 명령 없이 그림이 뜬다.
+%   절 스크립트도 같은 함수를 부르므로 화면과 강의노트의 그림이 어긋나지 않는다.
 %   Called automatically by the model's StopFcn, so pressing Run produces the
-%   figure without any further command.
+%   figure without any further command; the section scripts call the same
+%   function, so the figure on screen and the one in the notes cannot differ.
 %
 %   R is a cell array of structs with fields t and y, where the columns of y are
 %

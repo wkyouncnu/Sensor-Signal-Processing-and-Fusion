@@ -1,11 +1,40 @@
-%% A1 · section F — an empty row in B is not an empty column in M inverse
+%% A1 · 절 F — B 의 빈 행은 M 역행렬의 빈 열이 아니다
+%  A1 · Section F — an empty row in B is not an empty column in M inverse
 %
+%  실행 순서 / order of execution
 %      A1_0_setup
 %      A1_F_sway_without_force
 %
-%  The sway row of B is empty, so no command produces a sway FORCE. The vessel
-%  nevertheless acquires a sway ACCELERATION the instant a yaw moment is
-%  applied, because M(2,6) is not zero. Produces img/A1_result_coupling.png
+%  이 절이 바로잡는 오해 / the misreading this section corrects
+%      B 의 좌우(sway) 행은 비어 있다. 어떤 명령도 좌우 방향의 힘을 만들지
+%      못한다는 뜻이며, 여기까지는 옳다. 그런데 거기서 "그러므로 좌우 운동도
+%      생기지 않는다" 고 이어 가면 틀린다.
+%
+%      The sway row of B is empty, which correctly says that no command can
+%      produce a sway force. Continuing from there to "and therefore no sway
+%      motion" is wrong.
+%
+%      운동을 정하는 것은 힘이 아니라 가속도이고, 가속도는 nu_dot = M^-1 tau
+%      로 얻는다. M 은 대각행렬이 아니며 M(2,6) 이 0 이 아니다. 따라서 요
+%      모멘트 하나만 가해도 M^-1 의 좌우 행이 그 모멘트를 집어 좌우 가속도로
+%      바꾼다. 힘의 벡터에 0 이 들어 있다고 해서 그 성분의 가속도가 0 이 되는
+%      것은 아니다.
+%
+%      What sets the motion is not the force but the acceleration, and the
+%      acceleration is nu_dot = M^-1 tau. M is not diagonal, and M(2,6) is not
+%      zero, so a yaw moment alone is picked up by the sway row of M inverse
+%      and turned into a sway acceleration. A zero in the force vector does not
+%      make the corresponding acceleration zero.
+%
+%      이것은 1주차 절 D 에서 "옆으로 미는 힘이 없는데 v 가 0 이 아니다" 로
+%      관찰한 것과 같은 현상이며, 여기서는 그 원인을 행렬에서 직접 짚는다.
+%      This is the same phenomenon observed in section D of Week 1, where a
+%      sway velocity appeared with no sway force; here its cause is pointed to
+%      directly in the matrix.
+%
+%  만드는 것 / what it produces
+%      표와 img/A1_result_coupling.png
+%      Tables and img/A1_result_coupling.png
 
 clear V cfg y n1 n2 x0 f0 fa fb Xa Nb cX cN LB i o yy TZ tt kz f
 here = fileparts(mfilename('fullpath'));

@@ -1,23 +1,41 @@
 function W04_1_build_guidance()
-%W04_1_BUILD_GUIDANCE  Generate W04_guidance.slx from code.
+%W04_1_BUILD_GUIDANCE  유도 모델 W04_guidance.slx 를 코드로 만든다.
+%                      Generate W04_guidance.slx from code.
 %
-%   >> W04_1_build_guidance
+%   실행 / to run
+%       W04_1_build_guidance
 %
-%   FOUR VESSELS, ONE MISSION
+%   강의에서의 위치 / place in the lecture
+%       Part 2 의 절 B 이다. 절 C 부터 H 까지가 모두 이 모델 하나를 쓴다.
+%       This is section B of Part 2; sections C to H all use this one model.
 %
-%   Four identical Otters run the same waypoint list at the same time, in the
-%   same current, under the same heading autopilot. They differ in ONE thing:
-%   which guidance law turns the waypoint list into a heading command.
+%   네 척, 하나의 임무 / four vessels, one mission
+%       똑같은 Otter 네 척이 같은 웨이포인트 목록을, 같은 시각에, 같은 조류
+%       속에서, 같은 선수방위 오토파일럿으로 항해한다. 다른 것은 단 하나,
+%       웨이포인트 목록을 선수방위 명령으로 바꾸는 유도법칙뿐이다.
 %
-%     row 1   atan2      aim straight at the next waypoint
-%     row 2   LOS        aim at a point Delta ahead ON THE PATH
-%     row 3   ILOS       LOS, plus an integral state that absorbs the current
-%     row 4   ALOS       LOS, plus an ESTIMATE of the crab angle
+%         1행  atan2   다음 웨이포인트를 곧장 겨냥한다
+%         2행  LOS     경로 위에서 Delta 만큼 앞선 점을 겨냥한다
+%         3행  ILOS    LOS 에 조류를 흡수하는 적분 상태를 더한다
+%         4행  ALOS    LOS 에 크랩각의 추정값을 더한다
 %
-%   Running them together is what makes the comparison honest: the same
-%   realisation of everything else, so every difference in the tracks belongs
-%   to the guidance law and to nothing else. The same principle as the four
-%   rows of Week 2, section I.
+%         row 1   atan2   aim straight at the next waypoint
+%         row 2   LOS     aim at a point Delta ahead on the path
+%         row 3   ILOS    LOS with an integral state that absorbs the current
+%         row 4   ALOS    LOS with an estimate of the crab angle
+%
+%   왜 네 척을 동시에 돌리는가 / why they are run together
+%       비교를 정직하게 만들기 위해서다. 조류는 난류가 아니지만 초기 과도응답,
+%       전환이 일어나는 시점, 오토파일럿의 상태가 실행마다 미묘하게 달라질 수
+%       있다. 네 척을 한 번의 실행 안에 두면 유도법칙을 제외한 모든 것이 글자
+%       그대로 같은 실현을 공유하므로, 궤적의 차이는 전부 유도법칙의 몫이 된다.
+%       2주차 절 I 의 네 행과 같은 원칙이다.
+%
+%       To make the comparison honest. Placing all four in a single run means
+%       everything except the guidance law shares literally the same
+%       realisation, so every difference between the tracks belongs to the
+%       guidance law and to nothing else. This is the principle of the four
+%       rows in section I of Week 2.
 %
 %   THE SIGNAL CHAIN
 %

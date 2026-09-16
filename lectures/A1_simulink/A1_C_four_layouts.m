@@ -1,10 +1,30 @@
-%% A1 · section C — the column rule applied to four layouts
+%% A1 · 절 C — 열 규칙을 네 가지 추진기 배치에 적용한다
+%  A1 · Section C — the column rule applied to four thruster layouts
 %
+%  실행 순서 / order of execution
 %      A1_0_setup
 %      A1_C_four_layouts
 %
-%  No simulation. One rule, four thruster layouts, and the rank that follows.
-%  Prints tables only; the figure for this appendix is section D's.
+%  이 절의 요점 / the point of this section
+%      배분 행렬 B 를 배치마다 새로 외우지 않는다. 규칙은 하나뿐이다 — 추진기
+%      하나가 B 의 열 하나이고, 그 열은 그 추진기가 단위 추력을 냈을 때 생기는
+%      일반화 힘이다. 배치가 달라지면 열이 달라질 뿐 규칙은 그대로이다.
+%      그리고 그 B 의 계수(rank)가 그 배치로 독립적으로 지시할 수 있는 축의
+%      개수를 정한다.
+%
+%      The allocation matrix B is not memorised layout by layout. There is one
+%      rule: each thruster is one column of B, and that column is the
+%      generalised force produced when that thruster delivers unit thrust. A
+%      different layout gives different columns and leaves the rule untouched.
+%      The rank of B then fixes how many axes that layout can command
+%      independently.
+%
+%  시뮬레이션을 하지 않는다 / no simulation here
+%      계수와 도달 가능한 축의 개수는 행렬의 성질이므로 배를 띄우지 않고도
+%      결정된다. 표만 출력하며, 이 부록의 그림은 절 D 가 만든다.
+%      Rank and the number of reachable axes are properties of a matrix and
+%      are settled without putting a vessel in the water. Tables only are
+%      printed; the figure for this appendix is produced by section D.
 
 clear NAMES i c cfg Bp
 here = fileparts(mfilename('fullpath'));

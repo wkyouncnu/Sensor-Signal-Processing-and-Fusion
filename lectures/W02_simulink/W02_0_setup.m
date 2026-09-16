@@ -1,13 +1,29 @@
-%% W02_0_setup.m — the only file to edit this week
+%% W02_0_setup — 이번 주에 학생이 고치는 유일한 파일
+%  W02_0_setup — the only file to be edited in Week 2
 %
-%  Every Constant, Gain and Step block in W02_surge_control.slx reads a variable
-%  defined here.
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 A 이다. 이후의 모든 절이 여기서 만든 변수를 쓰므로 가장 먼저
+%      실행한다.
+%      This is section A of Part 2, and it is run first because every later
+%      section uses the variables it defines.
 %
-%     >> W02_0_setup
+%  이 파일의 역할 / what this file is for
+%      W02_surge_control.slx 의 모든 Constant, Gain, Step 블록은 숫자가 아니라
+%      여기서 정의한 변수의 이름을 갖고 있다. 게인을 바꾸려면 모델을 열 것 없이
+%      이 파일을 고치고 다시 실행한다. 실험 조건이 한곳에 모여 있어야 무엇을
+%      바꾸어 무엇이 달라졌는지 말할 수 있다.
 %
-%  To restore a model that has been broken:
+%      Every Constant, Gain and Step block in W02_surge_control.slx holds the
+%      name of a variable defined here rather than a number, so a gain is
+%      changed by editing this file and running it again. Keeping the
+%      conditions of an experiment in one place is what makes it possible to
+%      say which change produced which result.
 %
-%     >> W02_1_build_surge_control
+%  실행 / to run
+%      W02_0_setup
+%
+%  모델이 망가졌을 때 / to rebuild a model that has been damaged
+%      W02_1_build_surge_control
 
 clear; close all; bdclose('all');
 

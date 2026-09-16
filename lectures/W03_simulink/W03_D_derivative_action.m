@@ -1,11 +1,40 @@
-%% W03 · section D — derivative action, which on this axis is a damper
+%% W03 · 절 D — 이 축에서 미분항은 감쇠기이다
+%  W03 · Section D — derivative action, which on this axis is a damper
 %
+%  실행 순서 / order of execution
 %      W03_0_setup
 %      W03_D_derivative_action
 %
-%  The same term that made Week 2 worse makes this week better. The term did
-%  not change; the axis did.
-%  Produces img/W03_result_D.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 D 이며 §3-3 과 짝을 이룬다. 2주차 절 E 를 나쁘게 만들었던
+%      바로 그 항이 이번 주에는 좋게 만든다. 항이 달라진 것이 아니라 축이 달라졌다.
+%
+%      This is section D of Part 2, the counterpart of §3-3. The very term that
+%      made section E of Week 2 worse makes this week better. The term did not
+%      change; the axis did.
+%
+%  왜 결과가 반대인가 / why the result is opposite
+%      제어하는 양이 속도이면 그 미분은 가속도이고, 가속도에 곱해지는 것은
+%      질량이다. 그래서 2주차에서 Kd 는 선체를 무겁게 만들어 감쇠비를 떨어뜨렸다.
+%      제어하는 양이 각도이면 그 미분은 각속도이고, 각속도에 곱해지는 것은
+%      감쇠계수이다. 그래서 여기서 Kd 는 감쇠와 같은 자리에 더해진다.
+%
+%          M66 psi_ddot + (|Nr| + Kd) psi_dot + Kp psi = Kp psi_d
+%
+%      제어법칙을 운동방정식에 대입해 보기 전에 어떤 항이 무엇을 하는지 단정하지
+%      않는다는 것이 이 두 절의 교훈이다.
+%
+%      When the controlled variable is a velocity, its derivative is an
+%      acceleration and what multiplies an acceleration is a mass, so in Week 2
+%      Kd made the hull heavier and lowered the damping ratio. When the
+%      controlled variable is an angle, its derivative is a rate and what
+%      multiplies a rate is a damping coefficient, so here Kd adds to the
+%      damping. The lesson of the pair of sections is to substitute the control
+%      law into the equation of motion before assuming what a term does.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W03_result_D.png
+%      One table and img/W03_result_D.png
 
 clear RD KDS LD zeD MpP MpM i wn ts Kp0 STEPD
 here = fileparts(mfilename('fullpath'));

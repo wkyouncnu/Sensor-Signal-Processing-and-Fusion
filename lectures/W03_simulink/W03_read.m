@@ -1,22 +1,32 @@
 function y = W03_read(o)
-%W03_READ  This week's log, with the angles in degrees and named columns.
+%W03_READ  이번 주의 로그를 이름 붙은 필드로 바꾸고, 각도를 도 단위로 맞춘다.
+%          Convert this week's log into named fields, with the angles in degrees.
 %
 %   y = W03_read(run_sim('W03_heading_control', V))
-%   plot(o.t, y.psi)
+%   plot(y.t, y.psi)
 %
-%   WHY A CONVERSION AND NOT JUST COLUMN NAMES
+%   왜 열 이름만 붙이지 않고 변환까지 하는가
+%   why a conversion and not merely column names
+%       add_measurement 은 이 강의가 공유하는 규약
 %
-%   add_measurement logs the course-wide contract
+%           [u v r N E psi | psi_d tau_N n1 n2]
 %
-%       [u v r N E psi | psi_d tau_N n1 n2]
+%       에 따라 기록하되 단위는 모델이 쓰는 그대로이다. psi 는 add_measurement 이
+%       이미 도로 바꾸어 주지만 r 은 rad/s 이고 psi_d 는 라디안이다. otter.m 과
+%       제어기가 라디안으로 계산하기 때문이다. 선수방위를 다루는 주차는 처음부터
+%       끝까지 도로 읽으므로, 그 변환을 이 한 곳에서 한 번만 한다.
 %
-%   in the units the MODEL works in: psi already in degrees (add_measurement
-%   converts it), but r in rad/s and psi_d in radians, because otter.m and the
-%   controller work in radians. A heading lecture is read in degrees
-%   throughout, so the conversion happens ONCE, here, and nowhere else.
+%       add_measurement logs the contract shared by the whole course in the
+%       units the model itself works in: psi has been converted to degrees
+%       already, but r is in rad/s and psi_d in radians, because otter.m and
+%       the controller compute in radians. A week about heading is read in
+%       degrees throughout, so the conversion happens once, here, and nowhere
+%       else.
 %
-%   Returning a struct rather than a reordered matrix means a script says
-%   y.psi and not y(:,2), and a reader never has to count columns.
+%   행렬을 재배열해 돌려주지 않고 구조체를 돌려주는 이유는, 스크립트가 y(:,2) 가
+%   아니라 y.psi 라고 쓸 수 있게 하기 위해서다. 읽는 사람이 열을 세지 않아도 된다.
+%   A struct is returned rather than a reordered matrix so that a script can
+%   say y.psi instead of y(:,2), and a reader never has to count columns.
 
 y.u     = o.y(:,1);              % surge velocity        [m/s]
 y.v     = o.y(:,2);              % sway velocity         [m/s]

@@ -1,12 +1,47 @@
-%% W04 · section G — the current, and the two laws that beat it
+%% W04 · 절 G — 조류, 그리고 그것을 이기는 두 가지 법칙
+%  W04 · Section G — the current, and the two laws that beat it
 %
+%  실행 순서 / order of execution
 %      W04_0_setup
 %      W04_G_current_and_integral
 %
-%  A current leaves plain LOS with a PERMANENT cross-track error, and §4-7
-%  predicts its size: y_e = Delta tan(beta). ILOS removes it with an integral
-%  state; ALOS removes it by estimating the crab angle itself.
-%  Produces img/W04_result_current.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 G 이며, 3주차 §3-4 가 남겨 둔 빚을 갚는 자리이다. 거기서
+%      크랩각을 재면서 "경로추종 법칙은 이것 때문에 영구적인 오차를 남긴다" 고
+%      예고했다. 이 절이 그 오차의 크기를 재고, 그것을 없애는 두 가지 방법을
+%      나란히 놓는다.
+%
+%      This is section G of Part 2, and it settles the debt left by §3-4 in
+%      Week 3, where the crab angle was measured and it was announced that a
+%      path-following law would leave a permanent error because of it. The
+%      size of that error is measured here, and the two ways of removing it
+%      are placed side by side.
+%
+%  세 가지 결과 / the three results
+%      1. 단순한 LOS 는 조류 아래에서 영구적인 경로이탈 오차를 남긴다. §4-7 이
+%         그 크기를 미리 계산한다 : y_e = Delta tan(beta).
+%      2. ILOS 는 적분 상태를 하나 두어 그것을 없앤다.
+%      3. ALOS 는 크랩각 자체를 추정해서 없앤다.
+%
+%      1. Plain LOS settles on a permanent cross-track error, whose size §4-7
+%         predicts in advance: y_e = Delta tan(beta).
+%      2. ILOS removes it by carrying an integral state.
+%      3. ALOS removes it by estimating the crab angle itself.
+%
+%      두 방법의 차이는 상태가 무엇을 뜻하는가에 있다. ILOS 의 상태는 계산이
+%      맞아떨어지게 만드는 수일 뿐 그 자체로는 의미가 없다. ALOS 의 상태는
+%      물이 선체를 밀어 놓은 각도이므로 읽을 수 있고, 기록할 수 있으며,
+%      atan2(v, u) 와 대조해 고리가 주장대로 동작하는지 검사할 수 있다.
+%
+%      The difference lies in what the state means. The ILOS state is a number
+%      that makes the arithmetic come out right and signifies nothing on its
+%      own. The ALOS state is the angle through which the water is pushing the
+%      hull, so it can be read off, logged, and compared with atan2(v, u) as a
+%      check that the loop is doing what it claims.
+%
+%  만드는 것 / what it produces
+%      표 셋과 img/W04_result_current.png
+%      Three tables and img/W04_result_current.png
 
 clear V o y k i f pred meas VC B ROW
 here = fileparts(mfilename('fullpath'));

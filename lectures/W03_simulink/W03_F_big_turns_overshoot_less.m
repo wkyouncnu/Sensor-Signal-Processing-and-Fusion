@@ -1,12 +1,42 @@
-%% W03 · section F — big turns overshoot LESS, which no linear model can do
+%% W03 · 절 F — 큰 선회가 오히려 오버슛이 적다. 선형 모델로는 나올 수 없는 결과이다
+%  W03 · Section F — big turns overshoot less, which no linear model can do
 %
+%  실행 순서 / order of execution
 %      W03_0_setup
 %      W03_F_big_turns_overshoot_less
 %
-%  Four step sizes, one controller. The nonlinear yaw damping of otter.m,
-%      Nh = Nr (1 + 10 |r|) r,
-%  grows with the turn rate, so the hull damps its own large turns.
-%  Produces img/W03_result_size.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 F 이며, §3-1 의 경고 — Nomoto 모델은 선형이지만 이 선체는
+%      그렇지 않다 — 를 측정으로 보인다.
+%      This is section F of Part 2, and it measures the warning given in §3-1:
+%      Nomoto's model is linear and this hull is not.
+%
+%  실험의 구성 / how the experiment is arranged
+%      계단의 크기를 넷으로 바꾸고 제어기는 하나로 둔다. 선형계라면 응답의
+%      모양이 크기와 무관해야 하므로 오버슛 백분율이 네 경우 모두 같아야 한다.
+%      실제로는 그렇지 않다.
+%
+%      Four step sizes and one controller. In a linear system the shape of the
+%      response does not depend on its size, so the percentage overshoot would
+%      be the same in all four cases. It is not.
+%
+%  왜 그런가 / why this happens
+%      otter.m 의 요 감쇠는 각속도에 따라 커진다.
+%      The yaw damping in otter.m grows with the turn rate:
+%
+%          Nh = Nr (1 + 10 |r|) r
+%
+%      큰 선회일수록 |r| 이 크고 따라서 감쇠도 크다. 선체가 자기의 큰 선회를
+%      스스로 더 세게 감쇠시키는 셈이며, 그래서 오버슛이 줄어든다. 게인을
+%      조정해서 얻은 결과가 아니라 선체의 성질이다.
+%
+%      A larger turn means a larger |r| and therefore more damping, so the hull
+%      damps its own large turns more heavily and overshoots less. This is a
+%      property of the hull rather than anything obtained by tuning.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W03_result_size.png
+%      One table and img/W03_result_size.png
 
 clear RS SZ LS MpS rpk i ts Kp0 mult
 here = fileparts(mfilename('fullpath'));

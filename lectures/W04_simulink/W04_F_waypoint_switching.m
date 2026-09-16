@@ -1,12 +1,39 @@
-%% W04 · section F — when to give up on this waypoint and aim at the next
+%% W04 · 절 F — 언제 이 웨이포인트를 포기하고 다음 것을 겨냥할 것인가
+%  W04 · Section F — when to give up on this waypoint and aim at the next
 %
+%  실행 순서 / order of execution
 %      W04_0_setup
 %      W04_F_waypoint_switching
 %
-%  Two criteria are in circulation and they are not the same. MSS switches on
-%  the ALONG-TRACK distance remaining; most textbooks draw a CIRCLE OF
-%  ACCEPTANCE. They agree on the path and disagree off it.
-%  Produces img/W04_result_switching.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 F 이며 §4-6 의 두 판정 방식을 실제로 갈라 놓는다.
+%      This is section F of Part 2, and it separates the two switching
+%      criteria of §4-6 in practice.
+%
+%  무엇이 문제인가 / what is at issue
+%      널리 쓰이는 판정 방식이 둘이고, 둘은 같은 것이 아니다. MSS 는 남은
+%      경로방향 거리로 판정한다.
+%      Two criteria are in circulation and they are not the same. MSS switches
+%      on the along-track distance remaining:
+%
+%          d - x_e < R_switch
+%
+%      대부분의 교과서는 웨이포인트를 중심으로 수락반경 원을 그린다.
+%      Most textbooks draw a circle of acceptance about the waypoint:
+%
+%          sqrt((x_wp - x)^2 + (y_wp - y)^2) < R
+%
+%      배가 경로 위에 있으면 두 판정이 일치한다. 경로에서 벗어나 있으면
+%      일치하지 않으며, 원 판정은 배가 원에 한 번도 들어가지 못하면 영영 전환
+%      하지 않는다. 조류가 있거나 코너가 급할 때 실제로 일어나는 일이다.
+%
+%      On the path the two agree. Off it they do not, and the circle can fail
+%      to trigger at all if the vessel never enters it — which is what happens
+%      in a current, or at a sharp corner.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W04_result_switching.png
+%      One table and img/W04_result_switching.png
 
 clear V RR i j o y f k tsw d_corner COL lab
 here = fileparts(mfilename('fullpath'));

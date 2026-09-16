@@ -1,12 +1,40 @@
-%% W04 · section H — the adaptive gains, and the function that justifies them
+%% W04 · 절 H — 적응 게인, 그리고 그것을 정당화하는 함수
+%  W04 · Section H — the adaptive gains, and the function that justifies them
 %
+%  실행 순서 / order of execution
 %      W04_0_setup
 %      W04_H_adaptive_and_stability
 %
-%  The ALOS adaptation law was not guessed. It is the one choice that makes
-%  the derivative of a Lyapunov function negative, and this section computes
-%  that function from the simulation and watches it fall.
-%  Produces img/W04_result_stability.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 H 이며 §4-9 의 안정성 논의를 시뮬레이션으로 확인한다.
+%      This is section H of Part 2, and it checks the stability argument of
+%      §4-9 against simulation.
+%
+%  이 절의 주장 / what this section claims
+%      ALOS 의 적응법칙은 여러 후보 중에서 잘 되는 것을 고른 것이 아니다.
+%      Lyapunov 함수의 시간미분을 음으로 만드는 선택이 그것 하나뿐이고, 법칙은
+%      거기서 따라 나온다. 그래서 이 절은 그 함수를 시뮬레이션 결과로부터 직접
+%      계산해 실제로 감소하는지를 본다.
+%
+%      The ALOS adaptation law was not guessed and then found to work. It is
+%      the one choice that makes the derivative of a Lyapunov function
+%      negative, and the law follows from that. This section computes the
+%      function from the simulation itself and watches it fall.
+%
+%  왜 시뮬레이션으로 확인하는가 / why this is also measured
+%      손으로 한 유도는 손으로 한 실수를 포함할 수 있고, 유도 과정에서 버린
+%      항이 실제로는 작지 않을 수도 있다. V(t) 를 그려 보는 것은 그 두 가지를
+%      한꺼번에 검사한다. §4-9-6 에는 그 유도가 실제로 무엇을 보이고 무엇을
+%      보이지 못하는지가 적혀 있다.
+%
+%      A derivation done by hand can contain a mistake made by hand, and a
+%      term discarded during it may not be small after all. Plotting V(t)
+%      tests both at once. §4-9-6 records what that derivation does and does
+%      not establish.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W04_result_stability.png
+%      One table and img/W04_result_stability.png
 
 clear V KK GG i o y k f U bt Vly RESk RESg COL leg1
 here = fileparts(mfilename('fullpath'));

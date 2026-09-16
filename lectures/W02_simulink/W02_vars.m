@@ -1,17 +1,23 @@
 function V = W02_vars()
-%W02_VARS  Every variable W02_surge_control.slx needs, in one struct.
+%W02_VARS  W02_surge_control.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
+%          Every variable W02_surge_control.slx needs, in one struct.
 %
 %   V = W02_vars
 %
-%   WHY THIS IS SEPARATE FROM W02_0_setup
+%   왜 W02_0_setup 과 따로 있는가 / why this is separate from W02_0_setup
+%       W02_0_setup 은 같은 값들을 기본 작업공간에 채운다. 모델을 열고 Run 을
+%       누르기만 하면 되게 하려는 것이다. 절 스크립트는 같은 값들을 구조체로
+%       필요로 한다. run_sim 이 값 하나만 바꾸어 여러 번 돌릴 때, 작업공간이
+%       마지막 실행의 상태로 남지 않게 하기 위해서다.
 %
-%   W02_0_setup puts the variables in the BASE workspace, which is what a
-%   student needs when they open the model and press Run. The section scripts
-%   need the same values as a STRUCT, so that run_sim can vary one of them for
-%   one run without leaving the workspace in the state of the last run.
+%       W02_0_setup places the same values in the base workspace, which is
+%       what is needed to open the model and press Run. The section scripts
+%       need them as a struct instead, so that run_sim can vary one value for
+%       one run without leaving the workspace in the state of that run.
 %
-%   Both read the same numbers from here, so there is exactly one place where
-%   a gain is written down.
+%       둘 다 여기서 같은 숫자를 읽는다. 게인을 적어 두는 곳은 한 군데여야 한다.
+%       Both read the same numbers from here, so there is exactly one place
+%       where a gain is written down.
 
 mss_path();
 cfg = otter_config('base');

@@ -1,10 +1,25 @@
-%% W03_0_setup.m — the only file to edit this week
+%% W03_0_setup — 이번 주에 학생이 고치는 유일한 파일
+%  W03_0_setup — the only file to be edited in Week 3
 %
-%     >> W03_0_setup
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 A 이다. 이후의 모든 절이 여기서 만든 변수를 쓰므로 가장
+%      먼저 실행한다.
+%      This is section A of Part 2, run first because every later section uses
+%      the variables it defines.
 %
-%  To restore a model that has been broken:
+%  이 파일의 역할 / what this file is for
+%      W03_heading_control.slx 의 모든 Constant, Gain, Step 블록이 여기서 정의한
+%      변수의 이름을 갖고 있다. 게인이나 명령을 바꾸려면 모델을 열 것 없이 이
+%      파일을 고치고 다시 실행한다.
+%      Every Constant, Gain and Step block in W03_heading_control.slx holds the
+%      name of a variable defined here, so a gain or a command is changed by
+%      editing this file and running it again, without opening the model.
 %
-%     >> W03_1_build_heading
+%  실행 / to run
+%      W03_0_setup
+%
+%  모델이 망가졌을 때 / to rebuild a model that has been damaged
+%      W03_1_build_heading
 
 clear; close all; bdclose('all');
 
@@ -35,18 +50,35 @@ t_dn  = 1e6;                 % time of the second step [s]
 X_ff = 60;                   % surge force [N]
 
 %% ---- the controller -----------------------------------------------------
-%  P-D on the heading, with the D term acting on the YAW RATE and not on the
-%  derivative of the error:
+%  선수방위에 대한 P-D 제어. 미분항은 오차의 미분이 아니라 요 각속도에 작용한다.
+%  W02 §2-4 의 일반형으로 쓰면
 %
-%     tau_N = Kp ssa(psi_d - psi) - Kd r
+%     tau_N = Kp ssa(psi_d - psi) + Kd (c_d r_d - r)
 %
-%  Designed in §3-3 from
+%  이고, c_d = 0 이면 흔히 보는 tau_N = Kp ssa(psi_d - psi) - Kd r 이 된다.
+%
+%  P-D on the heading, with the derivative acting on the yaw rate rather than
+%  on the derivative of the error. Written in the general form of §2-4 in
+%  Week 2 it is the expression above, and at c_d = 0 it reduces to the
+%  familiar tau_N = Kp ssa(psi_d - psi) - Kd r.
+%
+%  §3-3 에서 다음 두 식으로 설계했다 / designed in §3-3 from
 %
 %     wn = sqrt(Kp/M66),   zeta = (|Nr| + Kd) / (2 sqrt(Kp M66))
 %
+%  wn = 1.53 rad/s, zeta = 0.9 로 두면 아래 두 값이 나온다.
 %  With wn = 1.53 rad/s and zeta = 0.9 this gives the pair below.
 Kp = 100.00;                 % [N m per rad]
 Kd = 74.90;                  % [N m per rad/s]
+
+%  미분항의 설정값 가중. 0 이면 측정한 요 각속도만 되먹임한다 (이번 주의 기본값).
+%  1 이면 명령한 각속도 r_d 와의 차이를 되먹임하며, 명령이 계단인 이번 주에는
+%  r_d = 0 이므로 결과가 같다. 7주차의 기준모델이 r_d 를 실제 값으로 채운다.
+%  The setpoint weight of the derivative term. At 0 the measured yaw rate
+%  alone is fed back, which is this week's default. At 1 the error in rate is
+%  fed back; this week's command is a step, so r_d is zero and the result is
+%  the same. The reference model of Week 7 fills r_d with a real value.
+c_d = 0;
 
 %  use_ssa = 0 removes the smallest-signed-angle wrap, so the vessel steers
 %  the long way round a +-180 deg boundary. Section E is that experiment.

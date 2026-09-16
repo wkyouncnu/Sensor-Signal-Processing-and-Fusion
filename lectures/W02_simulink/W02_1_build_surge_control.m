@@ -1,24 +1,43 @@
 function W02_1_build_surge_control()
-%BUILD_W02_MODELS  Generate W02_surge_control.slx from code.
+%W02_1_BUILD_SURGE_CONTROL  속도제어 모델 W02_surge_control.slx 를 코드로 만든다.
+%                           Generate W02_surge_control.slx from code.
 %
-%   >> W02_1_build_surge_control
+%   실행 / to run
+%       W02_1_build_surge_control
 %
-%   THE SIGNAL CHAIN
+%   강의에서의 위치 / place in the lecture
+%       Part 2 의 절 B 이다. 이번 주 실습의 절 C 부터 G 까지가 모두 이 모델
+%       하나를 쓴다. 개루프 동정도, 제어기 비교도, 와인드업 실험도 같은 모델의
+%       스위치를 바꾸어 하는 것이다.
+%       This is section B of Part 2. Sections C to G all use this one model:
+%       the open-loop identification, the comparison of controllers and the
+%       windup experiment are all done by changing switches in it.
 %
-%   Left to right, in the order used by the MSS demonstration models:
+%   신호의 흐름 / the signal chain
+%       MSS 데모 모델과 같은 순서로 왼쪽에서 오른쪽으로 놓는다.
+%       Left to right, in the order used by the MSS demonstration models:
 %
 %     Speed command --> Surge controller --> Control allocation --> Otter USV --> Measurements
 %          u_d                X_cmd                  n                  x
 %
-%   Two signals travel backwards, and only two:
+%   거꾸로 가는 신호는 둘뿐이다 / two signals travel backwards, and only two
 %
-%     x      from the plant to the controller — the measured speed
-%     X_sat  from the allocation to the controller — what the propellers
-%            actually delivered, which is what every anti-windup scheme needs
+%     x      플랜트에서 제어기로 — 측정한 속도
+%            from the plant to the controller, the measured speed
+%     X_sat  배분에서 제어기로 — 프로펠러가 실제로 낸 힘. 모든 안티와인드업
+%            방식이 이 값을 필요로 한다. 요구한 힘과 실현된 힘의 차이를 알지
+%            못하면 적분기에게 고리가 끊겼다고 알려 줄 방법이 없다
+%            from the allocation to the controller, the force the propellers
+%            actually delivered. Every anti-windup scheme needs it: without
+%            the difference between what was demanded and what was produced,
+%            there is no way to tell the integrator that the loop was opened
 %
+%   각 단계는 서브시스템이다. 최상위 화면에는 사슬과 두 개의 되먹임 경로만
+%   보이고, 나머지는 모두 단계 안에 들어 있다.
 %   Each stage is a subsystem. The top level shows the chain and the two
 %   feedback paths; everything else lives inside a stage.
 %
+%   다시 생성해도 안전하다. 기존 W02_surge_control.slx 는 덮어쓴다.
 %   Regenerating is safe: any existing W02_surge_control.slx is overwritten.
 
 m    = 'W02_surge_control';

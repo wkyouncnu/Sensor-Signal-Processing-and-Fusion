@@ -1,11 +1,38 @@
-%% W04 · section E — what the look-ahead distance trades against what
+%% W04 · 절 E — 전방주시거리 Delta 는 무엇과 무엇을 맞바꾸는가
+%  W04 · Section E — what the look-ahead distance trades against what
 %
+%  실행 순서 / order of execution
 %      W04_0_setup
 %      W04_E_lookahead_distance
 %
-%  Delta is the one number a LOS law has. Small Delta closes hard and
-%  overshoots; large Delta is lazy and never quite arrives.
-%  Produces img/W04_result_lookahead.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 E 이며 §4-5 의 극한 논의를 수치로 채운다.
+%      This is section E of Part 2, and it puts numbers to the limiting cases
+%      discussed in §4-5.
+%
+%  왜 이 절이 필요한가 / why this section exists
+%      LOS 법칙이 가진 조정 가능한 수는 Delta 하나뿐이다. 그래서 이 법칙을 쓴다는
+%      것은 곧 Delta 를 고른다는 뜻이고, 무엇을 얻고 무엇을 잃는지 알지 못하면
+%      고를 수가 없다.
+%
+%      Delta is the only adjustable number a LOS law has, so using the law
+%      amounts to choosing it, and it cannot be chosen without knowing what is
+%      gained and what is given up.
+%
+%  결과를 읽는 법 / how to read the result
+%      Delta 가 작으면 경로로 급하게 붙고 그만큼 지나쳐서 오버슛한다. Delta 가
+%      크면 느긋하게 접근하지만 끝내 경로에 정확히 올라서지 못한다. 스윕이 그
+%      둘 사이의 곡선을 그리며, 경험칙인 "선체 길이의 2~5 배" 가 그 곡선의
+%      어디쯤에 있는지도 함께 보인다.
+%
+%      A small Delta closes on the path hard and overshoots it; a large Delta
+%      approaches gently and never quite arrives. The sweep traces the curve
+%      between the two, and shows where the rule of thumb of two to five hull
+%      lengths falls on it.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W04_result_lookahead.png
+%      One table and img/W04_result_lookahead.png
 
 clear V DD i o y k f R sw
 here = fileparts(mfilename('fullpath'));

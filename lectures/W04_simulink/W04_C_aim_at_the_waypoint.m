@@ -1,11 +1,40 @@
-%% W04 · section C — aiming at a point is not following a path
+%% W04 · 절 C — 한 점을 겨냥하는 것은 경로를 따라가는 것이 아니다
+%  W04 · Section C — aiming at a point is not following a path
 %
+%  실행 순서 / order of execution
 %      W04_0_setup
 %      W04_C_aim_at_the_waypoint
 %
-%  The obvious guidance law: point the bow at the next waypoint. It reaches
-%  every waypoint and it never follows the line between them.
-%  Produces img/W04_result_atan2.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 C 이며 §4-1 과 짝을 이룬다. 유도법칙을 처음 만들 때 누구나
+%      떠올리는 방법을 먼저 만들어 보고, 그것이 왜 부족한지를 측정으로 보인다.
+%      실패하는 방법을 먼저 보아야 다음 방법이 무엇을 고치는 것인지 알 수 있다.
+%
+%      This is section C of Part 2, the counterpart of §4-1. The law anyone
+%      would think of first is built and then measured, to show where it falls
+%      short. Seeing the method that fails is what makes it possible to say
+%      what the next method repairs.
+%
+%  무엇을 만드는가 / the law being tested
+%      선수를 다음 웨이포인트로 향하게 한다.
+%      Point the bow at the next waypoint:
+%
+%          psi_d = atan2(y_wp - y, x_wp - x)
+%
+%  결과를 읽는 법 / how to read the result
+%      이 법칙은 웨이포인트를 모두 지나간다. 그러나 웨이포인트 사이의 선분은
+%      한 번도 따라가지 못한다. 조류가 있으면 더 벌어진다. 겨냥하는 목표가
+%      경로 위의 점이 아니라 경로의 끝점이기 때문이며, 끝점을 향해 가는 동안
+%      배는 경로에서 얼마나 떨어져 있든 상관하지 않는다.
+%
+%      The law reaches every waypoint and never once follows the line between
+%      them, and a current widens the gap further. What it aims at is the end
+%      of the path rather than a point on it, and while heading for an end
+%      point the vessel is indifferent to how far from the path it is.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W04_result_atan2.png
+%      One table and img/W04_result_atan2.png
 
 clear V o y k i f COL leg
 here = fileparts(mfilename('fullpath'));

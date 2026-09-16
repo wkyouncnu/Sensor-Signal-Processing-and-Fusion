@@ -1,11 +1,32 @@
-%% A1 · section D — the attainable control set
+%% A1 · 절 D — 도달 가능 제어 집합
+%  A1 · Section D — the attainable control set
 %
+%  실행 순서 / order of execution
 %      A1_0_setup
 %      A1_D_attainable_set
 %
-%  Every reachable (X, N) is the image of the shaft-speed box under the thrust
-%  curve and then B. The box is a square; the image is not.
-%  Produces img/A1_result_set.png
+%  무엇을 그리는가 / what is being drawn
+%      선체에 요구할 수 있는 (X, N) 전체이다. 그것은 축 회전수가 만드는 사각형
+%      영역을 추력곡선으로 옮기고, 다시 B 로 옮긴 상(image)이다.
+%
+%      Every (X, N) the hull can be asked for. It is the image of the box of
+%      shaft speeds, mapped first through the thrust curve and then through B.
+%
+%          n 의 상자 --> T = k n|n| --> tau = B T
+%
+%      출발한 것은 사각형인데 도착한 것은 사각형이 아니다. 추력곡선이 비선형
+%      이고 전진과 후진의 계수가 다르기 때문이다. 이 모양을 알아야 어떤 요구가
+%      잘려 나갈지 미리 말할 수 있고, 그것이 포화와 안티와인드업으로 이어진다.
+%
+%      What sets out as a square does not arrive as one, because the thrust
+%      curve is nonlinear and the ahead and astern coefficients differ.
+%      Knowing the shape is what makes it possible to say in advance which
+%      demands will be clipped, which is where saturation and anti-windup
+%      begin.
+%
+%  만드는 것 / what it produces
+%      표와 img/A1_result_set.png
+%      Tables and img/A1_result_set.png
 
 clear cfg y NG ng N1 N2 T1 T2 Xg Ng kk area_XN nn f
 here = fileparts(mfilename('fullpath'));

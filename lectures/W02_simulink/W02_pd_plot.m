@@ -1,15 +1,29 @@
 function f = W02_pd_plot(R, LBL, V, ttl)
-%W02_PD_PLOT  Draw the four derivative implementations of section I.
+%W02_PD_PLOT  절 I 의 네 가지 미분 구현을 그린다.
+%             Draw the four derivative implementations of section I.
 %
-%   W02_pd_plot                        the run sitting in the base workspace
-%   W02_pd_plot(R, LBL, V, ttl)        for W02_I_pseudo_derivative
-%   f = W02_pd_plot(...)               the figure handle
+%   W02_pd_plot                        기본 작업공간에 있는 실행 결과
+%                                      the run sitting in the base workspace
+%   W02_pd_plot(R, LBL, V, ttl)        절 I 스크립트가 부르는 형태
+%                                      the form the section I script uses
+%   f = W02_pd_plot(...)               그림 핸들 / the figure handle
 %
-%   Called by the model's StopFcn, so pressing Run produces the figure without
-%   any further command, and called by the runner, so the figure on screen and
-%   the figure in the lecture note come from one piece of code.
+%   모델의 StopFcn 과 절 스크립트가 모두 이 함수를 부른다. 그래서 Run 만 눌러도
+%   그림이 뜨고, 화면의 그림과 강의노트의 그림이 같은 코드에서 나온다.
+%   Both the model's StopFcn and the section script call this, so pressing Run
+%   produces the figure without any further command, and the figure on screen
+%   and the figure in the lecture note come from one piece of code.
 %
-%   The log is  [r  u1..u4  y1..y4  d1..d4].
+%   로그의 열 구성 / the columns of the log
+%       [r  u1..u4  y1..y4  d1..d4]
+%       설정값 하나, 네 방식의 작동기 신호, 그 출력, 그리고 각 방식이 실제로 낸
+%       미분항이다. 미분항을 따로 기록하는 것이 이 절의 요점이다 — 잡음이
+%       증폭되는 자리가 바로 거기이고, 출력만 보아서는 보이지 않는다.
+%
+%       The reference, the actuator signal of each of the four schemes, their
+%       outputs, and the derivative term each one actually produced. Logging
+%       the derivative term separately is the point of this section: that is
+%       where the noise is amplified, and it cannot be seen in the output.
 
 if nargin < 1 || isempty(R)
     if evalin('base', '~exist(''W02pd'',''var'')'), return; end

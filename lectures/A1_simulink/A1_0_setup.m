@@ -1,20 +1,28 @@
-%% A1_0_setup.m — the only file to edit in this appendix
+%% A1_0_setup — 이 부록에서 학생이 고치는 유일한 파일
+%  A1_0_setup — the only file to be edited in this appendix
 %
-%  Every Constant and Gain block in A1_actuation.slx reads a variable defined
-%  here. Change a value, run this script, and the model runs with it.
+%  이 파일의 역할 / what this file is for
+%      A1_actuation.slx 의 모든 Constant 와 Gain 블록이 여기서 정의한 변수의
+%      이름을 갖고 있다. 값을 바꾸고 이 스크립트를 실행하면 모델이 그 값으로 돈다.
+%      Every Constant and Gain block in A1_actuation.slx holds the name of a
+%      variable defined here, so changing a value and running this script is
+%      enough to make the model run with it.
 %
-%     >> A1_0_setup
+%  실행 / to run
+%      A1_0_setup
 %
-%  Then work through the appendix one section at a time:
+%  그다음 절을 하나씩 / then, one section at a time
+%      A1_C_four_layouts        열 규칙, 네 가지 추진기 배치, 그리고 계수(rank)
+%                               the column rule, four layouts, and rank
+%      A1_D_attainable_set      선체에 요구할 수 있는 (X, N) 의 범위
+%                               what (X, N) the hull can be asked for
+%      A1_E_command_that_turns  선회가 아닌 선회 명령
+%                               the turn that is not a turn
+%      A1_F_sway_without_force  B 의 빈 행이 M 역행렬의 빈 행은 아니다
+%                               an empty row in B is not an empty M inverse
 %
-%     >> A1_C_four_layouts        the column rule, four layouts, and rank
-%     >> A1_D_attainable_set      what (X, N) the hull can be asked for
-%     >> A1_E_command_that_turns  the turn that is not a turn
-%     >> A1_F_sway_without_force  an empty row in B is not an empty M inverse
-%
-%  To restore a model that has been broken:
-%
-%     >> A1_1_build_actuation
+%  모델이 망가졌을 때 / to rebuild a model that has been damaged
+%      A1_1_build_actuation
 
 clear; close all; bdclose('all');
 

@@ -1,13 +1,26 @@
 function f = W02_aw_plot(R, ttl, R0)
-%W02_AW_PLOT  The anti-windup demonstration, drawn.
+%W02_AW_PLOT  절 H 의 안티와인드업 실험을 그린다.
+%             The anti-windup demonstration of section H, drawn.
 %
-%   W02_aw_plot                 the run sitting in the base workspace
-%   W02_aw_plot(R, ttl)         a struct from W02_H_antiwindup
+%   W02_aw_plot                 기본 작업공간에 있는 실행 결과
+%                               the run sitting in the base workspace
+%   W02_aw_plot(R, ttl)         W02_H_antiwindup 이 만든 구조체
+%                               a struct from W02_H_antiwindup
 %
+%   W02_H_antiwindup.slx 의 StopFcn 이 자동으로 부른다.
 %   Called automatically by the StopFcn of W02_H_antiwindup.slx.
 %
-%   R.y columns, the logging contract of that model:
-%     1 r    2:5 u for the four schemes    6:9 y    10 integrator state, row 4
+%   R.y 의 열 구성 — 그 모델의 로깅 규약이다 / the logging contract of that model:
+%     1    설정값 r / the reference
+%     2:5  네 방식의 작동기 신호 u / the actuator signal of the four schemes
+%     6:9  네 방식의 출력 y / their outputs
+%     10   4행의 적분기 상태 / the integrator state of row 4
+%
+%   적분기 상태를 4행에서만 뽑는 이유는, 그 행이 손으로 조립한 경로여서 내부
+%   신호를 꺼낼 수 있기 때문이다. 라이브러리 블록에서는 그럴 수 없다.
+%   The integrator state is taken from row 4 alone because that row is the
+%   hand-built path, whose internal signals can be brought out; those of the
+%   library block cannot.
 
 if nargin < 1 || isempty(R)
     if evalin('base', '~exist(''W02aw'',''var'')'), return, end

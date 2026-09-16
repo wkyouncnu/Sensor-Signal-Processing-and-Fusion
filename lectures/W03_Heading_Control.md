@@ -235,18 +235,26 @@ $$
 
 ## 3-2. The control law
 
-- The controller is proportional on the heading error and derivative on the **yaw rate**:
+- The controller is proportional on the heading error and derivative on the **yaw rate**. Written in the general form of Week 2 §2-4, with a setpoint weight $c_d$ on the commanded rate:
 
 $$
-\boxed{\ \tau_N = K_p\,\operatorname{ssa}\!\left(\psi_d - \psi\right) - K_d\,r\ }
+\boxed{\ \tau_N = K_p\,\operatorname{ssa}\!\left(\psi_d - \psi\right) + K_d\left(c_d\,r_d - r\right)\ }
 $$
 
-- Two choices are being made, and both are deliberate.
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $r_d$ | commanded yaw rate | $0$ this week; supplied by the reference model of Week 7 |
+| $c_d$ | setpoint weight of the derivative term | $0$, `W03_0_setup.m` |
+
+- At $c_d = 0$ this is the familiar $\tau_N = K_p\operatorname{ssa}(\psi_d - \psi) - K_d r$, and the rest of this week works at that value. Writing it with the weight makes the minus a consequence rather than a convention: nothing is being negated, the bracket is simply empty on its commanded side. Week 2 §2-4 derives this and measures what the weight does and does not change.
+
+- Three choices are being made, and all three are deliberate.
 
 | Choice | Reason |
 |---|---|
 | $\operatorname{ssa}$ on the error | angles wrap; §3-5 is what happens without it |
-| $-K_d r$, not $-K_d \dot e$ | $r$ is measured directly by the gyro. Differentiating the error would also differentiate every step in $\psi_d$ |
+| the derivative acts on $r$, not on $\dot e$ | $r$ is measured directly by the gyro, and differentiating the error would also differentiate every step in $\psi_d$ |
+| $c_d = 0$ this week | the command is a step, so $r_d$ is zero except at the step itself, where it is not differentiable. The port exists so that Week 7 can fill it |
 
 ## 3-3. Where the derivative term goes this time
 

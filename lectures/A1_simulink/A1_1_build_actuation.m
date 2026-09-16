@@ -1,20 +1,31 @@
 function A1_1_build_actuation()
-%A1_1_BUILD_ACTUATION  Generate A1_actuation.slx from code.
+%A1_1_BUILD_ACTUATION  구동 모델 A1_actuation.slx 를 코드로 만든다.
+%                      Generate A1_actuation.slx from code.
 %
-%   >> A1_1_build_actuation
+%   실행 / to run
+%       A1_1_build_actuation
 %
-%   THE SIGNAL CHAIN
-%
-%   Left to right, in the order used by the MSS demonstration models:
+%   신호의 흐름 / the signal chain
+%       MSS 데모 모델과 같은 순서로 왼쪽에서 오른쪽으로 놓는다.
+%       Left to right, in the order used by the MSS demonstration models:
 %
 %     Propeller command --> Thrust and B --> Otter USV --> Measurements
 %            n              tau = B f          x
 %
-%   There is no controller here. The middle stage is pure actuation: shaft
-%   speed to thrust to generalised force, which is the subject of this
-%   appendix. The same command also reaches the plant, so the arithmetic of
-%   the middle stage can be checked against what the vessel actually does.
+%   이 부록에는 제어기가 없다 / there is no controller in this appendix
+%       가운데 단계는 순수한 구동이다. 축 회전수에서 추력으로, 추력에서 일반화
+%       힘으로 가는 계산이며 그것이 이 부록의 주제이다. 같은 명령이 플랜트에도
+%       그대로 들어가므로, 가운데 단계의 계산 결과를 선박이 실제로 하는 운동과
+%       대조할 수 있다. 계산이 맞는지 계산으로 확인하는 것이 아니라 선체로
+%       확인하는 셈이다.
 %
+%       The middle stage is pure actuation: shaft speed to thrust to
+%       generalised force, which is the subject of this appendix. The same
+%       command also reaches the plant, so the arithmetic of the middle stage
+%       can be checked against what the vessel actually does — the check is
+%       made against the hull rather than against more arithmetic.
+%
+%   다시 생성해도 안전하다. 기존 A1_actuation.slx 는 덮어쓴다.
 %   Regenerating is safe: any existing A1_actuation.slx is overwritten.
 
 m    = 'A1_actuation';

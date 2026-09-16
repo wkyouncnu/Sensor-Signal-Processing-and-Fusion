@@ -1,12 +1,36 @@
-%% W04 · section D — the line-of-sight law
+%% W04 · 절 D — 시선(LOS) 유도법칙
+%  W04 · Section D — the line-of-sight law
 %
+%  실행 순서 / order of execution
 %      W04_0_setup
 %      W04_D_line_of_sight
 %
-%  Aim at a point Delta ahead ON THE PATH, not at the waypoint. One arctan
-%  separates the two laws, and it is the difference between visiting points
-%  and following a path.
-%  Produces img/W04_result_los.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 D 이며 §4-4 에서 유도한 법칙을 절 C 의 법칙과 나란히 놓고
+%      비교한다.
+%      This is section D of Part 2, and it places the law derived in §4-4
+%      alongside the one measured in section C.
+%
+%  무엇이 달라지는가 / what changes
+%      겨냥하는 점을 웨이포인트가 아니라, 경로 위에서 Delta 만큼 앞선 자리로
+%      바꾼다.
+%      The point aimed at is moved from the waypoint to a point Delta ahead on
+%      the path itself:
+%
+%          psi_d = pi_p - arctan(y_e / Delta)
+%
+%      두 법칙을 가르는 것은 arctan 하나뿐이다. 그런데 그 하나가 점을 방문하는
+%      것과 경로를 따라가는 것의 차이를 만든다. 경로에서 벗어난 거리 y_e 가
+%      법칙에 직접 들어오기 때문이다. 절 C 의 법칙에는 그 양이 아예 없었다.
+%
+%      One arctan separates the two laws, and it is the difference between
+%      visiting points and following a path: the cross-track error y_e now
+%      enters the law directly, whereas the law of section C did not contain
+%      that quantity at all.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W04_result_los.png
+%      One table and img/W04_result_los.png
 
 clear V o y k i f ye psid pi_p err
 here = fileparts(mfilename('fullpath'));

@@ -1,12 +1,17 @@
 function f = W02_plot(R, LBL, ttl)
-%W02_PLOT  Reference, response, demand and integrator state of W02 runs.
+%W02_PLOT  W02 실행 결과의 설정값·응답·요구한 힘·적분기 상태를 그린다.
+%          Reference, response, demand and integrator state of Week 2 runs.
 %
-%   W02_plot                      the run sitting in the base workspace
-%   W02_plot(R, LBL, ttl)         a cell array of runs, for W02_run
-%   f = W02_plot(...)             the figure handle
+%   W02_plot                      기본 작업공간에 있는 실행 결과
+%                                 the run sitting in the base workspace
+%   W02_plot(R, LBL, ttl)         실행 결과들의 셀 배열 / a cell array of runs
+%   f = W02_plot(...)             그림 핸들 / the figure handle
 %
+%   모델의 StopFcn 이 자동으로 부르므로, Run 을 누르면 다른 명령 없이 그림이 뜬다.
+%   절 스크립트도 같은 함수를 부르므로 화면의 그림과 강의노트의 그림이 어긋나지 않는다.
 %   Called automatically by the model's StopFcn, so pressing Run produces the
-%   figure without any further command.
+%   figure without any further command. The section scripts call the same
+%   function, so the figure on screen and the one in the notes cannot differ.
 %
 %   R is a cell array of structs with fields t and y, where the nine columns of
 %   y are

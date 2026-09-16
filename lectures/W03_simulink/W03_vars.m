@@ -19,9 +19,22 @@ V.Nr  = -42.65;         % linear yaw damping, = -M66/T_yaw with T_yaw = 1 s
 V.psi_1 = 60;   V.psi_2 = 60;   V.t_up = 5;   V.t_dn = 1e6;
 V.X_ff  = 60;                   % constant surge command, so the vessel moves
 
-%  ---- controller ----------------------------------------------------------
-%  tau_N = Kp ssa(psi_d - psi) - Kd r    (P-D on the RATE, MSS convention)
+%  ---- 제어기 / the controller --------------------------------------------
+%  tau_N = Kp ssa(psi_d - psi) + Kd (c_d r_d - r)
+%
+%  c_d 는 미분항의 설정값 가중이며, W02 §2-4 의 것과 같은 뜻이다.
+%    c_d = 0  측정한 요 각속도만 되먹임한다. MSS 의 관용이며 이번 주의 기본값
+%    c_d = 1  명령한 각속도와의 차이를 되먹임한다. 명령이 계단인 이번 주에는
+%             r_d = 0 이므로 두 값이 같은 결과를 준다
+%
+%  c_d is the setpoint weight of the derivative term, in the sense of §2-4 in
+%  Week 2:
+%    c_d = 0  feed back the measured yaw rate alone, the MSS convention and
+%             this week's default
+%    c_d = 1  feed back the error in rate. This week's command is a step, so
+%             r_d is zero and the two give the same result
 V.Kp = 100.00;  V.Kd = 74.90;   V.use_ssa = 1;
+V.c_d = 0;
 
 %  ---- actuator and plant --------------------------------------------------
 V.k_pos = c.k_pos;  V.k_neg = c.k_neg;

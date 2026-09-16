@@ -1,11 +1,41 @@
-%% W03 · section E — the wrap, and the one line of arithmetic that prevents it
+%% W03 · 절 E — 각도의 되감김, 그리고 그것을 막는 한 줄의 계산
+%  W03 · Section E — the wrap, and the one line of arithmetic that prevents it
 %
+%  실행 순서 / order of execution
 %      W03_0_setup
 %      W03_E_the_wrap
 %
-%  Hold +170 deg, then command -170 deg. The two headings are 20 deg apart.
-%  One vessel turns 20 deg. The other turns 340 deg the other way.
-%  Produces img/W03_result_ssa.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 E 이며 §3-2 의 ssa 선택을 실험으로 확인한다.
+%      This is section E of Part 2, and it tests the choice of ssa made in §3-2.
+%
+%  실험의 구성 / how the experiment is arranged
+%      선수방위를 +170 도로 유지하다가 -170 도를 명령한다. 두 방위는 실제로는
+%      20 도밖에 떨어져 있지 않다. 한 척은 20 도를 돌고, 다른 한 척은 반대 방향
+%      으로 340 도를 돈다.
+%
+%      The heading is held at +170 deg and then -170 deg is commanded. The two
+%      headings are in fact 20 deg apart. One vessel turns 20 deg; the other
+%      turns 340 deg the other way.
+%
+%  무엇이 그 차이를 만드는가 / what makes the difference
+%      뺄셈 하나이다. psi_d - psi 를 그대로 쓰면 -340 도가 나오고, 제어기는 그
+%      숫자를 믿는다. ssa 는 그 각을 (-180, 180] 로 접어 +20 도로 만든다.
+%
+%          e = atan2(sin(psi_d - psi), cos(psi_d - psi))
+%
+%      각도는 실수가 아니라 원 위의 점이므로, 두 각의 차이를 뺄셈만으로 구하면
+%      원을 한 바퀴 돌아온 답을 얻을 수 있다. 이 한 줄이 그것을 막는다.
+%
+%      A single subtraction. Taken literally, psi_d - psi is -340 deg, and the
+%      controller believes it. The ssa wraps that angle into (-180, 180], where
+%      it is +20 deg. An angle is a point on a circle rather than a real
+%      number, so subtracting two of them can return an answer that has gone
+%      the long way round; this one line prevents it.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W03_result_ssa.png
+%      One table and img/W03_result_ssa.png
 
 clear W LW i k swept
 here = fileparts(mfilename('fullpath'));

@@ -1,11 +1,41 @@
-%% W03 · section C — proportional only, and the error that is already zero
+%% W03 · 절 C — 비례제어만으로도 이미 0 인 오차
+%  W03 · Section C — proportional only, and the error that is already zero
 %
+%  실행 순서 / order of execution
 %      W03_0_setup
 %      W03_C_proportional_only
 %
-%  Three gains, one step. Week 2 could not reach its setpoint at any gain.
-%  This axis reaches it at every gain, and nothing was tuned to make that happen.
-%  Produces img/W03_result_P.png
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 C 이며 §3-1 과 짝을 이룬다. 2주차의 속도축은 어떤 게인을
+%      써도 설정값에 도달하지 못했는데, 이 축은 어떤 게인을 써도 도달한다.
+%      그렇게 되도록 무언가를 조정한 것이 아니라, 축이 다르기 때문이다.
+%
+%      This is section C of Part 2, the counterpart of §3-1. The surge axis of
+%      Week 2 could not reach its setpoint at any gain; this axis reaches it at
+%      every gain. Nothing was tuned to bring that about — the axis is
+%      different.
+%
+%  왜 그런가 / why this happens
+%      선수방위의 운동방정식에는 요 각속도에 비례하는 감쇠만 있고 각도 자체에
+%      작용하는 복원력이 없다. 그래서 정지 상태에서 그 각도를 유지하는 데 힘이
+%      필요하지 않다. 속도축에서는 속도를 유지하는 데 감쇠를 이기는 힘이 늘
+%      필요했고, 그 힘을 만들려면 오차가 남아야 했다. 여기서는 그럴 필요가 없다.
+%      다시 말해 이 고리는 1 형이다.
+%
+%      The equation of motion for heading contains damping proportional to the
+%      yaw rate but no restoring term acting on the angle itself, so holding
+%      an angle at rest costs no moment. On the surge axis, holding a speed
+%      always required a force to overcome damping, and producing that force
+%      required an error to remain. Here it does not: the loop is type 1.
+%
+%  절차 / procedure
+%      비례게인 셋에 계단 명령 하나. 각 게인에서 정상상태 오차와 오버슛을 잰다.
+%      Three proportional gains and one step command; the steady-state error
+%      and the overshoot are measured at each gain.
+%
+%  만드는 것 / what it produces
+%      표 하나와 img/W03_result_P.png
+%      One table and img/W03_result_P.png
 
 clear RP KPS LP i wn ze Mp ts y
 here = fileparts(mfilename('fullpath'));

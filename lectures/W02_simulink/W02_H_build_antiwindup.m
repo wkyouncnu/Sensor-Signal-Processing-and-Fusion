@@ -1,23 +1,42 @@
 function W02_H_build_antiwindup()
-%BUILD_W02_ANTIWINDUP  Generate W02_H_antiwindup.slx — the principle, on its own.
+%W02_H_BUILD_ANTIWINDUP  와인드업의 원리만 남긴 모델 W02_H_antiwindup.slx 를 만든다.
+%                        Generate W02_H_antiwindup.slx, the principle on its own.
 %
-%   >> W02_H_build_antiwindup
+%   실행 / to run
+%       W02_H_build_antiwindup
 %
-%   WHY A SECOND MODEL
+%   강의에서의 위치 / place in the lecture
+%       Part 2 절 H 가 쓰는 모델이다. 절 F 가 선체에서 보인 것을, 다른 어떤
+%       것으로도 설명할 수 없는 가장 단순한 플랜트 위에서 다시 보인다.
+%       This is the model used by section H of Part 2. What section F showed on
+%       the vessel is shown again on the simplest plant that can show it, where
+%       nothing else could account for the result.
 %
-%   W02_surge_control.slx shows windup on the vessel, where the plant is twelve states,
-%   the saturation is a square-law propeller curve and the setpoint is a speed.
-%   None of that is the point. The point is a first-order plant, a limit, and
-%   an integrator that does not know about the limit.
+%   왜 모델이 하나 더 필요한가 / why a second model
+%       W02_surge_control.slx 는 와인드업을 선체 위에서 보인다. 그런데 거기서는
+%       플랜트가 열두 개의 상태를 갖고, 포화는 제곱 법칙을 따르는 프로펠러 곡선
+%       이며, 설정값은 속도이다. 그중 어느 것도 이 절의 주제가 아니다. 주제는
+%       1차 플랜트, 한계, 그리고 그 한계를 모르는 적분기 셋뿐이다.
 %
-%   This model removes everything else:
+%       W02_surge_control.slx shows windup on the vessel, where the plant has
+%       twelve states, the saturation is a square-law propeller curve and the
+%       setpoint is a speed. None of that is the point. The point is a
+%       first-order plant, a limit, and an integrator that does not know about
+%       the limit.
 %
-%       G(s) = 1 / (s + 1),      u in [-1, +1],      PI control
+%   이 모델은 나머지를 전부 걷어낸다 / this model removes everything else
 %
-%   With a DC gain of 1 and |u| <= 1, the largest reachable output is y = 1.
-%   The reference is stepped to 2, which cannot be reached, held, and then
-%   dropped to 0.5, which can. Everything this week says about windup is
-%   visible in that one profile.
+%       G(s) = 1 / (s + 1),      u in [-1, +1],      PI 제어 / PI control
+%
+%       직류이득이 1 이고 |u| <= 1 이므로 도달할 수 있는 가장 큰 출력은 y = 1 이다.
+%       설정값을 도달 불가능한 2 로 올려 한동안 유지한 뒤, 도달 가능한 0.5 로
+%       내린다. 이번 주가 와인드업에 대해 말하는 모든 것이 이 하나의 프로파일에
+%       들어 있다.
+%
+%       With a DC gain of 1 and |u| <= 1 the largest reachable output is y = 1.
+%       The reference is stepped to 2, which cannot be reached, held there, and
+%       then dropped to 0.5, which can. Everything this week says about windup
+%       is visible in that one profile.
 %
 %   FOUR CONTROLLERS, ONE PLANT EACH
 %
