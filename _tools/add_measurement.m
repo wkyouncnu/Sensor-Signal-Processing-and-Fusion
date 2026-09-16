@@ -1,15 +1,27 @@
 function add_measurement(mdl, pos, tag, extra, opts)
-%ADD_MEASUREMENT  The last stage of the chain: selectors, logging, live view.
+%ADD_MEASUREMENT  사슬의 마지막 단계 — 선택기, 로깅, 실시간 화면.
+%                 The last stage of the chain: selectors, logging, live view.
 %
 %   add_measurement(mdl, pos, tag)
 %   add_measurement(mdl, pos, tag, {'u_d','X_cmd'})
 %   add_measurement(mdl, pos, tag, {'n'}, struct('dash',true))
 %
-%     mdl    model name
-%     pos    [x1 y1 x2 y2], normally gnc_chain('measurement')
-%     tag    week tag, e.g. 'W01'. Names the logged variable and the live-view
+%     mdl    모델 이름 / the model name
+%     pos    [x1 y1 x2 y2], 보통 gnc_chain('measurement') 이 준다
+%            normally taken from gnc_chain('measurement')
+%     tag    주차 표시, 예를 들어 'W01'. 기록되는 변수의 이름과 실시간 화면
+%            함수 <tag>_animate 의 이름을 함께 정한다
+%            the week tag; it names both the logged variable and the live-view
 %            function <tag>_animate
-%     extra  cell array of extra inport names to log after the vessel states
+%     extra  선체 상태 뒤에 이어서 기록할 입력들의 이름
+%            extra inport names to log after the vessel states
+%
+%   로그의 앞 여섯 열은 모든 주차가 같다 / the first six columns never change
+%       [u v r N E psi] 는 이 강의 전체의 규약이다. 주차마다 그 뒤에 자기 몫을
+%       덧붙일 뿐이므로, 한 주차에서 쓴 읽기 코드가 다른 주차에서도 통한다.
+%       [u v r N E psi] is the contract of the whole course, and each week only
+%       appends its own columns after it, so code written to read one week's
+%       log still reads another's.
 %     opts   optional struct
 %              .dash      false (default) — the live view receives
 %                         (N, E, psi, t, en) and draws the track alone.

@@ -1,12 +1,28 @@
 function ok = verify_alos(verbose)
-%VERIFY_ALOS  강의 4-9 의 ALOS 유도를 MSS 의 ALOSpsi.m 과 한 스텝씩 대조한다.
+%VERIFY_ALOS  §4-9 의 ALOS 유도를 MSS 의 ALOSpsi.m 과 한 스텝씩 대조한다.
+%             Compare the ALOS derivation of §4-9 with MSS's ALOSpsi.m, one
+%             step at a time.
 %
-%   ok = verify_alos()        % 조용히, 통과하면 true
-%   ok = verify_alos(true)    % 표를 찍는다
+%   ok = verify_alos()        조용히 돌리고, 통과하면 true
+%                             run silently, returning true if it passes
+%   ok = verify_alos(true)    표를 출력한다 / print the table
 %
-%   이 볼트가 벤더링한 MSS 는 2021 릴리스라 ALOSpsi.m 이 없다. ALOS 는 2023 에
-%   들어갔다. 그래서 강의 4-9 는 법칙을 **직접 유도**했고, 이 함수가 그 유도를
-%   최신 MSS 구현과 대조한다 — 찾을 수 있을 때만.
+%   왜 대조 대상이 없을 수도 있는가 / why the reference may be missing
+%       이 볼트가 쓰는 MSS 는 2021 릴리스이고 거기에는 ALOSpsi.m 이 없다. ALOS 가
+%       MSS 에 들어간 것은 2023 이다. 그래서 §4-9 는 법칙을 직접 유도했고, 이
+%       함수는 그 유도를 최신 MSS 구현과 대조한다 — 그 파일을 찾을 수 있을 때만.
+%
+%       The MSS release used by this vault is from 2021 and does not contain
+%       ALOSpsi.m; ALOS entered MSS in 2023. §4-9 therefore derives the law
+%       itself, and this function checks that derivation against the newer
+%       implementation whenever that file can be found.
+%
+%       찾지 못하면 오류를 내지 않고 **false 를 돌려준다.** vault_runall 은 그
+%       반환값을 보아야 한다. 오류만 보면 통과한 것처럼 찍힌다 — 실제로 한 번
+%       그렇게 지나갔다.
+%       When it cannot be found this function returns false rather than
+%       raising an error, so vault_runall has to inspect the return value:
+%       watching only for errors reports a pass, which is what happened once.
 %
 %   Fossen 의 원 문헌:
 %     T. I. Fossen (2023). An Adaptive Line-of-sight (ALOS) Guidance Law for

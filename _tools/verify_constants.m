@@ -1,16 +1,28 @@
 function T = verify_constants(verbose)
-%VERIFY_CONSTANTS  Rebuild the Otter's inertia from otter.m and check every
+%VERIFY_CONSTANTS  Otter 의 관성행렬을 otter.m 으로부터 다시 만들고, 강의노트가
+%                  인용하는 모든 수를 그것과 대조한다.
+%                  Rebuild the Otter's inertia from otter.m and check every
 %                  number the lecture notes quote against it.
 %
-%   verify_constants          print the table
-%   T = verify_constants(0)   return it silently
+%   verify_constants          표를 출력한다 / print the table
+%   T = verify_constants(0)   조용히 돌려준다 / return it silently
 %
-%   WHY THIS EXISTS
+%   왜 이 함수가 있는가 / why this exists
+%       검증하지 않은 수식은 싣지 않는다는 것이 이 볼트의 규칙이다. 계수에
+%       대해서는 그것이 곧 "기억이 아니라 원천과 대조한다" 는 뜻이다. 사람이
+%       옮겨 적은 계수는 언젠가 한 자리가 틀리고, 틀린 자리는 결과가 크게
+%       달라지기 전에는 눈에 띄지 않는다.
 %
-%   The vault rule is that no equation is published until it has been checked
-%   (standing-orders.md §3-3). For the coefficients that means checking against
-%   the source, not against memory. This function does that, and it is meant to
-%   be re-run whenever MSS is updated.
+%       No equation is published in this vault until it has been checked. For
+%       the coefficients that means checking against the source rather than
+%       against memory: a coefficient copied by hand eventually loses a digit,
+%       and a lost digit does not announce itself until something is badly
+%       wrong.
+%
+%       MSS 가 갱신될 때마다 다시 돌리도록 만든 것이다. 2021 릴리스와 2024
+%       재보정 사이에 실제로 바뀐 계수가 있다.
+%       It is meant to be re-run whenever MSS is updated: coefficients did
+%       change between the 2021 release and the 2024 recalibration.
 %
 %   WHY NOT MEASURE IT BY FINITE DIFFERENCE
 %

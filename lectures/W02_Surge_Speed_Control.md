@@ -791,7 +791,9 @@ Opening the folder shows about fifteen files. Only the ones in this table are ev
 | right panel, circles | the settled speed measured from each of the four runs |
 
 - The DC gain is exact to four decimals across the whole range. The plant really is $u = K_u X$ in steady state.
-- The time constant is **not** exact: $1.1200$ s measured against $1.1025$ s predicted, an excess of $1.59\%$. The residue is the surge-pitch coupling retained by the twelve-state plant and discarded by the scalar model. It is reported rather than absorbed.
+- The time constant is **not** exact: $1.1200$ s measured against $1.1025$ s predicted, an excess of $1.59\%$. The discrepancy is not an error in either number. The measured curve departs from $K_u X\left(1 - e^{-t/T_u}\right)$ by up to $0.61\%$ of its final value, so it is not an exponential, and no single time constant describes it exactly — the $63.2\%$ crossing of a response that is not first order is simply not $T_u$.
+
+- What is left over belongs to the degrees of freedom §2-1 discarded. The plant being measured keeps all six, and a surge force applied away from the centre of gravity also excites heave and pitch. An exact match was therefore never available. What matters for the design of §2-3 is that the gain, which fixes the steady state, is exact, and that the time constant is wrong by under two per cent.
 
 **What the figure says**
 

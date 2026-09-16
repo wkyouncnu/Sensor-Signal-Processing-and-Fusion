@@ -1,15 +1,33 @@
 function [x_e, y_e, pi_p] = crosstrack_err(N, E, wp_k, wp_next)
-%CROSSTRACK_ERR  Along-track and cross-track error, from one rotation.
+%CROSSTRACK_ERR  경로방향 오차와 경로이탈 오차를, 회전 하나로 함께 구한다.
+%                Along-track and cross-track error, from a single rotation.
 %
 %   [x_e, y_e, pi_p] = crosstrack_err(N, E, wp_k, wp_next)
 %
-%     N, E       vessel position in NED [m]. May be vectors of equal length
-%     wp_k       the active waypoint,   [N E]
-%     wp_next    the one after it,      [N E]
+%     N, E       NED 좌표계에서의 선박 위치 [m]. 길이가 같은 벡터도 된다
+%                the vessel position in NED [m]; equal-length vectors are allowed
+%     wp_k       현재 겨냥하고 있는 웨이포인트 / the active waypoint,   [N E]
+%     wp_next    그다음 웨이포인트 / the one after it,                  [N E]
 %
-%     x_e        along-track error  — how far ALONG the leg the vessel is
-%     y_e        cross-track error  — how far TO THE SIDE of it
-%     pi_p       path-tangential angle, from North [rad]
+%     x_e        경로방향 오차 — 구간을 따라 얼마나 왔는가
+%                along-track error: how far along the leg the vessel is
+%     y_e        경로이탈 오차 — 구간에서 옆으로 얼마나 벗어났는가
+%                cross-track error: how far to the side of it
+%     pi_p       경로의 접선 방향, 북쪽에서 잰 각 [rad]
+%                the path-tangential angle, measured from North [rad]
+%
+%   왜 회전 하나로 둘 다 나오는가 / why one rotation gives both
+%       웨이포인트를 원점으로 옮기고 좌표계를 경로 방향으로 돌리면, 두 오차는
+%       회전한 좌표의 두 성분 그 자체가 된다. 따로 유도할 것이 없다.
+%       Translating the origin to the waypoint and rotating the frame onto the
+%       path makes the two errors the two components of the rotated
+%       coordinate, so neither has to be derived separately.
+%
+%   tan(pi_p) 를 쓰는 형태는 쓰지 않는다. 그 형태는 pi_p = ±90 도에서 특이해지며,
+%   실제로 동서 방향 구간에서 터진다. 회전행렬 형태에는 그런 자리가 없다.
+%   The form written with tan(pi_p) is avoided: it is singular at
+%   pi_p = ±90 deg and fails on an east-west leg. The rotation form has no
+%   such point.
 %
 %   THE WHOLE DERIVATION IS ONE ROTATION
 %

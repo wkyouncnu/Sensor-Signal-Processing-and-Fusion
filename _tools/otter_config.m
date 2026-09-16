@@ -1,12 +1,21 @@
 function cfg = otter_config(name)
-%OTTER_CONFIG  Actuator configuration of the Otter USV.
+%OTTER_CONFIG  Otter USV 의 추진기 구성.
+%              Actuator configuration of the Otter USV.
 %
-%   cfg = otter_config('base')          two fixed propellers, one per pontoon
-%   cfg = otter_config('aft_azimuth')   two tilting stern thrusters      (Week 9)
-%   cfg = otter_config('bow_thruster')  base + one bow tunnel thruster   (Week 10)
-%   cfg = otter_config('quad_tilt')     four tilting thrusters, +-45 deg (Week 11)
+%   cfg = otter_config('base')          폰툰마다 고정 프로펠러 하나씩
+%                                       two fixed propellers, one per pontoon
+%   cfg = otter_config('aft_azimuth')   방향을 바꿀 수 있는 선미 추진기 둘 (9주차)
+%                                       two tilting stern thrusters (Week 9)
+%   cfg = otter_config('bow_thruster')  기본 구성에 선수 터널 추진기 하나 (10주차)
+%                                       base plus one bow tunnel thruster (Week 10)
+%   cfg = otter_config('quad_tilt')     ±45 도로 기우는 추진기 넷 (11주차)
+%                                       four tilting thrusters, ±45 deg (Week 11)
 %
-%   All four configurations share the SAME hull. Only the actuator model and
+%   네 구성은 모두 **같은 선체**를 쓴다. 다른 것은 추진기 모델과 제어 유효행렬 B
+%   뿐이다. 그래야 네 구성을 비교했을 때 그 차이가 구동장치의 차이이고 다른
+%   무엇의 차이도 아니라고 말할 수 있다.
+%
+%   All four configurations share the same hull. Only the actuator model and
 %   the control effectiveness matrix B differ, so that any comparison between
 %   them measures the actuation and nothing else.
 %

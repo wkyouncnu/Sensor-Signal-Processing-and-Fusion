@@ -1,22 +1,30 @@
 function p = mss_path()
-%MSS_PATH  Find the vendored MSS toolbox and put it on the MATLAB path.
+%MSS_PATH  MSS 툴박스를 찾아 MATLAB 경로에 얹는다.
+%          Find the vendored MSS toolbox and put it on the MATLAB path.
 %
 %   mss_path
-%   p = mss_path()          returns the folder that was added
+%   p = mss_path()          더해진 폴더를 돌려준다 / returns the folder added
 %
-%   WHY THIS EXISTS
-%
-%   Every script in this course used to reach MSS by counting folders upwards:
+%   왜 이 함수가 있는가 / why this exists
+%       예전에는 이 강의의 모든 스크립트가 폴더를 위로 세어 올라가 MSS 에
+%       닿았다.
+%       Every script in this course used to reach MSS by counting folders
+%       upwards:
 %
 %       proj = fileparts(fileparts(fileparts(here)));
 %       addpath(genpath(fullfile(proj,'Tools','MSS')));
 %
-%   That works only while GradCourse sits in exactly one place. Move the
-%   course folder - or copy it to another machine - and twelve scripts break
-%   at once, each with a different unhelpful error. This function searches
-%   instead of counting, so the course folder can live anywhere.
+%   그 방법은 강의 폴더가 정확히 한 자리에 있을 때만 통한다. 폴더를 옮기거나
+%   다른 컴퓨터로 복사하면 열두 개의 스크립트가 한꺼번에 깨지고, 저마다 다른
+%   쓸모없는 오류 메시지를 낸다. 이 함수는 세지 않고 찾는다. 그래서 강의 폴더가
+%   어디에 있어도 된다.
 %
-%   WHERE IT LOOKS, in order
+%   That works only while the course folder sits in exactly one place. Move it,
+%   or copy it to another machine, and twelve scripts break at once, each with
+%   a different unhelpful error. This function searches instead of counting, so
+%   the course folder can live anywhere.
+%
+%   찾는 순서 / where it looks, in order
 %
 %     1. the path already in force            (otter.m resolvable -> nothing to do)
 %     2. GradCourse/Tools/MSS                 (a self-contained copy, if one is made)

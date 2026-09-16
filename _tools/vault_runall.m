@@ -1,16 +1,29 @@
 function vault_runall(logfile)
-%  logfile 을 주면 모든 스크립트의 콘솔 출력을 그 파일에 모은다.
-%  vault_number_audit 가 이 파일로 문서의 수치를 대조한다.
-%  diary 는 쓰지 않는다 — MCP 로 부른 MATLAB 에서는 거의 잡히지 않았다
-%  (실제로 2026-09-14 에 44 개를 돌리고 26 bytes 가 남았다). evalc 로 직접 받는다.
-if nargin < 1, logfile = ''; end
-LOG = {};
 %VAULT_RUNALL  모든 주차의 절 스크립트를 실제로 돌려 본다.
+%              Actually run every section script of every week.
 %
 %      vault_runall
+%      vault_runall('run.log')
 %
-%  왜 필요한가. 문서를 고치다 보면 스크립트도 함께 고치게 되고, 그때 한두 개만
-%  돌려 보고 넘어가기 쉽다. 학생은 전부 돌린다. 그래서 전부 돌려 본다.
+%  왜 필요한가 / why this exists
+%      문서를 고치다 보면 스크립트도 함께 고치게 되고, 그때 한두 개만 돌려 보고
+%      넘어가기 쉽다. 학생은 전부 돌린다. 그래서 전부 돌려 본다.
+%      Editing the notes leads to editing the scripts, and it is easy to run
+%      one or two of them and move on. A student runs all of them, so all of
+%      them are run here.
+%
+%  logfile 을 주면 모든 스크립트의 콘솔 출력을 그 파일에 모은다.
+%  vault_number_audit 가 그 파일로 문서의 수치를 대조한다.
+%  Given a logfile, every script's console output is collected into it, and
+%  vault_number_audit checks the documents' numbers against that file.
+%
+%  diary 는 쓰지 않는다. MCP 로 부른 MATLAB 에서는 거의 잡히지 않았다 — 실제로
+%  2026-09-14 에 44 개를 돌리고 26 바이트가 남았다. evalc 로 직접 받는다.
+%  diary is not used: under MATLAB called through the MCP it captured almost
+%  nothing — 44 scripts on 2026-09-14 left 26 bytes — so the output is taken
+%  directly with evalc.
+if nargin < 1, logfile = ''; end
+LOG = {};
 %
 %  주의 — 절 스크립트 대부분이 첫 줄에서 `clear` 를 부른다. 그래서 호출부의
 %  변수가 지워지지 않도록 **함수 안에서** 돌리고, 목록은 persistent 가 아니라

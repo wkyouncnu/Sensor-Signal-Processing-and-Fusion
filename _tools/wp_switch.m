@@ -1,14 +1,28 @@
 function [k_new, done] = wp_switch(k, N, E, WP, R, mode)
-%WP_SWITCH  Decide whether to move on to the next waypoint.
+%WP_SWITCH  다음 웨이포인트로 넘어갈 때가 되었는지 판정한다.
+%           Decide whether to move on to the next waypoint.
 %
 %   [k_new, done] = wp_switch(k, N, E, WP, R, mode)
 %
-%     k      index of the active waypoint, 1 .. size(WP,1)-1
-%     N, E   vessel position [m]
-%     WP     n-by-2 waypoint list, [N E] per row
-%     R      switching parameter [m]
-%     mode   1 = along-track (the MSS criterion)
-%            2 = circle of acceptance
+%     k      현재 겨냥하고 있는 웨이포인트의 번호, 1 .. size(WP,1)-1
+%            index of the active waypoint
+%     N, E   선박 위치 [m] / the vessel position [m]
+%     WP     웨이포인트 목록, 한 행이 [N E] / the waypoint list, [N E] per row
+%     R      전환 파라미터 [m] / the switching parameter [m]
+%     mode   1 = 남은 경로방향 거리로 판정 (MSS 의 방식)
+%                the along-track criterion, which is what MSS uses
+%            2 = 수락반경 원으로 판정 (교과서의 방식)
+%                the circle of acceptance, which is what most textbooks draw
+%
+%   왜 두 방식을 모두 두는가 / why both criteria are implemented
+%       둘은 배가 경로 위에 있을 때만 일치한다. 벗어나 있으면 갈라지고, 원 판정은
+%       배가 그 원 안에 한 번도 들어가지 못하면 영영 전환하지 않는다. 조류가 있거나
+%       코너가 급할 때 실제로 그렇게 된다. 절 F 가 그 배치를 만들어 보인다.
+%
+%       The two agree only while the vessel is on the path. Off it they part,
+%       and the circle can fail to trigger at all if the vessel never enters
+%       it — which is what happens in a current, or at a sharp corner. Section
+%       F constructs that arrangement and shows it.
 %
 %     k_new  the index to use from now on
 %     done   true once the last leg has been completed

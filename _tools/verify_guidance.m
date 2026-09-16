@@ -1,13 +1,19 @@
 function verify_guidance()
-%VERIFY_GUIDANCE  Check Week 4's guidance arithmetic against MSS, numerically.
+%VERIFY_GUIDANCE  4주차 유도법칙의 계산을 MSS 와 수치로 대조한다.
+%                 Check Week 4's guidance arithmetic against MSS, numerically.
 %
 %   >> verify_guidance
 %
-%   The course rule is that an equation is not published until it has been
-%   checked five ways - dimension, limit, sign, number, source. This function
-%   is the NUMBER and the SOURCE for the guidance laws: it runs our own
-%   arithmetic and Fossen's side by side on the same inputs and reports the
-%   largest disagreement.
+%   이 강의의 규칙은 수식을 다섯 가지로 검증하기 전에는 싣지 않는 것이다 —
+%   차원, 극한, 부호, 수치, 출처. 이 함수가 유도법칙에 대한 "수치" 와 "출처" 를
+%   맡는다. 같은 입력을 이 강의의 계산과 Fossen 의 구현에 나란히 넣고, 가장 크게
+%   어긋난 값을 보고한다.
+%
+%   The rule of this course is that an equation is not published until it has
+%   been checked five ways: dimension, limit, sign, number and source. This
+%   function is the number and the source for the guidance laws. It runs the
+%   course's own arithmetic and Fossen's side by side on the same inputs and
+%   reports the largest disagreement.
 %
 %   WHAT IS CHECKED
 %

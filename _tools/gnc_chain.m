@@ -1,15 +1,26 @@
 function P = gnc_chain(stages, varargin)
-%GNC_CHAIN  Standard block positions for the stages of the GNC signal chain.
+%GNC_CHAIN  GNC 신호 사슬의 각 단계가 놓일 표준 위치를 돌려준다.
+%           Standard block positions for the stages of the GNC signal chain.
 %
 %   P = gnc_chain({'command','controller','allocation','plant','measurement'})
 %   P.controller                        -> [x1 y1 x2 y2]
 %   P = gnc_chain(..., 'Height', struct('controller',150))
 %
-%   THE CHAIN
+%   왜 좌표를 손으로 쓰지 않는가 / why coordinates are not typed by hand
+%       매주 같은 자리에서 같은 것을 찾을 수 있어야 한다. 좌표를 빌더마다 손으로
+%       적으면 주차마다 조금씩 달라지고, 그 차이는 아무 의미도 없으면서 읽는
+%       사람의 눈을 매번 다시 적응시킨다.
 %
-%   Every model in this course is laid out left to right in the same order, the
-%   order used by the MSS demonstration models
-%   (Tools/MSS/SIMULINK/mssSimulinkDemos/demoOtterUSVHeadingControl.slx):
+%       The same thing must be in the same place every week. Coordinates typed
+%       into each builder drift from week to week, and the differences carry no
+%       meaning while forcing the reader's eye to re-adjust each time.
+%
+%   사슬 / the chain
+%       이 강의의 모든 모델은 MSS 데모 모델
+%       (Tools/MSS/SIMULINK/mssSimulinkDemos/demoOtterUSVHeadingControl.slx)
+%       과 같은 순서로 왼쪽에서 오른쪽으로 놓인다.
+%       Every model in this course is laid out left to right in the same order,
+%       the order used by the MSS demonstration models:
 %
 %     command --> reference --> controller --> allocation --> plant --> measurement
 %      what is     what is       what force     which          how the   what is
