@@ -567,8 +567,49 @@ $$
 $$
 \dot I = K_i e - K_{\text{aw}}\left(X_{\text{cmd}} - X_{\text{sat}}\right),
 \qquad
-K_{\text{aw}} = \frac{1}{T_u} .
+K_{\text{aw}} = 5\ \text{s}^{-1} .
 $$
+
+### What $K_{\text{aw}}$ is, and why another textbook's number will not match
+
+- $K_{\text{aw}}$ is a **rate**, not a ratio, and the dimensions say so before any reasoning does: $\dot I$ is in N/s and the excess $\varepsilon$ is in N, so $K_{\text{aw}}$ carries units of s⁻¹.
+
+- What rate it is follows from differentiating the excess while the actuator is saturated. There $X_{\text{sat}}$ is pinned at the limit, so
+
+$$
+\dot\varepsilon = \frac{\mathrm{d}}{\mathrm{d}t}\left(K_p e + I - X_{\text{sat}}\right) = K_p\dot e + \dot I = K_p \dot e + K_i e - K_{\text{aw}}\varepsilon .
+$$
+
+- Reading the last term on its own: the excess is driven by a first-order lag towards the fixed point of §2-6, with a time constant
+
+$$
+\boxed{\ T_t = \frac{1}{K_{\text{aw}}}\ }
+$$
+
+- $T_t$ is the **tracking time constant**, and it is how the literature parameterises this scheme (Åström and Hägglund, *Advanced PID Control*, 2006, §3.5). At $K_{\text{aw}} = 5$ it is $0.2$ s: the excess is brought to its fixed point roughly five times faster than the integral action of $T_i = K_p/K_i = 0.53$ s puts it there.
+
+| $K_{\text{aw}}$ [s⁻¹] | $T_t$ [s] | peak $I$ [N] | peak $X_{\text{cmd}}$ [N] | recovery [s] |
+|---|---|---|---|---|
+| $1/T_u = 0.907$ | $1.10$ | $339.0$ | $464.1$ | $3.640$ |
+| $1/T_i = 1.886$ | $0.53$ | $239.4$ | $389.0$ | $3.500$ |
+| $5$ | $0.20$ | $213.1$ | $356.2$ | $3.440$ |
+
+- The middle row is the textbook rule $T_t = T_i$. This course uses the last, because on this vessel it stores the least charge and recovers fastest, and because §H measures the same trade on a plant simple enough to see it.
+
+> [!warning] The same scheme is drawn two ways, and the gains are not the same number
+> Franklin (*Feedback Control of Dynamic Systems*, 8E, 2019, Fig. 9.22) draws back-calculation with the gain **inside** the integral gain — the correction is subtracted from the error, before $k_I$:
+>
+> $$\dot I = k_I\Bigl[\,e - K_a\left(u - u_{\text{sat}}\right)\Bigr] \qquad\text{against}\qquad \dot I = K_i e - K_{\text{aw}}\left(u - u_{\text{sat}}\right) .$$
+>
+> Expanding the first gives $\dot I = k_I e - k_I K_a (u - u_{\text{sat}})$, so the two are the same law with
+>
+> $$K_{\text{aw}} = k_I K_a .$$
+>
+> Franklin's figure uses $k_I = 4$ and $K_a = 10$, which is $K_{\text{aw}} = 40$, or $T_t = 25$ ms. A reader who carries the $10$ across to this page and sets $K_{\text{aw}} = 10$ has chosen a tracking time constant four times slower than the source intended.
+>
+> The placement also decides the units. Outside, $K_{\text{aw}}$ is always a rate in s⁻¹. Inside, $K_a$ must convert control units into error units, and it is dimensionless **only** when the plant's input and output share units — as they do in Franklin's $1/s$ example, and as they do not on a vessel whose input is newtons and whose output is m/s. That is the reason this course writes the gain outside.
+>
+> The claim that they are one law is measured rather than asserted. `verify_w02_antiwindup` integrates Franklin's arrangement — plant $1/s$, $k_p = 2$, $k_I = 4$, $K_a = 10$, $\lvert u\rvert \le 1$ — in both forms, and they agree **exactly**, to $0$, with $K_{\text{aw}} = k_I K_a = 40$. The same replication reproduces the published response: the output overshoots to $1.53$ without anti-windup and to $1.15$ with it, against the $1.53$ and $1.15$ of Fig. 9.23. The Otter appears nowhere in that check, which is what makes it a check on the scheme rather than on this vessel.
 
 - Back-calculation has a fixed point worth naming. While the actuator is saturated, $\dot I = 0$ requires $K_i e = K_{\text{aw}}\,\varepsilon$. Substituting $\varepsilon = X_{\text{cmd}} - X_{\text{sat}} = K_p e + I - X_{\text{sat}}$ and solving for $I$:
 
@@ -747,20 +788,30 @@ Opening the folder shows about fifteen files. Only the ones in this table are ev
 
 - The switch is not decoration. `loop_closed = 0` turns this model into the open-loop rig of §C, so the plant that is identified is provably the plant the controller then drives.
 
-> [!note] Inside `anti-windup`: three schemes drawn as three boxes
-> A single MATLAB Function block would express all three schemes in nine lines and leave the diagram tidier. It would also put the one thing §2-6 is about — how the three schemes differ — behind a double-click, where a reader comparing them has to read code rather than follow signals.
+### The three schemes, as the model builds them
+
+- All three are in `W02_surge_control.slx`, and `aw_mode` chooses. Opening `Surge controller` and then `anti-windup` shows them side by side:
+
+![Inside the anti-windup subsystem: the three schemes as three boxes](W02_simulink/img/W02_antiwindup_inside.png)
+
+| In the figure | Meaning |
+|---|---|
+| `sat` | $X_{\text{cmd}} - X_{\text{sat}}$ — the part of the demand the actuator refused, and zero whenever nothing was |
+| `Ki e` | what an unprotected integrator would receive. A Gain, because $K_i$ is a constant |
+| `clamping` | a subsystem: the decision whether to freeze, and nothing else |
+| `back-calculation` | a subsystem: the refused part fed back through $K_{\text{aw}}$ |
+| `aw_mode`, `scheme` | the selector. Entry $0$ is the unprotected case, which needs no box of its own |
+
+**What the figure says**
+
+Only two computations sit on this canvas, and they are there because all three schemes share them: what the actuator refused, and what an integrator would receive if nothing stopped it. Everything that distinguishes one scheme from another is inside that scheme's own box, so the three are compared by opening one at a time.
+
+The blocks are placed in the port order of `scheme`, which is why the four lines into it run straight across without crossing. The unprotected path has no box because there is nothing to do: $K_i e$ goes to the switch unchanged.
+
+> [!note] Why this is not one MATLAB Function block
+> A single MATLAB Function would express all three schemes in nine lines and leave a tidier drawing. It would also put the one thing §2-6 is about — how the three differ — behind a double-click, where a reader comparing them has to read code rather than follow signals.
 >
-> Opening `anti-windup` therefore shows five things and no more:
->
-> | Block | What it is |
-> |---|---|
-> | `sat` | $X_{\text{cmd}} - X_{\text{sat}}$, the part of the demand the actuator refused |
-> | `Ki e` | what an unprotected integrator would receive |
-> | `clamping` | a subsystem: the decision whether to freeze |
-> | `back-calculation` | a subsystem: the refused part fed back through $K_{\text{aw}}$ |
-> | `scheme` | `aw_mode` selects one of the three |
->
-> The first two are on that canvas because every scheme shares them. Each scheme's own arithmetic is inside its own box, so the three can be compared by opening one at a time rather than by disentangling them from a single drawing. The unprotected case needs no box: what reaches the integrator is $K_i e$ itself.
+> Opening the three boxes out onto a single flat canvas is not the answer either. Tried that way it came to fifteen blocks whose lines, although never overlapping, could not be traced. When $n$ things are to be compared, $n$ boxes is what the drawing should show.
 
 > [!important] The results of this section are checked against an implementation that is not this model
 > A model can be self-consistent and still wrong. `verify_w02_antiwindup` therefore checks the three schemes twice.
@@ -1427,7 +1478,8 @@ W02_check(1)                 % run this whenever, as often as needed
 ### Primary
 
 - Fossen, T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. §12.2 (PID control of marine craft) and §12.2.6 (integrator anti-windup).
-- Åström, K. J. and Hägglund, T. *Advanced PID Control*. ISA, 2006. Chapter 3, for the derivative filter and the two anti-windup schemes.
+- Åström, K. J. and Hägglund, T. *Advanced PID Control*. ISA, 2006. Chapter 3, for the derivative filter and the two anti-windup schemes; §3.5 for the tracking time constant $T_t = 1/K_{\text{aw}}$.
+- Franklin, G. F., Powell, J. D. and Emami-Naeini, A. *Feedback Control of Dynamic Systems*, 8th ed. Pearson, 2019. Fig. 9.22 draws back-calculation with the gain inside the integral gain, and Figs. 9.23–9.24 give the response with and without it. §2-6 relates the two forms.
 - MSS toolbox, `Tools/MSS/VESSELS/otter.m` — the damping and saturation constants, lines 65 and 91–98.
 
 ### Course files

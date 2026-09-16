@@ -132,24 +132,37 @@ add_block('simulink/Math Operations/Gain', [c '/Kp'], 'Gain','Kp', ...
 aw_blk = add_subsys(c, 'anti-windup', [380 150 530 330], ...
                     {'e','X_cmd','X_sat'}, {'di'});
 
+%  ---- 배치 / the arrangement ---------------------------------------------
+%  블록을 **scheme 스위치의 포트 순서대로 위에서 아래로** 놓는다. 그러면 네 개의
+%  연결이 모두 가로로 곧게 지나가고 서로 넘지 않는다. 처음에는 순서를 생각하지
+%  않고 놓았더니 배선은 옳은데 그림에서 선 넷이 서로를 넘어가 읽히지 않았다.
+%
+%      aw_mode            -> 제어 포트
+%      Ki e               -> 자리 0   보호 없음
+%      clamping           -> 자리 1
+%      back-calculation   -> 자리 2
+%
+%  The blocks are placed top to bottom in the port order of the scheme switch,
+%  so that all four connections run straight across without crossing. Arranged
+%  without regard to that order, the wiring was still correct but the four
+%  lines climbed over one another and the drawing could not be read.
 set_param([aw_blk '/e'],     'Position',[ 60  80  90 100]);
-set_param([aw_blk '/X_cmd'], 'Position',[ 60 160  90 180]);
-set_param([aw_blk '/X_sat'], 'Position',[ 60 240  90 260]);
-set_param([aw_blk '/di'],    'Position',[740 230 770 250]);
+set_param([aw_blk '/X_cmd'], 'Position',[ 60 460  90 480]);
+set_param([aw_blk '/X_sat'], 'Position',[ 60 520  90 540]);
+set_param([aw_blk '/di'],    'Position',[740 250 770 270]);
 
 %  ---- 모든 방식이 공유하는 둘 / the two every scheme shares ---------------
 %  Ki 는 상수이므로 Constant 와 Product 대신 Gain 하나면 된다.
 %  Ki is a constant, so one Gain does the work of a Constant and a Product.
+add_block('simulink/Sources/Constant', [aw_blk '/aw_mode'], 'Value','aw_mode', ...
+          'Position',[380 60 460 90]);
 add_block('simulink/Math Operations/Gain', [aw_blk '/Ki e'], 'Gain','Ki', ...
-          'Position',[200 40 260 80]);
-add_sum(aw_blk, 'sat', '+-', [220 200]);
+          'Position',[200 130 260 170]);
+add_sum(aw_blk, 'sat', '+-', [300 490]);
 
 %  ---- 방식 하나에 상자 하나 / one box per scheme --------------------------
-aw_clamp = aw_clamping(aw_blk, [380 220 520 320]);   %#ok<NASGU>
-aw_back  = aw_backcalc(aw_blk, [380  60 520 160]);   %#ok<NASGU>
-
-add_block('simulink/Sources/Constant', [aw_blk '/aw_mode'], 'Value','aw_mode', ...
-          'Position',[380 400 460 430]);
+aw_clamping(aw_blk, [380 200 520 300]);
+aw_backcalc(aw_blk, [380 340 520 440]);
 
 %  aw_mode 는 0, 1, 2 이므로 0 기준 인덱싱으로 둔다. 0 번 자리는 보호가 없는
 %  경우이고, 그때 적분기에 들어가는 것은 Ki e 그대로이므로 블록이 따로 필요 없다.
@@ -158,7 +171,7 @@ add_block('simulink/Sources/Constant', [aw_blk '/aw_mode'], 'Value','aw_mode', .
 %  itself, so it needs no block of its own.
 add_block('simulink/Signal Routing/Multiport Switch', [aw_blk '/scheme'], ...
           'DataPortOrder','Zero-based contiguous', 'Inputs','3', ...
-          'Position',[620 80 660 400]);
+          'Position',[620 60 660 460]);
 
 Lw = @(src, sp, dst, dp, x) lane_line(aw_blk, src, sp, dst, dp, x);
 Lw('e',     1, 'Ki e', 1, 170);
@@ -166,12 +179,11 @@ Lw('X_cmd', 1, 'sat',  1, 150);
 q = port_xy(aw_blk, 'sat', 'Inport', 2);
 Lw('X_sat', 1, 'sat',  2, q(1));
 
-Lw('Ki e', 1, 'clamping', 1, 330);
 Lw('e',    1, 'clamping', 2, 320);
-Lw('sat',  1, 'clamping', 3, 360);
-
+Lw('Ki e', 1, 'clamping', 1, 330);
 Lw('Ki e', 1, 'back-calculation', 1, 340);
-Lw('sat',  1, 'back-calculation', 2, 350);
+Lw('sat',  1, 'clamping', 3, 350);
+Lw('sat',  1, 'back-calculation', 2, 360);
 
 Lw('aw_mode',          1, 'scheme', 1, 560);
 Lw('Ki e',             1, 'scheme', 2, 570);
@@ -179,7 +191,7 @@ Lw('clamping',         1, 'scheme', 3, 580);
 Lw('back-calculation', 1, 'scheme', 4, 590);
 add_line(aw_blk, 'scheme/1', 'di/1', 'autorouting','on');
 
-note(aw_blk, [60 470 720 560], strjoin({ ...
+note(aw_blk, [60 590 900 680], strjoin({ ...
  'WINDUP IS NOT A FAULT OF THE INTEGRATOR.'
  'It is what an integrator does when it is asked to close a loop that the actuator has already opened.'
  'sat = X_cmd - X_sat is the part of the demand that never reached the plant. It is zero whenever'
@@ -457,6 +469,16 @@ save_system(m, out);
 %  The block diagram belongs to the builder: it changes when the model changes
 %  and not when a gain does. Exporting it here keeps it in step with the model.
 export_diagram(m, fullfile(here, 'img'));
+
+%  anti-windup 서브시스템도 따로 뽑는다. §2-6 이 그 화면을 싣기 때문이다.
+%  최상위 도면만으로는 세 방식이 어떻게 나뉘어 있는지 보이지 않고, 그것이 그
+%  절의 주제이므로 그림이 있어야 한다.
+%  The anti-windup subsystem is exported as well, because §2-6 prints that
+%  canvas: the top-level diagram cannot show how the three schemes are divided,
+%  and that division is the subject of the section.
+print(['-s' aw_blk], '-dpng', '-r120', ...
+      fullfile(here, 'img', 'W02_antiwindup_inside.png'));
+
 close_system(m, 0);
 
 fprintf('  built  %s\n', out);
@@ -536,6 +558,15 @@ L('zero',   1, 'hold', 1, 480);
 L('freeze', 1, 'hold', 2, 490);
 L('Ki e',   1, 'hold', 3, 500);
 add_line(sub, 'hold/1', 'di/1', 'autorouting','on');
+
+note(sub, [40 470 700 560], strjoin({ ...
+ 'CLAMPING, AS AN EQUATION'
+ '                 0        while  |sat| > 0  and  sign(e) = sign(sat)'
+ '    dI/dt  =  {'
+ '                 Ki e     otherwise'
+ 'Integration is suspended, not corrected: I holds whatever value it had reached.'
+ 'The second condition matters. A saturated actuator whose error has already reversed is on its'
+ 'way out, and freezing then would stop the integrator from ever discharging.'}, newline));
 end
 
 % -------------------------------------------------------------------------
@@ -593,4 +624,16 @@ L('sum',     1, 'gate', 1, 400);
 L('Ki live', 1, 'gate', 2, 410);
 L('Ki e',    1, 'gate', 3, 420);
 add_line(sub, 'gate/1', 'di/1', 'autorouting','on');
+
+note(sub, [40 430 760 540], strjoin({ ...
+ 'BACK-CALCULATION, AS AN EQUATION'
+ '    dI/dt  =  Ki e  -  K_aw ( X_cmd - X_sat )'
+ 'The correction is zero while nothing is refused, so the controller is unchanged below the limit.'
+ 'Above it the term is a negative feedback on the excess with time constant 1/K_aw, which is why'
+ 'K_aw is a RATE and carries units of 1/s.'
+ ''
+ 'Franklin (8E, Fig 9.22) draws the same law with the gain INSIDE the integral gain,'
+ '    dI/dt  =  kI [ e - Ka ( u - u_sat ) ],   so that   K_aw = kI Ka.'
+ 'His kI = 4 and Ka = 10 are therefore K_aw = 40, and not comparable with a K_aw read off this'
+ 'canvas until that product is taken.'}, newline));
 end

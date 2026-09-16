@@ -226,6 +226,41 @@ if agree, verdict = '일치한다 / agree'; else, verdict = '어긋난다 / DISA
 fprintf('  5) 클램핑 조건 %d 가지 조합에서 두 표현이 %s\n', numel(g)^2, verdict);
 ok = ok && agree;
 
+%% ===== 검증 6 : 게인의 위치 / check 6: where the gain sits ================
+%  §2-6 은 역계산이 두 가지 모양으로 그려진다고 말한다.
+%      이 강의       dI/dt = Ki e - K_aw (u - u_sat)          게인이 바깥
+%      Franklin      dI/dt = kI [ e - Ka (u - u_sat) ]        게인이 안쪽
+%  그리고 둘이 K_aw = kI Ka 로 같은 법칙이라고 주장한다. 그 주장을 잰다.
+%
+%  Otter 와 무관한 예제로 잰다 — Franklin 8E 그림 9.22 의 구성 그대로,
+%  플랜트 1/s, kp = 2, kI = 4, Ka = 10, |u| <= 1. 선체를 빼면 남는 것이
+%  안티와인드업뿐이므로, 맞지 않으면 원인이 하나뿐이다.
+%
+%  §2-6 claims that back-calculation is drawn two ways, with the gain outside
+%  the integral gain or inside it, and that the two are one law with
+%  K_aw = kI Ka. That claim is measured here on an example that has nothing to
+%  do with the Otter: the arrangement of Franklin 8E Fig. 9.22, with a plant of
+%  1/s, kp = 2, kI = 4, Ka = 10 and |u| <= 1. With the hull removed, nothing
+%  but the anti-windup is left to explain a disagreement.
+F.kp = 2;  F.kI = 4;  F.Ka = 10;  F.lim = 1;  F.h = 1e-4;  F.T = 10;
+
+yOut = local_franklin(F, 'outside');     % K_aw = kI*Ka
+yIn  = local_franklin(F, 'inside');      % Ka inside kI
+yOff = local_franklin(F, 'none');        % 보호 없음 / unprotected
+
+dGain = max(abs(yOut - yIn));
+ok    = ok && dGain < 1e-9;
+if dGain < 1e-9, mk = ''; else, mk = '  <-- 불일치 MISMATCH'; end
+
+fprintf('\n  6) 게인의 위치 — Franklin 8E 그림 9.22 의 예제로 (Otter 와 무관)\n');
+fprintf('     where the gain sits, on the example of Franklin 8E Fig. 9.22\n\n');
+fprintf('     바깥 형태와 안쪽 형태의 최대 차이 / largest difference between the\n');
+fprintf('     two forms, with K_aw = kI Ka = %g :  %.3e%s\n', F.kI*F.Ka, dGain, mk);
+fprintf('     보호 없음 오버슛 / overshoot without anti-windup : %.2f\n', max(yOff));
+fprintf('     보호 있음 오버슛 / overshoot with anti-windup    : %.2f\n', max(yOut));
+fprintf(['     Franklin 그림 9.23 이 싣는 값은 약 1.53 과 1.15 이다.\n' ...
+         '     Figure 9.23 of the source shows approximately 1.53 and 1.15.\n']);
+
 fprintf('\n');
 if ok
     fprintf('  ALL CHECKS PASSED\n\n');
@@ -235,6 +270,47 @@ end
 end
 
 % =========================================================================
+function y = local_franklin(F, form)
+%LOCAL_FRANKLIN  Franklin 8E 그림 9.22 의 구성을 평범한 MATLAB 으로 적분한다.
+%                The arrangement of Franklin 8E Fig. 9.22, integrated in plain
+%                MATLAB.
+%
+%      plant 1/s,  r = 1 계단,  u = kp e + I,  u_sat = sat(u),  ydot = u_sat
+%
+%      'none'      dI/dt = kI e                          보호 없음
+%      'outside'   dI/dt = kI e - (kI Ka)(u - u_sat)     이 강의의 모양
+%      'inside'    dI/dt = kI [ e - Ka (u - u_sat) ]     Franklin 의 모양
+%
+%  'outside' 와 'inside' 가 같은 값을 내야 §2-6 의 주장이 참이다.
+%  If 'outside' and 'inside' agree, the claim of §2-6 holds.
+t = (0:F.h:F.T).';
+y = zeros(numel(t),1);
+Y = 0;  I = 0;
+for k = 1:numel(t)
+    y(k) = Y;
+    if k == numel(t), break, end
+    [k1Y,k1I] = fr(Y, I, F, form);
+    [k2Y,k2I] = fr(Y+F.h/2*k1Y, I+F.h/2*k1I, F, form);
+    [k3Y,k3I] = fr(Y+F.h/2*k2Y, I+F.h/2*k2I, F, form);
+    [k4Y,k4I] = fr(Y+F.h*k3Y,   I+F.h*k3I,   F, form);
+    Y = Y + F.h/6*(k1Y+2*k2Y+2*k3Y+k4Y);
+    I = I + F.h/6*(k1I+2*k2I+2*k3I+k4I);
+end
+end
+
+function [Ydot, Idot] = fr(Y, I, F, form)
+e     = 1 - Y;                                   % 단위 계단 / a unit step
+u     = F.kp*e + I;
+u_sat = min(max(u, -F.lim), F.lim);
+switch form
+    case 'none',    Idot = F.kI*e;
+    case 'outside', Idot = F.kI*e - (F.kI*F.Ka)*(u - u_sat);
+    case 'inside',  Idot = F.kI*(e - F.Ka*(u - u_sat));
+end
+Ydot = u_sat;                                    % 플랜트 1/s / the plant 1/s
+end
+
+% -------------------------------------------------------------------------
 function o = local_pid_block(V, awmode)
 %LOCAL_PID_BLOCK  라이브러리 PID 블록 경로로 한 번 돌린다. 그 블록의 안티와인드업
 %                 방식을 골라 주어야 하므로 run_sim 대신 여기서 직접 부른다.

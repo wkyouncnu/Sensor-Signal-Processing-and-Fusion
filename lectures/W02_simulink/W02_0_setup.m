@@ -82,7 +82,19 @@ c_d = 0;
 %           2  back-calculation the excess (X_sat - X_cmd) is fed back into
 %                              the integrator through K_aw
 aw_mode = 2;
-K_aw    = 1/T_u;           % back-calculation gain [1/s]
+%  역계산 게인 [1/s]. 1/K_aw 가 추종 시상수이므로 이것은 비가 아니라 **율**이다.
+%  2026-09-16 까지 이 파일은 1/T_u = 0.9071 을, W02_vars 는 5 를 갖고 있었다.
+%  같은 수를 담아야 하는 두 파일이 갈라져 있었고, 그래서 학생이 Run 을 눌러 얻는
+%  결과와 강의노트의 표가 서로 달랐다. 강의의 모든 측정값이 5 로 재어진 것이므로
+%  5 로 맞춘다. §2-6 의 표가 그 선택의 근거를 수치로 보인다.
+%
+%  The back-calculation gain [1/s]. Since 1/K_aw is the tracking time constant
+%  this is a rate, not a ratio. Until 2026-09-16 this file held 1/T_u = 0.9071
+%  while W02_vars held 5: two files that must carry the same number had drifted
+%  apart, so what a student got by pressing Run did not match the tables in the
+%  notes. Every measurement in the lecture was taken at 5, and §2-6 shows the
+%  evidence for that choice.
+K_aw    = 5;
 
 %% ---- open loop ----------------------------------------------------------
 %  loop_closed = 0 disconnects the controller and applies X_open directly,
