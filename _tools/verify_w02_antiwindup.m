@@ -1,29 +1,44 @@
 function ok = verify_w02_antiwindup()
-%VERIFY_W02_ANTIWINDUP  표준 블록으로 다시 만든 안티와인드업이 예전 MATLAB
-%                       Function 블록과 같은 수를 내는지 확인한다.
-%                       Check that the anti-windup rebuilt from standard blocks
-%                       reproduces the MATLAB Function block it replaced.
+%VERIFY_W02_ANTIWINDUP  안티와인드업 세 방식의 결과가 옳은지 두 가지로 확인한다.
+%                       Check the results of the three anti-windup schemes two
+%                       independent ways.
 %
 %      ok = verify_w02_antiwindup
 %
-%  ── 왜 이 파일이 있는가 / why this file exists ──────────────────────────
-%  2026-09-16 에 Surge controller 안의 anti-windup 을 MATLAB Function 블록
-%  하나에서 Sum·Product·Switch 로 풀어 썼다. 목적은 §2-6 이 설명하는 세 방식의
-%  차이를 도면 위에 드러내는 것이었고, 동작을 바꾸려던 것이 아니다. 강의노트의
-%  모든 수치가 예전 블록으로 측정된 것이므로, 바뀌지 않았음을 보여야 한다.
+%VERIFY_W02_ANTIWINDUP  안티와인드업 세 방식의 결과가 옳은지 여러 방향에서 본다.
 %
-%  On 2026-09-16 the anti-windup inside the Surge controller was rebuilt from
-%  sums, products and switches in place of a single MATLAB Function block. The
-%  intention was to put the difference between the three schemes of §2-6 on
-%  the canvas, not to change any behaviour. Every measurement in the lecture
-%  notes was taken with the block that was removed, so it must be shown that
-%  nothing moved.
+%  ── 왜 한 가지로는 부족한가 / why one check is not enough ───────────────
+%  회귀 검증만으로는 "예전과 같다" 밖에 말하지 못한다. 예전 것이 틀렸다면 같이
+%  틀린 채로 통과한다. 그래서 두 방향을 더 붙였다 — 강의에 적힌 식에서 고리
+%  전체를 Simulink 없이 다시 구현한 것, 그리고 MathWorks 의 PID 블록.
 %
-%  ── 대조하는 값 / the reference values ─────────────────────────────────
-%  아래 표는 강의노트 §F 에 실려 있는 값이며, 교체 이전의 모델이 낸 것이다.
-%  여기서 다시 재어 같은 값이 나오는지 본다.
-%  The table below is the one printed in section F of the lecture notes,
-%  produced by the model as it stood before the replacement.
+%  A regression check alone can only say "the same as before", and if what came
+%  before was wrong it passes while still being wrong. Two further directions
+%  are therefore added: the whole loop reimplemented from the equations in the
+%  lecture without Simulink, and MathWorks's own PID Controller block.
+%
+%    검증 1  회귀 — 강의노트 §F 표의 세 행을 다시 재어 인쇄된 자릿수까지 대조
+%    검증 2  독립 — 평범한 MATLAB 으로 PI · 안티와인드업 · 배분 · otter.m 을
+%            같은 고정 스텝 RK4 로 적분하고, u(t) · I(t) · X_cmd(t) 를 대조
+%    검증 3  외부 — Simulink 의 PID Controller 블록이 자기 안티와인드업으로
+%            같은 궤적을 내는가
+%    검증 4  경계 — Ki = 0 에서 역계산이 막히는가
+%    검증 5  등가 — 클램핑의 얼림 조건 두 표현이 같은 값을 주는가
+%
+%    check 1  regression: the three rows of the section F table, to the
+%             precision printed there
+%    check 2  independence: PI, anti-windup, allocation and otter.m integrated
+%             in plain MATLAB with the same fixed-step RK4, compared on
+%             u(t), I(t) and X_cmd(t)
+%    check 3  an outside implementation: does Simulink's own PID Controller
+%             block, using its own anti-windup, produce the same trajectory
+%    check 4  boundary: is back-calculation gated off when Ki = 0
+%    check 5  equivalence: do the two ways of writing the clamping condition
+%             agree
+%
+%  세 곳에서 같은 답이 나온다 — 이 모델, 강의의 식, 그리고 MathWorks 의 구현.
+%  The same answer from three places: this model, the equations in the lecture,
+%  and MathWorks's implementation.
 
 here = fileparts(mfilename('fullpath'));
 addpath(here, fullfile(fileparts(here), 'lectures', 'W02_simulink'));
@@ -34,30 +49,29 @@ REF = { 'none',             0,   3438.2,      3480.0,         13.980
         'clamping',         1,    197.8,       355.9,          3.400
         'back-calculation', 2,    213.1,       356.2,          3.440 };
 
-%  강의노트가 소수 한 자리까지 싣고 있으므로 그 자리까지 맞으면 통과로 본다.
-%  힘은 0.05 N, 시간은 0.0005 s 이내여야 한다.
-%  The notes carry one decimal place for the forces and three for the time,
-%  so agreement is required to half a unit in the last printed digit.
 TOL_N = 0.05;   TOL_S = 0.0005;
 
 V = W02_vars;
 c = W02_cols;
 V.u_d1 = 3.5;   V.u_d2 = 1.5;   V.t_up = 5;   V.t_dn = 40;   V.T_final = 90;
 
-fprintf('\n  W02 §2-6 — 안티와인드업 회귀 검증 / anti-windup regression\n');
-fprintf('  표준 블록으로 다시 만든 것이 예전 MATLAB Function 과 같은가\n');
-fprintf('  does the block-built version match the MATLAB Function it replaced\n\n');
+ok = true;
+
+%% ===== 검증 1 : 회귀 / check 1: regression ==============================
+fprintf('\n  W02 §2-6 — 안티와인드업 검증 / anti-windup verification\n\n');
+fprintf('  1) 회귀 — 강의노트 §F 의 표를 다시 잰다\n');
+fprintf('     regression: the section F table, re-measured\n\n');
 fprintf('    %-18s %12s %12s %12s %12s %12s %12s\n', ...
         'scheme', 'peak I ref', 'peak I now', 'peak X ref', 'peak X now', ...
         'rec ref', 'rec now');
 fprintf('    %s\n', repmat('-', 1, 94));
 
-ok = true;
+R = cell(1,3);
 for i = 1:size(REF,1)
-    R  = run_sim('W02_surge_control', V, 'aw_mode', REF{i,2});
-    pI = max(R.y(:, c.I));
-    pX = max(R.y(:, c.X_cmd));
-    rc = local_recovery(R.t, R.y(:, c.u), V.u_d2, V.t_dn);
+    R{i} = run_sim('W02_surge_control', V, 'aw_mode', REF{i,2});
+    pI = max(R{i}.y(:, c.I));
+    pX = max(R{i}.y(:, c.X_cmd));
+    rc = local_recovery(R{i}.t, R{i}.y(:, c.u), V.u_d2, V.t_dn);
 
     good = abs(pI - REF{i,3}) < TOL_N && abs(pX - REF{i,4}) < TOL_N && ...
            abs(rc - REF{i,5}) < TOL_S;
@@ -67,42 +81,252 @@ for i = 1:size(REF,1)
             REF{i,1}, REF{i,3}, pI, REF{i,4}, pX, REF{i,5}, rc, mark);
 end
 
-%% ---- Ki = 0 일 때 역계산 항이 차단되는가 -------------------------------
-%  적분기가 없는데 역계산 항이 살아 있으면, 존재하지 않는 상태를 충전한다.
-%  예전 블록은 Ki ~= 0 으로 막았고, 새 도면에서는 'Ki live' 가 그 일을 한다.
-%  With no integrator there is nothing to protect, and a live back-calculation
-%  term would charge a state that is not there. The old block guarded this with
-%  a test on Ki; on the new canvas the guard is the block named 'Ki live'.
-R = run_sim('W02_surge_control', V, 'Ki', 0, 'aw_mode', 2);
-Imax = max(abs(R.y(:, c.I)));
-fprintf('\n    Ki = 0, aw_mode = 2 :  max|I| = %.3e   (0 이어야 한다 / must be zero)\n', Imax);
+%% ===== 검증 2 : 독립 구현 / check 2: an independent implementation ======
+%  Simulink 를 쓰지 않는다. 강의의 식만 보고 다시 짠다.
+%     제어기   X_cmd = Kp e + I,            e = u_d - u          (§2-3, Kd = 0)
+%     적분기   dI/dt = di,                  di 는 방식에 따라     (§2-6)
+%     배분     T = X_cmd/2,  n = sign(T) sqrt(|T|/k),  자른 뒤
+%              X_sat = 2 k n|n|                                   (§2-5)
+%     플랜트   otter.m 을 그대로 부른다                            (§1-10)
+%  적분은 모델과 같은 고정 스텝 RK4 이다.
+%
+%  No Simulink. The equations of the lecture are coded again from the notes,
+%  and integrated with the same fixed-step RK4 the model uses.
+fprintf('\n  2) 독립 구현 — Simulink 없이 강의의 식에서 고리를 다시 짠다\n');
+fprintf('     independence: the loop rebuilt from the equations, without Simulink\n\n');
+fprintf('    %-18s %14s %14s %14s\n', ...
+        'scheme', 'max |du| [m/s]', 'max |dI| [N]', 'max |dX| [N]');
+fprintf('    %s\n', repmat('-', 1, 64));
+
+for i = 1:size(REF,1)
+    S = local_replay(V, REF{i,2});
+    t = R{i}.t;
+    du = max(abs(interp1(S.t, S.u,     t) - R{i}.y(:, c.u)));
+    dI = max(abs(interp1(S.t, S.I,     t) - R{i}.y(:, c.I)));
+    dX = max(abs(interp1(S.t, S.X_cmd, t) - R{i}.y(:, c.X_cmd)));
+
+    %  허용오차는 절대값이 아니라 그 신호의 크기에 맞춘다. I 는 수천 N 까지
+    %  올라가고 u 는 몇 m/s 이므로 같은 잣대를 쓸 수 없다.
+    %  The tolerances are scaled to each signal: I reaches thousands of newtons
+    %  while u is a few m/s, so one absolute figure cannot serve both.
+    good = du < 1e-6 && dI < 1e-6*max(abs(R{i}.y(:, c.I))) && ...
+           dX < 1e-6*max(abs(R{i}.y(:, c.X_cmd)));
+    ok   = ok && good;
+    if good, mark = ''; else, mark = '  <-- 불일치 MISMATCH'; end
+    fprintf('    %-18s %14.2e %14.2e %14.2e%s\n', REF{i,1}, du, dI, dX, mark);
+end
+fprintf(['\n    두 구현이 이 정도로 같다는 것은, 모델의 결과가 모델 자신의\n' ...
+         '    배선이 아니라 강의에 적힌 식에서 나온다는 뜻이다.\n' ...
+         '    Agreement at this level means the model''s results follow from the\n' ...
+         '    equations printed in the lecture rather than from its own wiring.\n']);
+
+%% ===== 검증 3 : Simulink 의 PID 블록과 대조 / check 3: against the block ==
+%  Simulink 의 PID Controller 블록은 자체 출력 포화와 자체 안티와인드업을 갖고
+%  있고, 이 모델에서 그 한계는 배분이 거는 한계와 같은 값이다. 그러므로 같은
+%  방식을 고르면 두 경로가 같은 배를 몰아야 한다. 손으로 조립한 것이 옳은지를
+%  **MathWorks 의 구현**에 물어보는 셈이다.
+%
+%  Simulink's PID Controller block has its own output saturation and its own
+%  anti-windup, and in this model those limits are the same numbers the
+%  allocation imposes. Selecting the same scheme on both paths must therefore
+%  drive the same vessel: it asks MathWorks's implementation whether the
+%  hand-built one is right.
+%
+%  Kd = 0 으로 둔다. Kd 가 0 이 아니면 두 경로는 §2-4 의 c_d 때문에 애초에
+%  다른 제어기이고, 그 차이는 안티와인드업과 아무 상관이 없다.
+%  Kd is held at zero: with Kd non-zero the two paths are different controllers
+%  by the setpoint weight of §2-4, and that difference has nothing to do with
+%  anti-windup.
+%
+%  두 방식을 같은 잣대로 재지 않는다. 그럴 이유가 있다.
+%
+%  역계산의 오른편은 연속이다 — 적분기 입력이 Ki e - K_aw sat 이고, 포화가
+%  시작되는 순간에도 sat 은 0 에서 연속으로 자란다. 그래서 두 구현이 기계
+%  정밀도까지 같아야 하고, 실제로 그렇다.
+%
+%  클램핑의 오른편은 불연속이다 — 적분기 입력이 Ki e 와 0 사이를 **뛴다**.
+%  고정 스텝 솔버는 그 뜀을 스텝 안에서 해결하지 못하므로, 두 구현이 스위치가
+%  뒤집히는 순간을 h 정도 다르게 잡는다. 그러므로 여기서 물어야 할 것은
+%  "같은가" 가 아니라 "스텝을 줄이면 같아지는가" 이다. 규칙이 다르면 차이가
+%  남고, 이산화 때문이면 차이가 h 와 함께 사라진다.
+%
+%  The two schemes are not held to the same standard, and there is a reason.
+%  Back-calculation has a continuous right-hand side: the integrator input is
+%  Ki e - K_aw sat, and sat grows continuously from zero as saturation begins,
+%  so the two implementations must agree to machine precision, and they do.
+%  Clamping has a discontinuous one: the integrator input jumps between Ki e
+%  and zero. A fixed-step solver cannot place that jump inside a step, so two
+%  implementations catch it up to about h apart. The question to ask here is
+%  therefore not whether they agree but whether they converge: a difference of
+%  rule would persist, whereas a difference of discretisation vanishes with h.
+fprintf('\n  3) Simulink PID Controller 블록과의 대조\n');
+fprintf('     cross-check against Simulink''s own PID Controller block\n\n');
+fprintf('    %10s %24s %26s\n', 'h [s]', 'clamping max|du| [m/s]', 'back-calc max|du| [m/s]');
+fprintf('    %s\n', repmat('-', 1, 64));
+
+%  네 단계까지 줄인다. 두 단계로는 "줄어든다" 를 우연과 구별하기 어렵고,
+%  강의 §2-6 의 표가 이 네 줄을 그대로 싣는다.
+%  Four halvings: two would not distinguish a fall from a coincidence, and the
+%  table in §2-6 reproduces these four rows.
+HS = [V.h, V.h/2, V.h/4, V.h/8];
+dc = zeros(size(HS));
+for j = 1:numel(HS)
+    Vh = V;  Vh.h = HS(j);
+    Rc = run_sim('W02_surge_control', Vh, 'aw_mode', 1, 'Kd', 0, 'pid_mode', 0);
+    Rb = run_sim('W02_surge_control', Vh, 'aw_mode', 2, 'Kd', 0, 'pid_mode', 0);
+    Bc = local_pid_block(Vh, 'clamping');
+    Bb = local_pid_block(Vh, 'back-calculation');
+    dc(j) = max(abs(Rc.y(:, c.u) - Bc.y(:, c.u)));
+    db    = max(abs(Rb.y(:, c.u) - Bb.y(:, c.u)));
+
+    good = db < 1e-12;              % 역계산은 기계 정밀도여야 한다
+    ok   = ok && good;
+    if good, mark = ''; else, mark = '  <-- 불일치 MISMATCH'; end
+    fprintf('    %10g %24.3e %26.3e%s\n', HS(j), dc(j), db, mark);
+end
+
+conv = all(dc(2:end) < 0.8*dc(1:end-1));
+ok   = ok && conv;
+if conv
+    fprintf(['\n    역계산은 스텝과 무관하게 기계 정밀도로 같다. 클램핑의 차이는\n' ...
+             '    스텝을 반으로 줄일 때마다 함께 줄어든다. 두 구현이 서로 다른\n' ...
+             '    규칙을 쓰는 것이 아니라, 불연속을 이산화하는 방법이 다를 뿐이라는\n' ...
+             '    뜻이다. 규칙이 달랐다면 차이가 h 와 무관하게 남았을 것이다.\n' ...
+             '    (%.2e -> %.2e -> %.2e -> %.2e)\n' ...
+             '    Back-calculation agrees to machine precision at every step size,\n' ...
+             '    while the clamping difference falls with the step. The two\n' ...
+             '    implement the same rule and differ only in how each discretises\n' ...
+             '    the discontinuity; a difference of rule would not depend on h.\n'], dc);
+else
+    fprintf(['\n    ***** 클램핑의 차이가 스텝과 함께 줄지 않는다. 그렇다면 두\n' ...
+             '    구현이 서로 다른 규칙을 쓰고 있다는 뜻이므로 다시 본다. *****\n']);
+end
+
+%% ===== 검증 4 : Ki = 0 경계 / check 4: the Ki = 0 boundary ==============
+R0   = run_sim('W02_surge_control', V, 'Ki', 0, 'aw_mode', 2);
+Imax = max(abs(R0.y(:, c.I)));
+fprintf('\n  4) Ki = 0, aw_mode = 2 :  max|I| = %.3e   (0 이어야 한다 / must be zero)\n', Imax);
 ok = ok && Imax < 1e-9;
 
-%% ---- 클램핑의 얼어붙는 조건을 블록 논리 그대로 확인한다 ----------------
-%  도면의 두 조건은  |sat| > 1e-9  과  e*sat > 0  이다. 예전 코드는 뒤의 것을
-%  sign(e) == sign(sat) 으로 썼다. 두 표현이 같은 값을 주는지 격자로 확인한다.
-%  The canvas tests |sat| > 1e-9 and e*sat > 0. The code it replaced wrote the
-%  second as sign(e) == sign(sat). The two are checked against each other on a
-%  grid that includes the zeros and the tolerance boundary.
+%% ===== 검증 4 : 클램핑 조건의 등가성 / check 4: the clamping condition ==
+%  도면은 |sat| > 1e-9 과 e*sat > 0 을 본다. 그 이전의 코드는 뒤의 것을
+%  sign(e) == sign(sat) 으로 썼다. 0 과 허용오차 경계를 포함한 격자에서 비교한다.
+%  The canvas tests |sat| > 1e-9 and e*sat > 0; the code it replaced wrote the
+%  second as sign(e) == sign(sat). They are compared on a grid that includes
+%  the zeros and the tolerance boundary.
 g = [-3 -1 -1e-9 -1e-12 0 1e-12 1e-9 1 3];
 agree = true;
 for a = g
     for b = g
-        oldF = abs(b) > 1e-9 && sign(a) == sign(b);
-        newF = (abs(b) > 1e-9) && (a*b > 0);
-        agree = agree && (oldF == newF);
+        agree = agree && ((abs(b) > 1e-9 && sign(a) == sign(b)) == ...
+                          ((abs(b) > 1e-9) && (a*b > 0)));
     end
 end
 if agree, verdict = '일치한다 / agree'; else, verdict = '어긋난다 / DISAGREE'; end
-fprintf('    클램핑 조건 %d 가지 조합에서 두 표현이 %s\n', numel(g)^2, verdict);
+fprintf('  5) 클램핑 조건 %d 가지 조합에서 두 표현이 %s\n', numel(g)^2, verdict);
 ok = ok && agree;
 
 fprintf('\n');
 if ok
-    fprintf('  ALL CHECKS PASSED — 블록으로 바꾸어도 수치가 같다.\n\n');
+    fprintf('  ALL CHECKS PASSED\n\n');
 else
-    fprintf('  ***** 불일치 있음. 블록 배선을 다시 본다. *****\n\n');
+    fprintf('  ***** 불일치 있음. 위 표에서 표시된 줄을 본다. *****\n\n');
 end
+end
+
+% =========================================================================
+function o = local_pid_block(V, awmode)
+%LOCAL_PID_BLOCK  라이브러리 PID 블록 경로로 한 번 돌린다. 그 블록의 안티와인드업
+%                 방식을 골라 주어야 하므로 run_sim 대신 여기서 직접 부른다.
+%                 One run through the library PID block path. The block's own
+%                 anti-windup mode has to be selected, which run_sim does not
+%                 do, so the simulation is set up here.
+in = Simulink.SimulationInput('W02_surge_control');
+V.pid_mode = 1;   V.Kd = 0;
+fn = fieldnames(V);
+for i = 1:numel(fn), in = in.setVariable(fn{i}, V.(fn{i})); end
+in = in.setBlockParameter('W02_surge_control/Surge controller/PID block', ...
+                          'AntiWindupMode', awmode);
+evalc('r = sim(in);');
+names = r.who;
+for i = 1:numel(names)
+    s = r.(names{i});
+    if isstruct(s) && isfield(s,'signals') && isfield(s,'time')
+        y = squeeze(s.signals.values);
+        if size(y,1) < size(y,2), y = y.'; end
+        o.t = s.time;  o.y = y;  return
+    end
+end
+error('local_pid_block:noLog', '로그를 찾지 못했다 / no logged structure found');
+end
+
+% -------------------------------------------------------------------------
+function S = local_replay(V, aw_mode)
+%LOCAL_REPLAY  W02 의 속도 고리를 Simulink 없이 다시 구현한다.
+%              The Week 2 speed loop, reimplemented without Simulink.
+%
+%  상태는 otter.m 의 12 상태에 적분기 상태 I 를 더한 13 개이다. 적분은 모델과
+%  같은 고정 스텝 RK4 이고, 스텝 크기도 V.h 로 같다.
+%  The state is otter.m's twelve plus the integrator state I, thirteen in all,
+%  advanced by the same fixed-step RK4 at the same step size V.h.
+h  = V.h;
+t  = (0:h:V.T_final).';
+N  = numel(t);
+x  = V.x0(:);          % otter.m 의 12 상태 / otter's twelve states
+I  = 0;                % 적분기 상태 [N] / the integrator state
+
+S.t = t;
+S.u = zeros(N,1);  S.I = zeros(N,1);  S.X_cmd = zeros(N,1);
+
+for k = 1:N
+    S.u(k) = x(1);  S.I(k) = I;
+    S.X_cmd(k) = V.Kp*(ref(t(k),V) - x(1)) + I;
+    if k == N, break, end
+
+    %  RK4. 두 상태 묶음을 함께 전진시킨다 — 고리가 닫혀 있으므로 따로 풀 수 없다.
+    %  RK4, advancing both state groups together: the loop is closed, so they
+    %  cannot be stepped separately.
+    [k1x, k1I] = deriv(t(k),       x,           I,           V, aw_mode);
+    [k2x, k2I] = deriv(t(k)+h/2, x+h/2*k1x, I+h/2*k1I, V, aw_mode);
+    [k3x, k3I] = deriv(t(k)+h/2, x+h/2*k2x, I+h/2*k2I, V, aw_mode);
+    [k4x, k4I] = deriv(t(k)+h,   x+h*k3x,   I+h*k3I,   V, aw_mode);
+    x = x + h/6*(k1x + 2*k2x + 2*k3x + k4x);
+    I = I + h/6*(k1I + 2*k2I + 2*k3I + k4I);
+end
+end
+
+% -------------------------------------------------------------------------
+function [xdot, Idot] = deriv(t, x, I, V, aw_mode)
+%  제어기 / the controller (§2-3, Kd = 0 이므로 미분항은 없다)
+e     = ref(t,V) - x(1);
+X_cmd = V.Kp*e + I;
+
+%  배분 / the allocation (§2-5)
+T = X_cmd/2;
+if T >= 0, n = sqrt(T/V.k_pos); else, n = -sqrt(-T/V.k_neg); end
+n = min(max(n, V.n_min), V.n_max);
+if n >= 0, X_sat = 2*V.k_pos*n*abs(n); else, X_sat = 2*V.k_neg*n*abs(n); end
+
+%  안티와인드업 / the anti-windup (§2-6)
+sat  = X_cmd - X_sat;
+Idot = V.Ki*e;
+if V.Ki ~= 0
+    switch aw_mode
+        case 1
+            if abs(sat) > 1e-9 && sign(e) == sign(sat), Idot = 0; end
+        case 2
+            Idot = Idot - V.K_aw*sat;
+    end
+end
+
+%  플랜트 / the plant (otter.m, 고치지 않고 그대로 / called unmodified)
+xdot = otter(x, [n; n], V.mp, V.rp, V.V_c, V.beta_c);
+end
+
+% -------------------------------------------------------------------------
+function r = ref(t, V)
+%  두 계단의 합 / the sum of the two steps
+r = V.u_d1*(t >= V.t_up) + (V.u_d2 - V.u_d1)*(t >= V.t_dn);
 end
 
 % -------------------------------------------------------------------------

@@ -747,12 +747,55 @@ Opening the folder shows about fifteen files. Only the ones in this table are ev
 
 - The switch is not decoration. `loop_closed = 0` turns this model into the open-loop rig of §C, so the plant that is identified is provably the plant the controller then drives.
 
-> [!note] Why `anti-windup` is a subsystem of ordinary blocks and not one MATLAB Function
+> [!note] Inside `anti-windup`: three schemes drawn as three boxes
 > A single MATLAB Function block would express all three schemes in nine lines and leave the diagram tidier. It would also put the one thing §2-6 is about — how the three schemes differ — behind a double-click, where a reader comparing them has to read code rather than follow signals.
 >
-> Opening `anti-windup` therefore shows the arithmetic itself: `sat` forms $X_{\text{cmd}} - X_{\text{sat}}$, which is the part of the demand the actuator refused; `Ki e` forms what an unprotected integrator would receive; `clamping` and `back-calculation` each modify that in their own way; and `scheme` selects between them. The schemes can be compared by looking at three paths side by side.
+> Opening `anti-windup` therefore shows five things and no more:
 >
-> The change is presentational and must not alter any measurement. `verify_w02_antiwindup` re-measures the three rows of the §F table against the values recorded there, and also checks that the guard on $K_i = 0$ still holds and that the clamping condition on the canvas agrees with the one it replaced over a grid that includes the zeros and the tolerance boundary.
+> | Block | What it is |
+> |---|---|
+> | `sat` | $X_{\text{cmd}} - X_{\text{sat}}$, the part of the demand the actuator refused |
+> | `Ki e` | what an unprotected integrator would receive |
+> | `clamping` | a subsystem: the decision whether to freeze |
+> | `back-calculation` | a subsystem: the refused part fed back through $K_{\text{aw}}$ |
+> | `scheme` | `aw_mode` selects one of the three |
+>
+> The first two are on that canvas because every scheme shares them. Each scheme's own arithmetic is inside its own box, so the three can be compared by opening one at a time rather than by disentangling them from a single drawing. The unprotected case needs no box: what reaches the integrator is $K_i e$ itself.
+
+> [!important] The results of this section are checked against an implementation that is not this model
+> A model can be self-consistent and still wrong. `verify_w02_antiwindup` therefore checks the three schemes twice.
+>
+> The first check is a regression: the three rows of the §F table are re-measured and must match the values printed there, which were produced before the block was rebuilt. That establishes that nothing moved, and nothing more.
+>
+> The second check does not use Simulink at all. The PI law of §2-3, the anti-windup of §2-6, the allocation of §2-5 and `otter.m` are written out again in plain MATLAB, straight from the equations in these notes, and integrated with the same fixed-step RK4 at the same step size. The two implementations are then compared on the whole trajectory:
+>
+> | Scheme | $\max\lvert\Delta u\rvert$ [m/s] | $\max\lvert\Delta I\rvert$ [N] | $\max\lvert\Delta X_{\text{cmd}}\rvert$ [N] |
+> |---|---|---|---|
+> | none | $7.6\times10^{-15}$ | $2.3\times10^{-12}$ | $2.3\times10^{-12}$ |
+> | clamping | $2.2\times10^{-16}$ | $1.4\times10^{-14}$ | $1.4\times10^{-14}$ |
+> | back-calculation | $2.2\times10^{-16}$ | $1.4\times10^{-14}$ | $1.4\times10^{-14}$ |
+>
+> Against an integrator state that reaches $3438$ N, a disagreement of $10^{-12}$ N is the accumulated rounding of two different orderings of the same arithmetic. The measurements in this section therefore follow from the equations printed above, and not from anything peculiar to how the model happens to be wired.
+>
+> A third direction is available without writing anything: Simulink's own PID Controller block implements both schemes, and in this model its output limits are the same numbers the allocation imposes. Selecting the same scheme on both paths must drive the same vessel, and asking the block is asking an implementation nobody here wrote.
+
+> [!warning] Clamping and back-calculation do not answer that third question equally well, and the reason is worth a section of its own
+> Set against Simulink's block, the two schemes behave quite differently:
+>
+> | Step $h$ [s] | clamping $\max\lvert\Delta u\rvert$ [m/s] | back-calculation $\max\lvert\Delta u\rvert$ [m/s] |
+> |---|---|---|
+> | $0.02$ | $3.11\times10^{-2}$ | $6.7\times10^{-16}$ |
+> | $0.01$ | $1.56\times10^{-2}$ | $6.7\times10^{-16}$ |
+> | $0.005$ | $6.39\times10^{-3}$ | $6.7\times10^{-16}$ |
+> | $0.0025$ | $4.02\times10^{-3}$ | $4.4\times10^{-16}$ |
+>
+> Back-calculation agrees to machine precision at every step size. Clamping does not agree at all at the step this week uses — $3$ cm/s on a vessel making $3.09$ m/s — and the discrepancy **falls with the step**.
+>
+> That last column of behaviour is the diagnosis. A difference of *rule* would not care what $h$ is. A difference that vanishes as $h \to 0$ is a difference in where each implementation places an event inside a step, and clamping has an event to place: its integrator input **jumps** between $K_i e$ and zero. A fixed-step solver cannot resolve a jump within a step, so two implementations catch it up to one step apart, and the trajectories separate a little each time saturation begins or ends.
+>
+> Back-calculation has nothing to place. Its integrator input is $K_i e - K_{\text{aw}}(X_{\text{cmd}} - X_{\text{sat}})$, and the correction grows continuously from zero as saturation begins. The right-hand side never jumps, so there is no event, and two implementations of it cannot disagree.
+>
+> This is a third reason to prefer back-calculation, and it is not one §2-6 derived. Clamping stops the integrator; back-calculation steers it; and now — clamping makes the answer depend on the solver, while back-calculation does not. `verify_w02_antiwindup` produces this table, and fails if the clamping column ever stops shrinking, because that would mean the two really are different rules after all.
 
 ## C. Identifying the plant from the plant (15 min)
 
