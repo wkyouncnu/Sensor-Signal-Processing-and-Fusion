@@ -196,8 +196,18 @@ add_line(p, 'u/1','split/1','autorouting','on');
 add_line(p, 'collect/1','y/1','autorouting','on');
 for i = 1:4
     yb = 130 + 90*(i-1);
+    %  플랜트는 1/s 이다 — 순수한 적분기. Franklin 8E 그림 9.22 의 구성을 그대로
+    %  쓰기 때문이며, 그래야 이 절의 결과를 출판된 그림과 직접 대조할 수 있다.
+    %  적분기 플랜트는 와인드업을 보이기에도 가장 좋다. 감쇠가 없으므로 작동기가
+    %  한계에 있는 동안 출력이 멈추지 않고 일정한 속도로 계속 자란다.
+    %
+    %  The plant is 1/s, a pure integrator, because this section reproduces the
+    %  arrangement of Franklin 8E Fig. 9.22 so that its results can be compared
+    %  with a published figure. An integrator is also the clearest plant on
+    %  which to show windup: with no damping, the output does not stop growing
+    %  while the actuator sits on its limit.
     add_block('simulink/Continuous/Transfer Fcn', [p '/G' num2str(i)], ...
-              'Numerator','[1]', 'Denominator','[1 1]', ...
+              'Numerator','[1]', 'Denominator','[1 0]', ...
               'Position',[250 yb 370 yb+50]);
     add_line(p, sprintf('split/%d', i), sprintf('G%d/1', i), 'autorouting','on');
     add_line(p, sprintf('G%d/1', i), sprintf('collect/%d', i), 'autorouting','on');

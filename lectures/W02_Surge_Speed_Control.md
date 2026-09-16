@@ -622,8 +622,12 @@ $$
 - The second expression is the one to read. At the fixed point the demand is **not** equal to the limit: it exceeds it by $(K_i/K_{\text{aw}})\,e$. The excess is exactly what keeps the subtraction $K_{\text{aw}}\varepsilon$ large enough to cancel $K_i e$ — if the demand came down to the limit, $\varepsilon$ would vanish and the integrator would start winding up again.
 - So the scheme does not merely stop the integrator; it **steers it to $I^\star$**, and $I^\star$ approaches the boundary $X_{\text{cmd}} = X_{\text{sat}}$ only in the limit $K_{\text{aw}} \to \infty$.
 
-> [!note] Checked on the plant of §H
-> $K_p = 1.8$, $K_i = 4$, a limit of $\pm 1$, and a reference of $2$ the plant cannot reach, so $e = 1$ while saturated. Integrating the loop to steady state:
+> [!note] Checked on a first-order plant with an unreachable reference
+> The fixed point is a statement about a **sustained** saturation, so demonstrating it needs a loop that can stay saturated with the error held still. A plant of $1/(s+1)$ under $K_p = 1.8$, $K_i = 4$, a limit of $\pm 1$ and a reference of $2$ does that: the largest output the actuator can hold is $1$, so $e$ settles at $1$ and stays there.
+>
+> This is deliberately **not** the plant of §H. That section reproduces Franklin's example, whose plant is $1/s$, and an integrator has infinite DC gain — no constant reference is ever out of reach, so a saturation there is always temporary and the fixed point is approached but never occupied. The two demonstrations need different plants because they are demonstrating different things: §H shows what windup costs on the way past a setpoint, and this table shows where the integrator is heading while it is held.
+>
+> Integrating the loop above to steady state:
 >
 > | $K_{\text{aw}}$ | $I^\star$ predicted | $I$ simulated | settled demand $X_{\text{cmd}}$ | excess $\varepsilon^\star = (K_i/K_{\text{aw}})e$ |
 > |---|---|---|---|---|
@@ -1184,17 +1188,24 @@ The gap appears only at a setpoint change and vanishes in steady state. A loop t
 > Opening the model and pressing **Run** produces the same figure: the
 > scopes update as it runs and `StopFcn` draws the summary at the end.
 
-- The vessel is a distraction from the mechanism. A second model strips everything away:
+- The vessel is a distraction from the mechanism. A second model strips everything away, and the arrangement is not invented here: it is the one drawn in Franklin, *Feedback Control of Dynamic Systems*, 8th ed., Fig. 9.22.
 
 $$
-G(s) = \frac{1}{s+1},
+G(s) = \frac{1}{s},
 \qquad
 u \in [-1,\ +1],
 \qquad
-\text{PI with } K_p = 1.8,\ K_i = 4 .
+\text{PI with } k_p = 2,\ k_I = 4,
+\qquad
+r = 1 \text{ at } t = 0 .
 $$
 
-- The DC gain is $1$ and $|u| \le 1$, so the largest reachable output is $y = 1$. The reference is stepped to $2$ — unreachable — held for 14 s, then dropped to $0.5$, which is reachable.
+- The step is **reachable** — an integrator has infinite DC gain, so any constant reference is eventually attainable. Saturation here is temporary, and that is the point: $k_p e = 2$ at $t = 0$, already twice the limit, so the actuator saturates immediately and stays there while the integrator fills.
+
+- Franklin's back-calculation gain is $K_a = 10$, drawn **inside** the integral gain. §2-6 shows that this is $K_{\text{aw}} = k_I K_a = 40$ in the form used on this page, and the model is given the $40$.
+
+> [!important] Why a published example rather than one chosen here
+> Every other measurement in this week is checked against this course's own equations, which is a check on arithmetic but not on judgement. Reproducing a figure from a textbook checks the plant, the gains, the saturation and the anti-windup **at once, against an implementation nobody here wrote**. If the numbers below match Fig. 9.23, the mechanism is understood; if they do not, something is wrong and it is not a matter of taste.
 
 ```matlab
 W02_H_build_antiwindup
@@ -1207,53 +1218,67 @@ W02_H_antiwindup_run
 
 | Element | Meaning |
 |---|---|
-| `Reference` (white) | the step up to an impossible value, then down to a possible one |
+| `Reference` (white) | the unit step at $t = 0$ |
 | `PID bank` (blue) | four controllers with identical gains: three library blocks with the three anti-windup settings, and the fourth built by hand |
-| `Plant bank` (green) | four identical copies of $1/(s+1)$, one per controller |
+| `Plant bank` (green) | four identical copies of $1/s$, one per controller |
 | `Measurements` (grey) | the log |
 
 - The fourth row exists so that the **integrator state is a signal**. The library block does not expose it, and the integrator is where the whole phenomenon lives.
 
 ### Results
 
-| Anti-windup | time on the limit [s] | recovery [s] | $y$ at $t = 20$ s |
+| Anti-windup | time on the limit [s] | overshoot [%] | settling [s] |
 |---|---|---|---|
-| none | $43.05$ | $32.04$ | $1.0000$ |
-| clamping | $14.00$ | $2.380$ | $0.4997$ |
-| back-calculation | $14.00$ | $2.645$ | $0.5003$ |
-| the same, by hand | $14.00$ | $2.645$ | $0.5003$ |
+| none | $1.37$ | $52.86$ | $4.442$ |
+| clamping | $0.50$ | $14.89$ | $3.861$ |
+| back-calculation | $0.53$ | $14.94$ | $3.862$ |
+| the same, by hand | $0.53$ | $14.94$ | $3.862$ |
 
-- **Recovery** is the time after $t = 15$ s for $y$ to enter and stay within a $2\%$ band on $0.5$.
+- **Settling** is the instant after which $y$ stays within a $2\%$ band on $r = 1$, taken as the last exit from that band rather than the first entry.
 
-![The principle, on a first-order plant](W02_simulink/img/W02_result_aw_principle.png)
+> [!important] Against the published figure
+> An overshoot of $52.86\%$ is a peak of $\mathbf{1.53}$, and $14.94\%$ is a peak of $\mathbf{1.15}$. Figure 9.23 of the source shows $1.53$ without anti-windup and $1.15$ with it.
+>
+> The unprotected integrator peaks at $2.00$ against $0.547$ with back-calculation — a factor of $3.7$ — and every unit of it above the limit of $1$ is demand the plant will never see. The cost of holding it is the $0.38$ of extra overshoot, which is the distance the output travels while the error is negative and the integrator is discharging.
+
+![The principle, on the example of Franklin 8E Fig. 9.22](W02_simulink/img/W02_result_aw_principle.png)
 
 **Reading the figure**
 
 | Element | Meaning |
 |---|---|
-| top left | the output; all four are one curve on the way up |
-| top right | the control signal; all four sit on the limit for the same 14 s |
-| bottom left | the integrator state on a log scale, with and without anti-windup |
-| bottom right | the error, which cannot reach zero while the reference is unreachable |
+| top left | the output; all four are one curve for the $0.50$ s during which all four are still saturated |
+| top right | the control signal, pinned at the limit until the demand falls back through it |
+| bottom left | the integrator state, with and without anti-windup. Back-calculation drives it **negative**, which is the visible difference between steering an integrator and stopping one |
+| bottom right | the error, which changes sign at $t = 1$ s — and only after that can the four differ |
 
-- **All four are identical on the way up.** While the demand is impossible every scheme sits on the limit and produces $y = 1$. Nothing distinguishes them until $t = 15$ s.
-- The bottom-left panel is the whole phenomenon. Without anti-windup the integrator winds to $60.00$, against a largest useful value of $1.0$ and against $1.225$ with back-calculation — a factor of $49$. It then takes $30$ s to unwind, and the loop does nothing for all of it.
+- **All four are identical while all four are saturated.** For the first $0.50$ s every scheme produces the same $u = 1$, so the four plants receive the same input and the four outputs agree bit for bit. Nothing distinguishes them until the first of them comes off the limit.
+- The bottom-left panel is the whole phenomenon. Without anti-windup the integrator reaches $2.00$, against a largest useful value of $1$ and against $0.547$ with back-calculation.
 - Rows 3 and 4 agree to **exactly zero**. The library block and the hand-built path are the same algorithm, so the theory of §2-6 is a correct description of what the block does.
 
 **What the figure says**
 
-For the first $14$ s all four curves coincide in three of the four panels. The output holds at $y = 1$, the control sits flat on the limit, the error sits flat at $+1$. Only the integrator panel separates them — and it separates them by a factor of $49$: $60.00$ unprotected against $1.225$ with back-calculation.
+An integrator integrates. While the actuator is on its limit the loop around the plant is open, but the integrator is still being fed the error of a loop it believes is closed, so it accumulates demand the actuator has no way to use. **The trouble is not that the integrator misbehaved; it is that the loop was open and the integrator was not told.**
 
-An integrator integrates. While the reference is unreachable the error cannot change sign, so the integral grows without bound, into a quantity the actuator has no way to use. **The trouble is not that the integrator misbehaved; it is that the loop was open and the integrator was not told.**
+The cost appears afterwards, and here it is visible as distance rather than as time: the unprotected output travels to $1.53$ before it turns, against $1.15$ with back-calculation. Between those two peaks lies $0.38$ of overshoot bought entirely with stored charge that never reached the plant.
 
-That panel is on a log scale for a reason. Drawn linearly, the protected curve would lie flat against the axis and the reader would see one curve and a wall. On a log scale both are visible, and what it shows is not merely a smaller number but an integrator that **stays inside the range the actuator can act on** for the whole run.
-
-The setpoint here is deliberately impossible. A scheme that is invisible for $14$ s and decisive at second $15$ cannot be judged on a reachable command — and when second $15$ arrives, the unprotected loop needs $32.04$ s to settle while the others need about $2.5$.
+The bottom-left panel is drawn on a linear scale so that the sign is visible. Back-calculation takes the integrator **below zero** while the output is above the reference. That is the difference between the two schemes made visual: clamping stops the integrator where it stands, and back-calculation carries it to wherever the arithmetic requires — including through zero.
 
 > [!important] Choosing $K_{\text{aw}}$
-> The usual starting point is $K_{\text{aw}} = 1/\tau$, which on this plant is $1$ and gives a $3.49$ s recovery. Sweeping it finds a shallow minimum near $K_{\text{aw}} = 5$ at $2.375$ s: below that the integrator is not emptied fast enough, above it the loop leaves the limit so abruptly that undershoot grows from $4.60\%$ to $43.96\%$. The rule of thumb is a reasonable default and it is not the optimum.
+> Sweeping the gain around the source's value:
 >
-> Raising $K_{\text{aw}}$ does **not** turn back-calculation into clamping. Clamping stops the integrator wherever it happens to be; back-calculation steers it to $I^\star = X_{\text{sat}} - K_p e + (K_i/K_{\text{aw}})e$, which moves as $K_{\text{aw}}$ changes. Those are different fixed points, not two ends of one scale — which is why the swept curve dips *below* clamping's $2.380$ s and comes back up rather than approaching it as an asymptote.
+> | $K_{\text{aw}}$ | $T_t = 1/K_{\text{aw}}$ [s] | overshoot [%] | peak integrator | settling [s] |
+> |---|---|---|---|---|
+> | $1$ | $1.000$ | $31.53$ | $1.167$ | $4.174$ |
+> | $4$ | $0.250$ | $17.77$ | $0.651$ | $3.938$ |
+> | $10$ | $0.100$ | $15.30$ | $0.560$ | $3.872$ |
+> | $40$ | $0.025$ | $14.94$ | $0.547$ | $3.862$ |
+> | $100$ | $0.010$ | $14.92$ | $0.546$ | $3.861$ |
+> | $400$ | $0.0025$ | $14.92$ | $0.546$ | $3.861$ |
+>
+> Franklin's choice is the fourth row. Going ten times further buys $0.02$ percentage points, which is the shape of almost every gain in this course: the first order of magnitude does the work and the next one does not. A reader who carried his $K_a = 10$ across as $K_{\text{aw}} = 10$ would land on the third row — still respectable here, but arrived at by accident rather than by choice.
+>
+> Raising $K_{\text{aw}}$ does **not** turn back-calculation into clamping, which overshoots $14.89\%$. Clamping stops the integrator wherever it happens to be; back-calculation steers it to $I^\star = u_{\text{sat}} - k_p e + (k_I/K_{\text{aw}})e$, which moves as $K_{\text{aw}}$ changes. Those are different fixed points, not two ends of one scale, and the swept column approaches $14.92$ rather than clamping's $14.89$.
 
 ## I. The pseudo-derivative, on a plant that wants one (25 min)
 
@@ -1366,8 +1391,8 @@ One control experiment settles what the difference actually is. Repeating all fo
 | 5 | Established the exact speed ceiling | $u_{\max} = U_{\max} = 3.0864$ m/s, from $X_{\max} = 24.4g$ and $X_u = -24.4g/U_{\max}$ |
 | 6 | Measured windup and two remedies | integrator peak $3438$ N; recovery $13.98$ s against $3.40$ s and $3.64$ s |
 | 7 | Compared the hand-built controller with the library PID block | identical to $2\times10^{-16}$ m/s at $K_d = 0$; $0.18$ m/s apart at $K_d = 60$ |
-| 8 | Isolated the principle on $1/(s+1)$ | integrator peak $60.00$ against $1.225$; recovery $32.04$ s against $2.645$ s |
-| 9 | Swept the back-calculation gain | fastest recovery at $K_{\text{aw}} = 5$; undershoot $4.60 \to 43.96$ per cent across the sweep |
+| 8 | Isolated the principle on Franklin 8E Fig. 9.22 | overshoot $1.53$ without anti-windup against $1.15$ with, matching the published figure; integrator peak $2.00$ against $0.547$ |
+| 9 | Swept the back-calculation gain | overshoot $31.53 \to 14.92$ per cent from $K_{\text{aw}} = 1$ to $400$, with the source's $40$ already within $0.02$ of the floor |
 | 10 | Measured what the derivative filter buys | ideal derivative: actuator RMS $8.75$ and peak $105.94$; at $N = 10$, RMS $0.2348$ with *less* overshoot |
 | 11 | Swept the filter coefficient $N$ | best overshoot at $N = 5$; above it overshoot flat within $0.3$ points while RMS($u$) grew $3\times$ |
 

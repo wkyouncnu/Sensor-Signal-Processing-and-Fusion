@@ -50,10 +50,14 @@ for i = 1:4
     lw = 2.5 - 1.2*(i == 4);   st = '-';  if i == 4, st = '--'; end
     plot(R.t, R.y(:,5+i), st, 'Color', COL(i,:), 'LineWidth', lw);
 end
-yline(umax, ':', 'y_{max} = K u_{max}', 'Color',[0.75 0.2 0.2]);
+%  1/s 플랜트에는 작동기 한계가 만드는 출력 상한이 없다 — 한계에 앉아 있는 동안
+%  출력은 일정한 속도로 계속 자란다. 그래서 여기에 y_max 선을 긋지 않는다.
+%  An integrator plant has no output ceiling set by the actuator limit: while
+%  the actuator sits on the limit the output keeps growing at a constant rate.
+%  There is therefore no y_max line to draw here.
 xlabel('time [s]'); ylabel('y');
 legend([{'r'} LBL], 'Location','southeast');
-title({'output', 'identical on the way up, different on the way down'});
+title({'output', 'identical while the actuator is saturated, different after'});
 
 % -- control ---------------------------------------------------------------
 subplot(2,2,2); hold on;
@@ -64,7 +68,7 @@ end
 yline(umax, ':', 'Color',[0.75 0.2 0.2]);
 yline(umin, ':', 'Color',[0.75 0.2 0.2]);
 xlabel('time [s]'); ylabel('u  (already saturated)');
-title({'the control signal', 'all four sit on the limit while the demand is impossible'});
+title({'the control signal', 'all four sit on the limit until the demand falls back through it'});
 
 % -- the integrator --------------------------------------------------------
 subplot(2,2,3); hold on;
@@ -74,8 +78,13 @@ end
 plot(R.t, R.y(:,10), 'Color', COL(3,:), 'LineWidth',1.8);
 yline(umax, ':', 'the largest value the limit can use', 'Color',[0.75 0.2 0.2]);
 yline(0,'k:');
-set(gca,'YScale','log'); ylim([1e-2 1e2]);
-xlabel('time [s]'); ylabel('integrator state  (log scale)');
+%  선형 눈금으로 둔다. 역계산을 걸면 적분기 상태가 음수로 내려가는데, 로그 눈금은
+%  그 구간을 통째로 지워 버린다 — 그리고 음수로 내려가는 것이 바로 이 방식이
+%  적분기를 "끌고 간다" 는 증거이다.
+%  A linear scale: with back-calculation the integrator state goes negative, and
+%  a log scale would erase exactly that part — which is the evidence that this
+%  scheme steers the integrator rather than merely stopping it.
+xlabel('time [s]'); ylabel('integrator state');
 if ~isempty(R0)
     legend({'no anti-windup  (K_b = 0)','back-calculation'}, 'Location','southeast');
 end
@@ -91,7 +100,7 @@ end
 yline(0,'k:');
 xlabel('time [s]'); ylabel('e = r - y');
 legend(LBL, 'Location','northeast');
-title({'the error', 'it cannot reach zero while the reference is unreachable'});
+title({'the error', 'it changes sign, and only then can the four differ'});
 
 sgtitle(ttl, 'FontWeight','bold');
 end
