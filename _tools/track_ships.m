@@ -1,14 +1,28 @@
 function Lship = track_ships(tracks, COL, varargin)
-%TRACK_SHIPS  Draw the hull and heading along every track, into the current axes.
+%TRACK_SHIPS  궤적을 따라가며 선체와 선수방위를 함께 그린다.
+%             Draw the hull and heading along every track, into the current axes.
 %
 %   Lship = track_ships(tracks, COL)
 %   Lship = track_ships(tracks, COL, 'Marks', 7, 'MinLength', 2.00)
 %
-%   INPUTS
-%     tracks    cell array. Each element is an n-by-3 matrix whose columns are
-%               [N  E  psi], with N and E in metres and psi in DEGREES. Passing
-%               psi in radians draws a vessel that barely turns at all, which is
-%               the usual symptom
+%   왜 궤적선만으로는 부족한가 / why a track line alone is not enough
+%       궤적만 그리면 배가 그때 어디를 향하고 있었는지 알 수 없다. 그런데 이
+%       강의에서 반복해서 다루는 양 — 크랩각 — 이 바로 그 둘의 차이다. 선체를
+%       함께 그려야 "가는 방향" 과 "향한 방향" 이 눈에 같이 들어온다.
+%
+%       A track line does not say where the vessel was pointing while it drew
+%       it, and the difference between where it goes and where it points is
+%       the crab angle, which this course returns to again and again. Drawing
+%       the hull puts both in the same picture.
+%
+%   입력 / inputs
+%     tracks    셀 배열. 각 원소는 n x 3 행렬이고 열은 [N  E  psi] 이다.
+%               N 과 E 는 미터, psi 는 **도** 단위이다. psi 를 라디안으로 주면
+%               거의 돌지 않는 배가 그려진다. 단위를 틀렸을 때 나타나는 흔한 증상이다
+%               a cell array; each element is an n-by-3 matrix whose columns
+%               are [N  E  psi], with N and E in metres and psi in DEGREES.
+%               Passing psi in radians draws a vessel that barely turns, which
+%               is the usual symptom of the wrong unit
 %     COL       m-by-3 RGB, one row per track, reused cyclically
 %
 %   NAME/VALUE
