@@ -1,10 +1,11 @@
 function W03_S1_heading_loop(mdl)
-%W03_S1_HEADING_LOOP  Solution to all three Week 3 problems in one model.
+%W03_S1_HEADING_LOOP  3주차 세 문제를 모두 푸는 하나의 모델.
+%                     Solution to all three Week 3 problems in one model.
 %
-%   >> W03_S1_heading_loop      builds W03_S1.slx
-%   >> W03_check(1,'W03_S1')    and 2, and 3
+%   >> W03_S1_heading_loop      W03_S1.slx 를 만든다 / builds W03_S1.slx
+%   >> W03_check(1,'W03_S1')    1, 2, 3 을 차례로 / and 2, and 3
 %
-%   THE LAW
+%   제어법칙 / the law
 %
 %       tau_N = Kp * ssa(psi_d - psi) - Kd * r
 %

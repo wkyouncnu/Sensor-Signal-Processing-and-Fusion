@@ -1,9 +1,12 @@
 function n = check_overlaps(mdl, verbose)
-%CHECK_OVERLAPS  Report signal lines drawn on top of each other.
+%CHECK_OVERLAPS  서로 겹쳐 그려진 신호선을 찾아 보고한다.
+%                Report signal lines drawn on top of each other.
 %
 %   n = check_overlaps('W03_heading_control')
-%   check_overlaps('W03_heading_control', true)      list every finding
+%   check_overlaps('W03_heading_control', true)      모든 건을 나열한다
+%                                                    list every finding
 %
+%   같은 세로줄이나 가로줄을 나누어 쓰는 두 선은 인쇄된 도면에서 구별되지 않는다.
 %   Two lines that share a stretch of the same vertical or horizontal run are
 %   indistinguishable in the printed diagram: the reader cannot tell which
 %   source reaches which destination, and a diagram that cannot be read is not

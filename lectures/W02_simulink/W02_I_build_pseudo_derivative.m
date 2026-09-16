@@ -1,9 +1,22 @@
 function W02_I_build_pseudo_derivative()
-%BUILD_W02_PSEUDO  Generate W02_I_pseudo_derivative.slx — why a PID never differentiates directly.
+%W02_I_BUILD_PSEUDO_DERIVATIVE  유사미분 모델을 만든다 — 실제 PID 가 결코
+%                               직접 미분하지 않는 이유.
+%                               Generate W02_I_pseudo_derivative.slx: why a
+%                               working PID never differentiates directly.
 %
-%   >> W02_I_build_pseudo_derivative
+%   실행 / to run
+%       W02_I_build_pseudo_derivative
 %
-%   WHY A THIRD MODEL
+%   왜 모델이 셋째로 필요한가 / why a third model
+%       2주차의 서지 축은 미분 동작이 도움이 되지 않는 축이다. 그래서 절 A 부터
+%       G 까지의 어디에서도 미분 필터가 **무엇을 위한 것인지**는 드러나지 않는다.
+%       이 모델은 미분이 실제로 필요한 플랜트를 가져와, 필터가 무엇을 사고 무엇을
+%       파는지 보인다.
+%
+%       The surge axis of Week 2 is one on which derivative action does not
+%       help, so nothing in sections A to G shows what the derivative filter is
+%       for. This model brings in a plant that genuinely wants derivative
+%       action, and shows what the filter buys and what it costs.
 %
 %   Section 2-4 writes the derivative term as
 %

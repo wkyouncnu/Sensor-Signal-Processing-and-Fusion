@@ -1,11 +1,14 @@
 function h = draw_ship(ax, N, E, psi, Lship, col, varargin)
-%DRAW_SHIP  Draw a vessel silhouette and its heading at one point of a track.
+%DRAW_SHIP  궤적의 한 점에 선체의 윤곽과 선수방위를 그린다.
+%           Draw a vessel silhouette and its heading at one point of a track.
 %
 %   h = draw_ship(ax, N, E, psi, Lship, col)
 %   h = draw_ship(..., 'FaceAlpha', 0.85, 'Heading', 1.6, 'LineWidth', 1.0)
 %
+%   궤적만으로는 배가 어디로 갔는지만 알 수 있다. 그때 어디를 **향하고** 있었는지는
+%   알 수 없는데, 수상 운동체에서는 그 둘이
 %   A track alone shows where the vessel went. It does not show which way the
-%   vessel was POINTING while it went there, and for a marine vehicle those are
+%   vessel was pointing while it went there, and for a marine vehicle those are
 %   two different things: the hull carries a sway velocity, so the heading and
 %   the course over ground differ by the crab angle. Every figure in this course
 %   that draws a track therefore also draws the hull.

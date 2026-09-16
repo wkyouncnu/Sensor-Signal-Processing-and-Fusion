@@ -1,11 +1,17 @@
 function W03_1_build_heading()
-%BUILD_W03_MODELS  Generate W03_heading_control.slx from code.
+%W03_1_BUILD_HEADING  선수방위 제어 모델 W03_heading_control.slx 를 코드로 만든다.
+%                     Generate W03_heading_control.slx from code.
 %
-%   >> W03_1_build_heading
+%   실행 / to run
+%       W03_1_build_heading
 %
-%   THE SIGNAL CHAIN
+%   강의에서의 위치 / place in the lecture
+%       Part 2 의 절 B 이며, 절 C 부터 F 까지가 모두 이 모델 하나를 쓴다.
+%       This is section B of Part 2, and sections C to F all use this one model.
 %
-%   Left to right, in the order used by the MSS demonstration models:
+%   신호의 흐름 / the signal chain
+%       MSS 데모 모델과 같은 순서로 왼쪽에서 오른쪽으로 놓는다.
+%       Left to right, in the order used by the MSS demonstration models:
 %
 %     Heading command --> Heading autopilot --> Control allocation --> Otter USV --> Measurements
 %       psi_d, X_ff             tau_N                   n                  x

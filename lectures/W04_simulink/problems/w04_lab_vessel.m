@@ -1,10 +1,22 @@
 function w04_lab_vessel(mdl, x0)
-%W04_LAB_VESSEL  The Week 3 vessel, given to the Week 4 laboratory.
+%W04_LAB_VESSEL  3주차의 선박을 4주차 실습에 그대로 넘겨 준다.
+%                The Week 3 vessel, given to the Week 4 laboratory.
 %
 %   w04_lab_vessel(mdl, x0)
 %
-%     mdl   model that already exists
-%     x0    left edge of the chain on the canvas [px]
+%     mdl   이미 존재하는 모델 / a model that already exists
+%     x0    캔버스에서 사슬이 시작하는 왼쪽 끝 [px]
+%           the left edge of the chain on the canvas [px]
+%
+%   왜 선박을 주는가 / why the vessel is given
+%       4주차의 문제는 유도법칙을 만드는 것이지 오토파일럿을 다시 만드는 것이
+%       아니다. 3주차에서 이미 만들고 검증한 것을 다시 만들게 하면 시간이 그쪽으로
+%       가고, 정작 이번 주의 내용에는 시간이 남지 않는다.
+%
+%       The Week 4 problems are about building a guidance law, not about
+%       rebuilding an autopilot. Asking for what was already built and checked
+%       in Week 3 would spend the hour there and leave none for this week's
+%       subject.
 %
 %   Builds  Heading autopilot -> Control allocation -> Otter USV -> logs,
 %   with psi (state 12) and r (state 6) fed back to the autopilot as tags.

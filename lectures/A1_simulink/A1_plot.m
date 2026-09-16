@@ -1,9 +1,19 @@
 function f = A1_plot(R, LBL, ttl)
-%A1_PLOT  States, generalised force and track of one or more A1 runs.
+%A1_PLOT  A1 실행 결과의 상태량, 일반화 힘, 궤적을 그린다.
+%         States, generalised force and track of one or more A1 runs.
 %
-%   A1_plot                      the run sitting in the base workspace
-%   A1_plot(R, LBL, ttl)         a cell array of runs, for A1_E_command_that_turns
-%   f = A1_plot(...)             the figure handle
+%   A1_plot                      기본 작업공간에 있는 실행 결과
+%                                the run sitting in the base workspace
+%   A1_plot(R, LBL, ttl)         실행 결과들의 셀 배열 / a cell array of runs
+%   f = A1_plot(...)             그림 핸들 / the figure handle
+%
+%   힘과 궤적을 같은 그림에 두는 것이 이 부록의 요점이다. 지시한 힘이 무엇이고
+%   배가 실제로 어떻게 움직였는지를 나란히 놓아야, B 의 산술과 선체의 운동이
+%   어디서 갈라지는지 볼 수 있다.
+%   Placing the force and the track in one figure is the point of this
+%   appendix: the commanded force and the resulting motion have to be seen side
+%   by side before it is possible to say where the arithmetic of B and the
+%   behaviour of the hull part company.
 %
 %   Called automatically by the model's StopFcn, so pressing Run produces the
 %   figure without any further command. Section E calls the same function.

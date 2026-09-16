@@ -1,11 +1,18 @@
 function pass = W04_check(problem, mdl)
-%W04_CHECK  Run a student's Week 4 model and check it against the lecture.
+%W04_CHECK  학생이 만든 4주차 모델을 돌려 강의의 측정값과 대조한다.
+%           Run a student's Week 4 model and check it against the lecture.
 %
-%   W04_check(1)                checks W04_P1.slx
-%   W04_check(2, 'W04_P1_kim')  checks another model
-%   pass = W04_check(3, mdl)    returns true when every test passed
+%   W04_check(1)                W04_P1.slx 를 검사한다 / checks W04_P1.slx
+%   W04_check(2, 'W04_P1_kim')  다른 모델을 검사한다 / checks another model
+%   pass = W04_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   WHAT IS BEING CHECKED
+%   체커는 강의와 **같은 정의**로 재야 한다. 실제로 항로각을 gradient 로 재어
+%   강의의 시종점 정의와 0.56 도 어긋나 옳은 제출물을 떨어뜨린 적이 있다.
+%   The checker must measure by the same definitions as the lecture. Measuring
+%   the track angle with gradient once disagreed with the lecture's endpoint
+%   definition by 0.56 deg and failed a correct submission.
+%
+%   무엇을 검사하는가 / what is being checked
 %
 %     Problem 1   the LOS law itself. pi_p on leg 1 is exactly 0 rad, and the
 %                 vessel joins the line and stays on it              §4-4

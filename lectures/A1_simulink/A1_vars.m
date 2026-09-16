@@ -1,9 +1,14 @@
 function V = A1_vars()
-%A1_VARS  Every variable A1_actuation.slx needs, in one struct.
+%A1_VARS  A1_actuation.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
+%         Every variable A1_actuation.slx needs, in one struct.
 %
-%   Same split as Weeks 2 and 3: A1_0_setup fills the base workspace for a
-%   student pressing Run; this returns the same numbers as a struct so that
-%   run_sim can vary one per run.
+%   2주차·3주차와 같은 구조이다. A1_0_setup 은 같은 값들을 기본 작업공간에 채워
+%   학생이 모델을 열고 Run 을 누를 수 있게 하고, 이 함수는 같은 값들을 구조체로
+%   돌려주어 run_sim 이 실행마다 하나씩 바꾸어 쓸 수 있게 한다.
+%
+%   The same arrangement as Weeks 2 and 3: A1_0_setup fills the base workspace
+%   so that opening the model and pressing Run is enough, while this returns
+%   the same numbers as a struct so that run_sim can vary one of them per run.
 
 mss_path();
 c = otter_config('base');

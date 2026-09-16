@@ -1,11 +1,14 @@
 function h = image_button(mdl, label, sub, pos, face, edge, fcn)
-%IMAGE_BUTTON  A button on the Simulink canvas — a rounded image with a click callback.
+%IMAGE_BUTTON  Simulink 캔버스 위의 버튼 — 둥근 이미지에 클릭 콜백을 붙인 것.
+%              A button on the Simulink canvas: a rounded image with a click
+%              callback.
 %
 %   h = image_button(mdl, 'START', 'from the beginning', [40 300 300 380], ...
 %                    [0.30 0.69 0.31], [0.12 0.40 0.12], 'W01i_control(''start'')')
 %
-%     mdl    model name
-%     label  large text on the button, and the annotation name
+%     mdl    모델 이름 / the model name
+%     label  버튼에 크게 쓰이는 글자이자 주석의 이름
+%            the large text on the button, and the annotation name
 %     sub    small second line, '' for none
 %     pos    [x1 y1 x2 y2] on the canvas
 %     face   fill colour, RGB

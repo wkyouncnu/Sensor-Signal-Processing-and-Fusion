@@ -1,10 +1,20 @@
 function y = W04_read(o)
-%W04_READ  This week's log, with named fields and the angles in degrees.
+%W04_READ  이번 주의 로그를 이름 붙은 필드로 바꾸고, 각도를 도 단위로 맞춘다.
+%          Convert this week's log into named fields, with the angles in degrees.
 %
 %   y = W04_read(run_sim('W04_guidance', V))
-%   plot(y.t, y.y_e(:,2))          % the cross-track error of the LOS vessel
+%   plot(y.t, y.y_e(:,2))          % LOS 로 항해한 배의 경로이탈 오차
+%                                  % the cross-track error of the LOS vessel
 %
-%   THE LOG
+%   네 척이 한 모델 안에 있으므로 대부분의 필드는 **열 하나가 배 한 척**이다.
+%   그래서 y.y_e(:,2) 처럼 열 번호로 배를 고른다. 열의 순서는 유도법칙의 순서와
+%   같다 — atan2, LOS, ILOS, ALOS.
+%
+%   Four vessels share one model, so most fields carry one column per vessel
+%   and a vessel is selected by column, as in y.y_e(:,2). The columns are in
+%   the order of the guidance laws: atan2, LOS, ILOS, ALOS.
+%
+%   로그의 구성 / the log
 %
 %   add_measurement logs the course-wide contract followed by this week's
 %   four bank signals, each four wide:

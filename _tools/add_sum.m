@@ -1,11 +1,25 @@
 function blk = add_sum(sys, name, signs, centre)
-%ADD_SUM  A summing junction drawn the way MSS draws one: a small round circle.
+%ADD_SUM  MSS 가 그리는 모양 그대로의 합산점 — 작은 원 하나.
+%         A summing junction drawn the way MSS draws one: a small round circle.
 %
 %   blk = add_sum(sys, name, signs, centre)
 %
-%     sys      parent system, e.g. [mdl '/Controller']
-%     signs    '+-' or '++' or '-+' — the signs in port order
-%     centre   [x y], the CENTRE of the circle (not a corner)
+%     sys      부모 시스템, 예를 들어 [mdl '/Controller']
+%              the parent system, e.g. [mdl '/Controller']
+%     signs    포트 순서대로의 부호. '+-', '++', '-+' 등
+%              the signs, in port order
+%     centre   원의 **중심** [x y]. 모서리가 아니다
+%              the centre of the circle, not a corner
+%
+%   포트가 어디에 붙는지 / where the ports end up
+%       입력이 둘인 둥근 합산점은 첫 입력을 왼쪽 가장자리에, 둘째 입력을 아래쪽
+%       가장자리에 놓는다. 되먹임이 아래에서 올라오는 MSS 데모의 모양이 이렇게
+%       나온다. 배선할 때 이것을 모르면 두 선을 같은 높이로 끌고 와 겹치게 된다.
+%
+%       With two inputs, the round sum places the first on its left edge and
+%       the second underneath. That is how the MSS demonstration models come to
+%       have feedback entering from below, and not knowing it leads to both
+%       lines being brought in at the same height, where they overlap.
 %
 %   WHY THIS EXISTS
 %

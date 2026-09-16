@@ -1,11 +1,19 @@
 function pass = W03_check(problem, mdl)
-%W03_CHECK  Run a student's Week 3 model and check it against the lecture.
+%W03_CHECK  학생이 만든 3주차 모델을 돌려 강의의 측정값과 대조한다.
+%           Run a student's Week 3 model and check it against the lecture.
 %
-%   W03_check(1)                checks W03_P1.slx
-%   W03_check(2, 'W03_P1_kim')  checks another model
-%   pass = W03_check(3, mdl)    returns true when every test passed
+%   W03_check(1)                W03_P1.slx 를 검사한다 / checks W03_P1.slx
+%   W03_check(2, 'W03_P1_kim')  다른 모델을 검사한다 / checks another model
+%   pass = W03_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   WHAT IS BEING CHECKED, AND WHY THESE NUMBERS
+%   아래 목표값은 모두 강의의 절 스크립트가 실제로 측정한 것이다. 체커는 강의와
+%   **같은 정의**로 재야 한다 — 다른 정의로 재면 옳은 제출물이 떨어진다.
+%   Every target below was measured by the lecture's own section scripts, and
+%   the checker must measure by the same definitions: measured differently, a
+%   correct submission fails.
+%
+%   무엇을 검사하며 이 수치들은 어디서 왔는가
+%   what is being checked, and where these numbers come from
 %
 %     Problem 1   steady heading error, proportional only     0, at EVERY gain
 %                 overshoot grows with Kp: 0.24 % at 100, 1.53 % at 300   §3-C

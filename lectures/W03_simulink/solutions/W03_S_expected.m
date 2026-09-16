@@ -1,10 +1,12 @@
 function W03_S_expected()
-%W03_S_EXPECTED  The result graphs a correct Week 3 submission must produce.
+%W03_S_EXPECTED  올바른 3주차 제출물이 내야 하는 결과 그래프를 만든다.
+%                The result graphs a correct Week 3 submission must produce.
 %
 %   >> W03_S_expected
 %
+%   모범답안을 세 가지로 돌려 문제마다 PNG 를 하나씩 ../problems/img/ 에 쓴다.
 %   Runs the reference solution three ways and writes one PNG per problem into
-%   ../problems/img/. Only the OUTPUT crosses into problems/; the solution
+%   ../problems/img/. Only the output crosses into problems/; the solution
 %   code stays here.
 %
 %   See also W03_CHECK, W03_S1_HEADING_LOOP.

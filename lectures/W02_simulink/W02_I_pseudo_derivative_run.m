@@ -1,9 +1,44 @@
-%% W02 · section I — the pseudo-derivative
+%% W02 · 절 I — 유사미분
+%  W02 · Section I — the pseudo-derivative
 %
+%  실행 순서 / order of execution
 %      W02_0_setup
 %      W02_I_pseudo_derivative_run
 %
-%  A plant that genuinely wants derivative action, and four ways of taking it.
+%  강의에서의 위치 / place in the lecture
+%      Part 2 의 절 I 이며 §2-4 의 "유사미분" 절을 받는다. 이번 주의 서지 축은
+%      미분이 도움이 되지 않는 축이었으므로, 절 A 부터 G 까지의 어디에서도
+%      미분 필터가 무엇을 위한 것인지 드러나지 않았다. 이 절이 그 자리를 채운다.
+%
+%      This is section I of Part 2, and it answers the pseudo-derivative part
+%      of §2-4. The surge axis of this week is one on which derivative action
+%      does not help, so nothing in sections A to G showed what the derivative
+%      filter is for. This section supplies that.
+%
+%  실험의 구성 / how the experiment is arranged
+%      미분이 실제로 필요한 플랜트 하나를 가져와, 미분을 취하는 네 가지 방법을
+%      같은 측정 잡음 아래에서 비교한다.
+%        1. 미분 없음
+%        2. 이상적인 미분  K_d s
+%        3. 유사미분, N = 100 (거의 이상적인 것에 가깝다)
+%        4. 유사미분, N = 10  (더 느리게 거른다)
+%
+%      A plant that genuinely wants derivative action, and four ways of taking
+%      it, compared under the same measurement noise: no derivative, the ideal
+%      K_d s, and the pseudo-derivative at N = 100 and at N = 10.
+%
+%      그다음 잡음을 끄고 같은 네 행을 다시 돌린다. 이것이 대조 실험이다.
+%      잡음이 없는데도 행들이 갈라진다면 그 차이는 필터의 위상 지연이지 잡음
+%      증폭이 아니며, 그러면 이 절의 논지 전체가 다른 이야기가 된다.
+%
+%      The four rows are then run again with the noise switched off. That is
+%      the control experiment: if the rows still differed, the difference would
+%      be the filter's phase lag rather than noise amplification, and the whole
+%      argument of the section would be about something else.
+%
+%  만드는 것 / what it produces
+%      표 셋, 블록도, 그리고 img/W02_result_pd.png
+%      Three tables, the block diagram, and img/W02_result_pd.png
 
 varargin = {};   % kept so the override loop below still works unchanged
 %W02_PD_RUN  Run W02_I_pseudo_derivative.slx and report what the derivative filter buys.

@@ -1,10 +1,12 @@
 function W02_P1_start(mdl)
-%W02_P1_START  Create the starting model for the Week 2 laboratory problems.
+%W02_P1_START  2주차 실습 문제의 출발 모델을 만든다.
+%              Create the starting model for the Week 2 laboratory problems.
 %
-%   >> W02_P1_start                 creates W02_P1.slx
-%   >> W02_P1_start('W02_P1_kim')   creates a model under another name
+%   >> W02_P1_start                 W02_P1.slx 를 만든다 / creates W02_P1.slx
+%   >> W02_P1_start('W02_P1_kim')   다른 이름으로 만든다 / another name
 %
-%   WHAT THIS SCRIPT GIVES, AND WHAT IT WITHHOLDS
+%   무엇을 주고 무엇을 주지 않는가
+%   what this script gives, and what it withholds
 %
 %   It creates a model containing the hull and the thrust map, wired together
 %   and nothing else. The loop is the exercise.

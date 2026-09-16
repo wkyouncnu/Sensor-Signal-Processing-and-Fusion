@@ -1,10 +1,11 @@
 function W02_S1_speed_loop(mdl)
-%W02_S1_SPEED_LOOP  Solution to all three Week 2 problems in one model.
+%W02_S1_SPEED_LOOP  2주차 세 문제를 모두 푸는 하나의 모델.
+%                   Solution to all three Week 2 problems in one model.
 %
-%   >> W02_S1_speed_loop      builds W02_S1.slx
-%   >> W02_check(1,'W02_S1')  and 2, and 3
+%   >> W02_S1_speed_loop      W02_S1.slx 를 만든다 / builds W02_S1.slx
+%   >> W02_check(1,'W02_S1')  1, 2, 3 을 차례로 / and 2, and 3
 %
-%   WHY ONE MODEL AND NOT THREE
+%   왜 모델 셋이 아니라 하나인가 / why one model and not three
 %
 %   The three problems differ only in which parts of the loop are switched on:
 %

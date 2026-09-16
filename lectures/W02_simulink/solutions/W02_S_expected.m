@@ -1,10 +1,15 @@
 function W02_S_expected()
-%W02_S_EXPECTED  The result graphs a correct Week 2 submission must produce.
+%W02_S_EXPECTED  올바른 2주차 제출물이 내야 하는 결과 그래프를 만든다.
+%                The result graphs a correct Week 2 submission must produce.
 %
 %   >> W02_S_expected
 %
+%   모범답안을 세 가지로 돌려 문제마다 PNG 를 하나씩 ../problems/img/ 에 쓴다.
+%   모범답안 스크립트는 이 폴더에 남고 그 **출력만** problems/ 로 건너간다.
 %   Runs the reference solution three ways and writes one PNG per problem into
-%   ../problems/img/. The problem sheet shows those, so a student can compare
+%   ../problems/img/. The solution scripts stay in this folder; only their
+%   output crosses into problems/. The problem sheet shows those, so a student
+%   can compare
 %   a plot against the plot rather than against a number alone.
 %
 %   Only the OUTPUT crosses into problems/. The solution code stays here.

@@ -1,10 +1,12 @@
 function W03_P1_start(mdl)
-%W03_P1_START  Create the starting model for the Week 3 laboratory problems.
+%W03_P1_START  3주차 실습 문제의 출발 모델을 만든다.
+%              Create the starting model for the Week 3 laboratory problems.
 %
-%   >> W03_P1_start                 creates W03_P1.slx
-%   >> W03_P1_start('W03_P1_kim')   creates a model under another name
+%   >> W03_P1_start                 W03_P1.slx 를 만든다 / creates W03_P1.slx
+%   >> W03_P1_start('W03_P1_kim')   다른 이름으로 만든다 / another name
 %
-%   WHAT THIS SCRIPT GIVES, AND WHAT IT WITHHOLDS
+%   무엇을 주고 무엇을 주지 않는가
+%   what this script gives, and what it withholds
 %
 %   It creates a model containing the hull and the control allocation, wired
 %   together. The AUTOPILOT is the exercise.

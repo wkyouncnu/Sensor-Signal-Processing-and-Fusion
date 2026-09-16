@@ -1,10 +1,15 @@
 function live_track(N, E, psi, t, o)
-%LIVE_TRACK  Draw the vessel, its heading and its track while a model runs.
+%LIVE_TRACK  모델이 도는 동안 선체와 선수방위와 궤적을 실시간으로 그린다.
+%            Draw the vessel, its heading and its track while a model runs.
 %
 %   live_track(N, E, psi, t, o)
 %
+%   주차마다 있는 WXX_animate.m 은 모두 이 함수를 얇게 감싼 것이다. 그래서 실시간
+%   화면이 강의 전체에서 똑같이 보이고 똑같이 동작하며, 그렇지 않을 때 고칠 곳도
+%   한 군데뿐이다.
+%
 %   Every week's WXX_animate.m is a thin wrapper around this function, so the
-%   live view looks and behaves identically across the course and there is one
+%   live view looks and behaves identically across the course, and there is one
 %   place to fix when it does not.
 %
 %   INPUTS

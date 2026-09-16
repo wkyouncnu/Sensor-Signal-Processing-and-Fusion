@@ -1,11 +1,23 @@
 function add_otter_plant(mdl, name, pos, cfg)
-%ADD_OTTER_PLANT  Insert the Otter USV motion model as a Simulink subsystem.
+%ADD_OTTER_PLANT  Otter USV 운동모델을 Simulink 서브시스템으로 삽입한다.
+%                 Insert the Otter USV motion model as a Simulink subsystem.
 %
 %   add_otter_plant(mdl, name, pos, cfg)
 %
-%     mdl   model name, already created with new_system
-%     name  subsystem name, e.g. 'Otter plant'
+%     mdl   new_system 으로 이미 만들어 둔 모델의 이름
+%           the model name, already created with new_system
+%     name  서브시스템 이름, 예를 들어 'Otter USV'
+%           the subsystem name, e.g. 'Otter USV'
 %     pos   [x1 y1 x2 y2]
+%
+%   선체는 모든 주차가 같은 것을 쓴다 / every week uses the same hull
+%       otter.m 을 고치지 않고 그대로 호출한다. 주차마다 달라지는 것은 그 앞에
+%       붙는 제어기와 유도법칙뿐이다. 그래야 주차 사이의 차이가 제어의 차이이고
+%       모델의 차이가 아니라고 말할 수 있다.
+%
+%       otter.m is called unmodified. What changes from week to week is what is
+%       placed in front of it, so that a difference between weeks can be
+%       attributed to the control and not to the model.
 %     cfg   struct from otter_config; defaults to otter_config('base')
 %
 %   INTERFACE

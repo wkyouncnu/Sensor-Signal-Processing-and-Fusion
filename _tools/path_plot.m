@@ -1,11 +1,22 @@
 function path_plot(WP, R, N, E, PSI, COL, LBL, V)
-%PATH_PLOT  The standard track figure of the guidance weeks.
+%PATH_PLOT  유도 주차의 표준 궤적 그림.
+%           The standard track figure of the guidance weeks.
 %
 %   path_plot(WP, R, N, E, PSI, COL, LBL, V)
 %
-%     WP    n-by-2 waypoint list, [N E] per row
-%     R     switching parameter [m]; the circles drawn around each waypoint
-%     N,E   position, one COLUMN per vessel
+%     WP    웨이포인트 목록, 한 행이 [N E]
+%           the waypoint list, [N E] per row
+%     R     전환 파라미터 [m]. 각 웨이포인트 둘레에 그려지는 원의 반지름이다
+%           the switching parameter [m], drawn as a circle about each waypoint
+%     N,E   위치. 배 한 척이 한 **열**이다
+%           position, one column per vessel
+%
+%   경로선·웨이포인트·수락반경·선체·조류 화살표를 한 함수가 모두 그린다. 절마다
+%   따로 그리면 같은 그림이 절마다 조금씩 달라지고, 그 차이에는 아무 뜻이 없다.
+%   One function draws the path, the waypoints, the acceptance radii, the hulls
+%   and the current arrow. Drawn separately in each section, the same figure
+%   would differ slightly from section to section, and the differences would
+%   mean nothing.
 %     PSI   heading [deg], one column per vessel
 %     COL   m-by-3 RGB, one row per vessel
 %     LBL   cell array of legend labels

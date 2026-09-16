@@ -1,8 +1,13 @@
 function y = A1_read(o)
-%A1_READ  This appendix's log, with named fields.
+%A1_READ  이 부록의 로그를 이름 붙은 필드로 바꾼다.
+%         This appendix's log, with named fields.
+%
+%   add_measurement 이 [u v r N E psi | tau] 를 기록하므로 일반화 힘은 7 열부터
+%   9 열까지에 놓인다. 여기서 이름을 붙여 두면 다른 스크립트가 열 번호를 세지
+%   않아도 된다.
 %
 %   add_measurement logs [u v r N E psi | tau], so the generalised force
-%   occupies columns 7 to 9. Naming them here keeps the scripts free of
+%   occupies columns 7 to 9. Naming them here keeps the other scripts free of
 %   column arithmetic.
 
 y.u   = o.y(:,1);            % surge velocity        [m/s]

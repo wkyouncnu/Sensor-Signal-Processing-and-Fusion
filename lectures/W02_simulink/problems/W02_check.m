@@ -1,11 +1,18 @@
 function pass = W02_check(problem, mdl)
-%W02_CHECK  Run a student's Week 2 model and check it against the lecture.
+%W02_CHECK  학생이 만든 2주차 모델을 돌려 강의의 측정값과 대조한다.
+%           Run a student's Week 2 model and check it against the lecture.
 %
-%   W02_check(1)                checks W02_P1.slx
-%   W02_check(2, 'W02_P1_kim')  checks another model
-%   pass = W02_check(3, mdl)    returns true when every test passed
+%   W02_check(1)                W02_P1.slx 를 검사한다 / checks W02_P1.slx
+%   W02_check(2, 'W02_P1_kim')  다른 모델을 검사한다 / checks another model
+%   pass = W02_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   WHAT IS BEING CHECKED, AND WHY THESE NUMBERS
+%   아래 목표값은 모두 강의의 절 스크립트가 실제로 측정한 것이다. 이 값을
+%   재현하는 모델은 도면이 어떻게 생겼든 강의와 같은 물리를 하고 있다.
+%   Every target below was measured by the lecture's own section scripts, so a
+%   model that reproduces them is doing the same physics whatever it looks like.
+%
+%   무엇을 검사하며 이 수치들은 어디서 왔는가
+%   what is being checked, and where these numbers come from
 %
 %   Every target below was MEASURED by the lecture's own section scripts.
 %

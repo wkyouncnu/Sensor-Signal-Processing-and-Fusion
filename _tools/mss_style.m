@@ -1,9 +1,12 @@
 function n = mss_style(mdl, verbose)
-%MSS_STYLE  Resize every block in a model to the sizes MSS uses.
+%MSS_STYLE  모델 안의 모든 블록 크기를 MSS 가 쓰는 치수로 맞춘다.
+%           Resize every block in a model to the sizes MSS uses.
 %
-%   mss_style(mdl)              apply, silently
-%   n = mss_style(mdl, true)    apply, list what changed, return the count
+%   mss_style(mdl)              조용히 적용한다 / apply, silently
+%   n = mss_style(mdl, true)    적용하고 무엇이 바뀌었는지 나열한 뒤 개수를 돌려준다
+%                               apply, list what changed, return the count
 %
+%   빌더의 끝에서, save_system 직전에 한 번 부른다.
 %   Call it once at the end of a builder, just before save_system.
 %
 %   WHERE THE NUMBERS COME FROM

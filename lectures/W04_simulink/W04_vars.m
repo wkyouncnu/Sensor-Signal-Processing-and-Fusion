@@ -1,10 +1,16 @@
 function V = W04_vars()
-%W04_VARS  Every variable W04_guidance.slx needs, in one struct.
+%W04_VARS  W04_guidance.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
+%          Every variable W04_guidance.slx needs, in one struct.
 %
-%   Same split as Weeks 1 to 3: W04_0_setup fills the BASE workspace so a
-%   student can open the model and press Run; this returns the same numbers as
-%   a struct so that run_sim can vary one of them without leaving the
-%   workspace in the state of the last run.
+%   1주차부터 3주차까지와 같은 구조이다. W04_0_setup 은 같은 값들을 기본
+%   작업공간에 채워 학생이 모델을 열고 Run 을 누를 수 있게 하고, 이 함수는 같은
+%   값들을 구조체로 돌려주어 run_sim 이 값 하나만 바꾸어 돌릴 때 작업공간이
+%   마지막 실행의 상태로 남지 않게 한다.
+%
+%   The same arrangement as Weeks 1 to 3: W04_0_setup fills the base workspace
+%   so that opening the model and pressing Run is enough, while this returns
+%   the same numbers as a struct so that run_sim can vary one of them without
+%   leaving the workspace in the state of the last run.
 
 mss_path();
 c = otter_config('base');

@@ -1,9 +1,17 @@
 function f = W04_plot(y, V, ttl, rows)
-%W04_PLOT  Track and cross-track error of the four guidance laws.
+%W04_PLOT  네 유도법칙의 궤적과 경로이탈 오차를 그린다.
+%          Track and cross-track error of the four guidance laws.
 %
-%   W04_plot                       the run sitting in the base workspace
-%   W04_plot(y, V, ttl, rows)      a struct from W04_read, for a section script
-%   f = W04_plot(...)              the figure handle
+%   W04_plot                       기본 작업공간에 있는 실행 결과
+%                                  the run sitting in the base workspace
+%   W04_plot(y, V, ttl, rows)      W04_read 가 만든 구조체. 절 스크립트가 쓴다
+%                                  a struct from W04_read, for a section script
+%   f = W04_plot(...)              그림 핸들 / the figure handle
+%
+%   rows 로 그릴 법칙을 고른다. 절마다 비교하려는 대상이 다르기 때문이다 — 절 D 는
+%   atan2 와 LOS 둘만, 절 G 는 넷 모두를 그린다.
+%   rows selects which laws to draw, because each section compares a different
+%   pair or group: section D draws atan2 against LOS, section G draws all four.
 %
 %   Called by the model's StopFcn, so pressing Run in Simulink produces the
 %   figure without any further command, and by the section scripts, so the

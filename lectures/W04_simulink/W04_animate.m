@@ -1,10 +1,14 @@
 function W04_animate(u, v, r, N, E, psi, t)
-%W04_ANIMATE  Live view for W04_guidance.slx — waypoint following.
+%W04_ANIMATE  W04_guidance.slx 의 실시간 화면 — 웨이포인트 추종.
+%             Live view for W04_guidance.slx: waypoint following.
 %
-%   Called every step by the Animate block inside Measurements. The drawing
-%   itself is in _tools/live_dash.m, shared by every week of this course.
+%   Measurements 안의 Animate 블록이 매 스텝 부른다. 실제로 그리는 일은 모든
+%   주차가 함께 쓰는 _tools/live_dash.m 이 한다.
+%   Called at every step by the Animate block inside Measurements; the drawing
+%   itself is done by _tools/live_dash.m, shared by every week of this course.
 %
-%   THIS WRAPPER WAS MISSING UNTIL 2026-09-08
+%   이력 — 2026-09-08 까지 이 파일이 없었다
+%   history: this wrapper did not exist until 2026-09-08
 %
 %   W04_1_build_guidance has always created an Animate block that calls
 %   W04_animate, and W04_0_setup has always set animate = 1, but the function

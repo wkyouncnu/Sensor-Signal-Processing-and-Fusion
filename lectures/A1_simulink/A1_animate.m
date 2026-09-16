@@ -1,10 +1,14 @@
 function A1_animate(u, v, r, N, E, psi, t)
-%A1_ANIMATE  Live view for A1_actuation.slx.
+%A1_ANIMATE  A1_actuation.slx 의 실시간 화면.
+%            Live view for A1_actuation.slx.
 %
-%   Called every step by the model's Animate block. The drawing itself is in
-%   _tools/live_dash.m, shared by every week of this course.
+%   모델의 Animate 블록이 매 스텝 부른다. 실제로 그리는 일은 모든 주차가 함께
+%   쓰는 _tools/live_dash.m 이 한다.
+%   Called at every step by the model's Animate block; the drawing itself is
+%   done by _tools/live_dash.m, shared by every week of this course.
 %
-%   INPUTS are in the units otter.m works in — psi in rad, r in rad/s. The
+%   입력은 otter.m 이 쓰는 단위 그대로이다 — psi 는 rad, r 은 rad/s.
+%   The inputs are in the units otter.m works in: psi in rad and r in rad/s. The
 %   conversion to degrees happens once, inside live_dash.
 %
 %   WHAT TO WATCH

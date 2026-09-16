@@ -1,13 +1,27 @@
 function set_mlfcn(blk, lines, outName, outSize, sampleTime)
-%SET_MLFCN  Put a script into a MATLAB Function block, and size its output.
+%SET_MLFCN  MATLAB Function 블록에 코드를 넣고, 출력의 크기를 명시한다.
+%           Put a script into a MATLAB Function block, and size its output.
 %
 %   set_mlfcn(blk, lines)
 %   set_mlfcn(blk, lines, outName, outSize)
 %   set_mlfcn(blk, lines, outName, outSize, 'h')
 %
-%     blk         full path of an existing MATLAB Function block
-%     lines       cell array of source lines, one per element
-%     outName     output variable to give an explicit size, e.g. 'xdot'
+%     blk         이미 존재하는 MATLAB Function 블록의 전체 경로
+%                 the full path of an existing MATLAB Function block
+%     lines       소스 줄들의 셀 배열. 한 원소가 한 줄
+%                 a cell array of source lines, one per element
+%     outName     크기를 명시할 출력 변수의 이름, 예를 들어 'xdot'
+%                 the output variable to give an explicit size, e.g. 'xdot'
+%
+%   왜 크기를 명시하는가 / why the size is stated
+%       Simulink 는 출력 크기를 추론하려 하고, 추론에 실패하면 컴파일 시점에야
+%       알려 준다. 그때 나오는 메시지는 블록 안의 어느 줄이 원인인지 말해 주지
+%       않는다. 크기를 미리 못박아 두면 그 부류의 오류가 아예 생기지 않는다.
+%
+%       Simulink tries to infer the output size and reports failure only at
+%       compile time, in a message that does not say which line inside the
+%       block caused it. Fixing the size in advance removes that class of
+%       error altogether.
 %     outSize     size string, e.g. '[12 1]'
 %     sampleTime  discrete rate, e.g. 'h'. Required whenever the script keeps
 %                 a PERSISTENT variable

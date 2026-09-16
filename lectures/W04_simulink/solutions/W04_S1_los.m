@@ -1,10 +1,12 @@
 function W04_S1_los(mdl)
-%W04_S1_LOS  Solution to all three Week 4 problems in one model.
+%W04_S1_LOS  4주차 세 문제를 모두 푸는 하나의 모델.
+%            Solution to all three Week 4 problems in one model.
 %
-%   >> W04_S1_los             builds W04_S1.slx
-%   >> W04_check(1,'W04_S1')  and 2, and 3
+%   >> W04_S1_los             W04_S1.slx 를 만든다 / builds W04_S1.slx
+%   >> W04_check(1,'W04_S1')  1, 2, 3 을 차례로 / and 2, and 3
 %
-%   THE GUIDANCE LAYER, WHICH IS THE WHOLE EXERCISE
+%   유도 계층 — 이 문제의 전부이다
+%   the guidance layer, which is the whole exercise
 %
 %       pi_p  = atan2(y_next - y_i,  x_next - x_i)
 %       y_e^p = -(x - x_i) sin(pi_p) + (y - y_i) cos(pi_p)

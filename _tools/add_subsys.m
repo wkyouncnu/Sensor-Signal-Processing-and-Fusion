@@ -1,11 +1,14 @@
 function sub = add_subsys(mdl, name, pos, ins, outs, colour)
-%ADD_SUBSYS  An empty subsystem with named ports, ready to be filled.
+%ADD_SUBSYS  이름 붙은 포트를 가진 빈 서브시스템. 안을 채우기만 하면 된다.
+%            An empty subsystem with named ports, ready to be filled.
 %
 %   sub = add_subsys(mdl, name, pos, ins, outs, colour)
 %
-%     mdl     model name
-%     name    subsystem name, e.g. 'Heading autopilot'
-%     pos     [x1 y1 x2 y2], normally from gnc_chain
+%     mdl     모델 이름 / the model name
+%     name    서브시스템 이름, 예를 들어 'Heading autopilot'
+%             the subsystem name, e.g. 'Heading autopilot'
+%     pos     [x1 y1 x2 y2], 보통 gnc_chain 이 준다
+%             normally taken from gnc_chain
 %     ins     cell array of inport names,  e.g. {'psi_d','x'}
 %     outs    cell array of outport names, e.g. {'tau_N'}
 %     colour  optional BackgroundColor string
