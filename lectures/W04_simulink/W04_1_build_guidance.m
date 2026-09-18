@@ -420,7 +420,8 @@ note(m, [40 400 940 900], strjoin({ ...
 '   points.'
 ''
 '2  WITH A CURRENT, row 2 settles with a PERMANENT cross-track error of'
-'   about Delta*tan(beta_c). Rows 3 and 4 remove it, by different means.'
+'   about Delta*tan(beta), beta being the crab angle. Rows 3 and 4 remove'
+'   it, by different means. (beta_c is the direction of the current.)'
 ''
 '3  b_hat in row 4 converges to the crab angle itself. Read it off the'
 '   scope and compare it with atan2(v, u).'}, newline));

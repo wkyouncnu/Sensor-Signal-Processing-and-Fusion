@@ -321,7 +321,7 @@ $$
 | Element | Meaning |
 |---|---|
 | orange | $u$ and $v$, the components the vessel measures in $\{b\}$ |
-| blue | the velocity itself — one physical vector, drawn once |
+| green solid | the velocity itself — one physical vector, drawn once |
 | green dashed | $\dot{x}^n$ and $\dot{y}^n$, the components that the position actually changes by |
 | right-hand panel | the arithmetic, and the length check |
 
@@ -340,6 +340,50 @@ $$
 | speed in $\{n\}$, $\sqrt{(\dot{x}^n)^2+(\dot{y}^n)^2}$ | $2.0616$ m/s |
 
 - The two agree because a rotation preserves length. **That equality is the cheapest available check on any frame conversion**, and it catches a transposed or mis-signed matrix immediately.
+
+### One velocity, read in two frames
+
+- The worked example changes heading and sway at the same time, so it cannot show which of the two is responsible for what. The figure below separates them. Panels (1) to (3) hold $u = 1$ m/s and $v = 0$ and turn only the heading; panel (4) keeps the heading of panel (1) and adds a sway velocity.
+
+![One velocity, read in the body frame and in the NED frame, at four headings](../figures/w01-four-headings.svg)
+
+**Reading the figure**
+
+| Element | Meaning |
+|---|---|
+| orange | $u$ and $v$, measured along the vessel's own axes. In (1) to (3) $u$ lies exactly on the velocity, because $v = 0$ |
+| pale blue | the velocity itself — one vector, drawn once |
+| green dashed | $\dot x^n$ and $\dot y^n$, the components of that vector along North and East — the same green as the figure above |
+| grey dashed, grey dotted | the body axes: $x_b$ through the bow, $y_b$ to starboard |
+| violet | the angle between where the bow points and where the vessel goes |
+
+| Panel | Condition | $u$ | $v$ | $\dot x^n$ | $\dot y^n$ | Reading |
+|---|---|---|---|---|---|---|
+| (1) | $\psi = 0°$ | $1.00$ | $0$ | $1.00$ | $0$ | points north, goes north |
+| (2) | $\psi = 90°$ | $1.00$ | $0$ | $0$ | $1.00$ | $u$ unchanged, yet $\dot x^n$ is zero |
+| (3) | $\psi = 45°$ | $1.00$ | $0$ | $0.71$ | $0.71$ | one $u$ divided between two components |
+| (4) | $\psi = 0°$, pushed sideways | $1.00$ | $0.50$ | $1.00$ | $0.50$ | points north, goes north-east |
+
+- In (1), (2) and (3), $u$ is $1.00$ every time. Only the heading changed, and that alone changed $\dot x^n$ and $\dot y^n$. $u$ and $v$ are fixed to the hull and turn with it; $\dot x^n$ and $\dot y^n$ are fixed to the Earth and do not.
+- Panel (4) is the converse. Its heading is that of panel (1), yet $\dot y^n$ is no longer zero, because the vessel is now moving sideways as well as forwards.
+
+**What the figure says**
+
+Four symbols, one arrow. $u$, $v$, $\dot x^n$ and $\dot y^n$ look like four different quantities, and they are two readings of a single velocity — one taken against axes that turn with the vessel, one against axes that stay with the Earth. The length check of the worked example holds in every panel: $\sqrt{u^2 + v^2} = \sqrt{(\dot x^n)^2 + (\dot y^n)^2} = 1.00$ in the first three and $1.118$ in the fourth.
+
+Panel (4) carries the idea the rest of the course depends on. The heading $\psi$ says where the bow points. The direction the vessel actually travels is the **course**,
+
+$$
+\chi = \operatorname{atan2}\!\left(\dot y^n, \dot x^n\right),
+$$
+
+and in panels (1) to (3) the two coincide because $v = 0$. In panel (4) they part by
+
+$$
+\chi - \psi = \beta = \operatorname{atan2}(v, u) = \operatorname{atan2}(0.50,\ 1.00) = 26.6° ,
+$$
+
+which is the **crab angle**. §1-12 shows where a sway velocity comes from when no sway force is applied, and Week 4 has to steer a vessel along a path while its bow points $\beta$ away from it. `W01_frames` prints the four rows of the table above.
 
 > [!caution] The symptom of getting this wrong
 > Integrating $u$ to obtain a north position gives a track that is correct at $\psi = 0$, plausible at small headings, and increasingly wrong as the vessel turns — with no error, no warning and no `NaN`. Week 1's model is deliberately run at three different headings so that the failure would be visible if it were there.
@@ -1281,7 +1325,7 @@ $$
 \beta = \operatorname{atan2}(v, u), \qquad \chi = \psi + \beta
 $$
 
-where $\chi$ is the course angle. Week 4 §4-7 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error, and measures it as $\Delta\tan\beta_c$.
+where $\chi$ is the course angle. Week 4 §4-7 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error, and measures it as $\Delta\tan\beta$.
 
 ## 1-13. Ocean current — a velocity, not a force
 

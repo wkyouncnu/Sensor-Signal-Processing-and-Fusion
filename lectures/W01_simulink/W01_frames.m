@@ -58,6 +58,30 @@ T = table( ...
 
 if nargout < 1, disp(T); end
 
+%  ---- §1-4 의 네 칸 그림 / the four panels of §1-4 --------------------------
+%  (1)(2)(3) 은 u = 1, v = 0 에서 선수각만 바꾸고, (4) 는 (1) 의 선수각에 v 를
+%  더한다. figures/w01-four-headings.svg 와 강의의 표가 이 수를 쓴다.
+%  Panels (1) to (3) hold u = 1, v = 0 and turn only the heading; panel (4)
+%  keeps the heading of (1) and adds a sway velocity. The figure
+%  w01-four-headings.svg and the table of §1-4 quote these numbers.
+PANEL = [  0  1  0
+          90  1  0
+          45  1  0
+           0  1  0.5 ];
+if nargout < 1
+    fprintf('\n  §1-4  one velocity, read in two frames\n\n');
+    fprintf('    %5s %6s %6s %6s %8s %8s %8s %9s %9s\n', 'panel', 'psi', 'u', 'v', ...
+            'xn_dot', 'yn_dot', '|V|', 'beta', 'chi');
+    fprintf('    %s\n', repmat('-', 1, 74));
+    for k = 1:4
+        pk = deg2rad(PANEL(k,1));
+        vk = [cos(pk) -sin(pk); sin(pk) cos(pk)] * PANEL(k,2:3).';
+        fprintf('    %5d %6g %6.2f %6.2f %8.4f %8.4f %8.4f %9.3f %9.3f\n', k, ...
+                PANEL(k,1), PANEL(k,2), PANEL(k,3), vk(1), vk(2), norm(vk), ...
+                rad2deg(atan2(PANEL(k,3), PANEL(k,2))), rad2deg(atan2(vk(2), vk(1))));
+    end
+end
+
 %% ---- the figure ---------------------------------------------------------
 %  Uses the turning run if one is supplied, and generates the same motion
 %  analytically if not, so the function is useful on its own.

@@ -1,0 +1,119 @@
+% figures/w01-four-headings.svg — 같은 속도 하나를 두 좌표계로 읽는다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w01-four-headings.tex figures/w01-four-headings.svg
+%
+% 네 칸. (1)(2)(3) 은 u 를 1 로 두고 선수각만 바꾼다 — 바뀌는 것은 NED 성분뿐이다.
+% (4) 는 선수각을 (1) 과 같게 두고 v 만 더한다 — 선수각이 같은데 진행 방향이 바뀐다.
+%
+% 수치 (awk 로 계산, 강의 §1-4 의 표와 같다):
+%   (1) psi =  0  u=1 v=0    xn_dot=1.0000 yn_dot=0.0000  |V|=1.0000
+%   (2) psi = 90  u=1 v=0    xn_dot=0.0000 yn_dot=1.0000  |V|=1.0000
+%   (3) psi = 45  u=1 v=0    xn_dot=0.7071 yn_dot=0.7071  |V|=1.0000
+%   (4) psi =  0  u=1 v=0.5  xn_dot=1.0000 yn_dot=0.5000  |V|=1.1180
+%       beta = atan2(v,u) = 26.565 deg = chi - psi,  chi = atan2(yn_dot, xn_dot)
+%
+% 화면 규약 : x^n(북) 이 위, y^n(동) 이 오른쪽. 북에서 psi 인 방향의 화면각은 90 - psi.
+% 바디 좌표계는 scope 를 그 화면각만큼 돌려서 그린다. 그 안에서 +x 가 선수이고
+% **-y 가 우현**이다 (화면각 90-psi-90). 노드는 transform shape 을 쓰지 않으므로
+% 글자는 돌지 않는다.
+%
+% N 과 E 를 그림에 쓰지 않는다 (사용자 지시, 2026-09-12). 축 이름은 x^n, y^n 이고
+% 속도 성분은 그 점 미분이다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{16}           % 1 m/s = 16 mm
+\def\P{47}           % 칸 사이 간격
+
+% ---- 칸 하나를 그리는 매크로 -----------------------------------------------
+%  #1 x 오프셋   #2 psi [deg]   #3 u   #4 v   #5 xn_dot   #6 yn_dot
+\newcommand{\panel}[6]{%
+\begin{scope}[shift={(#1,0)}]
+  \pgfmathsetmacro{\A}{90-#2}                 % 선수의 화면각
+  % NED 축
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,-3) -- (0,27);
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (-3,0) -- (27,0);
+  \node[font=\scriptsize, anchor=south] at (0,27) {$x^n$};
+  \node[font=\scriptsize, anchor=west]  at (27,0) {$y^n$};
+  % 바디 좌표계 : 선체와 두 축
+  \begin{scope}[rotate=\A]
+    \draw[soft, line width=0.4pt, fill=black!6]
+         (4,0) -- (1.5,1.8) -- (-3.5,1.8) -- (-3.5,-1.8) -- (1.5,-1.8) -- cycle;
+    \draw[soft, line width=0.35pt, densely dashed] (4,0) -- (24,0);
+    \draw[soft, line width=0.35pt, densely dotted] (0,-1.8) -- (0,-11);
+  \end{scope}
+  % 속도 벡터 자체 — 굵고 옅게 깔아 u 와 겹쳐도 둘 다 보이게
+  \draw[flow, line width=2.4pt, opacity=0.35, -{Stealth[length=6pt,width=5pt]}]
+        (0,0) -- ({#6*\S},{#5*\S});
+  % u 와 v — 바디에서 잰 것, 선수 끝에 이어 붙인다
+  \begin{scope}[rotate=\A]
+    \draw[alng, line width=0.9pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- ({#3*\S},0);
+  \end{scope}
+\end{scope}}
+
+% ===================== 네 칸 ==============================================
+\panel{0}{0}{1}{0}{1}{0}
+\panel{\P}{90}{1}{0}{0}{1}
+\panel{2*\P}{45}{1}{0}{0.7071}{0.7071}
+\panel{3*\P}{0}{1}{0.5}{1}{0.5}
+
+% ---- 칸마다 다른 것 ---------------------------------------------------------
+% (1) 선수가 북쪽. u 가 곧 x^n 방향 성분
+\node[font=\small\bfseries, anchor=south west] at (-4,31) {(1)\ $\psi = 0^\circ$};
+\node[alng, font=\scriptsize, anchor=east] at (-1,9) {$u$};
+\node[pathc, font=\scriptsize, anchor=east] at (-1,16) {$\dot x^n$};
+
+% (2) 선수가 동쪽. u 는 그대로인데 x^n 성분이 0
+\node[font=\small\bfseries, anchor=south west] at ({\P-4},31) {(2)\ $\psi = 90^\circ$};
+\draw[soft, line width=0.45pt] ({\P},10) arc (90:0:10);
+\node[soft, font=\scriptsize] at ({\P+8.5},8.5) {$\psi$};
+\node[alng, font=\scriptsize, anchor=south] at ({\P+5},0.6) {$u$};   % 호 끝(10,0)을 피한다
+\node[pathc, font=\scriptsize, anchor=north] at ({\P+16},-1) {$\dot y^n$};
+
+% (3) 선수가 북동. u 하나가 두 성분으로
+\node[font=\small\bfseries, anchor=south west] at ({2*\P-4},31) {(3)\ $\psi = 45^\circ$};
+\draw[soft, line width=0.45pt] ({2*\P},14) arc (90:45:14);
+\node[soft, font=\scriptsize] at ({2*\P+5},15.5) {$\psi$};
+\draw[pathc, line width=0.4pt, densely dashed] ({2*\P+11.314},11.314) -- ({2*\P},11.314);
+\draw[pathc, line width=0.4pt, densely dashed] ({2*\P+11.314},11.314) -- ({2*\P+11.314},0);
+\node[pathc, font=\scriptsize, anchor=east]  at ({2*\P-1},11.314) {$\dot x^n$};
+\node[pathc, font=\scriptsize, anchor=north] at ({2*\P+11.314},-1) {$\dot y^n$};
+\node[alng, font=\scriptsize, anchor=north west] at ({2*\P+6},5) {$u$};
+
+% (4) 선수는 (1) 과 같이 북쪽인데 옆으로 밀린다
+\node[font=\small\bfseries, anchor=south west] at ({3*\P-4},31)
+     {(4)\ $\psi = 0^\circ$, pushed sideways};
+%  v 는 u 의 끝에서 우현(동쪽)으로. psi = 0 이면 바디 축과 NED 축이 겹치므로
+%  x^n 쪽 투영선은 v 화살표 자체와 같은 선이다 — 따로 긋지 않는다.
+\draw[alng, line width=0.9pt, -{Stealth[length=4pt,width=3pt]}]
+      ({3*\P},16) -- ({3*\P+8},16);
+\node[alng, font=\scriptsize, anchor=south] at ({3*\P+4},16.4) {$v$};
+\node[alng, font=\scriptsize, anchor=east]  at ({3*\P-1},9) {$u$};
+\draw[pathc, line width=0.4pt, densely dashed] ({3*\P+8},16) -- ({3*\P+8},0);
+\node[pathc, font=\scriptsize, anchor=east]  at ({3*\P-1},16) {$\dot x^n$};
+\node[pathc, font=\scriptsize, anchor=north] at ({3*\P+8},-1) {$\dot y^n$};
+%  크랩각 : 선수(화면 90도) 와 진행 방향(화면 63.43도) 사이
+\draw[accent, line width=0.55pt] ({3*\P},12) arc (90:63.435:12);
+\node[accent, font=\scriptsize] at ({3*\P+4.2},13.6) {$\beta$};
+
+% ===================== 칸 아래 수치 =========================================
+\foreach \i/\uu/\vv/\xd/\yd in {0/1.00/0/1.00/0, 1/1.00/0/0/1.00,
+                                2/1.00/0/0.71/0.71, 3/1.00/0.50/1.00/0.50} {
+  \node[alng, font=\scriptsize, anchor=west]  at ({\i*\P-4},-15) {$u = \uu$,\ \ $v = \vv$};
+  \node[pathc, font=\scriptsize, anchor=west] at ({\i*\P-4},-20) {$\dot x^n = \xd$,\ \ $\dot y^n = \yd$};
+}
+\node[accent, font=\scriptsize, anchor=west] at ({3*\P-4},-25) {$\beta = \operatorname{atan2}(v,u) = 26.6^\circ$};
+
+% ---- 아래 한 줄 : 색의 뜻 -----------------------------------------------------
+\draw[soft, line width=0.3pt] (-4,-30) -- ({3*\P+36},-30);
+\node[note, anchor=north west, align=left, text width=180mm] at (-4,-32) {%
+  \textcolor{alng}{orange}: $u$, $v$, measured along the vessel's own axes \quad
+  \textcolor{flow}{blue}: the velocity itself, one vector \quad
+  \textcolor{pathc}{green}: $\dot x^n$, $\dot y^n$, its components along North and East \quad
+  \textcolor{accent}{violet}: the crab angle};
+
+\end{tikzpicture}
+\end{document}
