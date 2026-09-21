@@ -6,6 +6,7 @@ function R = W02_read(model, varargin)
 %   R = W02_read('W02_H_antiwindup', 'block_mode', 'none')   PID 블록의 안티와인드업 방식
 %
 %   R.t, R.y_d, R.y, R.tau, R.I, R.D   (두 줄 모델은 R.y_blk, R.tau_blk 도)
+%   W02_B_three_ways 는 R.x_ode, R.x_tf, R.x_ss / W02_B_second_order 는 R.y_d, R.y
 
 V = W02_vars();
 in = Simulink.SimulationInput(model);
@@ -25,7 +26,12 @@ y = squeeze(L.signals.values);  if size(y,1) < size(y,2), y = y.'; end
 %  열 순서는 모델의 Scope 와 같다: [위치 칸, 힘 칸]
 %  Column order is the Scope's: [position panel, force panel]
 R.t = L.time;  z = zeros(size(R.t));
+R.V = V;
+if strcmp(model, 'W02_B_three_ways')                                   % 세 줄 / three rows
+    R.x_ode = y(:,1);  R.x_tf = y(:,2);  R.x_ss = y(:,3);  return
+end
 switch size(y,2)
+    case 2, R.y_d = y(:,1); R.y = y(:,2);                                          % 표준 2차 / standard form
     case 3, R.y_d = y(:,1); R.y = y(:,2); R.tau = y(:,3); R.I = z; R.D = z;        % P
     case 4, R.y_d = y(:,1); R.y = y(:,2); R.tau = y(:,3); R.I = z; R.D = y(:,4);   % P + D
     case 5, R.y_d = y(:,1); R.y = y(:,2); R.tau = y(:,3); R.I = y(:,4); R.D = y(:,5);

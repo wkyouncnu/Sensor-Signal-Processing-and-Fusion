@@ -1,9 +1,9 @@
 %% W02 · 절 I — 튜닝 순서를 따라가 본다 / Section I — the tuning order, step by step
-%  모델 W02_I_tuning 에서 §2-9 의 순서를 그대로 밟는다:
+%  모델 W02_I_tuning 에서 §2-12 의 순서를 그대로 밟는다:
 %    1 P 만, Kp 는 단위로 (스프링 k = 2 N/m 의 다섯 배)   2 P 응답의 오버슛에서 감쇠비를 읽는다
 %    3 오버슛이 더 줄지 않을 때까지 Kd 를 올린다         4 오차가 남으면 1 % 안에 3 초 안에 들 때까지 Ki
 %    5 힘을 본다 (30 N 이 있다고 하자) — 넘으면 목표를 부드럽게
-%  Follows §2-9 on W02_I_tuning: P only (Kp from the units), read zeta from the overshoot,
+%  Follows §2-12 on W02_I_tuning: P only (Kp from the units), read zeta from the overshoot,
 %  raise Kd until the overshoot stops falling, add Ki until inside 1 % in 3 s, then check the force.
 %  만드는 것 / produces: img/W02_result_tuning.png
 

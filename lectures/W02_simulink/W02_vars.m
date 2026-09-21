@@ -1,6 +1,6 @@
 function V = W02_vars()
-%W02_VARS  W02_pid.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
-%          Every variable W02_pid.slx needs, in one struct.
+%W02_VARS  2주차 모델들이 필요로 하는 모든 변수를 하나의 구조체로.
+%          Every variable the Week 2 models need, in one struct.
 %
 %   무엇을 위한 파일인가 / what this file is for
 %       W02_0_setup 과 같은 값을 담는다. 두 파일이 따로 있는 이유는 쓰임이
@@ -34,6 +34,9 @@ V.tau_max = 1e6;   V.Kb = 2;
 
 V.noise_std = 0;   V.noise_ts = 0.01;
 V.bench_w = 0.5;   V.bench_noise = 0.005;   V.bench_T = 20;
+
+V.F_step = 1;      V.x0_pos = 0;     V.x0_vel = 0;
+V.zeta = 0.5;      V.wn = 2;
 
 V.T_final = 10;    V.h = 1e-3;
 end

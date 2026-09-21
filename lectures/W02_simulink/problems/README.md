@@ -40,7 +40,7 @@ setpoint → (+)(−) → Kp → τ → plant → y
               └──────────────────────┘
 ```
 
-**Predict before running.** From §2-3, $y_{ss} = K_p/(k + K_p)$ and $\zeta = b/(2\sqrt{m(k + K_p)})$ with $m = 1$, $b = 2$, $k = 2$. Write down both numbers for $K_p = 2$ and $K_p = 10$ **before** pressing Run.
+**Predict before running.** From §2-6, $y_{ss} = K_p/(k + K_p)$ and $\zeta = b/(2\sqrt{m(k + K_p)})$ with $m = 1$, $b = 2$, $k = 2$. Write down both numbers for $K_p = 2$ and $K_p = 10$ **before** pressing Run.
 
 **Verify.** `W02_check(1)`.
 
@@ -72,9 +72,9 @@ $$
 $$
 
 > [!warning] The derivative is filtered
-> Set the Transfer Fcn to numerator `[Kd*Nf 0]` and denominator `[1 Nf]`, as the block `D filter` of `W02_E_PID.slx`. A Derivative block would differentiate the corner of the step into an impulse (§2-7).
+> Set the Transfer Fcn to numerator `[Kd*Nf 0]` and denominator `[1 Nf]`, as the block `D filter` of `W02_E_PID.slx`. A Derivative block would differentiate the corner of the step into an impulse (§2-10).
 
-**Predict before running.** These are the gains the tuning order of §2-9 arrived at: $K_p = 10$, $K_d = 6$, $K_i = 8$, $N_f = 20$. From §2-7, what is the force at the instant of the step?
+**Predict before running.** These are the gains the tuning order of §2-12 arrived at: $K_p = 10$, $K_d = 6$, $K_i = 8$, $N_f = 20$. From §2-10, what is the force at the instant of the step?
 
 **Verify.** `W02_check(2)`.
 

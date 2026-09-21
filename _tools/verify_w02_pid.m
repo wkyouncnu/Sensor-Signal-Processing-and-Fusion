@@ -5,10 +5,10 @@ function ok = verify_w02_pid()
 %   ok = verify_w02_pid()
 %
 %   강의에서의 위치 / place in the lecture
-%       2주차 Part 1 의 식들(§2-3 ~ §2-10)이 옳은지 확인한다. 절 스크립트는 모델을
+%       2주차 Part 1 의 식들(§2-2 ~ §2-13)이 옳은지 확인한다. 절 스크립트는 모델을
 %       돌려 수를 잰다. 이 함수는 같은 수를 전달함수와 대수로 다시 구해, 두 길이
 %       같은 답에 닿는지 본다.
-%       Checks the equations of Part 1 of Week 2 (§2-3 to §2-10). The section
+%       Checks the equations of Part 1 of Week 2 (§2-2 to §2-13). The section
 %       scripts measure numbers by running the model; this recomputes the same
 %       numbers from transfer functions and algebra, to see whether the two
 %       routes arrive at the same answer.
@@ -32,6 +32,10 @@ function ok = verify_w02_pid()
 %        the first unstable sample time, found again on a fine grid
 %     8  손으로 만든 PID 와 PID 블록이 포화와 잡음 아래에서도 반올림 오차 안에서 같다
 %        the hand-built PID equals the PID block under saturation and noise
+%     9  상태공간 A = [0 1; -k/m -b/m] 이 전달함수 1/(m s^2 + b s + k) 와 같다 (§2-2)
+%        the state-space form gives back the transfer function (§2-2)
+%    10  표준 2차: 대역폭 공식, 첨두시간 pi/wd, 오버슛 공식이 계산값과 같다 (§2-3, §2-4)
+%        standard second order: bandwidth formula, peak time and overshoot (§2-3, §2-4)
 
 root = fileparts(fileparts(mfilename('fullpath')));
 wk   = fullfile(root, 'lectures', 'W02_simulink');
@@ -108,6 +112,28 @@ if ~isfile(fullfile(wk, 'W02_F_block_vs_hand.slx')), W02_1_build_pid('W02_F_bloc
 R = W02_read('W02_F_block_vs_hand', 'tau_max', 2.5, 'noise_std', 0.005);
 d8 = max([abs(R.y - R.y_blk); abs(R.tau - R.tau_blk)]);
 ok = report(ok, '8 hand-built = PID block (saturation, noise)', d8 < 1e-12, sprintf('%.1e', d8));
+
+%% 9 ----------------------------------------------------------------------
+A = [0 1; -k/m -b/m];  B = [0; 1/m];  C = [1 0];
+[n9, d9] = ss2tf(A, B, C, 0);
+e9 = max(abs([n9(end) d9] - [1/m 1 b/m k/m]));
+ok = report(ok, '9 state space [x; v] -> 1/(m s^2 + b s + k)', e9 < 1e-12, sprintf('%.1e', e9));
+
+%% 10 ---------------------------------------------------------------------
+e10 = 0;
+for z = [0.2 0.5 0.707 1 2]
+    for w = [1 2 4]
+        wB = w*sqrt(1 - 2*z^2 + sqrt(4*z^4 - 4*z^2 + 2));
+        e10 = max(e10, abs(wB - bandwidth(tf(w^2, [1 2*z*w w^2]), -10*log10(2)))/wB);
+        if z < 1
+            [yy, tt] = step(tf(w^2, [1 2*z*w w^2]), linspace(0, 20/w, 2e5));
+            [pk, ip] = max(yy);
+            e10 = max(e10, abs(tt(ip) - pi/(w*sqrt(1 - z^2)))*w);
+            e10 = max(e10, abs(100*(pk - 1) - 100*exp(-pi*z/sqrt(1 - z^2)))/100);
+        end
+    end
+end
+ok = report(ok, '10 second order: bandwidth, peak time, overshoot', e10 < 1e-3, sprintf('%.1e', e10));
 
 fprintf('\n  %s\n\n', ternary(ok, 'ALL CHECKS PASSED', '불일치 있음 — 위 FAIL 을 볼 것'));
 end

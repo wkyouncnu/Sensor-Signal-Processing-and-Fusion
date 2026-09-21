@@ -3,7 +3,7 @@
 %
 %  실행 / to run
 %      W02_0_setup
-%      open_system('W02_pid')      그리고 Run / then press Run
+%      open_system('W02_E_PID')    그리고 Run / then press Run
 %
 %  강의에서의 위치 / place in the lecture
 %      Part 2 절 A 이다. 학생이 고치는 유일한 파일이며, 모델의 블록에는 숫자가
@@ -82,6 +82,16 @@ noise_ts  = 0.01;     % 잡음이 새 값을 뽑는 주기 (100 Hz 센서) / noi
 bench_w     = 0.5;    % 사인파의 각주파수 / frequency of the sine        [rad/s]
 bench_noise = 0.005;  % 사인파에 섞는 잡음의 표준편차 / noise on the sine
 bench_T     = 20;     % 시험 시간 / run length                           [s]
+
+%% ---- 플랜트 세 가지 표현 (W02_B_three_ways) / the plant three ways --------
+F_step = 1;           % 질량을 미는 계단 힘 / step force on the mass       [N]
+x0_pos = 0;           % 처음 위치. 0.5 로 두면 전달함수 줄만 반응하지 못한다
+                      % initial position; with 0.5 only the transfer-function row misses it  [m]
+x0_vel = 0;           % 처음 속도 / initial velocity                     [m/s]
+
+%% ---- 표준 2차 시스템 (W02_B_second_order) / the standard second-order system
+zeta = 0.5;           % 감쇠비. 클수록 덜 출렁인다 / damping ratio; larger rings less
+wn   = 2;             % 고유진동수. 클수록 빠르다 / natural frequency; larger is faster  [rad/s]
 
 %% ---- 시뮬레이션 / simulation -----------------------------------------------
 T_final = 10;         % [s]

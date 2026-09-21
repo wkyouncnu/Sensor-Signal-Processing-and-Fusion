@@ -1,21 +1,26 @@
 function W02_1_build_pid(which)
-%W02_1_BUILD_PID  2주차 실습 모델 일곱 개를 코드로 만든다 — 절 하나에 모델 하나.
-%                 Generate the seven Week 2 models, one model per section.
+%W02_1_BUILD_PID  2주차 실습 모델 열 개를 코드로 만든다 — 절 하나에 모델 하나.
+%                 Generate the ten Week 2 models, one model per section.
 %
 %   실행 / to run
-%       W02_1_build_pid                  일곱 개 전부 / all seven
+%       W02_1_build_pid                  열 개 전부 / all ten
 %       W02_1_build_pid('W02_E_PID')     하나만 / one of them
 %
 %   강의에서의 위치 / place in the lecture
-%       Part 2 절 B 이다. 절 C~I 가 각자 자기 모델을 연다. 모델을 열고 Run 을 누르면
+%       Part 2 절 A 이다. 절 B~I 가 각자 자기 모델을 연다. 모델을 열고 Run 을 누르면
 %       캔버스의 Scope 하나에 위치(목표와 응답)와 힘(과 그 항들)이 함께 뜬다.
 %       명령창에서 Kp 를 바꾸고 다시 Run 을 누르면 바뀐 응답이 바로 보인다.
-%       Section B of Part 2. Sections C to I each open their own model. Opening
+%       Section A of Part 2. Sections B to I each open their own model. Opening
 %       a model and pressing Run shows, in one Scope on the canvas, the position
 %       (setpoint and response) and the force (with its terms). Changing Kp in
 %       the Command Window and pressing Run again shows the new response at once.
 %
 %   모델 / the models
+%       W02_B_three_ways    제어기 없는 플랜트, 미분방정식·전달함수·상태공간 세 줄
+%                           the plant with no controller, as ODE, transfer function, state space
+%       W02_B_second_order  표준 2차 시스템, zeta 와 wn 만 바꾼다
+%                           the standard second-order system; only zeta and wn change
+%       W02_G_derivative_bench  루프 없이 미분 두 가지 / two derivatives, no loop
 %       W02_C_P             P 만                         / P only
 %       W02_D_PD            P + D                        / P + D
 %       W02_E_PID           P + I + D                    / P + I + D
@@ -66,6 +71,140 @@ for k = 1:numel(M)
     build_one(M(k), here);
 end
 if nargin == 0 || strcmp(which, 'W02_G_derivative_bench'), build_bench(here); end
+if nargin == 0 || strcmp(which, 'W02_B_three_ways'),       build_three(here); end
+if nargin == 0 || strcmp(which, 'W02_B_second_order'),     build_second(here); end
+end
+
+% =========================================================================
+%  플랜트 하나를 세 가지로 (절 B) — 제어기 없이, 같은 힘을 세 줄에 넣는다
+%  One plant written three ways (section B): no controller, one force, three rows
+%
+%      A  미분방정식 그대로: m x'' = F - b x' - k x 를 적분기 두 개로
+%         the equation of motion itself, with two integrators
+%      B  전달함수 1/(m s^2 + b s + k)          초기조건을 담지 못한다 / holds no initial condition
+%      C  상태공간 x = [위치; 속도] / [position; velocity]
+function build_three(here)
+m = 'W02_B_three_ways';
+m0 = new_model(m, here);
+Y = 100;
+blk(m, 'simulink/Sources/Step', 'force F', 50, 240, [30 30], ...
+    {'Time','t_step', 'Before','0', 'After','F_step'});
+
+% A: 적분기 두 개 / two integrators
+add_sum(m, 'spring', '+-', [150 Y]);
+add_sum(m, 'damper', '+-', [230 Y]);
+blk(m, 'simulink/Math Operations/Gain', 'divide by m', 300, Y, [70 36], {'Gain','1/pid_m'});
+blk(m, 'simulink/Continuous/Integrator', 'velocity', 400, Y, [30 30], {'InitialCondition','x0_vel'});
+blk(m, 'simulink/Continuous/Integrator', 'position', 490, Y, [30 30], {'InitialCondition','x0_pos'});
+blk(m, 'simulink/Math Operations/Gain', 'b', 320, 160, [50 30], {'Gain','pid_b', 'Orientation','left', 'ShowName','off'});
+blk(m, 'simulink/Math Operations/Gain', 'k', 320, 205, [50 30], {'Gain','pid_k', 'Orientation','left', 'ShowName','off'});
+set_param([m '/spring'], 'NamePlacement','alternate');
+set_param([m '/damper'], 'NamePlacement','alternate');
+route(m, 'force F', 1, 'spring', 1, [100 240; 100 Y]);
+route(m, 'spring', 1, 'damper', 1, zeros(0,2));
+route(m, 'damper', 1, 'divide by m', 1, zeros(0,2));
+route(m, 'divide by m', 1, 'velocity', 1, zeros(0,2));
+route(m, 'velocity', 1, 'position', 1, zeros(0,2));
+route(m, 'velocity', 1, 'b', 1, [440 Y; 440 160]);
+route(m, 'b', 1, 'damper', 2, [230 160]);
+route(m, 'position', 1, 'k', 1, [530 Y; 530 205]);
+route(m, 'k', 1, 'spring', 2, [150 205]);
+goto_at(m, {'position', 1}, [550 Y], 'up', 'x_ode');
+
+% B: 전달함수 / transfer function
+blk(m, 'simulink/Continuous/Transfer Fcn', 'transfer function', 300, 240, [110 40], ...
+    {'Numerator','[1]', 'Denominator','[pid_m pid_b pid_k]', 'BackgroundColor', gnc_colour('plant')});
+route(m, 'force F', 1, 'transfer function', 1, zeros(0,2));
+
+% C: 상태공간 / state space
+blk(m, 'simulink/Continuous/State-Space', 'state space', 300, 320, [110 40], ...
+    {'A','[0 1; -pid_k/pid_m -pid_b/pid_m]', 'B','[0; 1/pid_m]', 'C','[1 0]', 'D','0', ...
+     'InitialCondition','[x0_pos; x0_vel]', 'BackgroundColor', gnc_colour('plant')});
+route(m, 'force F', 1, 'state space', 1, [100 240; 100 320]);
+
+add_block('simulink/Signal Routing/Mux', [m '/three'], 'Inputs','3', 'Position',[700 60 705 360]);
+q = port_xy(m, 'three', 'Inport', 1);
+add_block('simulink/Signal Routing/From', [m '/From x_ode'], 'GotoTag','x_ode', 'ShowName','off', ...
+          'Position', [590 q(2)-10 640 q(2)+10]);
+h1 = route(m, 'From x_ode', 1, 'three', 1, zeros(0,2));
+set_param([m '/Goto x_ode'], 'ShowName','off');
+q = port_xy(m, 'three', 'Inport', 2);  h2 = route(m, 'transfer function', 1, 'three', 2, [660 240; 660 q(2)]);
+q = port_xy(m, 'three', 'Inport', 3);  h3 = route(m, 'state space', 1, 'three', 3, [670 320; 670 q(2)]);
+set_param(h1, 'Name','A  ODE');  set_param(h2, 'Name','B  TF');  set_param(h3, 'Name','C  SS');
+finish_scope(m, 'three', 780);
+a = Simulink.Annotation([m '/note']);
+a.Text = strjoin({'WEEK 2, SECTION B  -  ONE PLANT, WRITTEN THREE WAYS (no controller)', '', ...
+  '   A   m x'''' = F - b x'' - k x         two integrators: acceleration -> velocity -> position', ...
+  '   B   X(s)/F(s) = 1 / (m s^2 + b s + k)   one Transfer Fcn block', ...
+  '   C   d/dt [x; v] = [0 1; -k/m -b/m] [x; v] + [0; 1/m] F,   x = [1 0] [x; v]', '', ...
+  'Run: the three lines lie on top of each other and settle at F/k = 0.5 m.', ...
+  'Then set F_step = 0; x0_pos = 0.5 and Run: A and C swing back from 0.5 m,', ...
+  'B stays at zero - a transfer function has no place for an initial condition.'}, newline);
+a.Position = [40 400 700 540];  a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
+save_model(m, m0, here);
+end
+
+% =========================================================================
+%  표준 2차 시스템 (절 B) — 두 숫자 zeta 와 wn 만 바꿔 본다
+%  The standard second-order system (section B): only zeta and wn change
+function build_second(here)
+m = 'W02_B_second_order';
+m0 = new_model(m, here);
+blk(m, 'simulink/Sources/Step', 'step', 60, 150, [30 30], ...
+    {'Time','t_step', 'Before','0', 'After','y_step'});
+blk(m, 'simulink/Continuous/Transfer Fcn', 'standard form', 260, 150, [150 40], ...
+    {'Numerator','[wn^2]', 'Denominator','[1 2*zeta*wn wn^2]', 'BackgroundColor', gnc_colour('plant')});
+route(m, 'step', 1, 'standard form', 1, zeros(0,2));
+add_block('simulink/Signal Routing/Mux', [m '/two'], 'Inputs','2', 'Position',[480 90 485 210]);
+goto_at(m, {'step', 1}, [110 150], 'up', 'y_d');
+set_param([m '/Goto y_d'], 'ShowName','off');
+q = port_xy(m, 'two', 'Inport', 1);
+add_block('simulink/Signal Routing/From', [m '/From y_d'], 'GotoTag','y_d', 'ShowName','off', ...
+          'Position', [400 q(2)-10 450 q(2)+10]);
+h1 = route(m, 'From y_d', 1, 'two', 1, zeros(0,2));
+q = port_xy(m, 'two', 'Inport', 2);  h2 = route(m, 'standard form', 1, 'two', 2, [420 150; 420 q(2)]);
+set_param(h1, 'Name','y_d');  set_param(h2, 'Name','y');
+finish_scope(m, 'two', 560);
+a = Simulink.Annotation([m '/note']);
+a.Text = strjoin({'WEEK 2, SECTION B  -  THE STANDARD SECOND-ORDER SYSTEM', '', ...
+  '   Y(s)/Y_d(s) = wn^2 / (s^2 + 2 zeta wn s + wn^2)', '', ...
+  '   zeta  damping ratio      larger zeta   ->  less overshoot', ...
+  '   wn    natural frequency  larger wn     ->  faster: shorter rise and peak time', '', ...
+  'Change zeta (0.2, 0.5, 0.7, 1, 2) or wn (1, 2, 4) in the Command Window and press Run.'}, newline);
+a.Position = [40 260 620 380];  a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
+save_model(m, m0, here);
+end
+
+%  새 모델 하나 / one new model
+function out = new_model(m, here)
+out = fullfile(here, [m '.slx']);
+bdclose(m);
+if isfile(out), delete(out); end
+new_system(m);
+set_param(m, 'SolverType','Fixed-step', 'Solver','ode4', 'FixedStep','h', ...
+             'StartTime','0', 'StopTime','T_final', 'ReturnWorkspaceOutputs','off');
+end
+
+%  Mux 하나를 Scope 와 로그 W02log 로 / one Mux to the Scope and the log W02log
+function finish_scope(m, mux, X)
+blk(m, 'simulink/Sinks/Scope', 'Scope', X, 150, [30 30], {});
+q = port_xy(m, 'Scope', 'Inport', 1);  p = port_xy(m, mux, 'Outport', 1);
+set_param([m '/Scope'], 'Position', [X-30 p(2)-30 X+30 p(2)+30]);
+route(m, mux, 1, 'Scope', 1, zeros(0,2));
+blk(m, 'simulink/Sinks/To Workspace', 'W02log', X, p(2)+90, [60 30], ...
+    {'VariableName','W02log', 'SaveFormat','Structure With Time'});
+route(m, mux, 1, 'W02log', 1, [p(1)+30 p(2); p(1)+30 p(2)+90]);
+try, set_param([m '/Scope'], 'ShowLegend','on'); catch, end
+set_param([m '/Scope'], 'Open','on');
+end
+
+function save_model(m, out, here)
+mss_style(m);
+save_system(m, out);
+print(['-s' m], '-dpng', '-r100', fullfile(here, 'img', [m '.png']));
+n = check_overlaps(m);
+close_system(m, 0);
+fprintf('  built  %-22s (overlapping lines: %d)\n', [m '.slx'], n);
 end
 
 % =========================================================================

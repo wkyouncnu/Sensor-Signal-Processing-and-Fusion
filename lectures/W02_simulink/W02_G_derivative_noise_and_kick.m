@@ -37,7 +37,7 @@ for i = [4 3 2 1]
     Q = W02_read('W02_G_noise_kick', CASE{i,2}{:});
     late = N.t > 6;
     fprintf('    %-10s  %13.2f  %10.2f  %12.1f\n', CASE{i,1}, std(N.tau(late)), 1e3*std(N.y(late)), ...
-            step_metrics(Q.t, Q.y, 1, 1));
+            max(0, step_metrics(Q.t, Q.y, 1, 1)));     % -0.0 대신 0.0 / 0.0 rather than -0.0
     plot(N.t, N.tau, 'LineWidth', 1, 'DisplayName', CASE{i,1});
 end
 xlim([5 10]); grid on; legend; xlabel('time [s]'); ylabel('force \tau [N]');

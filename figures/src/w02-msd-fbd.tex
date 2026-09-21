@@ -1,0 +1,77 @@
+% figures/w02-msd-fbd.svg — 질량-스프링-댐퍼 장치와 그 자유물체도.
+%
+%   bash _tools/tikz2svg.sh figures/src/w02-msd-fbd.tex figures/w02-msd-fbd.svg
+%
+% 2주차 §2-2 의 그림. 사용자 요청(2026-09-21): "매스 스프링 댐퍼시스템 free-body-diagram
+% 도 추가해주고 먼저.....미분방정식 구하는 것도 설명해주고". 제어시스템설계 2주차의
+% 네 단계(장치 → 자유물체도 → 미분방정식 → 전달함수) 가운데 앞의 둘을 한 장에 둔다.
+%
+% 부호 약속: 오른쪽이 + . 스프링 힘과 댐퍼 힘은 y, y' 이 양일 때 왼쪽을 향하므로
+% 식에서 - 가 붙는다. 화살표 방향이 곧 부호다.
+%
+% 폭 약 170 mm. A4 본문 폭 186 mm 안.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ======================== 왼쪽: 장치 ========================================
+% 벽
+\draw[ink, line width=0.8pt] (0,-10) -- (0,10);
+\foreach \yy in {-9,-6,...,9} \draw[ink, line width=0.35pt] (0,\yy) -- (-2.5,\yy-2.5);
+% 바닥 (마찰 없음)
+\draw[ink, line width=0.5pt] (0,-10) -- (66,-10);
+% 스프링 k
+\draw[ink, line width=0.5pt] (0,4) -- (4,4);
+\draw[ink, line width=0.5pt, decorate,
+      decoration={zigzag, segment length=2.4mm, amplitude=1.6mm}] (4,4) -- (24,4);
+\draw[ink, line width=0.5pt] (24,4) -- (30,4);
+\node[sname, above] at (14,5.6) {$k$};
+% 댐퍼 b
+\draw[ink, line width=0.5pt] (0,-4) -- (8,-4);
+\draw[ink, line width=0.5pt] (18,-1.2) -- (8,-1.2) -- (8,-6.8) -- (18,-6.8);
+\draw[ink, line width=0.8pt] (14,-2.2) -- (14,-5.8);
+\draw[ink, line width=0.5pt] (14,-4) -- (30,-4);
+\node[sname, below] at (13,-7.2) {$b$};
+% 질량
+\draw[ink, line width=0.55pt, fill=black!6] (30,-9) rectangle (46,9);
+\node[font=\small] at (38,0) {$m$};
+% 힘
+\draw[accent, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (46,0) -- (60,0);
+\node[sname, accent, above] at (54,0.3) {$\tau$};
+% 위치와 부호
+\draw[soft, densely dashed, line width=0.4pt] (30,10) -- (30,17);
+\draw[sig] (30,15) -- (42,15);
+\node[sname, above] at (36,15) {$y$};
+\node[note, anchor=west] at (43,15) {$+$ to the right; $y = 0$ with the spring relaxed};
+\node[note, anchor=north] at (33,-11) {the device: a mass, a spring, a damper, a force};
+
+% 가운데 화살표
+\draw[soft, line width=0.5pt, -{Stealth[length=4pt, width=3pt]}] (70,0) -- (84,0);
+\node[note, align=center, anchor=south] at (77,0.8) {cut the mass free};
+
+% ======================== 오른쪽: 자유물체도 ================================
+\draw[ink, line width=0.55pt, fill=black!6] (118,-9) rectangle (134,9);
+\node[font=\small] at (126,0) {$m$};
+\draw[accent, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (134,0) -- (150,0);
+\node[sname, accent, above] at (142,0.3) {$\tau$};
+\node[note, accent, below] at (142,-0.3) {pushes};
+\draw[ink, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (118,4) -- (100,4);
+\node[sname, above] at (109,4.3) {$k\,y$};
+\node[note, anchor=south] at (109,9.8) {spring pulls back};
+\draw[ink, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (118,-4) -- (100,-4);
+\node[sname, below] at (109,-4.3) {$b\,\dot y$};
+\node[note, anchor=north] at (109,-9.4) {damper resists motion};
+\node[note, anchor=north] at (126,-14.5) {the free-body diagram: the mass alone, every force on it};
+
+% ======================== 아래: 식 ===========================================
+\node[font=\small, anchor=north] at (79,-22)
+  {$\displaystyle \sum F = m\,\ddot y
+     \quad\Longrightarrow\quad
+     \tau - k\,y - b\,\dot y = m\,\ddot y
+     \quad\Longrightarrow\quad
+     m\,\ddot y + b\,\dot y + k\,y = \tau$};
+
+\end{tikzpicture}
+\end{document}

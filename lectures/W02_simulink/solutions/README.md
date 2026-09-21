@@ -60,7 +60,7 @@ $$
 | | The choice | Why the alternative is worse |
 |---|---|---|
 | **Every block on the top level** | no subsystem around the controller | each block is one symbol of the equation above, so the canvas can be read as the equation |
-| **The derivative is one Transfer Fcn** | numerator `[Kd*Nf 0]`, denominator `[1 Nf]` | a Derivative block turns the corner of the step into an impulse and every step of sensor noise into a spike (§2-7); the filter caps the gain at $K_d N_f$ |
+| **The derivative is one Transfer Fcn** | numerator `[Kd*Nf 0]`, denominator `[1 Nf]` | a Derivative block turns the corner of the step into an impulse and every step of sensor noise into a spike (§2-10); the filter caps the gain at $K_d N_f$ |
 | **The excess is $\tau - u$, taken after the limit** | a Sum with $\tau$ on its plus input and $u$ on its minus input | taken the other way round the sign is wrong and the "anti-windup" winds the integrator faster; taken before the limit it is always zero |
 | **Rows P, D, I from the top** | the integrator's junction at the bottom | the back-calculation line then comes up into it from below without crossing any other line; `check_overlaps` is 0 |
 
@@ -72,10 +72,10 @@ At the instant of the step the error jumps from 0 to 1 m. The proportional branc
 
 The checker measures $129.6$ N, and the $0.4$ N is the solver, not the law. The fourth stage of the `ode4` step that ends at $t = 1$ s already sees the step, so by the first logged sample the filter has decayed by $(h/6)\cdot N_f \cdot 120 = 0.4$ N, and $d = 119.6$ N. The log confirms $d = 119.6000$ N at $t = 1.0000$ s.
 
-Nothing about the response reveals this number, which is the reason step 5 of the tuning order looks at the force separately (§2-9).
+Nothing about the response reveals this number, which is the reason step 5 of the tuning order looks at the force separately (§2-12).
 
 ---
 
 ## Why the integrator goes negative in problem 3
 
-While the force is on its limit, back-calculation drives the integrator towards the value that makes the demand equal to the limit, $I^\star = \tau_{\max} - P - D + (K_i/K_b)\,e$ (§2-8). Just after the step, $P$ alone is $10$ N against a limit of $2.5$ N, so $I^\star$ is negative, and the integrator follows it down. That is the formula working: the integrator is holding the demand at the limit instead of piling up on top of it.
+While the force is on its limit, back-calculation drives the integrator towards the value that makes the demand equal to the limit, $I^\star = \tau_{\max} - P - D + (K_i/K_b)\,e$ (§2-11). Just after the step, $P$ alone is $10$ N against a limit of $2.5$ N, so $I^\star$ is negative, and the integrator follows it down. That is the formula working: the integrator is holding the demand at the limit instead of piling up on top of it.
