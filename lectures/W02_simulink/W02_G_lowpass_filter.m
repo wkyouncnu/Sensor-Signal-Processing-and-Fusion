@@ -3,8 +3,19 @@
 %  빠른 사인(100 rad/s)을 따로 넣어 통과한 진폭을 잰다.
 %  Draws the Bode plot for Nf = 5, 20, 200, then runs W02_G_lowpass with the slow
 %  (1 rad/s) and the fast (100 rad/s) sine separately and measures what passes.
+%
+%  출력에서 볼 것 / what to look for in the output
+%      - 느린 사인 (1 rad/s) 은 Nf 가 무엇이든 거의 그대로 지나간다 (0.981 ~ 1.000).
+%      - 빠른 사인 (100 rad/s) 은 Nf = 5 에서 0.050, 20 에서 0.196, 200 에서 0.894 만 남는다.
+%      - 잰 값이 괄호 안의 공식 Nf / sqrt(w^2 + Nf^2) 과 세 자리까지 같다.
+%      - The slow sine (1 rad/s) passes almost unchanged whatever Nf is (0.981 to 1.000).
+%      - Of the fast sine (100 rad/s) only 0.050 survives at Nf = 5, 0.196 at 20,
+%        0.894 at 200.
+%      - Every measured ratio equals Nf / sqrt(w^2 + Nf^2) to three digits.
+%
 %  만드는 것 / produces: img/W02_result_bode.png, img/W02_result_lowpass.png
 
+%% 0) 경로 / paths
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 NF = [5 20 200];

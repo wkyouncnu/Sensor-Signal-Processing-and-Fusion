@@ -12,8 +12,8 @@ function ok = verify_w03_speed()
 %        the measured speed per newton equals Week 1's K_u = 1/X_u (§3-2)
 %     4  적분이 멈춘 힘 116.3 N 이 1.5 m/s 를 1/K_u 로 나눈 값과 같다 (§3-3)
 %        the integral's final force equals 1.5 m/s divided by K_u (§3-3)
-%     5  '축 회전수' Fcn 식이 T = k n|n| 의 역함수이다 (앞·뒤 방향 모두)
-%        the shaft-speed Fcn inverts T = k n|n|, forward and backward
+%     5  allocation 블록의 식이 T = k n|n| 의 역함수이다 (앞·뒤 방향 모두)
+%        the allocation block inverts T = k n|n|, forward and backward
 
 root = fileparts(fileparts(mfilename('fullpath')));
 wk   = fullfile(root, 'lectures', 'W03_simulink');
@@ -53,7 +53,7 @@ n  = @(T) sg(T).*sqrt(abs(T)./(cfg.k_pos*(1 + sg(T))/2 + cfg.k_neg*(1 - sg(T))/2
 T  = [-60 -1 1 60 119.68];
 k  = cfg.k_pos*(T > 0) + cfg.k_neg*(T < 0);
 e5 = max(abs(k.*n(T).*abs(n(T)) - T));
-ok = report(ok, '5 shaft-speed Fcn inverts T = k n|n|', e5 < 1e-9, sprintf('%.1e N', e5));
+ok = report(ok, '5 allocation inverts T = k n|n|', e5 < 1e-9, sprintf('%.1e N', e5));
 
 fprintf('\n  %s\n\n', ternary(ok, 'ALL CHECKS PASSED', '불일치 있음 — 위 FAIL 을 볼 것'));
 end

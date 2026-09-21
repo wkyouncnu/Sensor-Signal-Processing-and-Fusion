@@ -178,20 +178,44 @@ end
 %  Allocation and the Otter: X -> half each -> shaft speed -> Otter -> u, and the feedback
 function plant(m, src, YP, YF, o)
 X0 = 930;
-blk(m, 'simulink/Math Operations/Gain', 'half each', X0, YP, [50 36], {'Gain','0.5'});
-route(m, src{1}, src{2}, 'half each', 1, zeros(0,2));
-blk(m, 'simulink/User-Defined Functions/Fcn', 'shaft speed', X0+120, YP, [110 36], ...
-    {'Expr','sgn(u)*sqrt(abs(u)/(k_pos*(1 + sgn(u))/2 + k_neg*(1 - sgn(u))/2))'});
-route(m, 'half each', 1, 'shaft speed', 1, zeros(0,2));
-add_block('simulink/Signal Routing/Mux', [m '/two shafts'], 'Inputs','2', ...
-          'Position', [X0+210 YP-25 X0+215 YP+25]);
-q1 = port_xy(m, 'two shafts', 'Inport', 1);  q2 = port_xy(m, 'two shafts', 'Inport', 2);
-route(m, 'shaft speed', 1, 'two shafts', 1, [X0+190 YP; X0+190 q1(2)]);
-route(m, 'shaft speed', 1, 'two shafts', 2, [X0+190 YP; X0+190 q2(2)]);
+%  배분: 힘 X -> 두 축 회전수 n. 주석이 달린 MATLAB Function 하나로 둔다 (열어서 읽으면 된다).
+%  Allocation: force X -> two shaft speeds n, as one commented MATLAB Function
+%  (open it and read it).
+add_block('simulink/User-Defined Functions/MATLAB Function', [m '/allocation'], ...
+          'Position', round([X0-40 YP-30 X0+140 YP+30]));
+set_mlfcn([m '/allocation'], { ...
+'function n = allocation(X, k_pos, k_neg)'
+'%#codegen'
+'%ALLOCATION  전진력 X [N] 를 두 프로펠러의 축 회전수 n [rad/s] 로 바꾼다.'
+'%            Turn the surge force X [N] into the shaft speeds n [rad/s] of the two propellers.'
+'%'
+'%   k_pos, k_neg 는 작업공간 변수 (W03_0_setup) 에서 온다 — 블록의 포트가 아니다.'
+'%   k_pos and k_neg come from the workspace (W03_0_setup), not from ports.'
+''
+'% 1) 똑바로 갈 때 두 프로펠러는 같은 일을 한다: 각자 X 의 절반.'
+'%    Going straight, both propellers do the same work: half of X each.'
+'T = X/2;'
+''
+'% 2) 프로펠러 곡선 T = k n|n| (1주차) 을 n 에 대해 푼다.'
+'%    앞으로 밀 때와 뒤로 당길 때 계수가 다르다 (k_pos > k_neg).'
+'%    Solve the propeller curve T = k n|n| (Week 1) for n; the coefficient'
+'%    differs ahead and astern (k_pos > k_neg).'
+'if T >= 0'
+'    n1 =  sqrt( T / k_pos);      % 앞으로 / ahead'
+'else'
+'    n1 = -sqrt(-T / k_neg);      % 뒤로 / astern'
+'end'
+''
+'% 3) 두 축에 같은 회전수. Otter 는 [좌현; 우현] 순서로 받는다.'
+'%    The same speed on both shafts; the Otter takes [port; starboard].'
+'n = [n1; n1];'
+'end'}, 'n', '[2 1]');
+mlfcn_params([m '/allocation'], {'k_pos','k_neg'});
+route(m, src{1}, src{2}, 'allocation', 1, zeros(0,2));
 cfg = otter_config('base');
 add_otter_plant(m, 'Otter', [X0+260 YP-30 X0+360 YP+30], cfg);
 set_param([m '/Otter'], 'BackgroundColor', gnc_colour('plant'));
-q = port_xy(m, 'Otter', 'Inport', 1);  p = port_xy(m, 'two shafts', 'Outport', 1);
+q = port_xy(m, 'Otter', 'Inport', 1);  p = port_xy(m, 'allocation', 'Outport', 1);
 set_param([m '/Otter'], 'Position', get_param([m '/Otter'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));
 q = port_xy(m, 'Otter', 'Inport', 1);
 add_line(m, [p; q]);

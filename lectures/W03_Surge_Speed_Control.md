@@ -89,8 +89,7 @@ This section answers: what changes when the controller of Week 2 is placed aroun
 | Block in the model | What it does | Where it comes from |
 |---|---|---|
 | `thrust limit` | holds $X$ inside $[-133.42,\ 239.36]$ N | the largest thrust the two propellers produce forward and backward; derived in Appendix A1 |
-| `half each` | gives half of $X$ to each propeller | going straight, both propellers do the same work |
-| `shaft speed` | turns a thrust $T$ into the shaft speed that produces it, $n = \mathrm{sign}(T)\sqrt{\lvert T\rvert/k}$ | the propeller curve $T = k\,n\lvert n\rvert$ of Week 1, solved for $n$; $k$ differs forward and backward |
+| `allocation` | a MATLAB Function block, commented line by line: ① each propeller takes half of $X$, $T = X/2$; ② the thrust is turned into the shaft speed that produces it, $n = \mathrm{sign}(T)\sqrt{\lvert T\rvert/k}$; ③ both shafts get that speed | going straight, both propellers do the same work; the propeller curve $T = k\,n\lvert n\rvert$ of Week 1, solved for $n$, with $k$ different ahead and astern |
 | `Otter` | the MSS model `otter.m`, twelve states | Week 1 |
 | `surge speed u` | picks the first state, the surge speed $u$ | Week 1: $\mathbf{x} = [u\ v\ w\ p\ q\ r\ \dots]$ |
 
@@ -224,7 +223,7 @@ open_system('W03_E_PID')
 | `step` → `e` | the speed command $u_d$ and the error $e = u_d - u$ |
 | `Kp`, `D filter`, `Ki` → `I`, `p+d`, `u` | the PID of Week 2, block for block; `u` is the sum of the three terms, the force demanded |
 | `thrust limit` | the force the propellers can give, $[-133.42,\ 239.36]$ N |
-| `half each` → `shaft speed` → `two shafts` | the force split between the two propellers and turned into shaft speeds |
+| `allocation` | the force split between the two propellers and turned into shaft speeds; double-click it to read the commented code |
 | green `Otter` | the MSS vessel model |
 | `surge speed u` and the long line along the bottom | the speed, fed back to `e` |
 | `speed`, `force` → Scope | top: $u_d$ and $u$; bottom: the force $X$, the integral $I$, the derivative $D$ |
@@ -247,7 +246,7 @@ W03_C_plant_from_outside
 | In the figure | Meaning |
 |---|---|
 | `force X` | a step force of `X_open` newtons at $t = 5$ s |
-| `half each` → `shaft speed` → `Otter` → `surge speed u` | the plant chain of §3-1 |
+| `allocation` → `Otter` → `surge speed u` | the plant chain of §3-1 |
 | Scope | top: the speed $u$; bottom: the force $X$ |
 
 Expected output:
@@ -544,7 +543,7 @@ Compare the final gains with those of §3-5. Explain, from the measurement of �
 | the speed returns seconds late after a lower command | $K_b = 0$ | set `Kb = 1` |
 | a Scope does not match these notes | a changed variable is still in the workspace | run `W03_0_setup` again |
 | a `.slx` was edited by hand and now differs | the models are generated | run `W03_1_build_speed` again |
-| the build stops at the block `shaft speed` with a syntax error | a Fcn block expression used `sign` or `>=` | the Fcn block writes the sign function `sgn` and has no relational operators; the builder already does |
+| `allocation` reports that `k_pos` is undefined | `W03_0_setup` was not run, so the block's parameters have no values | run `W03_0_setup`; the block reads `k_pos` and `k_neg` from the workspace |
 
 ---
 

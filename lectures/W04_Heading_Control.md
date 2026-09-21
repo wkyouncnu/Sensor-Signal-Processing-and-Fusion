@@ -89,7 +89,7 @@ This section answers: what changes when the controller of Weeks 2 and 3 steers t
 |---|---|---|
 | `deg to rad` | converts the command from degrees to radians | people command headings in degrees; the vessel model works in radians |
 | `ssa` | wraps the error into $(-\pi,\ \pi]$: $\text{ssa}(e) = \operatorname{atan2}(\sin e,\ \cos e)$ | $-170°$ is $20°$ past $170°$, not $340°$ back; §4-6 |
-| `port share` … `starboard shaft` | turns the demanded yaw moment $N$ into two propeller thrusts, then two shaft speeds | the Otter has no rudder; it turns by pushing one side harder |
+| `allocation` | a MATLAB Function block, commented line by line: turns the demanded yaw moment $N$ into two propeller thrusts, then two shaft speeds | the Otter has no rudder; it turns by pushing one side harder |
 
 **The yaw moment comes from a thrust difference.** Both propellers push forward to give the surge force $X_{ff}$; a yaw moment is added by pushing the port propeller harder and the starboard one less. Each propeller sits $y_{\text{pont}}$ from the centreline, so a thrust difference $T_1 - T_2$ gives a moment $y_{\text{pont}}(T_1 - T_2)$, and the two thrusts are
 
@@ -274,14 +274,13 @@ open_system('W04_H_tuning')
 | `step` → `deg to rad` → `e` → `ssa` | the command in degrees, the error in radians, wrapped |
 | `Kp`, `D filter`, `Ki` → `I`, `p+d`, `u` | the PID of Weeks 2 and 3, block for block |
 | `moment limit`, `N - u`, `Kb` | the moment limit and the back-calculation path of Week 3 |
-| `port share`, `starboard share`, `plus half surge` | $T_1$ and $T_2$ of §4-1 |
-| `port health` | the port propeller's efficiency, `port_eff`; 1 unless section F lowers it |
-| `port shaft`, `starboard shaft` → `Otter` → `heading psi` → `in degrees` | shaft speeds, the vessel, and the heading back in degrees for the Scope |
+| `allocation` | $T_1$ and $T_2$ of §4-1, the port propeller's efficiency `port_eff` (1 unless section F lowers it), and the two shaft speeds; double-click it to read the commented code |
+| `Otter` → `heading psi` → `in degrees` | the vessel, and the heading back in degrees for the Scope |
 | `heading`, `moment` → Scope | top: $\psi_d$ and $\psi$; bottom: $N$, $I$ and $D$ |
 
 > [!tip] In class
 > - **Purpose** — show that the controller is still the Week 2 controller; the new parts are the degree conversion, the wrap, and the thrust split that makes a moment out of two propellers.
-> - **Point to** — the two rows behind the `moment limit`: one moment in, two thrusts out, one larger and one smaller.
+> - **Point to** — open the `allocation` block behind the `moment limit`: one moment in, two thrusts out, one larger and one smaller, each turned into a shaft speed.
 > - **Ask** — "Why is there a `moment limit` at all, when each propeller has its own limit?" Because the demand must be limited where the controller can see it; otherwise the integral cannot know it was cut, and windup follows (§4-5).
 > - **Take away** — to steer a rudderless vessel, push one side harder.
 
@@ -623,7 +622,7 @@ Explain why the available yaw moment depends on the surge force, and how that mo
 | a big turn overshoots and creeps back | $K_b = 0$: windup | `Kb = 0.1` |
 | the vessel turns the long way round | `use_ssa = 0` | `use_ssa = 1` |
 | a Scope does not match these notes | a changed variable is still in the workspace | run `W04_0_setup` again |
-| a block name with `/` stops the build | Simulink reads `/` as a path separator | the builder names the Bias blocks `plus half surge` |
+| `allocation` reports that `X_ff` or `k_pos` is undefined | `W04_0_setup` was not run, so the block's parameters have no values | run `W04_0_setup`; the block reads `X_ff`, `y_pont`, `k_pos`, `k_neg` and `port_eff` from the workspace |
 
 ---
 

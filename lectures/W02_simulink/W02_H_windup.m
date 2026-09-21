@@ -8,10 +8,31 @@
 %  How long does each scheme (none, clamping, back-calculation) take to come back?
 %  만드는 것 / produces: img/W02_result_windup.png
 
+%
+%  출력에서 볼 것 / what to look for in the output
+%      - 15 s 까지는 모든 방식이 1.25 m 에 있다: 목표에 닿을 수 없으니 차이가 보이지 않는다.
+%      - 차이는 기억에 있다: 안티와인드업이 없으면 적분이 94 N 을 쌓아 (힘은 2.5 N 뿐)
+%        목표가 0.5 m 로 내려가도 질량이 돌아오지 않는다 (Inf).
+%      - clamping 은 4.41 s, back-calculation 은 4.06 s 에 돌아온다. 손으로 만든 것과 블록이
+%        반올림 오차 안에서 같다. Kb 는 0.5 ~ 50 에서 크게 중요하지 않다.
+%      - Until 15 s every scheme sits at 1.25 m: the target cannot be reached,
+%        so no difference shows.
+%      - The difference is the memory: without anti-windup the integral stores
+%        94 N (the force can give 2.5 N) and the mass never returns (Inf).
+%      - Clamping returns in 4.41 s, back-calculation in 4.06 s; hand-built and
+%        block agree to round-off. Kb matters little between 0.5 and 50.
+
+%% 0) 경로와 시나리오 / paths and the scenario
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
+%  힘 한계 2.5 N, 1 s 에 2 m (닿을 수 없음), 15 s 에 0.5 m (닿을 수 있음), 30 s 동안
+%  Force limit 2.5 N; 2 m at 1 s (unreachable), 0.5 m at 15 s (reachable); 30 s
 S = {'tau_max',2.5, 'y_step',2, 't_step2',15, 'y_step2',0.5, 'T_final',30};
 
+%% 1) 세 방식으로 돌린다 / run the three schemes
+%  위 줄 (손으로 만든 back-calculation) 은 Kb 로, 아래 줄 (PID 블록) 은 block_mode 로 방식을 정한다.
+%  The top row (hand-built back-calculation) is set by Kb; the bottom row (the
+%  PID block) by block_mode.
 R0 = W02_read('W02_H_antiwindup', S{:}, 'Kb', 0, 'block_mode', 'none');
 R1 = W02_read('W02_H_antiwindup', S{:}, 'Kb', 2, 'block_mode', 'clamping');
 R2 = W02_read('W02_H_antiwindup', S{:}, 'Kb', 2, 'block_mode', 'back-calculation');
@@ -21,6 +42,9 @@ ROW = {'none (block)',             R0.t, R0.y_blk
        'none (by hand, Kb = 0)',   R0.t, R0.y
        'back-calc (by hand, Kb = 2)', R2.t, R2.y};
 
+%% 2) 15 s 의 위치와 0.5 m 로 돌아오는 시간 / position at 15 s and the time to return to 0.5 m
+%  back(t, y) (맨 아래 함수): 15 s 뒤 0.5 m 의 2 % 띠를 마지막으로 벗어난 시각
+%  back(t, y) (at the bottom): the last exit from the 2 % band of 0.5 m after 15 s
 fprintf('\n  W02 H  unreachable 2 m for 14 s, then a reachable 0.5 m  (|tau| <= 2.5 N)\n');
 fprintf('    %-30s  y at 15 s [m]  back within 2 %% of 0.5 m after [s]\n', 'anti-windup');
 for i = 1:size(ROW,1)
@@ -30,12 +54,14 @@ fprintf('    by hand vs block, back-calculation: max |y diff| = %.2e\n', max(abs
 fprintf('    integrator at t = 15 s: %.1f N without anti-windup, %.2f N with back-calculation\n', ...
         interp1(R0.t, R0.I, 15), interp1(R2.t, R2.I, 15));
 
+%% 3) 되감기 이득 Kb 를 바꿔 본다 / vary the back-calculation gain Kb
 fprintf('\n    the back-calculation gain Kb (by hand)\n    Kb     back within 2 %% after [s]\n');
 for Kb = [0.5 2 10 50]
     R = W02_read('W02_H_antiwindup', S{:}, 'Kb', Kb);
     fprintf('    %-5g  %10.2f\n', Kb, back(R.t, R.y));
 end
 
+%% 4) 그림: 위 위치, 아래 적분항 / figure: position on top, the integral below
 f = lab_fig('W02 H  anti-windup', 1000, 720);
 subplot(2,1,1); hold on;
 plot(R0.t, R0.y_d, 'k--', 'DisplayName', 'setpoint');

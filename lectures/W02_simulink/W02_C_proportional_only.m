@@ -1,12 +1,29 @@
 %% W02 · 절 C — P 만 / Section C — P only
 %  모델 W02_C_P 를 Kp = 2, 10, 50 으로 돌려, 정상상태값과 오버슛을 §2-6 의 공식과 나란히 적는다.
 %  Runs W02_C_P at Kp = 2, 10, 50 and prints the steady value and overshoot next to §2-6's formulas.
+%
+%  출력에서 볼 것 / what to look for in the output
+%      - 정상상태값이 공식 Kp/(k + Kp) 와 같고 1 에 닿지 않는다: P 는 오차가 있어야 힘을 낸다.
+%      - Kp 가 클수록 빠르고 더 울린다 (오버슛 16.3 -> 64.4 %).
+%      - 정착시간은 Kp 를 25 배로 올려도 4.04 -> 3.64 s: 극점이 위로만 가고 왼쪽으로 가지 않는다.
+%      - 첨두시간은 공식 pi/wd 와 정확히 같다. 마지막 줄은 §2-4 그림의 다섯 숫자다.
+%      - The steady value equals Kp/(k + Kp) and never reaches 1: P produces
+%        force only from error.
+%      - A larger Kp is faster and rings more (overshoot 16.3 -> 64.4 %).
+%      - Settling barely moves (4.04 -> 3.64 s) for 25 times the gain: the poles
+%        move up, not left.
+%      - The peak time equals pi/wd exactly. The last line is the five numbers
+%        of the §2-4 figure.
+%
 %  만드는 것 / produces: img/W02_result_P.png, img/W02_result_metrics.png
 
+%% 0) 경로와 플랜트 값 / paths and plant values
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 k = 2;  b = 2;                                       % 플랜트의 스프링과 감쇠 / spring and damper
 
+%% 1) Kp 세 개: 첫째 표 (공식과 나란히), 둘째 표를 위한 값 M 을 모은다
+%     Three gains: the first table (next to the formulas), and M for the second
 fprintf('\n  W02 C  P only\n');
 fprintf('    Kp    y_ss (formula)   overshoot %% (formula)   rise [s]  settle [s]  peak tau [N]\n');
 f = lab_fig('W02 C  P only', 1000, 620);

@@ -189,47 +189,73 @@ end
 %  Allocation and the Otter: N -> two thrusts -> shaft speeds -> Otter -> psi, and the feedback
 function plant(m, src, YP, YF)
 s = port_xy(m, src{1}, 'Outport', src{2});
-X0 = round(s(1)) + 90;                        % 가지점 / the branch point
-YA = YP - 50;  YB = YP + 50;                  % 좌현 줄, 우현 줄 / port row, starboard row
-blk(m, 'simulink/Math Operations/Gain', 'port share', X0+60, YA, [60 36], {'Gain','1/(2*y_pont)'});
-blk(m, 'simulink/Math Operations/Gain', 'starboard share', X0+60, YB, [60 36], {'Gain','-1/(2*y_pont)'});
-route(m, src{1}, src{2}, 'port share', 1, [X0 YP; X0 YA]);
-route(m, src{1}, src{2}, 'starboard share', 1, [X0 YP; X0 YB]);
-blk(m, 'simulink/Math Operations/Bias', 'plus half surge', X0+170, YA, [60 30], {'Bias','X_ff/2'});
-blk(m, 'simulink/Math Operations/Bias', 'plus half surge ', X0+170, YB, [60 30], {'Bias','X_ff/2'});
-route(m, 'port share', 1, 'plus half surge', 1, zeros(0,2));
-route(m, 'starboard share', 1, 'plus half surge ', 1, zeros(0,2));
-blk(m, 'simulink/Math Operations/Gain', 'port health', X0+270, YA, [60 36], {'Gain','port_eff'});
-route(m, 'plus half surge', 1, 'port health', 1, zeros(0,2));
-fx = '(sgn(u)*sqrt(abs(u)/(k_pos*(1 + sgn(u))/2 + k_neg*(1 - sgn(u))/2)))';
-blk(m, 'simulink/User-Defined Functions/Fcn', 'port shaft', X0+390, YA, [110 36], {'Expr',fx});
-blk(m, 'simulink/User-Defined Functions/Fcn', 'starboard shaft', X0+390, YB, [110 36], {'Expr',fx});
-route(m, 'port health', 1, 'port shaft', 1, zeros(0,2));
-route(m, 'plus half surge ', 1, 'starboard shaft', 1, zeros(0,2));
-add_block('simulink/Signal Routing/Mux', [m '/two shafts'], 'Inputs','2', ...
-          'Position', [X0+480 YA-10 X0+485 YB+10]);
-q1 = port_xy(m, 'two shafts', 'Inport', 1);  q2 = port_xy(m, 'two shafts', 'Inport', 2);
-route(m, 'port shaft', 1, 'two shafts', 1, [X0+460 YA; X0+460 q1(2)]);
-route(m, 'starboard shaft', 1, 'two shafts', 2, [X0+460 YB; X0+460 q2(2)]);
+X0 = round(s(1)) + 90;
+%  배분: 요 모멘트 N -> 두 축 회전수 n. 주석이 달린 MATLAB Function 하나 (열어서 읽으면 된다).
+%  Allocation: yaw moment N -> two shaft speeds n, as one commented MATLAB
+%  Function (open it and read it).
+add_block('simulink/User-Defined Functions/MATLAB Function', [m '/allocation'], ...
+          'Position', round([X0+60 YP-30 X0+300 YP+30]));
+set_mlfcn([m '/allocation'], { ...
+'function n = allocation(N, X_ff, y_pont, k_pos, k_neg, port_eff)'
+'%#codegen'
+'%ALLOCATION  요 모멘트 N [N m] 를 두 프로펠러의 축 회전수 n [rad/s] 로 바꾼다.'
+'%            Turn the yaw moment N [N m] into the shaft speeds n [rad/s] of the two propellers.'
+'%'
+'%   N 만 입력 포트다. 나머지는 작업공간 변수 (W04_0_setup) 에서 온다.'
+'%   Only N is an input port; the rest come from the workspace (W04_0_setup).'
+'%     X_ff      두 프로펠러가 함께 내는 전진력 / surge force from both propellers   [N]'
+'%     y_pont    중심선에서 각 프로펠러까지의 거리 / each propeller''s arm              [m]'
+'%     k_pos     앞으로 밀 때 추력 계수 / thrust coefficient ahead'
+'%     k_neg     뒤로 당길 때 추력 계수 / thrust coefficient astern'
+'%     port_eff  좌현 프로펠러 효율, 보통 1 (절 F 는 0.7) / port efficiency, 1 unless section F'
+''
+'% 1) 두 프로펠러의 추력. 둘 다 X_ff 의 절반씩 밀고, 모멘트는 한쪽을 더 세게,'
+'%    다른 쪽을 덜 세게 밀어 만든다. 팔 길이가 y_pont 이므로'
+'%        y_pont (T1 - T2) = N,   T1 + T2 = X_ff'
+'%    Both push half of X_ff ahead; the moment comes from pushing one side'
+'%    harder and the other less. With arm y_pont:'
+'%        y_pont (T1 - T2) = N,   T1 + T2 = X_ff'
+'T = [X_ff/2 + N/(2*y_pont);      % 좌현 / port'
+'     X_ff/2 - N/(2*y_pont)];     % 우현 / starboard'
+''
+'% 2) 약한 좌현 프로펠러: 요구한 추력의 port_eff 배만 낸다 (절 F).'
+'%    A weak port propeller delivers only port_eff of what is asked (section F).'
+'T(1) = port_eff * T(1);'
+''
+'% 3) 프로펠러 곡선 T = k n|n| (1주차) 을 하나씩 n 에 대해 푼다.'
+'%    앞으로와 뒤로의 계수가 다르다 (k_pos > k_neg).'
+'%    Solve the propeller curve T = k n|n| (Week 1) for each n; the coefficient'
+'%    differs ahead and astern (k_pos > k_neg).'
+'n = zeros(2,1);'
+'for i = 1:2'
+'    if T(i) >= 0'
+'        n(i) =  sqrt( T(i) / k_pos);   % 앞으로 / ahead'
+'    else'
+'        n(i) = -sqrt(-T(i) / k_neg);   % 뒤로 / astern'
+'    end'
+'end'
+'end'}, 'n', '[2 1]');
+mlfcn_params([m '/allocation'], {'X_ff','y_pont','k_pos','k_neg','port_eff'});
+route(m, src{1}, src{2}, 'allocation', 1, zeros(0,2));
 cfg = otter_config('base');
-add_otter_plant(m, 'Otter', [X0+530 YP-30 X0+630 YP+30], cfg);
+add_otter_plant(m, 'Otter', [X0+380 YP-30 X0+480 YP+30], cfg);
 set_param([m '/Otter'], 'BackgroundColor', gnc_colour('plant'));
-q = port_xy(m, 'Otter', 'Inport', 1);  p = port_xy(m, 'two shafts', 'Outport', 1);
+q = port_xy(m, 'Otter', 'Inport', 1);  p = port_xy(m, 'allocation', 'Outport', 1);
 set_param([m '/Otter'], 'Position', get_param([m '/Otter'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));
 q = port_xy(m, 'Otter', 'Inport', 1);
 add_line(m, [p; q]);
 add_block('simulink/Signal Routing/Selector', [m '/heading psi'], 'InputPortWidth','12', ...
-          'Indices','12', 'Position', [X0+680 YP-15 X0+710 YP+15]);
+          'Indices','12', 'Position', [X0+530 YP-15 X0+560 YP+15]);
 p = port_xy(m, 'Otter', 'Outport', 1);  q = port_xy(m, 'heading psi', 'Inport', 1);
 set_param([m '/heading psi'], 'Position', get_param([m '/heading psi'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));
 q = port_xy(m, 'heading psi', 'Inport', 1);
 add_line(m, [p; q]);
 ys = port_xy(m, 'heading psi', 'Outport', 1);  ys = ys(2);
-blk(m, 'simulink/Math Operations/Gain', 'in degrees', X0+800, ys, [50 36], {'Gain','180/pi'});
+blk(m, 'simulink/Math Operations/Gain', 'in degrees', X0+650, ys, [50 36], {'Gain','180/pi'});
 route(m, 'heading psi', 1, 'in degrees', 1, zeros(0,2));
-goto_at(m, {'in degrees', 1}, [X0+845 ys], 'up', 'psi');
+goto_at(m, {'in degrees', 1}, [X0+695 ys], 'up', 'psi');
 if ~isempty(YF)
-    route(m, 'heading psi', 1, 'e', 2, [X0+745 ys; X0+745 YF; 340 YF]);
+    route(m, 'heading psi', 1, 'e', 2, [X0+595 ys; X0+595 YF; 340 YF]);
 end
 end
 

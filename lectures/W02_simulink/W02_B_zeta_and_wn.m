@@ -1,10 +1,30 @@
 %% W02 · 절 B-2 — 감쇠비와 고유진동수 / Section B-2 — damping ratio and natural frequency
 %  모델 W02_B_second_order 에서 zeta 만, 그다음 wn 만 바꿔 가며 네 지표와 대역폭을 잰다.
 %  Runs W02_B_second_order varying zeta alone, then wn alone; measures four metrics and the bandwidth.
+%
+%  표준 2차 시스템 / the standard second-order system (§2-3)
+%      Y(s)/Y_d(s) = wn^2 / (s^2 + 2 zeta wn s + wn^2)
+%
+%  출력에서 볼 것 / what to look for in the output
+%      - zeta 가 클수록 오버슛이 작다 (52.7 -> 16.3 -> 4.3 -> 0 %). 오버슛은 zeta 만의 함수다.
+%      - wn 이 두 배면 첨두시간·상승시간·정착시간이 반, 대역폭은 두 배. 오버슛은 그대로다.
+%      - 측정한 오버슛과 첨두시간이 괄호 안의 공식값과 같다.
+%      - A larger zeta, less overshoot (52.7 -> 16.3 -> 4.3 -> 0 %); the overshoot
+%        depends on zeta alone.
+%      - Doubling wn halves the peak, rise and settling times and doubles the
+%        bandwidth; the overshoot stays.
+%      - The measured overshoot and peak time equal the formulas in brackets.
+%
 %  만드는 것 / produces: img/W02_result_zeta_wn.png
 
+%% 0) 경로 / paths
 here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
+
+%% 1) 두 번의 훑기: zeta 만 바꾸기, 그다음 wn 만 바꾸기
+%     Two sweeps: zeta alone, then wn alone
+%  C 의 한 줄 = {바꾸는 이름, 값들, 고정한 값, 고정한 이름}
+%  One row of C = {name varied, its values, the fixed value, the fixed name}
 
 f = lab_fig('W02 B-2  zeta and wn', 1100, 800);
 fprintf('\n  W02 B-2  the standard second-order system\n');
