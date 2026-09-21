@@ -191,14 +191,14 @@ add_block('simulink/Sinks/Terminator', [m '/anim end'], ...);   % ok 출력을 �
 
 ---
 
-### 2-5. 결과 그림의 결함 네 가지 — W04 에서 전부 한 번씩 냈다
+### 2-5. 결과 그림의 결함 네 가지 — W05 에서 전부 한 번씩 냈다
 
 그림을 렌더해서 눈으로 보는 이유가 이것이다. 넷 다 **코드는 정상 종료했고 표는 옳았다.**
 그림만 틀렸다. `vault_check.sh` 도 잡지 못한다 — 그림의 **내용**은 기계가 못 본다.
 
 #### ① 앞 절과 같은 그림
 
-W04 C 절과 D 절이 둘 다 `W04_plot` 을 불러 **제목만 다른 같은 그림**을 냈다.
+W05 C 절과 D 절이 둘 다 `W05_plot` 을 불러 **제목만 다른 같은 그림**을 냈다.
 결과 그림 여섯 장 중 둘이 같은 그림이면 그 절 하나는 그림이 없는 것과 같다.
 
 > 절마다 **그 절이 말하는 것**을 그린다. C 절은 "atan2 는 경로를 따라가지 못한다" 이므로
@@ -207,8 +207,8 @@ W04 C 절과 D 절이 둘 다 `W04_plot` 을 불러 **제목만 다른 같은 �
 
 #### ② 판정선이 그 절의 판정이 아니다
 
-W04 F 절은 **along-track 판정** ($d - x_e < R$) 을 스윕하면서 웨이포인트 둘레에
-**수락반경 원**을 그렸다. 바로 앞 페이지(§4-6)가 "이 둘은 다르다" 를 그림 한 장으로
+W05 F 절은 **along-track 판정** ($d - x_e < R$) 을 스윕하면서 웨이포인트 둘레에
+**수락반경 원**을 그렸다. 바로 앞 페이지(§5-6)가 "이 둘은 다르다" 를 그림 한 장으로
 설명한 참이었다. 그림이 본문을 반박한 것이다.
 
 > 그림에 그린 임계선은 **코드가 실제로 평가한 부등식**이어야 한다.
@@ -226,14 +226,14 @@ W04 F 절은 **along-track 판정** ($d - x_e < R$) 을 스윕하면서 웨이�
 
 #### ④ 한 양에 두 구간
 
-`settled |y_e|` 를 `W04_plot` 은 마지막 1/4, D 절 스크립트는 마지막 1/5 로 쟀다.
+`settled |y_e|` 를 `W05_plot` 은 마지막 1/4, D 절 스크립트는 마지막 1/5 로 쟀다.
 같은 양인데 그림에는 $0.02$, 표에는 $0.0141$ 이 찍혔다.
 
 > **한 양에는 한 구간.** 평균·RMS 의 구간은 공용 플로터가 정하고, 절 스크립트가 따른다.
 > 구간은 그림과 본문 양쪽에 **적는다**.
 
 축 이야기 하나 더. `axis equal` 은 궤적에는 옳지만 **한 축만 긴 그림에서는 그림을 죽인다.**
-W04 E 절은 60 m 구간에서 9 m 안의 수렴을 보는 그림이라, `axis equal` 이 다섯 궤적을
+W05 E 절은 60 m 구간에서 9 m 안의 수렴을 보는 그림이라, `axis equal` 이 다섯 궤적을
 경로선 위로 겹쳐 아무것도 안 보이게 만들었다. 축 비율을 깨는 편이 맞을 때는 깨되,
 **제목이나 축 이름에 "not to the same scale" 이라고 적는다.**
 
@@ -340,7 +340,7 @@ ax = gca;  ax.ThetaZeroLocation = 'top';  ax.ThetaDir = 'clockwise';
 > ```
 >
 > 개념도(SVG)와 블록도에는 붙이지 않는다 — 그 둘은 "reading the figure" 표로 끝난다.
-> **결과 그래프에는 예외 없이 붙인다.** 2026-09-05 현재 W01 6 · W02 10 · W03 4 · A1 3,
+> **결과 그래프에는 예외 없이 붙인다.** 2026-09-05 현재 W01 6 · W03 10 · W04 4 · A1 3,
 > 전부 완료.
 
 > [!caution] 2026-09-08 개정 — **범주 이름을 본문에 쓰지 않는다**
@@ -382,7 +382,7 @@ ax = gca;  ax.ThetaZeroLocation = 'top';  ax.ThetaDir = 'clockwise';
 - 패널이 여럿이면 **패널 순서대로**. 독자의 눈이 움직이는 순서와 같아야 한다
 - **소리 내어 읽어 본다.** 읽다가 걸리면 그 문장이 틀린 것이다
 
-### 실제 예 — W02 §E (2026-09-08)
+### 실제 예 — W03 §E (2026-09-08)
 
 고치기 전은 `**Meaning.**` `**Trend, in numbers.**` `**Principle.**` … 다섯 불릿,
 각 불릿이 세 줄. 고친 뒤는 짧은 문단 다섯:
@@ -410,19 +410,19 @@ Part 2 의 절마다, 그림 **바로 앞에** 실행 블록을 둔다.
 > [!tip] To produce this figure
 > | | |
 > |---|---|
-> | script | `W02_E_integral_and_derivative.m` |
-> | model | `W02_surge_control.slx` |
-> | figure | `img/W02_result_PI.png` |
+> | script | `W03_E_integral_and_derivative.m` |
+> | model | `W03_surge_control.slx` |
+> | figure | `img/W03_result_PI.png` |
 >
 > ```matlab
-> W02_0_setup                        % once per session
-> W02_E_integral_and_derivative      % this section only
+> W03_0_setup                        % once per session
+> W03_E_integral_and_derivative      % this section only
 > ```
 ```
 
 - **스크립트 · 모델 · 그림 파일** 셋을 모두 적는다. 하나라도 빠지면 찾는 데 시간이 든다
 - 모델만 열어서 Run 을 눌러도 되면 그것도 적는다 — 학생이 블록을 만져 보는 경로다
-- 파일명이 강의 절 문자를 달고 있으므로(`W02_E_…`) 절과 파일이 눈으로 짝지어진다
+- 파일명이 강의 절 문자를 달고 있으므로(`W03_E_…`) 절과 파일이 눈으로 짝지어진다
   → `simulink-gnc-models/references/model-layout.md`
 
 ---
@@ -436,7 +436,7 @@ Part 2 의 절마다, 그림 **바로 앞에** 실행 블록을 둔다.
 
 ```bash
 bash _tools/tex2svg.sh -s 18 -x 40 -y 120 'y_e = \Delta\tan\beta_c'
-bash _tools/tex2svg.sh -p _tools/labels/w02-windup.txt      # 배치목록 통째로
+bash _tools/tex2svg.sh -p _tools/labels/w03-windup.txt      # 배치목록 통째로
 ```
 
 배치목록은 한 줄에 하나, `x | y | 크기 | 정렬 | 색 | TeX` 이다.
@@ -462,7 +462,7 @@ bash _tools/tex2svg.sh -p _tools/labels/w02-windup.txt      # 배치목록 통�
 `_tools/bdiag.sh` 가 이 규약을 도형으로 굳혀 놓았다 — `bd_blk`·`bd_sum`·`bd_sig`·
 `bd_wire`·`bd_dot`·`bd_sigA`(강조). 새 블록선도는 이것으로 그린다.
 
-실례: `figures/w02-windup.svg` 를 `_tools/w02_windup_fig.sh` 로 다시 그렸다.
+실례: `figures/w03-windup.svg` 를 `_tools/w03_windup_fig.sh` 로 다시 그렸다.
 내용은 그대로인데 형식만 바꿔도 논문 그림에 가까워진다.
 
 ## 2-8. 새 블록선도·도표는 TikZ 로 그린다
@@ -472,7 +472,7 @@ TeX Live 2026 + `pgf` + `standalone` + `dvisvgm`). 그림 전용이며,
 **문서 PDF 파이프라인은 그대로 Chrome + MathJax 다.**
 
 ```bash
-bash _tools/tikz2svg.sh figures/src/w02-windup.tex figures/w02-windup.svg
+bash _tools/tikz2svg.sh figures/src/w03-windup.tex figures/w03-windup.svg
 ```
 
 - 원본은 `figures/src/*.tex`, 스타일은 `figures/src/gnc-style.tex` 하나를 공유한다.
@@ -557,8 +557,8 @@ Z=$(awk -v w=$W 'BEGIN{printf "%.3f", 703/w}')      # PDF 에서의 실제 배�
 bash _tools/svgzoom.sh figures/w01-euler.svg $Z out.png
 ```
 
-- 이 볼트에서 줄어드는 그림: `w04-los-geometry`(78 %) · `w01-otter-layout`(83 %) ·
-  `w01-euler`(84 %) · `w04-three-laws`(90 %) 등 여덟 장.
+- 이 볼트에서 줄어드는 그림: `w05-los-geometry`(78 %) · `w01-otter-layout`(83 %) ·
+  `w01-euler`(84 %) · `w05-three-laws`(90 %) 등 여덟 장.
 - **그래서 그림 안의 최소 글자는 `\scriptsize` 다. `\tiny` 를 쓰지 않는다.**
   `w01-euler` 의 축 이름표가 `\tiny` (5 pt) 였고, 84 % 로 줄면 **4.2 pt** 라
   인쇄본에서 읽히지 않았다. `\scriptsize` 로 올려 5.8 pt 가 되었다.

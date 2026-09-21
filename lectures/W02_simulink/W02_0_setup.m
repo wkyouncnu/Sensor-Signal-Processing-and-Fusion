@@ -1,150 +1,86 @@
-%% W02_0_setup — 이번 주에 학생이 고치는 유일한 파일
-%  W02_0_setup — the only file to be edited in Week 2
-%
-%  강의에서의 위치 / place in the lecture
-%      Part 2 의 절 A 이다. 이후의 모든 절이 여기서 만든 변수를 쓰므로 가장 먼저
-%      실행한다.
-%      This is section A of Part 2, and it is run first because every later
-%      section uses the variables it defines.
-%
-%  이 파일의 역할 / what this file is for
-%      W02_surge_control.slx 의 모든 Constant, Gain, Step 블록은 숫자가 아니라
-%      여기서 정의한 변수의 이름을 갖고 있다. 게인을 바꾸려면 모델을 열 것 없이
-%      이 파일을 고치고 다시 실행한다. 실험 조건이 한곳에 모여 있어야 무엇을
-%      바꾸어 무엇이 달라졌는지 말할 수 있다.
-%
-%      Every Constant, Gain and Step block in W02_surge_control.slx holds the
-%      name of a variable defined here rather than a number, so a gain is
-%      changed by editing this file and running it again. Keeping the
-%      conditions of an experiment in one place is what makes it possible to
-%      say which change produced which result.
+%% W02_0_SETUP  2주차 모델이 쓰는 모든 값을 기본 작업공간에 올린다.
+%                Put every value the Week 2 model uses into the base workspace.
 %
 %  실행 / to run
 %      W02_0_setup
+%      open_system('W02_pid')      그리고 Run / then press Run
 %
-%  모델이 망가졌을 때 / to rebuild a model that has been damaged
-%      W02_1_build_surge_control
+%  강의에서의 위치 / place in the lecture
+%      Part 2 절 A 이다. 학생이 고치는 유일한 파일이며, 모델의 블록에는 숫자가
+%      아니라 여기의 변수 이름이 들어 있다. Kp 를 명령창에서 바꾸고 Run 을 다시
+%      누르면 그 값으로 돈다.
+%      This is section A of Part 2 and the only file a student edits. Every
+%      block in the model holds a variable name from this file rather than a
+%      number, so changing Kp in the Command Window and pressing Run again runs
+%      the model with the new value.
+%
+%  이 주차의 플랜트는 배가 아니다 / this week's plant is not a vessel
+%      질량-스프링-댐퍼 하나이다. 배는 게인 하나를 바꿔도 항력·프로펠러 곡선·
+%      축 사이의 얽힘이 함께 움직여서, 무엇 때문에 응답이 달라졌는지 가려낼 수
+%      없다. 그래서 먼저 출렁이는 것 하나뿐인 가장 단순한 2차 시스템에서 P, I, D
+%      가 각각 무엇을 하는지 본다. 3주차가 같은 제어기를 Otter 의 전진 속도에
+%      옮긴다.
+%
+%      A single mass-spring-damper. On a vessel, changing one gain also moves
+%      the drag, the propeller curve and the coupling between axes, and the
+%      cause of a change in the response cannot be isolated. The effect of P,
+%      I and D is therefore seen first on the simplest second-order system
+%      that can oscillate. Week 3 moves the same controller onto the surge
+%      speed of the Otter.
+%
+%          m y'' + b y' + k y = tau        G(s) = 1 / (m s^2 + b s + k)
 
-clear; close all; bdclose('all');
-
+clear; close all;
 here = fileparts(mfilename('fullpath'));
-root = fileparts(fileparts(here));            % ...\GradCourse
+root = fileparts(fileparts(here));
 addpath(fullfile(root,'_tools'), here);
-mss_path();                                   % locates MSS wherever it lives
 
-cfg = otter_config('base');
+%% ---- 플랜트 / the plant --------------------------------------------------
+%  극은 -1 +- 1j. 제어기 없이 두어도 조금 출렁이다 멈춘다 (감쇠비 0.707).
+%  Poles at -1 +- 1j: left alone it rings a little and stops (damping 0.707).
+pid_m = 1;            % 질량 / mass                        [kg]
+pid_b = 2;            % 감쇠 / damping                      [N s/m]
+pid_k = 2;            % 스프링 / spring                     [N/m]
 
-%% ---- the plant, as three numbers ----------------------------------------
-%  Week 1 reduced the surge axis to  M11 u_dot = X + Xu u.  Everything the
-%  controller design needs is in the two derived constants.
-M11  = 85.50;                       % surge mass including added mass [kg]
-Xu   = 24.4*9.81/(6*0.5144);        % linear surge damping [N per m/s]
-K_u  = 1/Xu;                        % DC gain  [(m/s) per N]
-T_u = M11/Xu;                     % time constant [s]
+%% ---- PID 게인 / the PID gains -------------------------------------------
+%  절 C, D, E 는 이 가운데 하나만 바꾸어 가며 돌린다. 여기의 값은 세 갈래를
+%  모두 켠 기본값이다.
+%  Sections C, D and E vary one of these at a time. The values here are the
+%  default with all three terms switched on.
+Kp = 10;              % 비례 / proportional                 [N/m]
+Ki = 8;               % 적분 / integral                     [N/(m s)]
+Kd = 4;               % 미분 / derivative                   [N s/m]
+Nf = 20;              % 미분 필터 계수 / derivative filter    [rad/s]
+                      %   Simulink PID 블록 대화상자의 "Filter coefficient (N)"
+                      %   the "Filter coefficient (N)" of the PID block dialog
+d_filtered = 1;       % 1 = Nf s/(s+Nf) 로 거른 미분, 0 = 순수 미분 (손으로 만든 쪽만)
+                      % 1 = filtered derivative, 0 = pure derivative (hand-built row only)
 
-%% ---- the reference ------------------------------------------------------
-%  Two steps are summed, so one model covers a single step and the up-then-down
-%  profile that the windup experiment needs.
-%
-%     u_d = u_d1  for  t_up  <= t < t_dn
-%     u_d = u_d2  for  t_dn  <= t
-%
-%  Setting u_d2 = u_d1 turns the second step off.
-u_d1 = 1.5;                  % first commanded speed [m/s]
-u_d2 = 1.5;                  % second commanded speed [m/s]
-t_up = 5;                    % time of the first step [s]
-t_dn = 1e6;                  % time of the second step [s]
+%% ---- 목표값 / the setpoint -----------------------------------------------
+y_step = 1;           % 목표 위치 / target position          [m]
+t_step = 1;           % 계단이 들어가는 시각 / step instant   [s]
+ref_filter = 0;       % 1 이면 목표를 1차 필터로 부드럽게 / 1 smooths the setpoint
+ref_Tf     = 0.3;     % 그 필터의 시상수 / its time constant  [s]
 
-%% ---- the controller -----------------------------------------------------
-%  Designed in §3-4 for a closed-loop damping ratio and natural frequency:
-%
-%     K_i = wn^2 T_u / K_u,     K_p = (2 zeta sqrt(T_u K_u K_i) - 1)/K_u
-%
-%  With zeta = 0.7 and wn = 1.5 rad/s this gives the pair below.
-Kp = 102.00;                 % proportional gain [N per m/s]
-Ki = 192.38;                 % integral gain     [N per m]
-Kd = 0;                      % derivative gain   [N per m/s^2]
-Nf = 20;                     % derivative filter bandwidth [rad/s]
+%% ---- 액추에이터 한계와 안티와인드업 / actuator limit and anti-windup ------
+tau_max = 1e6;        % 힘의 한계. 1e6 은 사실상 한계가 없는 것
+                      % force limit [N]; 1e6 means effectively none
+Kb      = 2;          % 되감기 이득. 0 이면 안티와인드업이 없다
+                      % back-calculation gain [1/s]; 0 removes anti-windup
 
-%  미분항은 (c_d*u_d - u) 를 미분한다. c_d 가 그 설정값 가중이다.
-%    c_d = 0  측정값을 미분한다. 설정값이 계단으로 변해도 미분 킥이 없다
-%    c_d = 1  오차를 미분한다. 교과서형이며 Simulink PID 블록과 같아진다
-%  The derivative acts on (c_d*u_d - u), and c_d is its setpoint weight:
-%    c_d = 0  differentiate the measurement, so a step in u_d produces no kick
-%    c_d = 1  differentiate the error, the textbook form, which is what
-%             Simulink's PID Controller block does
-c_d = 0;
+%% ---- 센서 잡음 / sensor noise ---------------------------------------------
+noise_std = 0;        % 위치 센서 잡음의 표준편차. 0 이면 잡음이 없다
+                      % standard deviation of the position sensor noise; 0 = none   [m]
+noise_ts  = 0.01;     % 잡음이 새 값을 뽑는 주기 (100 Hz 센서) / noise sample time  [s]
 
-%% ---- anti-windup --------------------------------------------------------
-%  aw_mode  0  none            the integrator never stops
-%           1  clamping        integration is frozen while the actuator is
-%                              saturated and the error drives it further in
-%           2  back-calculation the excess (X_sat - X_cmd) is fed back into
-%                              the integrator through K_aw
-aw_mode = 2;
-%  역계산 게인 [1/s]. 1/K_aw 가 추종 시상수이므로 이것은 비가 아니라 **율**이다.
-%  2026-09-16 까지 이 파일은 1/T_u = 0.9071 을, W02_vars 는 5 를 갖고 있었다.
-%  같은 수를 담아야 하는 두 파일이 갈라져 있었고, 그래서 학생이 Run 을 눌러 얻는
-%  결과와 강의노트의 표가 서로 달랐다. 강의의 모든 측정값이 5 로 재어진 것이므로
-%  5 로 맞춘다. §2-6 의 표가 그 선택의 근거를 수치로 보인다.
-%
-%  The back-calculation gain [1/s]. Since 1/K_aw is the tracking time constant
-%  this is a rate, not a ratio. Until 2026-09-16 this file held 1/T_u = 0.9071
-%  while W02_vars held 5: two files that must carry the same number had drifted
-%  apart, so what a student got by pressing Run did not match the tables in the
-%  notes. Every measurement in the lecture was taken at 5, and §2-6 shows the
-%  evidence for that choice.
-K_aw    = 5;
+%% ---- 시뮬레이션 / simulation -----------------------------------------------
+T_final = 10;         % [s]
+h       = 1e-3;       % 고정 스텝 / fixed step (ode4)          [s]
 
-%% ---- open loop ----------------------------------------------------------
-%  loop_closed = 0 disconnects the controller and applies X_open directly,
-%  which is how the plant constants are identified in Part 2, section C.
-pid_mode    = 0;             % 0 = the hand-built PID, 1 = Simulink's PID Controller block
-loop_closed = 1;
-X_open      = 100;           % surge force applied in open loop [N]
-
-%% ---- actuator -----------------------------------------------------------
-k_pos = cfg.k_pos;   k_neg = cfg.k_neg;
-n_max = cfg.n_max;   n_min = cfg.n_min;
-
-%  The surge force the propellers can actually produce. These are the limits
-%  the allocation imposes, and the same numbers are given to the PID block so
-%  that its internal saturation and the real one coincide.
-X_hi  =  2*k_pos*n_max^2;    %  239.36 N
-X_lo  = -2*k_neg*n_min^2;    % -133.42 N
-
-%% ---- vessel and environment --------------------------------------------
-mp     = 25;
-rp     = [0.05 0 -0.35]';
-V_c    = 0;
-beta_c = 0;
-x0     = zeros(12,1);
-
-%% ---- simulation ---------------------------------------------------------
-h       = 0.02;
-T_final = 30;
-
-%% ---- live view -----------------------------------------------------------
-animate       = 1;
-animate_every = 0.5;
-track_Nmin = -5;    track_Nmax = 65;
-track_Emin = -35;   track_Emax = 35;
-
-%% ---- report -------------------------------------------------------------
-X_lim = [2*k_neg*n_min*abs(n_min), 2*k_pos*n_max*abs(n_max)];
-fprintf('\n  W02 setup complete\n');
-fprintf('    plant           T_u = %.4f s,  K_u = %.6f (m/s)/N\n', T_u, K_u);
-fprintf('    actuator        X in [%.2f, %.2f] N  ->  u_ss in [%.4f, %.4f] m/s\n', ...
-        X_lim(1), X_lim(2), X_lim(1)*K_u, X_lim(2)*K_u);
-fprintf('    controller      Kp = %g, Ki = %g, Kd = %g, Nf = %g\n', Kp, Ki, Kd, Nf);
-if Ki > 0
-    wn = sqrt(K_u*Ki/T_u);
-    ze = (1 + K_u*Kp)/(2*sqrt(T_u*K_u*Ki));
-    fprintf('    closed loop     wn = %.4f rad/s,  zeta = %.4f\n', wn, ze);
-else
-    fprintf('    closed loop     P only, steady-state error = %.2f %%\n', 100/(1+K_u*Kp));
-end
-AW = {'none','clamping','back-calculation'};
-fprintf('    anti-windup     %s\n', AW{aw_mode+1});
-fprintf('    reference       %g -> %g m/s at t = %g s\n', u_d1, u_d2, t_up);
-fprintf('    simulation      %g s at h = %g s\n\n', T_final, h);
+fprintf(['\n  W02_0_setup\n' ...
+         '    plant    G(s) = 1/(%g s^2 + %g s + %g)\n' ...
+         '    gains    Kp = %g   Ki = %g   Kd = %g   Nf = %g\n' ...
+         '    step     y_d = 0 -> %g at t = %g s\n' ...
+         '    limit    |tau| <= %g,  Kb = %g\n' ...
+         '    noise    std %g m every %g s\n\n'], ...
+        pid_m, pid_b, pid_k, Kp, Ki, Kd, Nf, y_step, t_step, tau_max, Kb, noise_std, noise_ts);

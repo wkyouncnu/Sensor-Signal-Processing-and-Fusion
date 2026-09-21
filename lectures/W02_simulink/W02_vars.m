@@ -1,70 +1,37 @@
 function V = W02_vars()
-%W02_VARS  W02_surge_control.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
-%          Every variable W02_surge_control.slx needs, in one struct.
+%W02_VARS  W02_pid.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
+%          Every variable W02_pid.slx needs, in one struct.
 %
-%   V = W02_vars
+%   무엇을 위한 파일인가 / what this file is for
+%       W02_0_setup 과 같은 값을 담는다. 두 파일이 따로 있는 이유는 쓰임이
+%       다르기 때문이다. W02_0_setup 은 값을 기본 작업공간에 올려서 학생이 모델을
+%       열고 Run 만 누르면 되게 한다. 이 함수는 같은 값을 구조체로 돌려주고, 절
+%       스크립트는 run_sim 으로 그중 하나만 바꾸어 돌린다. 그래야 스윕이 끝난
+%       뒤에도 작업공간이 마지막 실행의 값으로 남지 않는다.
 %
-%   왜 W02_0_setup 과 따로 있는가 / why this is separate from W02_0_setup
-%       W02_0_setup 은 같은 값들을 기본 작업공간에 채운다. 모델을 열고 Run 을
-%       누르기만 하면 되게 하려는 것이다. 절 스크립트는 같은 값들을 구조체로
-%       필요로 한다. run_sim 이 값 하나만 바꾸어 여러 번 돌릴 때, 작업공간이
-%       마지막 실행의 상태로 남지 않게 하기 위해서다.
+%       It holds the same values as W02_0_setup, for a different use. The setup
+%       script puts them in the base workspace so that opening the model and
+%       pressing Run is enough. This function returns them as a struct, and the
+%       section scripts pass it to run_sim with one value changed, so that a
+%       sweep does not leave the workspace holding the values of its last run.
 %
-%       W02_0_setup places the same values in the base workspace, which is
-%       what is needed to open the model and press Run. The section scripts
-%       need them as a struct instead, so that run_sim can vary one value for
-%       one run without leaving the workspace in the state of that run.
-%
-%       둘 다 여기서 같은 숫자를 읽는다. 게인을 적어 두는 곳은 한 군데여야 한다.
-%       Both read the same numbers from here, so there is exactly one place
-%       where a gain is written down.
+%   두 파일의 값이 어긋나면 / if the two files disagree
+%       학생이 Run 으로 본 그림과 강의에 실린 그림이 달라진다. 값을 고칠 때는
+%       두 곳을 함께 고친다. verify_w02_pid 가 두 파일을 대조한다.
+%       A figure produced with Run would then differ from the one printed in the
+%       notes. Change both together; verify_w02_pid compares the two.
 
-mss_path();
-cfg = otter_config('base');
+V.pid_m = 1;   V.pid_b = 2;   V.pid_k = 2;
 
-%  ---- the plant, from otter.m --------------------------------------------
-V.M11   = 85.50;                      % surge mass incl. added mass [kg]
-V.Xu    = 24.4*9.81/(6*0.5144);       % |X_u|, linear surge damping [N per m/s]
-V.K_u   = 1/V.Xu;                     % DC gain [(m/s)/N]
-V.T_u = V.M11/V.Xu;                 % time constant [s]
-V.X_hi  =  2*cfg.k_pos*cfg.n_max^2;   % most the propellers can push [N]
-V.X_lo  = -2*cfg.k_neg*cfg.n_min^2;   % most they can pull back [N]
+V.Kp = 10;     V.Ki = 8;      V.Kd = 4;     V.Nf = 20;
+V.d_filtered = 1;
 
-%  ---- the PI design of 2-3 -----------------------------------------------
-zeta_d = 0.7;  wn_d = 1.5;
-V.zeta_d = zeta_d;  V.wn_d = wn_d;
-V.Ki_d = wn_d^2 * V.T_u / V.K_u;
-V.Kp_d = (2*zeta_d*sqrt(V.T_u*V.K_u*V.Ki_d) - 1)/V.K_u;
+V.y_step = 1;  V.t_step = 1;
+V.ref_filter = 0;  V.ref_Tf = 0.3;
 
-%  ---- controller, as the model reads it ----------------------------------
-V.Kp = V.Kp_d;  V.Ki = V.Ki_d;  V.Kd = 0;  V.Nf = 20;
+V.tau_max = 1e6;   V.Kb = 2;
 
-%  미분항의 설정값 가중 / the setpoint weight of the derivative term
-%    c_d = 0  측정값을 미분한다 (이 강의의 기본값)
-%    c_d = 1  오차를 미분한다 (교과서형, Simulink PID 블록과 같다)
-%    c_d = 0  differentiate the measurement, which is this course's default
-%    c_d = 1  differentiate the error, the textbook form and the one
-%             Simulink's PID Controller block uses
-V.c_d = 0;
-V.aw_mode = 2;  V.K_aw = 5;
+V.noise_std = 0;   V.noise_ts = 0.01;
 
-%  ---- command -------------------------------------------------------------
-V.u_d1 = 1.5;   V.u_d2 = 1.5;   V.t_up = 5;   V.t_dn = 1e6;
-
-%  ---- open-loop switch ----------------------------------------------------
-V.loop_closed = 1;  V.X_open = 100;  V.pid_mode = 0;
-
-%  ---- plant and environment -----------------------------------------------
-V.mp = 25;  V.rp = [0.05 0 -0.35]';  V.V_c = 0;  V.beta_c = 0;
-V.x0 = zeros(12,1);
-V.k_pos = cfg.k_pos;  V.k_neg = cfg.k_neg;
-V.n_max = cfg.n_max;  V.n_min = cfg.n_min;
-
-%  ---- simulation ----------------------------------------------------------
-V.h = 0.02;  V.T_final = 30;
-
-%  ---- live view (off for the section scripts; they plot at the end) -------
-V.animate = 0;  V.animate_every = 0.5;
-V.track_Nmin = -5;   V.track_Nmax = 65;
-V.track_Emin = -35;  V.track_Emax = 35;
+V.T_final = 10;    V.h = 1e-3;
 end

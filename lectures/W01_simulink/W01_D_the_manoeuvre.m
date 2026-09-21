@@ -9,13 +9,13 @@
 %      Part 2 의 절 D 이며, Part 1 의 §1-12 가 예고한 두 가지를 실제로 보이는
 %      자리이다. 하나는 옆으로 미는 힘이 전혀 없는데도 옆 속도가 생긴다는 것이고,
 %      다른 하나는 선수가 가리키는 방향과 배가 실제로 가는 방향이 다르다는 것이다.
-%      뒤의 것이 크랩각이며, 4주차의 유도법칙이 정면으로 다루게 될 양이다.
+%      뒤의 것이 크랩각이며, 5주차의 유도법칙이 정면으로 다루게 될 양이다.
 %
 %      This is section D of Part 2, and it demonstrates the two consequences
 %      announced in §1-12 of Part 1: that a sway velocity appears although no
 %      sway force is ever applied, and that the direction the bow points
 %      differs from the direction the vessel travels. The second of these is
-%      the crab angle, the quantity the guidance laws of Week 4 must confront.
+%      the crab angle, the quantity the guidance laws of Week 5 must confront.
 %
 %  절차 / procedure
 %      1. W01_openloop.slx 를 150 s 동안 한 번 돌린다. 제어기는 없으며, 두
@@ -140,7 +140,7 @@ fprintf(['\n    Y is identically zero. Both propellers are bolted to the hull\n'
          '\n    The vessel nevertheless sways in both turns, and v CHANGES SIGN\n' ...
          '    between them. That sway velocity is produced by the hull ROTATING\n' ...
          '    while it moves, through the Coriolis term in otter.m, and not by\n' ...
-         '    any side force. It is the crab angle, and Week 3 has to steer\n' ...
+         '    any side force. It is the crab angle, and Week 4 has to steer\n' ...
          '    around it.\n']);
 
 %  WITHDRAWN 2026-09-08, at the lecturer's request: the five-panel state

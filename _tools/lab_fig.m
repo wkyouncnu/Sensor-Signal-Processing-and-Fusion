@@ -2,8 +2,8 @@ function h = lab_fig(name, w, hgt)
 %LAB_FIG  이 강의의 공통 서식을 가진 그림 창 하나를 연다.
 %         One figure, in the course's house style.
 %
-%   lab_fig('W02 C  open loop')          900 x 380, 기본 크기 / the default
-%   lab_fig('W04 G  current', 1250, 470)
+%   lab_fig('W03 C  open loop')          900 x 380, 기본 크기 / the default
+%   lab_fig('W05 G  current', 1250, 470)
 %
 %   모든 절 스크립트가 이것을 거쳐 그린다. 크기도, 격자도, 선 굵기도 같아지므로
 %   학생이 직접 돌려 얻은 그림과 강의노트에 실린 그림이 같은 강의의 것으로 보인다.

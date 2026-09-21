@@ -29,6 +29,21 @@ status: done
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · instructor's Simulink lectures [part 1](https://youtu.be/a-afHg_fSaU) · [part 2](https://youtu.be/070Yn0Hw5a0) |
 
 
+> [!tip] Getting the course files, and keeping them current (Windows)
+> <span style="font-size:0.88em">The notes, models and scripts are kept in one Git repository that is updated through the semester. Clone it once; before every class, pull. A pull downloads only what has changed since the last one.</span>
+>
+> | When | Where to run it | Command |
+> |---|---|---|
+> | once | PowerShell — installs Git for Windows | `winget install --id Git.Git -e` |
+> | once | the folder that will hold the course, e.g. `Documents` | `git clone https://github.com/wkyouncnu/Sensor-Signal-Processing-and-Fusion.git` |
+> | before every class | inside the cloned folder `Sensor-Signal-Processing-and-Fusion` | `git pull` |
+>
+> - `git pull` prints `Already up to date.` when nothing has changed, and otherwise lists the files it updated.
+> - The repository is private. When Git asks, sign in with the GitHub account the instructor has given access.
+> - Experiment on copies, not on the cloned files: copy a week's `WXX_simulink` folder elsewhere first, and a pull can never collide with local edits. If it already has, `git stash`, then `git pull`, then `git stash pop` sets the edits aside, updates, and puts them back.
+> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder.
+
+
 - **Course**: USV Guidance, Navigation and Control (Graduate)
 - **Department**: Autonomous Vehicle System Engineering, Chungnam National University
 - **This week**: ① the two reference frames and the twelve states ② the equation of motion and where each term comes from ③ an open-loop Simulink model whose settled speed is predicted on paper before it is measured
@@ -128,7 +143,7 @@ A reader short of time can go 1-1 → 1-3 → 1-4 → 1-9 and still follow the l
 > | | |
 > |---|---|
 > | $N$ is already taken | $N$ is the **yaw moment** in $\boldsymbol{\tau} = [X\ \ Y\ \ N]^{\!\top}$, used from §1-7 onward and in every week after. One letter cannot be both a position and a moment in the same document |
-> | frames must be visible | By Week 4 three frames appear in one equation — $\{n\}$, $\{b\}$ and the path frame $\{p\}$ — and a symbol with no superscript cannot say which one it belongs to |
+> | frames must be visible | By Week 5 three frames appear in one equation — $\{n\}$, $\{b\}$ and the path frame $\{p\}$ — and a symbol with no superscript cannot say which one it belongs to |
 >
 > This is Fossen's notation, so the Handbook and the lecture agree symbol for symbol. The **superscript** marks the frame; subscripts are already spoken for by components and coefficients, as in $x_g$, $y_{\text{pont}}$ and $N_r$.
 >
@@ -143,9 +158,9 @@ A reader short of time can go 1-1 → 1-3 → 1-4 → 1-9 and still follow the l
 > | $T_u$, $T_{\text{yaw}}$, $T_{\text{sway}}$ — a **named** subscript | a **time constant**, in seconds | a thrust | `otter.m` writes `T_yaw = 1; % time constant in yaw (s)` |
 > | $T$, $T_1$, $T_2$ — bare, or a **numbered** subscript | a **thrust**, in newtons | a time constant | `otter.m` writes `Thrust(i)` for exactly this quantity |
 >
-> The one deliberate exception is Nomoto's second-order model in §3-2, where the literature's own $T_1, T_2, T_3$ are time constants. It is confined to a single callout, which says so on the spot.
+> The one deliberate exception is Nomoto's second-order model in §4-2, where the literature's own $T_1, T_2, T_3$ are time constants. It is confined to a single callout, which says so on the spot.
 >
-> Week 2's surge time constant was written $\tau_u$ until 2026-09-10 and is now $T_u$, in both the lecture and the scripts. If an older printout shows `tau_u = 1.1025 s`, it is the same number under the old name.
+> Week 3's surge time constant was written $\tau_u$ until 2026-09-10 and is now $T_u$, in both the lecture and the scripts. If an older printout shows `tau_u = 1.1025 s`, it is the same number under the old name.
 
 ### NED and ENU — the other convention
 
@@ -291,7 +306,7 @@ $$
 
 ### The horizontal plane
 
-- From Week 2 onward the vessel is treated as a 3-DOF craft and only the yaw rotation survives:
+- From Week 3 onward the vessel is treated as a 3-DOF craft and only the yaw rotation survives:
 
 $$
 \mathbf{R}(\psi) =
@@ -383,7 +398,7 @@ $$
 \chi - \psi = \beta = \operatorname{atan2}(v, u) = \operatorname{atan2}(0.50,\ 1.00) = 26.6° ,
 $$
 
-which is the **crab angle**. §1-12 shows where a sway velocity comes from when no sway force is applied, and Week 4 has to steer a vessel along a path while its bow points $\beta$ away from it. `W01_frames` prints the four rows of the table above.
+which is the **crab angle**. §1-12 shows where a sway velocity comes from when no sway force is applied, and Week 5 has to steer a vessel along a path while its bow points $\beta$ away from it. `W01_frames` prints the four rows of the table above.
 
 > [!caution] The symptom of getting this wrong
 > Integrating $u$ to obtain a north position gives a track that is correct at $\psi = 0$, plausible at small headings, and increasingly wrong as the vessel turns — with no error, no warning and no `NaN`. Week 1's model is deliberately run at three different headings so that the failure would be visible if it were there.
@@ -449,7 +464,7 @@ $$
 > The $1/\cos\theta$ entries blow up: at $\theta = 89.9°$ the largest entry of $\mathbf{T}_{\Theta}$ is already $573$. This is **gimbal lock**, and it is a property of the Euler-angle representation, not of the vessel. A surface craft never approaches it, which is why this course uses Euler angles throughout. An AUV performing a vertical manoeuvre does approach it, and that is where quaternions earn their place.
 
 > [!note] Two simplifications that hold for this vessel, and are stated rather than assumed
-> For a surface craft $\phi$ and $\theta$ stay within a few degrees, so $\mathbf{T}_{\Theta} \approx \mathbf{I}$ and $\dot\psi \approx r$. Week 3 controls $\psi$ by integrating $r$ on exactly that basis. The twelve-state plant does **not** make the approximation; only the design equations do.
+> For a surface craft $\phi$ and $\theta$ stay within a few degrees, so $\mathbf{T}_{\Theta} \approx \mathbf{I}$ and $\dot\psi \approx r$. Week 4 controls $\psi$ by integrating $r$ on exactly that basis. The twelve-state plant does **not** make the approximation; only the design equations do.
 
 ### Unit quaternions — attitude without the singularity
 
@@ -894,7 +909,7 @@ $$
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | buoyancy and weight acting through different points |
 | $\boldsymbol{\tau}$ | control force | what the thrusters produce |
 
-- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 4 §4-7 pays for it with a permanent path error, and Week 6 adds wind and waves beside it.
+- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 5 §5-7 pays for it with a permanent path error, and Week 7 adds wind and waves beside it.
 
 > [!important] The added mass is not a correction term
 > For the Otter, $-X_{\dot u} = 5.50$ kg against a hull-plus-payload mass of $80.0$ kg, so the water contributes $6.4\%$ of the effective surge inertia. In sway it contributes far more, $-Y_{\dot v} = 82.5$ kg against the same $80.0$ kg. It is part of the model, not a refinement of it.
@@ -978,7 +993,7 @@ $$
 > [!warning] Every angle in the state vector is in **radians**
 > `otter.m` works in radians throughout; only the setup scripts and the plots use degrees. A heading typed as `60` rather than `deg2rad(60)` is a command of $60$ radians, or nine and a half full turns. The models in this course convert once, at the command block, and never again.
 
-- The states that matter for guidance and control are therefore $\{u, v, r, x, y, \psi\}$ — six of the twelve. From Week 2 onward the vessel is treated as a 3-DOF craft, and the discarded states are justified by their magnitude rather than by assumption.
+- The states that matter for guidance and control are therefore $\{u, v, r, x, y, \psi\}$ — six of the twelve. From Week 3 onward the vessel is treated as a 3-DOF craft, and the discarded states are justified by their magnitude rather than by assumption.
 - The heave, roll and pitch states are retained in the plant because they contribute to the restoring and trim terms. They are computed and then not used.
 
 ### Hull constants
@@ -1003,12 +1018,12 @@ All values below are read directly from `Tools/MSS/VESSELS/otter.m`.
 | $U_{\max}$ | $3.086$ m/s | design speed, 6 knots | `otter.m` |
 
 > [!caution] $M_{66}$ is not $I_z - N_{\dot r}$
-> Adding the two inertia entries gives $15.1021 + 25.6736 = 40.7757$ kg·m², which is **not** the value `otter.m` uses. The rigid-body matrix is built at the centre of gravity and then transferred to the origin of $\{b\}$, and the payload puts the CG at $x_g = (55 \times 0.2 + 25 \times 0.05)/80 = 0.153125$ m — exactly — rather than at the origin. The transfer adds $(m + m_p)x_g^2 = 80 \times 0.153125^2 = 1.8758$ kg·m², and $40.7757 + 1.8758 = 42.6515$ kg·m² is the figure `otter.m` uses. It propagates into $N_r$ as well. Week 3 sizes a controller from this number, so the $4.6\%$ difference is not cosmetic.
+> Adding the two inertia entries gives $15.1021 + 25.6736 = 40.7757$ kg·m², which is **not** the value `otter.m` uses. The rigid-body matrix is built at the centre of gravity and then transferred to the origin of $\{b\}$, and the payload puts the CG at $x_g = (55 \times 0.2 + 25 \times 0.05)/80 = 0.153125$ m — exactly — rather than at the origin. The transfer adds $(m + m_p)x_g^2 = 80 \times 0.153125^2 = 1.8758$ kg·m², and $40.7757 + 1.8758 = 42.6515$ kg·m² is the figure `otter.m` uses. It propagates into $N_r$ as well. Week 4 sizes a controller from this number, so the $4.6\%$ difference is not cosmetic.
 >
-> Four decimals are kept here on purpose. Rounded to two, the same arithmetic reads $15.10 + 25.67 = 40.77$ and $40.78 + 1.88 = 42.66$ — neither closes, because each term was rounded separately. Week 3 §3-1 builds $M_{66}$ step by step from the same four numbers.
+> Four decimals are kept here on purpose. Rounded to two, the same arithmetic reads $15.10 + 25.67 = 40.77$ and $40.78 + 1.88 = 42.66$ — neither closes, because each term was rounded separately. Week 4 §4-1 builds $M_{66}$ step by step from the same four numbers.
 
 > [!note] One damping term is not linear
-> The yaw damping applied in `otter.m` is $N_h = N_r\!\left(1 + 10|r|\right) r$, not $N_r r$. The extra factor is dormant at low turn rates and dominant at high ones. It is recorded here and exploited in Week 3, where it makes large heading changes overshoot **less** than small ones — behaviour a linear model cannot produce.
+> The yaw damping applied in `otter.m` is $N_h = N_r\!\left(1 + 10|r|\right) r$, not $N_r r$. The extra factor is dormant at low turn rates and dominant at high ones. It is recorded here and exploited in Week 4, where it makes large heading changes overshoot **less** than small ones — behaviour a linear model cannot produce.
 
 ## 1-10. From propeller speed to force
 
@@ -1075,7 +1090,7 @@ $$
 - The middle row is **exactly zero**, and $\operatorname{rank}(\mathbf{B}) = 2$. Appendix A1 derives this matrix from a general rule and shows what it costs; this week only records that the row is empty.
 
 > [!important] Zero is not a small number
-> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 9 meets this fact again as a hard limit on what can be controlled.
+> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 10 meets this fact again as a hard limit on what can be controlled.
 
 ### The whole chain, from revolutions to generalised force
 
@@ -1134,7 +1149,7 @@ tau = [Thrust(1) + Thrust(2)  0 0 0 0  -l1*Thrust(1) - l2*Thrust(2)]';
 
 ## 1-11. Surge alone — a first-order system
 
-- The speed controller of Week 2 is designed on one scalar equation. This section derives that equation from the surge row of the full model, states every term discarded on the way, and measures what the discarding costs.
+- The speed controller of Week 3 is designed on one scalar equation. This section derives that equation from the surge row of the full model, states every term discarded on the way, and measures what the discarding costs.
 
 ### The surge row, as `otter.m` integrates it
 
@@ -1163,9 +1178,9 @@ $$
 | Dropped term | Size in a straight run from rest, $n = [60, 60]$ | Why it goes | When it returns |
 |---|---|---|---|
 | $M_{15}\,\dot q$ | peak $9.14$ N against $X = 79.78$ N | it acts only while the hull pitches, by at most $0.39°$; it is the only dropped term that is not identically zero here | never in the design models — it is the whole residue measured below |
-| $-M_{22}\,v\,r - M_{26}\,r^2$ | $0$ exactly | equal thrust on a symmetric hull gives $v = r = 0$ | every turn — Week 3 |
+| $-M_{22}\,v\,r - M_{26}\,r^2$ | $0$ exactly | equal thrust on a symmetric hull gives $v = r = 0$ | every turn — Week 4 |
 | terms in $p$, $q$, $w$ of $\mathbf{C}$ | peak $0.012$ N | products of two small transients | not for this hull |
-| $X_u\,(u_r - u)$ | $0$ | $V_c = 0$ | §1-13 and Week 4 |
+| $X_u\,(u_r - u)$ | $0$ | $V_c = 0$ | §1-13 and Week 5 |
 
 ### The first-order model, one step at a time
 
@@ -1325,7 +1340,7 @@ $$
 \beta = \operatorname{atan2}(v, u), \qquad \chi = \psi + \beta
 $$
 
-where $\chi$ is the course angle. Week 4 §4-7 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error, and measures it as $\Delta\tan\beta$.
+where $\chi$ is the course angle. Week 5 §5-7 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error, and measures it as $\Delta\tan\beta$.
 
 ## 1-13. Ocean current — a velocity, not a force
 
@@ -1439,7 +1454,7 @@ So $\beta_c - \psi$ is **not a new convention to memorise.** It is what $\mathbf
 | fore-and-aft ($\beta_c = 0°$ or $180°$) | the track stays straight; only the **ground speed** changes, by exactly $\pm V_c$ |
 | on the beam | the track leaves the heading by a drift angle, and cross-flow drag on $v_r$ makes a yaw moment that slowly **turns the hull into the flow** — with no command given |
 
-- The second is the same crab angle as §1-12, arriving by a different route. Week 4 has to steer around both at once.
+- The second is the same crab angle as §1-12, arriving by a different route. Week 5 has to steer around both at once.
 
 ### The same thing in `otter.m`, line by line
 
@@ -1655,7 +1670,7 @@ $$
 | the track | **where** the hull went |
 | the hull outline and the line leaving its bow | **where the hull was pointing** while it went there |
 
-- Those are not the same question. A marine vehicle carries a sway velocity, so its heading $\psi$ and its course over ground differ by the crab angle $\beta = \operatorname{atan2}(v, u)$. In the turns of §D they differ by $7.05°$, and in the beam current of §E by $25.8°$; no track drawn on its own can show either. Week 4 has to steer around exactly this difference.
+- Those are not the same question. A marine vehicle carries a sway velocity, so its heading $\psi$ and its course over ground differ by the crab angle $\beta = \operatorname{atan2}(v, u)$. In the turns of §D they differ by $7.05°$, and in the beam current of §E by $25.8°$; no track drawn on its own can show either. Week 5 has to steer around exactly this difference.
 - A MATLAB Function block cannot plot. The drawing function is therefore declared extrinsic, which makes Simulink hand the call back to MATLAB instead of generating code for it:
 
 ```matlab
@@ -1737,7 +1752,7 @@ The reason is that two different laws meet at the steady state. Thrust grows wit
 
 $$2k_{\text{pos}}\,n\lvert n\rvert = \lvert X_u\rvert\,u \qquad\Longrightarrow\qquad u \propto n^2 .$$
 
-The dashed prediction and the measured markers agree to four decimal places, and that agreement is worth pausing on. The prediction came from one scalar equation; the measurement came from a twelve-state nonlinear model. They match because **surge damping in `otter.m` really is linear** when nothing else is moving — a fact about this vessel, not about the method. Week 3 runs the same exercise on the yaw axis and gets only an approximation, and the difference between the two weeks is a property of the hull.
+The dashed prediction and the measured markers agree to four decimal places, and that agreement is worth pausing on. The prediction came from one scalar equation; the measurement came from a twelve-state nonlinear model. They match because **surge damping in `otter.m` really is linear** when nothing else is moving — a fact about this vessel, not about the method. Week 4 runs the same exercise on the yaw axis and gets only an approximation, and the difference between the two weeks is a property of the hull.
 
 Nothing here involves a controller, because there is none yet. These four points are the ceiling every later week works underneath: no speed controller can ask for a speed the propellers cannot produce.
 
@@ -1815,7 +1830,7 @@ A turning vessel always has some sideways velocity $v$, so it always moves at an
 
 The turn itself is nearly free. Surge falls from $1.0286$ to $1.0218$ m/s — seven tenths of one per cent. Because $n\lvert n\rvert$ curves upward, the propeller that speeds up gains more than the slowed one loses, so the total thrust barely changes. That is why a differential turn is the cheap way to steer a twin-screw craft, and why reversing a propeller is kept for manoeuvring at rest.
 
-Raising `dn` in `W01_0_setup.m` widens the crab angle, because $\beta$ grows with turn rate. Week 3 §3-4 has to steer around it, and Week 4's line-of-sight guidance is where it finally has to be paid for.
+Raising `dn` in `W01_0_setup.m` widens the crab angle, because $\beta$ grows with turn rate. Week 4 §4-4 has to steer around it, and Week 5's line-of-sight guidance is where it finally has to be paid for.
 
 > [!important] The sway force is zero and the sway velocity is not
 > $\max\lvert Y\rvert = 0.0 \times 10^{0}$ N over every command in the manoeuvre — not small, but **structurally** zero, because both propellers face forward and $\mathbf{B}$ of §1-10 has no sway row. The vessel sways anyway, at $\pm 0.1264$ m/s, and $v$ **changes sign** between the two turns. That sway is the Coriolis term $M_{11}\,u\,r$ of §1-12 acting while the hull rotates, not a force. Reporting $Y \approx 0$ and $Y = 0$ as the same observation loses the entire content of §1-10.
@@ -1874,8 +1889,8 @@ W01_E_current_run
 - **A beam current changes the direction.** The orange track leaves the meridian and ends about $50$ m to the east — **while its bow still points north.** The track and the heading differ by $25.8°$, and no force pushed the hull sideways.
 - **Why that happens** is §1-13 in one line: `otter.m` computes every force from $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$, the velocity through the water, but integrates the position with $\boldsymbol{\nu}$, the velocity over the ground. **Forces feel the water; the track is over the ground.**
 
-> [!note] This is the problem Week 4 exists to solve
-> A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 4 §4-7 measures the resulting path error and §4-8 and §4-9 remove it.
+> [!note] This is the problem Week 5 exists to solve
+> A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 5 §5-7 measures the resulting path error and §5-8 and §5-9 remove it.
 
 ## F. Driving the vessel by hand (15 min)
 
@@ -2056,7 +2071,7 @@ $$
 
 | Term | What it does |
 |---|---|
-| $X_d/2$ | splits the surge demand equally, as in Week 2 §2-5 |
+| $X_d/2$ | splits the surge demand equally, as in Week 3 §3-5 |
 | $+N_d/(2y_{\text{pont}})$ on the left, $-N_d/(2y_{\text{pont}})$ on the right | makes the difference $T_L - T_R = N_d/y_{\text{pont}}$, which is exactly the moment asked for. The difference does not change $X$ |
 
 - Check the sign against §1-10: a starboard demand $N_d > 0$ gives $T_L > T_R$, and $N = y_{\text{pont}}(T_L - T_R) > 0$. The model's block `B inverse` is this matrix, computed in `W01_G_build_rc.m` as `inv(Bxn)` from the $\mathbf{B}$ of `_tools/otter_B.m`.
@@ -2064,7 +2079,7 @@ $$
 
 ### Allocation, step 2 — invert the propeller curve
 
-- Each thrust is turned into a shaft speed separately, with the coefficient chosen by the sign of the thrust (§1-10; the same inversion as Week 2 §2-5, applied per propeller):
+- Each thrust is turned into a shaft speed separately, with the coefficient chosen by the sign of the thrust (§1-10; the same inversion as Week 3 §3-5, applied per propeller):
 
 $$
 n_i = \operatorname{sign}(T_i)\sqrt{\frac{\lvert T_i\rvert}{k_i}},
@@ -2288,7 +2303,7 @@ W01_H_usb_check
 
 ## Progress Check
 
-> [!important] Minimum condition for following Week 2
+> [!important] Minimum condition for following Week 3
 
 ### Theory
 
@@ -2341,7 +2356,7 @@ W01_check(1)                 % run this whenever, as often as needed
 
 ## Assignment 1
 
-- **Due**: before the Week 2 session
+- **Due**: before the Week 3 session
 - **Submit**: the modified `W01_0_setup.m`, the numbers requested below, and a short analysis
 
 ### ① Requirements
@@ -2384,7 +2399,7 @@ W01_check(1)                 % run this whenever, as often as needed
 | The vessel turns right when the port turn was expected | the yaw moment is $N = y_{\text{pont}}(T_L - T_R)$, so slowing the **right** propeller turns the bow right | for a port turn slow the **left** propeller: $n = [n_0 - dn;\ n_0 + dn]$ |
 | The exported block diagram is thousands of pixels wide | an annotation was edited into one long line; Simulink does not wrap annotation text | keep the manual line breaks in `W01_1_build_openloop.m` |
 | Terminal speed differs from the prediction by a few percent | the simulation was stopped before the transient finished | `T_final` must exceed roughly $5T_u \approx 5.5$ s; the default is 120 s |
-| Heading reads more than 360° | $\psi$ is an unwrapped integral of $r$ and nothing in this model wraps it | expected. Week 3 introduces the wrapping and shows what happens without it |
+| Heading reads more than 360° | $\psi$ is an unwrapped integral of $r$ and nothing in this model wraps it | expected. Week 4 introduces the wrapping and shows what happens without it |
 | The run is far slower than the simulated time | the live view is redrawing too often | raise `animate_every` in `W01_0_setup.m`, or set `animate = 0` |
 | The vessel leaves the live view and disappears | the axes are fixed before the run and do not auto-range | widen `track_Nmin` … `track_Emax` in `W01_0_setup.m` |
 | In `W01_rc.slx` the vessel does not move although a stick was moved | the stick moved was not the throttle of the selected mode, or it is still inside the neutral zone $50 \pm 3$ | check MODE: the throttle is `LY` in Mode 2 and `RY` in Mode 1 |
@@ -2429,10 +2444,10 @@ W01_check(1)                 % run this whenever, as often as needed
 
 ## Next Week
 
-- **Week 2 — Surge Speed Control**
-- The first closed loop. The surge equation of §1-11 becomes a plant, a controller is placed around it, and the settled speed is predicted before it is measured — as in this week, but now with feedback.
-- The propeller curve of §1-10 is inverted, so that a demanded **force** becomes a shaft speed.
-- Preparation: bring $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-11, and the derivation of $u_{ss}(n)$ from Assignment 1.
+- **Week 2 — PID Control Fundamentals**
+- Before the vessel is put under control, the three terms of a PID are taken apart on the simplest plant that can oscillate: one mass, one spring, one damper. Each term is measured on its own, then the three additions no real controller runs without — the derivative filter, a smooth setpoint, anti-windup — and a tuning order that can be followed step by step.
+- Preparation: nothing from this week's models. Week 2 needs Simulink only; the MSS toolbox is not used.
+- **Week 3 — Surge Speed Control** then closes the first loop on the Otter. Bring $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-11, and the derivation of $u_{ss}(n)$ from Assignment 1.
 
 > [!note] Appendix A1 is available but not required yet
-> The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 2 and 3 quote its two results where they need them. It becomes required reading before Week 5.
+> The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 3 and 4 quote its two results where they need them. It becomes required reading before Week 6.

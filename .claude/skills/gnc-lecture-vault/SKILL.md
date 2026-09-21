@@ -63,7 +63,7 @@ description: 대학원 USV GNC 강의 볼트(GradCourse)에서 강의자료를 �
 | "PDF 다시 뽑아줘" | `bash _tools/md2pdf.sh <파일>` — 쪽수·그림·수식까지 확인 | `references/results-and-figures.md` §3 |
 | "그림 그려줘" (개념도) | `figures/` 에 SVG. **한 번의 Bash 호출에 하나씩** | `references/figures-svg.md` |
 | "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 | 스킬 `simulink-gnc-models` |
-| "형상 바꿔줘" (W09~W11) | `_tools/otter_config.m` 에 `cfg` 추가. **선체는 손대지 않는다** | 아래 §3 |
+| "형상 바꿔줘" (W10~W12) | `_tools/otter_config.m` 에 `cfg` 추가. **선체는 손대지 않는다** | 아래 §3 |
 | "주차를 옮기자 / 순서 바꾸자" | 파급 범위를 먼저 나열한다 (문서 4곳 이상) | `references/vault-upkeep.md` |
 | "다 끝났나 확인해줘" | `bash .claude/skills/gnc-lecture-vault/scripts/vault_check.sh` | 아래 §5 |
 
@@ -87,7 +87,7 @@ description: 대학원 USV GNC 강의 볼트(GradCourse)에서 강의자료를 �
 
 ## 3. 플랜트는 하나, 형상은 넷
 
-`otter.m` 은 `numel(n) == 2` 를 강제하므로 W09~W11 에 그대로 못 쓴다.
+`otter.m` 은 `numel(n) == 2` 를 강제하므로 W10~W12 에 그대로 못 쓴다.
 네 번 복사하는 것은 **틀린 답**이다. 파라미터화된 플랜트 하나를 쓴다.
 
 ```matlab
@@ -102,7 +102,7 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 > [!warning] 부호 규약 함정
 > 이 프로젝트에는 **정확히 부호가 반대인 `B` 가 둘** 산다 —
 > `Lecture/_tools/otter4_B.m` 과 `otter_params.m` 41행.
-> 둘 중 어느 것도 가져오지 않는다. **W02 의 열 규칙이 유일한 정의**이며,
+> 둘 중 어느 것도 가져오지 않는다. **W03 의 열 규칙이 유일한 정의**이며,
 > 모든 `B` 를 `_tools/otter_B.m` 이 거기서 유도한다.
 >
 > ```

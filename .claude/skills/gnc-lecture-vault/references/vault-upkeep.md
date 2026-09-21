@@ -24,7 +24,7 @@
 ---
 type: week            # plan | guide | week | knowledge | reference | assignment
 week: 3               # type: week 일 때만
-title: 3주차 — Gazebo VRX 구축과 좌표계
+title: 4주차 — Gazebo VRX 구축과 좌표계
 date: 2026-09-03
 tags: [week, gazebo, vrx]
 status: done          # draft | done
@@ -108,3 +108,30 @@ bash .claude/skills/capstone-lecture-vault/scripts/vault_check.sh
 - VRX 를 띄웠으면 프로세스를 정리한다 → `vrx-runbook.md` §6
 - 작업 기록은 `~/.claude/plans/` 의 계획 파일 끝에 날짜와 함께 덧붙인다.
   **볼트 문서에 작업 일지를 쓰지 않는다** — 배포본이 지저분해진다
+
+---
+
+## 7. YouTube 영상을 참고자료로 쓸 때 — 자막을 받아 읽는다 (2026-09-21)
+
+제목과 설명만 보고 강의에 인용하지 않는다. 자막을 받아 실제로 읽는다.
+
+- `api/timedtext` 를 직접 `fetch` 하면 **빈 응답**이 온다. 요즘 YouTube 는 플레이어가 붙이는
+  `pot` 토큰이 있어야 자막을 준다
+- 그래서 **플레이어가 받는 것을 가로챈다.** 내장 브라우저에서 영상 페이지를 열고, 페이지에
+  `XMLHttpRequest`·`fetch` 가로채기를 걸고, 플레이어의 자막 모듈을 켜서 재생을 잠깐 돌린다
+
+```js
+window.__caps=[]; const oo=XMLHttpRequest.prototype.open, os=XMLHttpRequest.prototype.send;
+XMLHttpRequest.prototype.open=function(m,u){this.__u=u; return oo.apply(this,arguments)};
+XMLHttpRequest.prototype.send=function(){ this.addEventListener('load',()=>{
+  if(/timedtext/.test(this.__u)) window.__caps.push([this.__u,this.responseText])});
+  return os.apply(this,arguments)};
+const p=document.querySelector('#movie_player'); p.mute();
+p.unloadModule('captions'); p.loadModule('captions');
+p.setOption('captions','track',{languageCode:'en'});   // 한국어 영상은 'ko' (자동 생성 asr)
+p.playVideo(); /* 5 초 뒤 */ p.pauseVideo();
+// window.__caps[0][1] 이 json3 — events[].segs[].utf8 을 이어 붙이면 전문
+```
+
+- 한국어 자동 자막(asr)은 오인식이 많다("pid" → "bie 체어"). 수치나 인용은 영상에서 확인한다
+- 영상 내용은 요약해서 쓰고 출처(편·절)를 그 자리에 적는다. 자막을 옮겨 싣지 않는다

@@ -157,7 +157,7 @@ note(m, [40 330 880 690], strjoin({ ...
 '3  n_cmd = [60; -78.6701].  The command that IS a pure turn.'
 '   X is zero AND N is 26 per cent LARGER than in case 2.'
 ''
-'Rank 2 is the whole story of this course. Weeks 8 to 10 buy the'
+'Rank 2 is the whole story of this course. Weeks 10 to 12 buy the'
 'third rank back, one hull at a time, and measure what it costs.'}, newline));
 
 %% ---- plot when the run finishes ----------------------------------------

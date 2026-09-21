@@ -2,7 +2,7 @@
 #
 #  svg2png.sh — render a figure the way a reader will actually see it.
 #
-#      bash _tools/svg2png.sh figures/w04-los-geometry.svg  [out.png]
+#      bash _tools/svg2png.sh figures/w05-los-geometry.svg  [out.png]
 #
 #  The standing order is to RENDER a figure and look at it before publishing,
 #  and again after fixing it. A preview pane that scales the drawing to fit

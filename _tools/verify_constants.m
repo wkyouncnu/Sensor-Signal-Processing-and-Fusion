@@ -100,9 +100,9 @@ if verbose
     fprintf('      %10.4f %10.4f %10.4f\n', S');
     fprintf(['\n  The first row and column are zero to machine precision. That is\n' ...
              '  port-starboard symmetry, and it is what makes the surge reduction\n' ...
-             '  of W02 2-1 exact rather than approximate.\n']);
+             '  of W03 2-1 exact rather than approximate.\n']);
     %  2026-09-14 수정. 예전 문구 "Quote M(6,6), never I_z - N_rdot" 은 I_z 가
-    %  **어느 점 둘레인지** 말하지 않아서, W01/W03 의 "M66 = I_z - N_rdot (I_z 는
+    %  **어느 점 둘레인지** 말하지 않아서, W01/W04 의 "M66 = I_z - N_rdot (I_z 는
     %  원점 둘레)" 와 정면으로 부딪혔다. 둘 다 맞다 — 점이 다를 뿐이다. 그래서
     %  두 점의 값을 모두 찍고, 평행축 항으로 둘이 이어진다는 것을 보인다.
     Iz_CG = Ig(3,3);

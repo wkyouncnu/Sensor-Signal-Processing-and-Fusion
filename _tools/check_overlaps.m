@@ -2,8 +2,8 @@ function n = check_overlaps(mdl, verbose)
 %CHECK_OVERLAPS  서로 겹쳐 그려진 신호선을 찾아 보고한다.
 %                Report signal lines drawn on top of each other.
 %
-%   n = check_overlaps('W03_heading_control')
-%   check_overlaps('W03_heading_control', true)      모든 건을 나열한다
+%   n = check_overlaps('W04_heading_control')
+%   check_overlaps('W04_heading_control', true)      모든 건을 나열한다
 %                                                    list every finding
 %
 %   같은 세로줄이나 가로줄을 나누어 쓰는 두 선은 인쇄된 도면에서 구별되지 않는다.

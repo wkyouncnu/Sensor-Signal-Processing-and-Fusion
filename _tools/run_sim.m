@@ -3,8 +3,8 @@ function o = run_sim(model, V, varargin)
 %         One simulation of a model, with the variables in V, without touching
 %         the base workspace.
 %
-%   o = run_sim('W02_surge_control', V)
-%   o = run_sim('W02_surge_control', V, 'Kp', 500, 'Ki', 0)
+%   o = run_sim('W03_surge_control', V)
+%   o = run_sim('W03_surge_control', V, 'Kp', 500, 'Ki', 0)
 %
 %     model    이미 만들어져 있는 모델의 이름 / the model name, already built
 %     V        모델이 필요로 하는 모든 변수의 구조체

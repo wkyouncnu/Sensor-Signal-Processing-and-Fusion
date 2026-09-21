@@ -4,10 +4,10 @@ function tr = recovery_time(t, y, yf, t0)
 %
 %   tr = recovery_time(t, y, yf, t0)
 %
-%   고리가 무언가에서 빠져나와야 하는 자리마다 쓴다. 2주차의 포화, 3주차의
+%   고리가 무언가에서 빠져나와야 하는 자리마다 쓴다. 3주차의 포화, 4주차의
 %   선수방위 되감김이 그렇다.
-%   Used wherever a loop has to climb out of something: saturation in Week 2,
-%   a heading wrap in Week 3.
+%   Used wherever a loop has to climb out of something: saturation in Week 3,
+%   a heading wrap in Week 4.
 %
 %   "머무르기까지" 가 요점이다 / the words "and stay" are the point
 %       띠를 처음 통과한 시각이 아니라 **마지막으로 벗어난** 시각을 쓴다.

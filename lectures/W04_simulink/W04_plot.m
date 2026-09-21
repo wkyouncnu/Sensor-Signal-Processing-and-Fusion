@@ -1,67 +1,90 @@
-function f = W04_plot(y, V, ttl, rows)
-%W04_PLOT  네 유도법칙의 궤적과 경로이탈 오차를 그린다.
-%          Track and cross-track error of the four guidance laws.
+function f = W04_plot(R, LBL, ttl)
+%W04_PLOT  W04 실행 결과의 선수방위·요 각속도·요 모멘트·궤적을 그린다.
+%          Heading, yaw rate, yaw moment and track of one or more Week 4 runs.
 %
-%   W04_plot                       기본 작업공간에 있는 실행 결과
-%                                  the run sitting in the base workspace
-%   W04_plot(y, V, ttl, rows)      W04_read 가 만든 구조체. 절 스크립트가 쓴다
-%                                  a struct from W04_read, for a section script
-%   f = W04_plot(...)              그림 핸들 / the figure handle
+%   W04_plot                      기본 작업공간에 있는 실행 결과
+%                                 the run sitting in the base workspace
+%   W04_plot(R, LBL, ttl)         실행 결과들의 셀 배열 / a cell array of runs
 %
-%   rows 로 그릴 법칙을 고른다. 절마다 비교하려는 대상이 다르기 때문이다 — 절 D 는
-%   atan2 와 LOS 둘만, 절 G 는 넷 모두를 그린다.
-%   rows selects which laws to draw, because each section compares a different
-%   pair or group: section D draws atan2 against LOS, section G draws all four.
+%   모델의 StopFcn 이 자동으로 부르므로 Run 을 누르면 다른 명령 없이 그림이 뜬다.
+%   절 스크립트도 같은 함수를 부르므로 화면과 강의노트의 그림이 어긋나지 않는다.
+%   Called automatically by the model's StopFcn, so pressing Run produces the
+%   figure without any further command; the section scripts call the same
+%   function, so the figure on screen and the one in the notes cannot differ.
 %
-%   Called by the model's StopFcn, so pressing Run in Simulink produces the
-%   figure without any further command, and by the section scripts, so the
-%   figure on screen and the figure in the lecture come from one piece of code.
+%   R is a cell array of structs with fields t and y, where the columns of y are
 %
-%   ROWS selects which of the four laws to draw, in the order
-%   1 atan2, 2 LOS, 3 ILOS, 4 ALOS. The base-workspace variable guid_show
-%   does the same when the model is run from Simulink: 0 draws all four.
+%     1 psi_d[deg]  2 psi[deg]  3 r[deg/s]  4 tau_N[N m]  5 n1  6 n2  7 N  8 E
 
-COL = [0.85 0.33 0.10      % atan2  — the one that does not work
-       0    0.45 0.74      % LOS
-       0.47 0.67 0.19      % ILOS
-       0.49 0.18 0.56];    % ALOS
-
-if nargin < 1 || isempty(y)
+if nargin < 1 || isempty(R)
     if evalin('base', '~exist(''W04'',''var'')'), return, end
     W = evalin('base', 'W04');
-    z = squeeze(W.signals.values);  if size(z,1) < size(z,2), z = z.'; end
-    y = W04_read(struct('t', W.time, 'y', z));
-    V = W04_vars;
-    V.V_c = base_var('V_c', 0);  V.beta_c = base_var('beta_c', 0);
-    ttl  = 'W04 guidance — four laws, one mission';
-    rows = base_var('guid_show', 0);
+    y = squeeze(W.signals.values);  if size(y,1) < size(y,2), y = y.'; end
+    R = {struct('t', W.time, 'y', w04_cols(y))};
+    LBL = {'run'};
+    ttl = 'W04 heading control — result of the last simulation';
 end
-if nargin < 3 || isempty(ttl),  ttl  = 'W04 guidance'; end
-if nargin < 4 || isempty(rows), rows = 0; end
-if isscalar(rows) && rows == 0,  rows = 1:4; end
+if nargin < 2 || isempty(LBL), LBL = arrayfun(@(k) sprintf('run %d', k), ...
+                                              1:numel(R), 'UniformOutput', false); end
+if nargin < 3 || isempty(ttl), ttl = 'W04 heading control'; end
 
-f = lab_fig('W04  guidance', 1150, 470);
+COL = [0    0.45 0.74
+       0.85 0.33 0.10
+       0.47 0.67 0.19
+       0.49 0.18 0.56];
+c = @(i) COL(1+mod(i-1,4),:);
 
-subplot(1,2,1);
-path_plot(V.WP, V.R_switch, y.trkN(:,rows), y.trkE(:,rows), y.trkPsi(:,rows), ...
-          COL(rows,:), y.name(rows), V);
-legend('Location','southoutside', 'NumColumns',2);
-title({'the track', 'hull and heading drawn along each'});
+f = lab_fig('W04  heading loop', 1150, 660);
 
-subplot(1,2,2); hold on;
-yline(0, 'k:', 'HandleVisibility','off');
-for i = rows
-    plot(y.t, y.y_e(:,i), 'Color', COL(i,:), 'DisplayName', y.name{i});
+% -- heading ---------------------------------------------------------------
+subplot(2,3,[1 2]); hold on;
+plot(R{1}.t, R{1}.y(:,1), ':', 'Color',[0.35 0.35 0.35], 'LineWidth',1.4);
+for i = 1:numel(R), plot(R{i}.t, R{i}.y(:,2), 'Color', c(i), 'LineWidth',1.3); end
+xlabel('time [s]'); ylabel('\psi  heading [deg]');
+legend([{'\psi_d'} LBL], 'Location','best', 'Interpreter','none');
+title('heading');
+
+% -- error -----------------------------------------------------------------
+subplot(2,3,3); hold on;
+for i = 1:numel(R)
+    e = R{i}.y(:,1) - R{i}.y(:,2);
+    plot(R{i}.t, e, 'Color', c(i));
 end
-xlabel('time [s]'); ylabel('y_e  cross-track error [m]');
-legend('Location','best');
-%  The settled value is read over the LAST QUARTER of the run, after the final
-%  corner, so the number describes steady tracking and not a turn.
-k = y.t >= 0.75*y.t(end);
-title({'the distance from the path', ...
-       sprintf('settled |y_e| over the last quarter: %s', ...
-               strjoin(arrayfun(@(i) sprintf('%s %.2f m', y.name{i}, ...
-                       mean(abs(y.y_e(k,i)))), rows, 'UniformOutput',false), ',  '))});
+yline(0,'k:');
+xlabel('time [s]'); ylabel('\psi_d - \psi  [deg]');
+title({'error', 'a type 1 plant reaches zero'});
+
+% -- yaw rate --------------------------------------------------------------
+subplot(2,3,4); hold on;
+for i = 1:numel(R), plot(R{i}.t, R{i}.y(:,3), 'Color', c(i)); end
+yline(0,'k:');
+xlabel('time [s]'); ylabel('r  yaw rate [deg/s]');
+title('what the D term feeds on');
+
+% -- yaw moment and shafts -------------------------------------------------
+subplot(2,3,5); hold on;
+for i = 1:numel(R), plot(R{i}.t, R{i}.y(:,4), 'Color', c(i)); end
+yline(0,'k:');
+xlabel('time [s]'); ylabel('\tau_N  [N\cdotm]');
+title('the demanded yaw moment');
+
+% -- track -----------------------------------------------------------------
+subplot(2,3,6); hold on; axis equal;
+for i = 1:numel(R), plot(R{i}.y(:,8), R{i}.y(:,7), 'Color', c(i)); end
+track_ships(cellfun(@(q) q.y(:,[7 8 2]), R, 'UniformOutput', false), COL, 'Marks', 6);
+plot(0, 0, 'ks', 'MarkerFaceColor','w', 'HandleVisibility','off');
+xlabel('East [m]'); ylabel('North [m]');
+title('track — hull and heading');
 
 sgtitle(ttl, 'FontWeight','bold');
+end
+
+% -------------------------------------------------------------------------
+function z = w04_cols(y)
+%W04_COLS  The course logging contract, reordered for this week.
+%
+%   add_measurement logs [u v r N E psi | psi_d tau_N n1 n2], with psi already
+%   in degrees, r in rad/s and psi_d in radians. This week works in
+%   [psi_d psi r tau_N n1 n2 N E], all angles in degrees.
+z = [rad2deg(y(:,7)), y(:,6), rad2deg(y(:,3)), y(:,8), y(:,9), y(:,10), y(:,4), y(:,5)];
 end

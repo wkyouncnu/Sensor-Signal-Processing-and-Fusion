@@ -1,16 +1,16 @@
-# Week 4 · Laboratory Problems — build the guidance layer in Simulink
+# Week 4 · Laboratory Problems — build the heading autopilot in Simulink
 
 - Course: Sensor Signal Processing and Fusion · Department of Autonomous Vehicle System Engineering
 - Time: **one hour**, immediately after the Week 4 lecture hour
-- Three problems, in order.
+- Three problems, in order. Each one adds one branch to the previous answer.
 
 ---
 
 ## What this hour is for
 
-Weeks 1 to 3 were **told** what heading to hold. This hour builds the layer that decides it.
+Week 3 closed a loop around a **velocity** and found that the error never reached zero. This hour closes a loop around an **angle** and finds the opposite. The whole point is that the difference is **structural** — a property of the axis being controlled — and not a better controller.
 
-A complete Week 3 vessel is provided — heading autopilot, control allocation, hull — with one input left dangling: the commanded heading. That split is the point of the week. **Nothing inside the autopilot changes between Week 3 and Week 4**, and this model makes that seam visible.
+The hull and the control allocation are provided. The allocation is Appendix A1's subject; Week 4 is about the loop that decides what yaw moment to demand.
 
 ---
 
@@ -18,52 +18,36 @@ A complete Week 3 vessel is provided — heading autopilot, control allocation, 
 
 ```matlab
 cd lectures/W04_simulink/problems
-W04_P1_start                 % creates W04_P1.slx — a Week 3 vessel, no guidance
+W04_P1_start                 % creates W04_P1.slx — hull and allocation only
 W04_check(1)                 % run this whenever, as often as needed
 ```
 
 The solver is already set to fixed-step `ode4` at `h = 0.02` s. **Do not change it.**
 
-> [!important] Two requirements on every model
-> - **`xlog`** — To Workspace, `Structure With Time`, the plant's twelve states
-> - **`glog`** — To Workspace, `Structure With Time`, carrying $[\,\pi_p\ ;\ y_e^{\,p}\ ;\ \psi_d\,]$ in **radians and metres, in that order**
->
-> The guidance log is required because Problems 1 and 3 are about quantities that never appear in the state vector. A model can put the vessel in the right place with a wrong $y_e^{\,p}$, and only `glog` can tell.
-
-The waypoints are already in the workspace as `WP_N` and `WP_E`. **Leg 1** runs from $\mathbf{p}_1^{\,n} = (0,0)$ to $\mathbf{p}_2^{\,n} = (60,0)$ — due north, so $\pi_p$ is exactly zero. That is deliberate: a leg whose angle is zero makes a sign error in the rotation visible immediately.
+> [!important] One requirement on every model
+> A To Workspace block named **`xlog`**, format **`Structure With Time`**, fed by the plant's twelve-state output. The heading is state **12** and the yaw rate is state **6**.
 
 ---
 
-## Problem 1 · The LOS law (25 minutes)
+## Problem 1 · Proportional only (20 minutes)
 
-**Build.** A guidance block taking the position and producing $\psi_d$.
+**Build.** Command, error, one gain, into the allocation.
 
-$$
-\pi_p = \operatorname{atan2}\!\big(y_{i+1}^n - y_i^n,\ x_{i+1}^n - x_i^n\big)
-$$
+```
+Step ψ_d [deg] → deg2rad → (+)(−) → Kp → τ_N → Control allocation → Otter USV
+                              ↑                                          ↓
+                              └──────────────  ψ  ←──────────────────────┘
+```
 
-$$
-y_e^{\,p} = -\big(x^n - x_i^n\big)\sin\pi_p + \big(y^n - y_i^n\big)\cos\pi_p
-$$
+**Predict before running.** Week 3's plant had no free integrator and its steady error was $u_d\,/(1+K_pK_u)$ — 44 % at $K_p = 100$. Ask the same question here **before** running: what is the steady heading error at $K_p = 30$?
 
-$$
-\psi_d = \pi_p - \tan^{-1}\!\left(\frac{y_e^{\,p}}{\Delta}\right)
-$$
+**Verify.** `W04_check(1)`, step to $60°$.
 
-Leg 1 only; no waypoint switching this hour.
-
-> [!warning] Two different arctangents, and they are not interchangeable
-> $\pi_p$ **must** use the two-argument `atan2` — a leg can point into any of the four quadrants, and the one-argument form folds two of them onto the others.
-> The correction term may use the one-argument `atan`, because $\Delta > 0$ always and the aim-point vector therefore never leaves the right half-plane of $\{p\}$.
-
-**Verify.** `W04_check(1)`. The vessel starts $18$ m east of the leg.
-
-| What the checker expects | |
-|---|---|
-| $\pi_p$ on leg 1 | exactly $0$ rad |
-| initial $y_e^{\,p}$ | $18$ m |
-| settled $y_e^{\,p}$ | $0$ |
-| settled $\psi_d$ | $0$ rad, i.e. $\psi_d \to \pi_p$ |
+| $K_p$ | steady error | overshoot |
+|---|---|---|
+| $30$ | $0$ | $-0.01$ % |
+| $100$ | $0$ | $0.24$ % |
+| $300$ | $0$ | $1.53$ % |
 
 **What a correct model produces**
 
@@ -71,31 +55,41 @@ Leg 1 only; no waypoint switching this hour.
 
 | Reading the figure | |
 |---|---|
-| left | the vessel curves onto the dashed path and then runs along it. Hulls are drawn so the heading is visible |
-| middle | $y_e^{\,p}$ falls smoothly to zero without crossing — with $\Delta = 8$ m it does not overshoot |
-| right | $\psi_d$ starts well off $\pi_p$ and **converges onto it** as the error closes |
-| the check | if the initial $y_e^{\,p}$ comes out $-18$ m, the two sine terms have swapped sign |
+| left | all three gains arrive at $60°$. Higher gain arrives faster and rings more |
+| right | the same runs as error. **All three go to zero**, and nothing was tuned to make that happen |
+| the check | if any trace settles short of $60°$, the feedback is not the heading — check that the Selector picks state 12 |
+
+**The point.** $\psi = \int r$, so the plant carries a **free integrator** and the loop is **type 1**. Week 3's was type 0. That one structural fact — not a better controller — is why the error is zero here at every gain.
 
 ---
 
-## Problem 2 · Aiming at a point is not following a path (20 minutes)
+## Problem 2 · Derivative action (20 minutes)
 
-**Build.** Add a second law to the same block, selected by a flag:
+**Build.** One more branch: $-K_d\,r$, added to the proportional term.
+
+> [!warning] Feed back the yaw rate, not the derivative of the error
+> The two agree while $\psi_d$ is constant and disagree at **every step**, where $\mathrm{d}\psi_d/\mathrm{d}t$ is an impulse. Differentiating the error puts that impulse straight into the actuator. The plant already **measures** $r$ — it is state 6 — so nothing in a correct model is differentiated anywhere.
+
+**Predict before running.** Substitute the law into the yaw equation:
 
 $$
-\psi_d = \operatorname{atan2}\!\big(y_{i+1}^n - y^n,\ x_{i+1}^n - x^n\big)
+M_{66}\,\ddot\psi + \big(\lvert N_r\rvert + K_d\big)\dot\psi + K_p\,\psi = K_p\,\psi_d
 $$
 
-**Both laws must share one plant, one autopilot and one allocation.** If they do not, the comparison measures something other than the guidance.
+$$
+\omega_n = \sqrt{\frac{K_p}{M_{66}}}, \qquad
+\zeta = \frac{\lvert N_r\rvert + K_d}{2\sqrt{K_p M_{66}}}
+$$
 
-**Verify.** `W04_check(2)`, same start.
+**Which coefficient does $K_d$ sit beside?** Answer that, and the direction of the effect follows without simulating anything.
 
-| | worst $\lvert y_e^{\,p}\rvert$ after 90 s |
-|---|---|
-| LOS | $0.09$ m |
-| atan2 | $3.78$ m |
+**Verify.** `W04_check(2)`, $K_p = 100$, $5°$ step.
 
-Both still reach the waypoint. That is essential to the argument: `atan2` is **not broken**.
+| $K_d$ | $\zeta$ | overshoot |
+|---|---|---|
+| $0$ | $0.327$ | $11.74$ % |
+| $25$ | $0.518$ | $4.10$ % |
+| $74.9$ | $0.900$ | $\approx 0$ |
 
 **What a correct model produces**
 
@@ -103,32 +97,33 @@ Both still reach the waypoint. That is essential to the argument: `atan2` is **n
 
 | Reading the figure | |
 |---|---|
-| left | both tracks end at the red waypoint marker. Only the blue one lies on the dashed path while doing so |
-| right | distance from the **line**. The orange trace stays an order of magnitude above the blue one |
-| the check | if the two tracks are identical, the law flag is not reaching the guidance block |
+| left | four responses to the same step. **Overshoot falls as $K_d$ rises** |
+| right | the same four as overshoot against $\zeta$, landing on the second-order curve |
+| the check | if overshoot *rises* with $K_d$, the derivative is being taken of the error rather than fed back as $r$ — or its sign is wrong |
 
-**The point.** `atan2` regulates the distance to a **point**, and a point carries no information about the line it sits on. No autopilot gain fixes this, because the path does not appear anywhere in the law. **It is answering a different question.**
+**The point.** $K_d$ sits beside the **damping**. In Week 3 the controlled variable was a velocity, its derivative was an acceleration, and the same term sat beside the **mass**, where it made the response worse. **The term did not change; the axis did.**
+
+Note also that the hull alone already gives $\zeta = 0.327$ at $K_p = 100$, because $N_r$ is large. Most of the damping in this loop is not the controller's.
 
 ---
 
-## Problem 3 · A current, and the offset that stays (15 minutes)
+## Problem 3 · The wrap (20 minutes)
 
-**Build.** Nothing. Set $V_c = 0.3$ m/s and $\beta_c = 90°$ and run the LOS law again.
-
-**Predict before running.** Section 4-7 derives
+**Build.** Nothing new — one line inside the control law, and a switch to turn it off.
 
 $$
-y_e^{\,p,ss} = \Delta\tan\beta_c
+e = \psi_d - \psi, \qquad
+\text{ssa}(e) = \big((e + \pi) \bmod 2\pi\big) - \pi \ \in (-\pi,\ \pi]
 $$
 
-Measure $\beta_c$ from the run as $\operatorname{atan2}(v, u)$ and work out what the offset should be.
+**Set up the test.** Start the vessel at $\psi = 170°$ and command $\psi_d = -170°$. The two headings are **$20°$ apart**.
 
 **Verify.** `W04_check(3)`.
 
-| What the checker expects | |
+| | turn executed |
 |---|---|
-| settled $y_e^{\,p}$ | equal to $\Delta\tan\beta_c$ to within $0.15$ m |
-| heading error while that offset persists | $0$ |
+| with the wrap | $+20°$ |
+| without it | $-340°$ |
 
 **What a correct model produces**
 
@@ -136,12 +131,11 @@ Measure $\beta_c$ from the run as $\operatorname{atan2}(v, u)$ and work out what
 
 | Reading the figure | |
 |---|---|
-| left | the track runs **parallel** to the path and beside it. The hulls lean upstream |
-| middle | $y_e^{\,p}$ rises and settles **exactly on the dashed prediction** $\Delta\tan\beta_c$ |
-| right | the heading error is $0$ the whole time the offset persists |
-| the check | if the offset keeps growing, the guidance is reading a stale position; if it returns to zero, an integrator has crept in |
+| left | heading, **unwrapped**. Blue rises $20°$ to $190°$; orange falls $340°$ to $-170°$. Both end at the same physical heading |
+| right | the yaw rates have **opposite sign** for the whole manoeuvre |
+| the check | if the two traces are identical, `use_ssa` is not reaching the control law |
 
-**The point.** The loop is doing exactly what it was asked. The heading error is **already zero**, so there is nothing left for a larger autopilot gain to act on. **The law is not short of authority; it is short of terms.** Sections 4-8 and 4-9 are two ways of supplying the missing one, and neither of them uses gain.
+**The point.** Without the wrap the error is computed as $-340°$ and the vessel goes the long way round — **seventeen times further, for the same commanded heading**. `ssa` is one line of code and it is not optional. Week 5's guidance produces commands anywhere in $(-180°, 180°]$, so this seam is crossed routinely.
 
 ---
 
@@ -149,9 +143,9 @@ Measure $\beta_c$ from the run as $\operatorname{atan2}(v, u)$ and work out what
 
 | | Weight | What is being marked |
 |---|---|---|
-| Problem 1 | 40 | `W04_check(1)` passes; the reason $\pi_p$ needs `atan2` and the correction does not is stated |
-| Problem 2 | 30 | `W04_check(2)` passes; the sentence "it regulates a point, not a line" is argued rather than quoted |
-| Problem 3 | 30 | `W04_check(3)` passes; the predicted $\Delta\tan\beta_c$ was written down **before** running |
+| Problem 1 | 30 | `W04_check(1)` passes; the type-1 argument is stated in one sentence |
+| Problem 2 | 40 | `W04_check(2)` passes; the answer to "which coefficient does $K_d$ sit beside" is stated **and** the rate feedback is $r$, not $\mathrm{d}e/\mathrm{d}t$ |
+| Problem 3 | 30 | `W04_check(3)` passes; the cost of omitting `ssa` is quantified |
 
 ---
 
@@ -159,11 +153,12 @@ Measure $\beta_c$ from the run as $\operatorname{atan2}(v, u)$ and work out what
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `The model has no To Workspace block whose variable name is glog` | only `xlog` was added | add the second log, three signals, `Structure With Time` |
-| `glog has 1 column; 3 were expected` | a matrix signal reached the log | the MATLAB Function output is $3\times1$; insert a Reshape set to `1-D array` |
-| Initial $y_e^{\,p}$ is $-18$ m | the two sine terms are swapped | $y_e^{\,p} = -\Delta x\,\sin\pi_p + \Delta y\,\cos\pi_p$ |
-| The vessel turns away from the path | the sign of the correction is reversed | the law **subtracts** the arctangent from $\pi_p$ |
-| The vessel spirals | $\pi_p$ was computed with one-argument `atan` | use `atan2` |
-| $\psi_d$ jumps by $360°$ | the command was wrapped in the guidance | do not wrap it there; the autopilot wraps the **error**, which is the only place a wrap belongs |
+| `The model has no To Workspace block whose variable name is xlog` | the variable name is still `simout` | rename it |
+| Heading settles short of the command | the feedback is not state 12 | the Selector index must be 12 for $\psi$, 6 for $r$ |
+| The vessel spins continuously | the error sign is reversed | the sum is $\psi_d - \psi$, not $\psi - \psi_d$ |
+| Overshoot rises with $K_d$ | the derivative is taken of the error | feed back $r$ directly; the sign is $-K_d r$ |
+| Huge spike in the actuator at each step | same cause | same fix |
+| The two Problem 3 traces are identical | `use_ssa` never reaches the law | wire it in as a Constant, like $K_p$ and $K_d$ |
+| Angles look 57 times too large or small | degrees and radians mixed | every angle inside the loop is in **radians**; convert once, at the command |
 
 Reference answers are in `../solutions/`. Read them **after** attempting the problem.

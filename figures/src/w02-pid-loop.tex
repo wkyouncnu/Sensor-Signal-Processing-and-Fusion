@@ -1,0 +1,81 @@
+% figures/w02-pid-loop.svg — 되먹임 루프 하나와, 오차 하나를 세 가지로 읽는 PID.
+%
+%   bash _tools/tikz2svg.sh figures/src/w02-pid-loop.tex figures/w02-pid-loop.svg
+%
+% 2주차 §2-2 의 그림. 루프의 이름(목표·오차·제어입력·플랜트·출력·센서)과 PID 의
+% 세 갈래(지금·과거·앞으로)를 한 장에 둔다. MATLAB Tech Talk "Understanding PID
+% Control" 1편이 쓰는 말(present, past, future)을 그대로 갈래 이름으로 쓴다.
+%
+% 기호: 목표 y_d, 오차 e, 제어입력 tau, 출력 y, 측정값 y_m. u 와 r 은 이 강의에서
+% 전후 속도와 요 각속도이므로 쓰지 않는다 (§2-2 의 경고).
+%
+% 폭 약 176 mm. A4 본문 폭 186 mm 안.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+\tikzset{
+  tblk/.style = {draw=ink, line width=0.55pt, fill=white, minimum width=24mm,
+                 minimum height=8mm, inner sep=2pt, font=\small},
+  pblk/.style = {draw=ink, line width=0.55pt, fill=black!6, minimum width=24mm,
+                 minimum height=10mm, inner sep=2pt, font=\small, align=center},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 목표와 오차 ----------------------------------------------------------
+\node[sname, anchor=east] (yd) at (0,0) {$y_d$};
+\node[sum] (e) at (12,0) {};
+\node[font=\scriptsize] at ([shift={(-2.6mm,1.9mm)}]e.center) {$+$};
+\node[font=\scriptsize] at ([shift={(1.6mm,-2.9mm)}]e.center) {$-$};
+\draw[sig] (yd.east) -- (e.west);
+
+% ---- 세 갈래 ----------------------------------------------------------------
+\node[dot] (br) at (22,0) {};
+\draw[wire] (e.east) -- node[sname, above, pos=0.55] {$e$} (br);
+
+\node[tblk] (P) at (48, 14) {$K_p\, e$};
+\node[tblk] (I) at (48,  0) {$K_i \displaystyle\int_0^t e\,\mathrm{d}\sigma$};
+\node[tblk] (D) at (48,-14) {$K_d\, \dfrac{\mathrm{d}e}{\mathrm{d}t}$};
+\draw[sig] (br) |- (P.west);
+\draw[sig] (br) -- (I.west);
+\draw[sig] (br) |- (D.west);
+
+\node[anote, anchor=south] at (P.north) {present: how wrong it is now};
+\node[anote, anchor=south] at ([yshift=0.2mm]I.north) {past: how long it has been wrong};
+\node[anote, anchor=north] at (D.south) {future: how fast it is closing};
+
+\node[sum] (s) at (74,0) {};
+\node[font=\scriptsize] at ([shift={(-2.6mm,2.4mm)}]s.center) {$+$};
+\node[font=\scriptsize] at ([shift={(-3.1mm,-0.1mm)}]s.center) {$+$};
+\node[font=\scriptsize] at ([shift={(-2.6mm,-2.6mm)}]s.center) {$+$};
+\draw[sig] (P.east) -| (s.north);
+\draw[sig] (I.east) -- (s.west);
+\draw[sig] (D.east) -| (s.south);
+
+% 제어기 테두리
+\begin{scope}[on background layer]
+  \node[draw=soft, densely dotted, line width=0.45pt, rounded corners=1.5mm,
+        fit=(P)(D)(br)(s), inner xsep=3mm, inner ysep=7mm] (ctl) {};
+\end{scope}
+\node[note, anchor=north west] at (ctl.north west) {controller (PID)};
+
+% ---- 플랜트 --------------------------------------------------------------
+\node[pblk] (G) at (106,0) {plant $G(s)$\\[-0.5mm]\scriptsize the thing pushed};
+\draw[sig] (s.east) -- node[sname, above] {$\tau$} node[note, below] {control input} (G.west);
+
+\node[dot] (ob) at (130,0) {};
+\draw[wire] (G.east) -- (ob);
+\node[sname, anchor=west] (yout) at (140,0) {$y$};
+\draw[sig] (ob) -- (yout.west);
+\node[note, anchor=north] at (137,-1.2) {output};
+
+% ---- 센서와 되먹임 ----------------------------------------------------------
+\node[tblk, minimum width=18mm] (S) at (106,-26) {sensor};
+\draw[sig] (ob) |- (S.east);
+\draw[sig] (S.west) -| node[sname, pos=0.3, below] {$y_m$\ \ {\scriptsize\color{soft}measured}} (e.south);
+
+\node[note, anchor=north east, align=right] at (9,-3.5) {error\\$e = y_d - y_m$};
+\node[note, anchor=south] at (yd.north) {setpoint};
+
+\end{tikzpicture}
+\end{document}

@@ -29,13 +29,28 @@ status: done
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · instructor's Simulink lectures [part 1](https://youtu.be/a-afHg_fSaU) · [part 2](https://youtu.be/070Yn0Hw5a0) |
 
 
+> [!tip] Getting the course files, and keeping them current (Windows)
+> <span style="font-size:0.88em">The notes, models and scripts are kept in one Git repository that is updated through the semester. Clone it once; before every class, pull. A pull downloads only what has changed since the last one.</span>
+>
+> | When | Where to run it | Command |
+> |---|---|---|
+> | once | PowerShell — installs Git for Windows | `winget install --id Git.Git -e` |
+> | once | the folder that will hold the course, e.g. `Documents` | `git clone https://github.com/wkyouncnu/Sensor-Signal-Processing-and-Fusion.git` |
+> | before every class | inside the cloned folder `Sensor-Signal-Processing-and-Fusion` | `git pull` |
+>
+> - `git pull` prints `Already up to date.` when nothing has changed, and otherwise lists the files it updated.
+> - The repository is private. When Git asks, sign in with the GitHub account the instructor has given access.
+> - Experiment on copies, not on the cloned files: copy a week's `WXX_simulink` folder elsewhere first, and a pull can never collide with local edits. If it already has, `git stash`, then `git pull`, then `git stash pop` sets the edits aside, updates, and puts them back.
+> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder.
+
+
 - **Course**: USV Guidance, Navigation and Control (Graduate)
 - **Department**: Autonomous Vehicle System Engineering, Chungnam National University
 - **This appendix**: ① one rule that produces $\mathbf{B}$ for any thruster layout ② the attainable control set and what actuation rank costs ③ the command that looks like a pure turn and is not, and the one that is
 
 > [!important] When to read this
-> - This appendix is **optional for Weeks 2 and 3**. Those weeks need only two results from it, and both are quoted where they are used: the vessel can produce $X \in [-133.42,\ 239.36]$ N, and its yaw moment is $N = y_{\text{pont}}(T_1 - T_2)$.
-> - It becomes **required before Week 5**, where the allocation problem stops having an obvious answer, and before Weeks 9 to 11, where the thruster layout changes three times.
+> - This appendix is **optional for Weeks 3 and 4**. Those weeks need only two results from it, and both are quoted where they are used: the vessel can produce $X \in [-133.42,\ 239.36]$ N, and its yaw moment is $N = y_{\text{pont}}(T_1 - T_2)$.
+> - It becomes **required before Week 6**, where the allocation problem stops having an obvious answer, and before Weeks 10 to 12, where the thruster layout changes three times.
 > - Prerequisites: Week 1 — the twelve states, $T = k\,n|n|$ with $k_{\text{pos}} \neq k_{\text{neg}}$, and the observation that $Y \equiv 0$. Here that observation becomes a theorem.
 
 ---
@@ -82,7 +97,7 @@ $$
 
 **Every $\mathbf{B}$ in this course is produced by that expression** — none is transcribed from another file. The Otter's sway row is empty because both propellers face forward and $e_y = 0$, not because someone decided it should be.
 
-This appendix is a prerequisite for Week 5 and is referenced from Weeks 2, 3 and 4 wherever a demanded force has to become a shaft speed.
+This appendix is a prerequisite for Week 6 and is referenced from Weeks 3, 4 and 5 wherever a demanded force has to become a shaft speed.
 
 ## A1-1. The problem this week solves
 
@@ -90,9 +105,9 @@ This appendix is a prerequisite for Week 5 and is referenced from Weeks 2, 3 and
 
 | Reason | Where it is felt |
 |---|---|
-| Weeks 9 to 11 change the thruster layout three times | a transcribed matrix would have to be re-derived and re-checked three times |
+| Weeks 10 to 12 change the thruster layout three times | a transcribed matrix would have to be re-derived and re-checked three times |
 | This project already ships two mutually **negative** $\mathbf{B}$ matrices | a transcribed matrix cannot be told apart from its own sign error |
-| Week 5 inverts $\mathbf{B}$ | an inverse is only as trustworthy as the matrix it inverts |
+| Week 6 inverts $\mathbf{B}$ | an inverse is only as trustworthy as the matrix it inverts |
 
 > [!caution] Two contradictory matrices exist in this repository
 > `Lecture/_tools/otter4_B.m` and `otter_params.m` line 41 differ by an overall sign. Neither is imported into this course. Every $\mathbf{B}$ used from this week onward is produced by `_tools/otter_B.m` from the single rule of §A1-2, so a sign convention cannot enter twice.
@@ -225,7 +240,7 @@ $$
 \mathbf{B}^{\dagger}\begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix} = \begin{bmatrix} 0 \\ 0 \end{bmatrix},
 $$
 
-- that is, the least-squares allocator correctly answers *do nothing*, because doing nothing is the closest reachable point to a request that lies outside the column space. Week 5 makes this precise.
+- that is, the least-squares allocator correctly answers *do nothing*, because doing nothing is the closest reachable point to a request that lies outside the column space. Week 6 makes this precise.
 
 ## A1-4. Tilting thrusters and the extended thrust vector
 
@@ -253,7 +268,7 @@ $$
 $$
 
 - This is the **extended thrust vector** of Fossen (2011) §12.3.4. The azimuth is recovered after the allocation rather than solved for during it.
-- The cost is that the two components of one machine are not independent: $\sqrt{f_{ix}^2 + f_{iy}^2} \le T_{\max}$ is a circular constraint, and $\delta_i$ is subject to a mechanical limit and a rate limit. Week 5 handles both; this week only records that the linear structure has been bought and what it was bought with.
+- The cost is that the two components of one machine are not independent: $\sqrt{f_{ix}^2 + f_{iy}^2} \le T_{\max}$ is a circular constraint, and $\delta_i$ is subject to a mechanical limit and a rate limit. Week 6 handles both; this week only records that the linear structure has been bought and what it was bought with.
 
 ### The four layouts of this course
 
@@ -288,11 +303,11 @@ The first panel shows why it is the exception. Both `base` arrows point the same
 
 That is exactly what the second panel is: the same two machines, moved aft and made steerable. Nothing was added, and the rank goes from 2 to 3. **Actuation authority is a property of directions, not of thrust** — the strongest claim in this appendix, and one panel apart from the one that contradicts it.
 
-The last two panels separate for a different reason. `bow_thruster` is square, three columns for three demands, so the allocation has exactly one answer and there is nothing to choose. `quad_tilt` has eight columns for three demands, so its answers form a five-dimensional set and **something has to decide between them**. That decision is what Week 5 is for.
+The last two panels separate for a different reason. `bow_thruster` is square, three columns for three demands, so the allocation has exactly one answer and there is nothing to choose. `quad_tilt` has eight columns for three demands, so its answers form a five-dimensional set and **something has to decide between them**. That decision is what Week 6 is for.
 
 - Two observations follow immediately, and both matter later.
   - `aft_azimuth` reaches rank 3 with **the same two physical machines** as `base`. The third degree of freedom is bought with servos, not with thrusters.
-  - `bow_thruster` has a **square** $\mathbf{B}$ with rank 3, so the allocation has a unique solution and there is nothing to optimise. `quad_tilt` has a five-dimensional null space, so it has infinitely many solutions and Week 5's machinery finally has something to do.
+  - `bow_thruster` has a **square** $\mathbf{B}$ with rank 3, so the allocation has a unique solution and there is nothing to optimise. `quad_tilt` has a five-dimensional null space, so it has infinitely many solutions and Week 6's machinery finally has something to do.
 
 ## A1-5. Symmetry in the command is not symmetry in the force
 
@@ -355,11 +370,11 @@ $$
 $$
 
 > [!note] Why the set matters
-> Every controller designed from Week 2 onward produces a demanded $\boldsymbol{\tau}$. If that demand lies outside $\mathcal{T}$, the actuators saturate and the loop no longer behaves as designed — this is the mechanism behind the integrator windup of Week 2. Knowing the shape of $\mathcal{T}$ in advance is what makes a saturation event diagnosable rather than mysterious.
+> Every controller designed from Week 3 onward produces a demanded $\boldsymbol{\tau}$. If that demand lies outside $\mathcal{T}$, the actuators saturate and the loop no longer behaves as designed — this is the mechanism behind the integrator windup of Week 3. Knowing the shape of $\mathcal{T}$ in advance is what makes a saturation event diagnosable rather than mysterious.
 
 ## A1-7. An empty row in B is not an empty column in M⁻¹
 
-- Section 2-3 proved $Y \equiv 0$. It is tempting to conclude that the vessel cannot move sideways. That conclusion is wrong, and the reason is instructive.
+- Section A1-3 proved $Y \equiv 0$. It is tempting to conclude that the vessel cannot move sideways. That conclusion is wrong, and the reason is instructive.
 - At rest the Coriolis and damping terms both vanish, so the plant reduces to a linear map:
 
 $$
@@ -387,7 +402,7 @@ $$
 - Week 1 attributed the sway velocity of a turn to the Coriolis term. For the **steady** value that is correct: setting $\dot{\boldsymbol{\nu}} = \mathbf{0}$ removes $\mathbf{M}$ from the equation. This section is about the transient, and both mechanisms are real.
 
 > [!important] Actuation rank and controllability are different questions
-> A rank-2 $\mathbf{B}$ says the vessel cannot be *pushed* sideways. It does not say the vessel cannot *reach* a point to its side — it plainly can, by turning and driving. What underactuation costs is the ability to do so **without changing heading**, and that is exactly what Week 7 needs for dynamic positioning and cannot have from this hull.
+> A rank-2 $\mathbf{B}$ says the vessel cannot be *pushed* sideways. It does not say the vessel cannot *reach* a point to its side — it plainly can, by turning and driving. What underactuation costs is the ability to do so **without changing heading**, and that is exactly what Week 8 needs for dynamic positioning and cannot have from this hull.
 
 ---
 
@@ -475,7 +490,7 @@ The table is produced from `otter_config` alone; no simulation is involved.
   B * that            = [0.000e+00 ; 0.000e+00 ; 0.000e+00]
 ```
 
-- The least-squares allocator asks for no thrust at all when it is asked for pure sway. That is the correct answer to an impossible request, and it is worth seeing before Week 5 assigns it a name.
+- The least-squares allocator asks for no thrust at all when it is asked for pure sway. That is the correct answer to an impossible request, and it is worth seeing before Week 6 assigns it a name.
 
 ## D. The attainable control set (15 min)
 
@@ -631,7 +646,7 @@ In the right panel the two curves leave the origin together, agreeing to $0.01\%
 Read the size honestly: sway reaches $-0.015$ m/s and then turns back. This coupling gives a **transient** sideways motion at the start of a turn, not a way of translating sideways. Anything needing sustained sway still needs a thruster that can produce it.
 
 > [!note] Two effective inertias, used in later weeks
-> The same probe gives $1/(\mathbf{M}^{-1})_{11} = 76.71$ kg against the matrix entry $M_{11} = 85.50$ kg, and $1/(\mathbf{M}^{-1})_{66} = 41.00$ kg·m² against $M_{66} = 42.65$ kg·m². The pairs differ by $10\%$ and $4\%$ because the probe leaves heave, pitch and sway free while the matrix entry does not. Weeks 2 and 3 use the matrix entries and state the discrepancy rather than hiding it.
+> The same probe gives $1/(\mathbf{M}^{-1})_{11} = 76.71$ kg against the matrix entry $M_{11} = 85.50$ kg, and $1/(\mathbf{M}^{-1})_{66} = 41.00$ kg·m² against $M_{66} = 42.65$ kg·m². The pairs differ by $10\%$ and $4\%$ because the probe leaves heave, pitch and sway free while the matrix entry does not. Weeks 3 and 4 use the matrix entries and state the discrepancy rather than hiding it.
 
 ---
 
@@ -744,8 +759,8 @@ Read the size honestly: sway reaches $-0.015$ m/s and then turns back. This coup
 
 | Result of this appendix | Used by |
 |---|---|
-| $X \in [-133.42,\ 239.36]$ N | Week 2, as the saturation that causes integrator windup |
-| $N = y_{\text{pont}}(T_1 - T_2)$ | Week 3, as the yaw allocation |
-| $n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}}$ | Week 3, which produces the same pair automatically by allocating **thrust** rather than shaft speed |
-| the column rule and $\mathbf{B}^{\dagger}$ | Week 5, control allocation |
-| the four layouts and their ranks | Weeks 9 to 11, the hull variants |
+| $X \in [-133.42,\ 239.36]$ N | Week 3, as the saturation that causes integrator windup |
+| $N = y_{\text{pont}}(T_1 - T_2)$ | Week 4, as the yaw allocation |
+| $n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}}$ | Week 4, which produces the same pair automatically by allocating **thrust** rather than shaft speed |
+| the column rule and $\mathbf{B}^{\dagger}$ | Week 6, control allocation |
+| the four layouts and their ranks | Weeks 10 to 12, the hull variants |

@@ -6,25 +6,32 @@ function pass = W03_check(problem, mdl)
 %   W03_check(2, 'W03_P1_kim')  다른 모델을 검사한다 / checks another model
 %   pass = W03_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   아래 목표값은 모두 강의의 절 스크립트가 실제로 측정한 것이다. 체커는 강의와
-%   **같은 정의**로 재야 한다 — 다른 정의로 재면 옳은 제출물이 떨어진다.
-%   Every target below was measured by the lecture's own section scripts, and
-%   the checker must measure by the same definitions: measured differently, a
-%   correct submission fails.
+%   아래 목표값은 모두 강의의 절 스크립트가 실제로 측정한 것이다. 이 값을
+%   재현하는 모델은 도면이 어떻게 생겼든 강의와 같은 물리를 하고 있다.
+%   Every target below was measured by the lecture's own section scripts, so a
+%   model that reproduces them is doing the same physics whatever it looks like.
 %
 %   무엇을 검사하며 이 수치들은 어디서 왔는가
 %   what is being checked, and where these numbers come from
 %
-%     Problem 1   steady heading error, proportional only     0, at EVERY gain
-%                 overshoot grows with Kp: 0.24 % at 100, 1.53 % at 300   §3-C
-%     Problem 2   overshoot FALLS as Kd rises                 §3-D
-%                 zeta = (|Nr| + Kd) / (2 sqrt(Kp M66))
-%     Problem 3   with the wrap, a command across the seam is answered by the
-%                 SHORT turn; without it, by the long way round
+%   Every target below was MEASURED by the lecture's own section scripts.
+%
+%     Problem 1   DC gain of the open-loop plant             0.012894 (m/s)/N
+%                 terminal speed at X = 100 N                1.2894 m/s   §2-C
+%     Problem 2   steady speed at Kp = 100, u_d = 1.5        0.8448 m/s
+%                 the same at Kp = 500                       1.2986 m/s   §2-D
+%                 and the error is NEVER zero
+%     Problem 3   steady error with the integrator present   0 to tolerance
 %
 %   WHAT THE MODEL MUST CONTAIN
 %
 %     xlog   To Workspace, 'Structure With Time', the plant's 12 states
+%     Xlog   To Workspace, 'Structure With Time', the demanded surge force
+%            that enters 'X to n'
+%
+%   Two logs and not one, because Week 3's subject is the relation between a
+%   demanded force and the speed it buys. A log of the states alone cannot
+%   show that a proportional controller runs out of force.
 %
 %   See also W03_P1_START, W03_0_SETUP.
 
@@ -51,126 +58,95 @@ end
 
 % =========================================================================
 function pass = check_p1(mdl)
-%  Proportional only. The steady error is zero at every gain — that is the
-%  whole contrast with Week 2, and it is structural.
-%  The overshoot targets are section C's measured values. Comparing wn with
-%  sqrt(Kp/M66) would be comparing a number with itself and would pass on a
-%  model that does nothing at all.
+%  Open loop: a constant force, long enough to settle.
 pass = true;
-G = [30 100 300];  MPWANT = [-0.01 0.24 1.53];
-for i = 1:3
-    y = run_student(mdl, struct('Kp',G(i), 'Kd',0, 'use_ssa',1, ...
-                                'psi_1',60, 'psi_2',60, 'T_final',40));
-    k = y.t >= 30;
-    pass = report(pass, sprintf('steady error at Kp = %g', G(i)), ...
-                  mean(60 - y.psi(k)), 0, 0.05, 'deg');
-    kk = y.t >= 5;
-    pass = report(pass, sprintf('   overshoot at Kp = %g', G(i)), ...
-                  100*(max(y.psi(kk)) - 60)/60, MPWANT(i), 0.25, '%');
+for X = [50 100 200]
+    y = run_student(mdl, struct('loop_closed',0, 'X_open',X, 'u_d',0, ...
+                                'Kp',0, 'Ki',0, 'T_final',40));
+    pass = report(pass, sprintf('u_ss at X = %g N', X), ...
+                  y.u(end), 0.012894*X, 5e-3, 'm/s');
 end
-fprintf('\n     Zero at EVERY gain, and nothing was tuned to achieve it. The\n');
-fprintf('     heading is the integral of the yaw rate, psi = int r, so the\n');
-fprintf('     plant carries a free integrator and the loop is TYPE 1. Week 2\n');
-fprintf('     could not reach its setpoint at any gain. The difference is one\n');
-fprintf('     structural fact about the axis, not a better controller.\n');
+fprintf('\n     In steady state the plant really is u = K_u X, with\n');
+fprintf('     K_u = 1/|X_u| = 0.012894 (m/s)/N. The relation is exact, not\n');
+fprintf('     approximate: surge damping in otter.m is linear.\n');
 end
 
 % =========================================================================
 function pass = check_p2(mdl)
-%  Derivative action. Overshoot falls as Kd rises — the opposite of Week 2.
-pass = true;  M66 = 42.65;  Nr = -42.65;  Kp = 100;
-Mp = zeros(1,3);  K = [0 25 74.9];
-for i = 1:3
-    y = run_student(mdl, struct('Kp',Kp, 'Kd',K(i), 'use_ssa',1, ...
-                                'psi_1',5, 'psi_2',5, 'T_final',40));
-    k = y.t >= 5;
-    Mp(i) = 100*(max(y.psi(k)) - 5)/5;
-    z = (abs(Nr) + K(i))/(2*sqrt(Kp*M66));
-    fprintf('  %-38s %9.4f  (zeta = %.4f)\n', ...
-            sprintf('overshoot at Kd = %g  [%%]', K(i)), Mp(i), z);
+%  Proportional only. The error is structural, not a tuning failure.
+pass = true;
+Ku = 0.012894;   ud = 1.5;
+for Kp = [100 500 2000]
+    y = run_student(mdl, struct('loop_closed',1, 'X_open',0, 'u_d',ud, ...
+                                'Kp',Kp, 'Ki',0, 'T_final',40));
+    want = Kp*Ku/(1 + Kp*Ku) * ud;
+    pass = report(pass, sprintf('u_ss at Kp = %g', Kp), y.u(end), want, 5e-3, 'm/s');
 end
-pass = report(pass, 'overshoot at Kd = 0', Mp(1), 11.74, 1.0, '%');
-if ~(Mp(1) > Mp(2) && Mp(2) > Mp(3))
-    fprintf('  %-38s %s\n', 'overshoot must FALL as Kd rises', 'FAIL');
-    pass = false;
-else
-    fprintf('  %-38s %s\n', 'overshoot falls as Kd rises', 'PASS');
-end
-pass = report(pass, 'overshoot at Kd = 74.9 (zeta = 0.9)', Mp(3), 0, 0.5, '%');
-fprintf('\n     Substituting the law into the yaw equation gives\n');
-fprintf('        M66 psi_ddot + (|Nr| + Kd) psi_dot + Kp psi = Kp psi_d\n');
-fprintf('     so Kd sits beside the DAMPING. In Week 2 the controlled variable\n');
-fprintf('     was a velocity, its derivative was an acceleration, and the same\n');
-fprintf('     term sat beside the MASS. The term did not change; the axis did.\n');
+fprintf('\n     The plant has no free integrator, so the loop is TYPE 0 and a\n');
+fprintf('     proportional controller cannot reach the setpoint. The steady\n');
+fprintf('     force the damping demands can only be produced by a NON-ZERO\n');
+fprintf('     error. Raising Kp shrinks the error and never removes it.\n');
 end
 
 % =========================================================================
 function pass = check_p3(mdl)
-%  The wrap. A command 20 deg the other side of the seam.
-%
-%  The vessel starts at psi = 170 deg and is asked for -170 deg. The short
-%  way is +20 deg through the seam; the long way is -340 deg.
+%  With the integrator the error goes to zero, and overshoot appears.
 pass = true;
-x0 = zeros(12,1);  x0(12) = deg2rad(170);
+y = run_student(mdl, struct('loop_closed',1, 'X_open',0, 'u_d',1.5, ...
+                            'Kp',102, 'Ki',192.38, 'T_final',40));
+pass = report(pass, 'steady speed with PI', y.u(end), 1.5, 5e-3, 'm/s');
+pass = report(pass, 'steady error with PI',  1.5 - y.u(end), 0, 5e-3, 'm/s');
 
-yOn  = run_student(mdl, struct('Kp',100,'Kd',74.9,'use_ssa',1, ...
-                              'psi_1',-170,'psi_2',-170,'t_up',0,'T_final',60), x0);
-yOff = run_student(mdl, struct('Kp',100,'Kd',74.9,'use_ssa',0, ...
-                              'psi_1',-170,'psi_2',-170,'t_up',0,'T_final',60), x0);
-
-swOn  = yOn.psi(end)  - 170;      % unwrapped: how far the hull actually turned
-swOff = yOff.psi(end) - 170;
-pass = report(pass, 'turn WITH the wrap',    swOn,  20,   3.0, 'deg');
-pass = report(pass, 'turn WITHOUT the wrap', swOff, -340, 12.0, 'deg');
-fprintf('\n     With the wrap the vessel takes the 20 deg turn through the seam.\n');
-fprintf('     Without it the error is computed as -340 deg and the vessel goes\n');
-fprintf('     the long way round — seventeen times further, for the same\n');
-fprintf('     commanded heading. ssa is one line of code and it is not optional.\n');
+k = y.t >= 5;                            % after the step
+Mp = 100*(max(y.u(k)) - 1.5)/1.5;
+fprintf('  %-38s %9.4f  %s\n', 'overshoot with PI', Mp, '[%]  (P alone had none)');
+if Mp <= 0.05
+    fprintf('  %-38s %s\n', 'overshoot is present', 'FAIL — expected some');
+    pass = false;
+end
+fprintf('\n     The integrator supplies the steady force that the damping\n');
+fprintf('     demands, so the error no longer has to. What it costs is a\n');
+fprintf('     state that keeps acting after the error has passed through\n');
+fprintf('     zero — which is overshoot, and, when the actuator saturates,\n');
+fprintf('     windup. Sections F to H of the lecture are about that.\n');
 end
 
 % =========================================================================
-function y = run_student(mdl, V, x0)
-if nargin < 3, x0 = zeros(12,1); end
-cfg = otter_config('base');
-b = 'base';
-assignin(b,'h',0.02);          assignin(b,'T_final',V.T_final);
-assignin(b,'Kp',V.Kp);         assignin(b,'Kd',V.Kd);
-assignin(b,'use_ssa',V.use_ssa);
-assignin(b,'psi_1',V.psi_1);   assignin(b,'psi_2',V.psi_2);
-%  Problem 3 commands from t = 0 so that both runs start with the SAME error
-%  and differ only in how that error is computed. With a step at t = 5 the two
-%  runs are already in different places when the step arrives, and the
-%  comparison stops being about the wrap.
-if isfield(V,'t_up'), t_up = V.t_up; else, t_up = 5; end
-assignin(b,'t_up',t_up);       assignin(b,'t_dn',1e6);
-assignin(b,'X_ff',60);
-assignin(b,'M66',42.65);       assignin(b,'Nr',-42.65);
-assignin(b,'k_pos',cfg.k_pos); assignin(b,'k_neg',cfg.k_neg);
-assignin(b,'n_max',cfg.n_max); assignin(b,'n_min',cfg.n_min);
-assignin(b,'y_pont',0.395);
-assignin(b,'mp',25);           assignin(b,'rp',[0.05 0 -0.35]');
-assignin(b,'V_c',0);           assignin(b,'beta_c',0);
-assignin(b,'x0',x0);
-assignin(b,'animate',0);       assignin(b,'animate_every',0.5);
+function y = run_student(mdl, V)
+base = 'base';
+assignin(base,'h',0.02);              assignin(base,'T_final',V.T_final);
+assignin(base,'loop_closed',V.loop_closed);
+assignin(base,'X_open',V.X_open);     assignin(base,'u_d',V.u_d);
+assignin(base,'Kp',V.Kp);             assignin(base,'Ki',V.Ki);
+assignin(base,'Kd',0);                assignin(base,'Nf',20);
+assignin(base,'mp',25);               assignin(base,'rp',[0.05 0 -0.35]');
+assignin(base,'V_c',0);               assignin(base,'beta_c',0);
+assignin(base,'x0',zeros(12,1));
+assignin(base,'animate',0);           assignin(base,'animate_every',0.5);
+assignin(base,'t_step',5);
 
-evalin(b, sprintf('bdclose(''%s'');', mdl));
+evalin(base, sprintf('bdclose(''%s'');', mdl));
 load_system(mdl);
-set_param(mdl,'StopTime','T_final','ReturnWorkspaceOutputs','off');
-if isempty(find_system(mdl,'BlockType','ToWorkspace','VariableName','xlog'))
-    error('W03_check:noLog', ...
-      ['The model has no To Workspace block whose variable name is xlog.\n' ...
-       'Add one, feed it the plant''s 12-state output, and set its format\n' ...
-       'to ''Structure With Time''.']);
-end
-evalin(b, sprintf('sim(''%s'');', mdl));
-S = evalin(b,'xlog');
-x = squeeze(S.signals.values);  if size(x,1)==12, x = x.'; end
+set_param(mdl, 'StopTime','T_final', 'ReturnWorkspaceOutputs','off');
+need_log(mdl, 'xlog');
+evalin(base, sprintf('sim(''%s'');', mdl));
+
+S = evalin(base, 'xlog');
+x = squeeze(S.signals.values);
+if size(x,1) == 12, x = x.'; end
 if size(x,2) < 12
-    error('W03_check:width', 'xlog has %d columns; feed it all 12 states.', size(x,2));
+    error('W03_check:width', ...
+      'xlog has %d columns. Feed it the FULL 12-state vector.', size(x,2));
 end
-%  psi is NOT wrapped here. Problem 3 needs the accumulated turn, and a
-%  wrapped angle cannot tell 20 deg from -340 deg.
-y.t = S.time;  y.psi = rad2deg(x(:,12));  y.r = rad2deg(x(:,6));
+y.t = S.time;   y.u = x(:,1);   y.v = x(:,2);   y.r = rad2deg(x(:,6));
+end
+
+function need_log(mdl, name)
+if isempty(find_system(mdl, 'BlockType','ToWorkspace', 'VariableName', name))
+    error('W03_check:noLog', ...
+      ['The model has no To Workspace block whose variable name is %s.\n' ...
+       'Add one and set its Save format to ''Structure With Time''.'], name);
+end
 end
 
 function ok = report(ok, what, got, want, tol, unit)

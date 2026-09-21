@@ -214,7 +214,7 @@ note(m, [40 300 800 640], strjoin({ ...
 '3  SWAY WITHOUT A SIDE FORCE.  v is nevertheless non-zero in both'
 '   turns, and changes SIGN between them. It comes from the hull'
 '   rotating - the Coriolis term - not from any force Y. That is the'
-'   crab angle, and Week 3 has to steer around it.'
+'   crab angle, and Week 4 has to steer around it.'
 ''
 '4  HEADING IS NOT COURSE.  In each turn the vessel points one way'
 '   and travels another. The track alone cannot show this, which is'

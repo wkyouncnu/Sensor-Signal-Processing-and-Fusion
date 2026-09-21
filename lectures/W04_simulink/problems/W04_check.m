@@ -6,28 +6,25 @@ function pass = W04_check(problem, mdl)
 %   W04_check(2, 'W04_P1_kim')  다른 모델을 검사한다 / checks another model
 %   pass = W04_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   체커는 강의와 **같은 정의**로 재야 한다. 실제로 항로각을 gradient 로 재어
-%   강의의 시종점 정의와 0.56 도 어긋나 옳은 제출물을 떨어뜨린 적이 있다.
-%   The checker must measure by the same definitions as the lecture. Measuring
-%   the track angle with gradient once disagreed with the lecture's endpoint
-%   definition by 0.56 deg and failed a correct submission.
+%   아래 목표값은 모두 강의의 절 스크립트가 실제로 측정한 것이다. 체커는 강의와
+%   **같은 정의**로 재야 한다 — 다른 정의로 재면 옳은 제출물이 떨어진다.
+%   Every target below was measured by the lecture's own section scripts, and
+%   the checker must measure by the same definitions: measured differently, a
+%   correct submission fails.
 %
-%   무엇을 검사하는가 / what is being checked
+%   무엇을 검사하며 이 수치들은 어디서 왔는가
+%   what is being checked, and where these numbers come from
 %
-%     Problem 1   the LOS law itself. pi_p on leg 1 is exactly 0 rad, and the
-%                 vessel joins the line and stays on it              §4-4
-%     Problem 2   atan2 reaches the waypoint and never the LINE      §4-1, §4-C
-%     Problem 3   in a current LOS settles at Delta tan(beta_c)      §4-7
+%     Problem 1   steady heading error, proportional only     0, at EVERY gain
+%                 overshoot grows with Kp: 0.24 % at 100, 1.53 % at 300   §3-C
+%     Problem 2   overshoot FALLS as Kd rises                 §3-D
+%                 zeta = (|Nr| + Kd) / (2 sqrt(Kp M66))
+%     Problem 3   with the wrap, a command across the seam is answered by the
+%                 SHORT turn; without it, by the long way round
 %
 %   WHAT THE MODEL MUST CONTAIN
 %
 %     xlog   To Workspace, 'Structure With Time', the plant's 12 states
-%     glog   To Workspace, 'Structure With Time', [pi_p ; y_e_p ; psi_d]
-%            in radians and metres, in that order
-%
-%   The guidance log is required because Problems 1 and 3 are about quantities
-%   that never appear in the state vector. A model can put the vessel in the
-%   right place with the wrong y_e, and only glog can tell.
 %
 %   See also W04_P1_START, W04_0_SETUP.
 
@@ -54,128 +51,126 @@ end
 
 % =========================================================================
 function pass = check_p1(mdl)
-%  Leg 1 runs from (0,0) to (60,0): due north, so pi_p is exactly zero.
-%  The vessel starts 18 m to the east of it and has to join the line.
+%  Proportional only. The steady error is zero at every gain — that is the
+%  whole contrast with Week 3, and it is structural.
+%  The overshoot targets are section C's measured values. Comparing wn with
+%  sqrt(Kp/M66) would be comparing a number with itself and would pass on a
+%  model that does nothing at all.
 pass = true;
-y = run_student(mdl, struct('law',1, 'V_c',0, 'beta_c',0, 'T_final',120, 'y0',18));
-
-pass = report(pass, 'pi_p on leg 1', mean(y.pi_p), 0, 1e-9, 'rad');
-k = y.t >= 90;
-pass = report(pass, 'settled cross-track error', mean(y.y_e(k)), 0, 0.05, 'm');
-pass = report(pass, 'settled heading command',   mean(y.psi_d(k)), 0, 0.01, 'rad');
-pass = report(pass, 'it started 18 m off the line', y.y_e(1), 18, 0.05, 'm');
-fprintf('\n     The correction fades to zero exactly as the vessel reaches the\n');
-fprintf('     path, so psi_d ends on pi_p and the rest of the leg is run along\n');
-fprintf('     it. That is the whole of the LOS law.\n');
+G = [30 100 300];  MPWANT = [-0.01 0.24 1.53];
+for i = 1:3
+    y = run_student(mdl, struct('Kp',G(i), 'Kd',0, 'use_ssa',1, ...
+                                'psi_1',60, 'psi_2',60, 'T_final',40));
+    k = y.t >= 30;
+    pass = report(pass, sprintf('steady error at Kp = %g', G(i)), ...
+                  mean(60 - y.psi(k)), 0, 0.05, 'deg');
+    kk = y.t >= 5;
+    pass = report(pass, sprintf('   overshoot at Kp = %g', G(i)), ...
+                  100*(max(y.psi(kk)) - 60)/60, MPWANT(i), 0.25, '%');
+end
+fprintf('\n     Zero at EVERY gain, and nothing was tuned to achieve it. The\n');
+fprintf('     heading is the integral of the yaw rate, psi = int r, so the\n');
+fprintf('     plant carries a free integrator and the loop is TYPE 1. Week 3\n');
+fprintf('     could not reach its setpoint at any gain. The difference is one\n');
+fprintf('     structural fact about the axis, not a better controller.\n');
 end
 
 % =========================================================================
 function pass = check_p2(mdl)
-%  The same run under both laws. atan2 reaches the waypoint; LOS reaches the
-%  LINE. The gap is measured as the largest cross-track error after the
-%  vessel has had time to settle.
-pass = true;
-yL = run_student(mdl, struct('law',1, 'V_c',0, 'beta_c',0, 'T_final',120, 'y0',18));
-yA = run_student(mdl, struct('law',2, 'V_c',0, 'beta_c',0, 'T_final',120, 'y0',18));
-%  From 90 s, the same window Problem 1 uses. At 60 s the LOS vessel is still
-%  finishing its approach, and measuring there compares a transient with a
-%  steady state — which flatters atan2 rather than the other way round.
-k  = yL.t >= 90;
-
-eL = max(abs(yL.y_e(k)));
-eA = max(abs(yA.y_e(k)));
-fprintf('  %-38s %9.4f m\n', 'LOS   worst |y_e| after 90 s', eL);
-fprintf('  %-38s %9.4f m\n', 'atan2 worst |y_e| after 90 s', eA);
-pass = report(pass, 'LOS holds the line', eL, 0, 0.20, 'm');
-if eA > 5*max(eL, 0.05)
-    fprintf('  %-38s %s\n', 'atan2 does NOT hold the line', 'PASS');
-else
-    fprintf('  %-38s %s\n', 'atan2 should be far worse than LOS', 'FAIL');
-    pass = false;
+%  Derivative action. Overshoot falls as Kd rises — the opposite of Week 3.
+pass = true;  M66 = 42.65;  Nr = -42.65;  Kp = 100;
+Mp = zeros(1,3);  K = [0 25 74.9];
+for i = 1:3
+    y = run_student(mdl, struct('Kp',Kp, 'Kd',K(i), 'use_ssa',1, ...
+                                'psi_1',5, 'psi_2',5, 'T_final',40));
+    k = y.t >= 5;
+    Mp(i) = 100*(max(y.psi(k)) - 5)/5;
+    z = (abs(Nr) + K(i))/(2*sqrt(Kp*M66));
+    fprintf('  %-38s %9.4f  (zeta = %.4f)\n', ...
+            sprintf('overshoot at Kd = %g  [%%]', K(i)), Mp(i), z);
 end
-%  Both must still arrive: the point of the comparison is that atan2 is not
-%  broken, it is answering a different question.
-pass = report(pass, 'atan2 still reaches the waypoint', ...
-              hypot(60 - yA.x(end), 0 - yA.y(end)), 0, 6.0, 'm');
-fprintf('\n     atan2 regulates the distance to a POINT, and a point carries no\n');
-fprintf('     information about the line it sits on. It is not badly tuned; it\n');
-fprintf('     is answering a different question.\n');
+pass = report(pass, 'overshoot at Kd = 0', Mp(1), 11.74, 1.0, '%');
+if ~(Mp(1) > Mp(2) && Mp(2) > Mp(3))
+    fprintf('  %-38s %s\n', 'overshoot must FALL as Kd rises', 'FAIL');
+    pass = false;
+else
+    fprintf('  %-38s %s\n', 'overshoot falls as Kd rises', 'PASS');
+end
+pass = report(pass, 'overshoot at Kd = 74.9 (zeta = 0.9)', Mp(3), 0, 0.5, '%');
+fprintf('\n     Substituting the law into the yaw equation gives\n');
+fprintf('        M66 psi_ddot + (|Nr| + Kd) psi_dot + Kp psi = Kp psi_d\n');
+fprintf('     so Kd sits beside the DAMPING. In Week 3 the controlled variable\n');
+fprintf('     was a velocity, its derivative was an acceleration, and the same\n');
+fprintf('     term sat beside the MASS. The term did not change; the axis did.\n');
 end
 
 % =========================================================================
 function pass = check_p3(mdl)
-%  A beam current. LOS settles beside the path and stays there.
+%  The wrap. A command 20 deg the other side of the seam.
+%
+%  The vessel starts at psi = 170 deg and is asked for -170 deg. The short
+%  way is +20 deg through the seam; the long way is -340 deg.
 pass = true;
-Delta = 8;
-y = run_student(mdl, struct('law',1, 'V_c',0.3, 'beta_c',pi/2, ...
-                            'T_final',200, 'y0',0));
-k = y.t >= 150;
+x0 = zeros(12,1);  x0(12) = deg2rad(170);
 
-beta = mean(atan2(y.v(k), y.u(k)));           % the crab angle, measured
-off  = mean(y.y_e(k));
-pred = Delta*tan(beta);
+yOn  = run_student(mdl, struct('Kp',100,'Kd',74.9,'use_ssa',1, ...
+                              'psi_1',-170,'psi_2',-170,'t_up',0,'T_final',60), x0);
+yOff = run_student(mdl, struct('Kp',100,'Kd',74.9,'use_ssa',0, ...
+                              'psi_1',-170,'psi_2',-170,'t_up',0,'T_final',60), x0);
 
-fprintf('  %-38s %9.4f deg\n', 'measured crab angle beta_c', rad2deg(beta));
-pass = report(pass, 'settled offset y_e', off,  pred, 0.15, 'm');
-pass = report(pass, 'the prediction Delta tan(beta_c)', pred, off, 0.15, 'm');
-
-%  And the heading error is already zero while that offset persists.
-he = mean(mod(y.psi_d(k) - y.psi(k) + pi, 2*pi) - pi);
-pass = report(pass, 'heading error while offset persists', rad2deg(he), 0, 0.5, 'deg');
-fprintf('\n     The vessel settles BESIDE the path and stays there, with the\n');
-fprintf('     heading error already at zero. There is nothing left for a\n');
-fprintf('     larger autopilot gain to act on. Sections 4-8 and 4-9 exist to\n');
-fprintf('     remove this offset, and neither of them does it with gain.\n');
+swOn  = yOn.psi(end)  - 170;      % unwrapped: how far the hull actually turned
+swOff = yOff.psi(end) - 170;
+pass = report(pass, 'turn WITH the wrap',    swOn,  20,   3.0, 'deg');
+pass = report(pass, 'turn WITHOUT the wrap', swOff, -340, 12.0, 'deg');
+fprintf('\n     With the wrap the vessel takes the 20 deg turn through the seam.\n');
+fprintf('     Without it the error is computed as -340 deg and the vessel goes\n');
+fprintf('     the long way round — seventeen times further, for the same\n');
+fprintf('     commanded heading. ssa is one line of code and it is not optional.\n');
 end
 
 % =========================================================================
-function y = run_student(mdl, V)
+function y = run_student(mdl, V, x0)
+if nargin < 3, x0 = zeros(12,1); end
 cfg = otter_config('base');
-W   = [0 0; 60 0; 60 60; 0 60; 60 120];
-b   = 'base';
+b = 'base';
 assignin(b,'h',0.02);          assignin(b,'T_final',V.T_final);
-assignin(b,'WP_N',W(:,1));     assignin(b,'WP_E',W(:,2));
-assignin(b,'Delta',8);         assignin(b,'law',V.law);
-assignin(b,'Kp',100);          assignin(b,'Kd',74.9);
+assignin(b,'Kp',V.Kp);         assignin(b,'Kd',V.Kd);
+assignin(b,'use_ssa',V.use_ssa);
+assignin(b,'psi_1',V.psi_1);   assignin(b,'psi_2',V.psi_2);
+%  Problem 3 commands from t = 0 so that both runs start with the SAME error
+%  and differ only in how that error is computed. With a step at t = 5 the two
+%  runs are already in different places when the step arrives, and the
+%  comparison stops being about the wrap.
+if isfield(V,'t_up'), t_up = V.t_up; else, t_up = 5; end
+assignin(b,'t_up',t_up);       assignin(b,'t_dn',1e6);
 assignin(b,'X_ff',60);
+assignin(b,'M66',42.65);       assignin(b,'Nr',-42.65);
 assignin(b,'k_pos',cfg.k_pos); assignin(b,'k_neg',cfg.k_neg);
 assignin(b,'n_max',cfg.n_max); assignin(b,'n_min',cfg.n_min);
 assignin(b,'y_pont',0.395);
 assignin(b,'mp',25);           assignin(b,'rp',[0.05 0 -0.35]');
-assignin(b,'V_c',V.V_c);       assignin(b,'beta_c',V.beta_c);
-x0 = zeros(12,1);  x0(8) = V.y0;               % start east of the leg
+assignin(b,'V_c',0);           assignin(b,'beta_c',0);
 assignin(b,'x0',x0);
 assignin(b,'animate',0);       assignin(b,'animate_every',0.5);
 
 evalin(b, sprintf('bdclose(''%s'');', mdl));
 load_system(mdl);
 set_param(mdl,'StopTime','T_final','ReturnWorkspaceOutputs','off');
-need(mdl,'xlog');  need(mdl,'glog');
-evalin(b, sprintf('sim(''%s'');', mdl));
-
-X = grab(evalin(b,'xlog'), 12, 'xlog');
-G = grab(evalin(b,'glog'),  3, 'glog');
-S = evalin(b,'xlog');
-y.t = S.time;
-y.u = X(:,1);  y.v = X(:,2);  y.x = X(:,7);  y.y = X(:,8);  y.psi = X(:,12);
-y.pi_p = G(:,1);  y.y_e = G(:,2);  y.psi_d = G(:,3);
-end
-
-function need(mdl, name)
-if isempty(find_system(mdl,'BlockType','ToWorkspace','VariableName',name))
+if isempty(find_system(mdl,'BlockType','ToWorkspace','VariableName','xlog'))
     error('W04_check:noLog', ...
-      ['The model has no To Workspace block whose variable name is %s.\n' ...
-       'Set its Save format to ''Structure With Time''.'], name);
+      ['The model has no To Workspace block whose variable name is xlog.\n' ...
+       'Add one, feed it the plant''s 12-state output, and set its format\n' ...
+       'to ''Structure With Time''.']);
 end
+evalin(b, sprintf('sim(''%s'');', mdl));
+S = evalin(b,'xlog');
+x = squeeze(S.signals.values);  if size(x,1)==12, x = x.'; end
+if size(x,2) < 12
+    error('W04_check:width', 'xlog has %d columns; feed it all 12 states.', size(x,2));
 end
-
-function M = grab(S, w, name)
-M = squeeze(S.signals.values);
-if size(M,1) == w, M = M.'; end
-if size(M,2) ~= w
-    error('W04_check:width', '%s has %d columns; %d were expected.', ...
-          name, size(M,2), w);
-end
+%  psi is NOT wrapped here. Problem 3 needs the accumulated turn, and a
+%  wrapped angle cannot tell 20 deg from -340 deg.
+y.t = S.time;  y.psi = rad2deg(x(:,12));  y.r = rad2deg(x(:,6));
 end
 
 function ok = report(ok, what, got, want, tol, unit)

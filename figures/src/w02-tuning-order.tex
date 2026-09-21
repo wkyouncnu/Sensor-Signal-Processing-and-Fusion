@@ -1,0 +1,101 @@
+% figures/w02-tuning-order.svg — PID 튜닝 순서. 한 번에 하나씩.
+%
+%   bash _tools/tikz2svg.sh figures/src/w02-tuning-order.tex figures/w02-tuning-order.svg
+%
+% 2주차 §2-9 의 그림. 사용자 요청(2026-09-21): "PID 튜닝 하는 순서도 정리해줘봐....
+% 최대한 쉽게". 순서의 근거는 셋이다.
+%   - 제어조교(Ctrl튜브) "PID 제어기 짬튜닝" — P 를 먼저, 단위로 크기를 정하고, P 응답으로
+%     시스템을 읽는다. I 는 남는 오차가 있을 때만. 목표값은 부드럽게.
+%   - MATLAB Tech Talk "Understanding PID Control" 4편·6편 — 먼저 요구조건과 플랜트가
+%     "얌전한가" 를 본다. 끝에는 언제나 손으로 다듬는다. 제어 입력을 반드시 본다.
+%   - 캡스톤디자인 6주차 F-6 — P → D → I → 안티와인드업.
+% 오른쪽 열의 수는 W02_I_tuning_by_hand 가 이 플랜트에서 실제로 잰 값이다.
+%
+% 폭 약 176 mm.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+\usetikzlibrary{shapes.geometric}
+\tikzset{
+  tstep/.style = {draw=ink, line width=0.55pt, fill=white, rounded corners=1mm,
+                 text width=66mm, minimum height=10mm, inner sep=2.2mm,
+                 font=\small, align=left},
+  ask/.style  = {draw=accent, line width=0.6pt, fill=white, diamond, aspect=2.6,
+                 inner sep=0.6mm, font=\small, align=center, text=accent},
+  num/.style  = {font=\scriptsize, soft, text width=52mm, align=left, anchor=west},
+  lbl/.style  = {font=\scriptsize, accent, inner sep=1pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=south] at (10,14)
+     {Tuning a PID by hand: one gain at a time, each chosen from the last measurement};
+
+% ---- 0 ---------------------------------------------------------------------
+\node[tstep] (s0) at (0,0) {\textbf{0\quad Before any gain.} Write down what ``good'' means
+  (overshoot, settling time, force available). Check the plant is well behaved:
+  stable, nearly linear, little delay.};
+
+% ---- 1 ---------------------------------------------------------------------
+\node[tstep, below=6mm of s0] (s1) {\textbf{1\quad P only.} $K_i = K_d = 0$. Choose the size of
+  $K_p$ from the units: a few times the stiffness the plant already has.};
+\node[num] at ([xshift=6mm]s1.east) {$k = 2$ N/m, so $K_p = 5k = 10$ N/m};
+
+% ---- 2 ---------------------------------------------------------------------
+\node[tstep, below=6mm of s1] (s2) {\textbf{2\quad Read the P response.} The overshoot
+  $M_p$ gives the damping ratio:\\[1mm]
+  \hspace*{8mm}$\zeta = -\ln M_p \big/ \sqrt{\pi^2 + \ln^2 M_p}$};
+\node[num] at ([xshift=6mm]s2.east) {$M_p = 38.8\,\%$, so $\zeta = 0.289$};
+
+\node[ask, below=6mm of s2] (q2) {does it ring?};
+\draw[sig] (s0) -- (s1);  \draw[sig] (s1) -- (s2);  \draw[sig] (s2) -- (q2);
+
+% no: raise Kp
+\node[tstep, text width=36mm, anchor=east] (up) at ([xshift=-12mm]q2.west)
+     {\textbf{no}: slow and smooth. Raise $K_p$ and read again.};
+\draw[asig] (q2.west) -- node[lbl, above] {no} (up.east);
+\draw[asig] (up.north) |- ([yshift=-2mm]s1.west);
+
+% ---- 3 ---------------------------------------------------------------------
+\node[tstep, below=6mm of q2] (s3) {\textbf{3\quad Add D.} Raise $K_d$ step by step while the
+  overshoot keeps falling. Stop where it stops falling. If the force starts to
+  chatter, lower $N_f$.};
+\draw[asig] (q2) -- node[lbl, right] {yes} (s3);
+\node[num] at ([xshift=6mm]s3.east) {$K_d = 0,1,\dots,7$: $38.8 \to 8.60\,\%$ at $K_d = 6$, then up again};
+
+\node[ask, below=6mm of s3] (q3) {error left?};
+\draw[sig] (s3) -- (q3);
+
+% ---- 4 ---------------------------------------------------------------------
+\node[tstep, below=6mm of q3] (s4) {\textbf{4\quad Add I}, only because an error remains. Raise
+  $K_i$ until the response is inside the band in time. Too much brings the overshoot back.};
+\draw[asig] (q3) -- node[lbl, right] {yes} (s4);
+\node[num] at ([xshift=6mm]s4.east) {error left $0.167$ m; $K_i = 8$: inside 1\,\% in $2.77$ s};
+\node[tstep, text width=36mm, anchor=east] (noI) at ([xshift=-12mm]q3.west)
+     {\textbf{no}: leave $K_i = 0$. An integral that is not needed only costs.};
+\draw[asig] (q3.west) -- node[lbl, above] {no} (noI.east);
+
+% ---- 5 ---------------------------------------------------------------------
+\node[ask, below=6mm of s4] (q5) {force within\\the limit?};
+\draw[sig] (s4) -- (q5);
+%  I 가 필요 없으면 4 를 건너 4 와 5 사이의 연결선으로 들어간다.
+%  With no error left, step 4 is skipped: join the connector between 4 and 5.
+\coordinate (j45) at ($(s4.south)!0.5!(q5.north)$);
+\draw[asig] (noI.south) |- (j45);
+\node[tstep, below=6mm of q5] (s5) {\textbf{5\quad Look at the force, not only the response.}
+  Smooth the setpoint to remove the derivative kick; switch on anti-windup ($K_b$);
+  if still too much, lower the gains.};
+\draw[asig] (q5) -- node[lbl, right] {no} (s5);
+\node[num] at ([xshift=6mm]s5.east) {step: $129.6$ N against $30$ N available; smoothed: $13.9$ N};
+
+% ---- 6 ---------------------------------------------------------------------
+\node[tstep, below=6mm of s5] (s6) {\textbf{6\quad Finish by hand.} A PID Tuner or a
+  Ziegler--Nichols rule gives a starting point, never the last word. Re-check
+  step 5 after every change.};
+\draw[sig] (s5) -- (s6);
+%  힘이 한계 안이면 5 를 건너 6 으로 / within the limit: skip 5, go to 6
+\coordinate (byp) at ([xshift=-6mm]s5.west |- q5.west);
+\draw[asig] (q5.west) -- node[lbl, above] {yes} (byp) |- (s6.west);
+
+\end{tikzpicture}
+\end{document}

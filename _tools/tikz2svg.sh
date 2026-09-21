@@ -2,7 +2,7 @@
 #
 #  tikz2svg.sh — TikZ 그림 하나를 SVG 로 만든다.
 #
-#      bash _tools/tikz2svg.sh figures/src/w02-windup.tex figures/w02-windup.svg
+#      bash _tools/tikz2svg.sh figures/src/w03-windup.tex figures/w03-windup.svg
 #
 #  왜 TikZ 인가. 손으로 SVG 좌표를 쓰면 화살촉·선 굵기·간격이 그림마다 미묘하게
 #  달라지고, 그것이 "어설퍼 보인다" 의 정체다. TikZ 는 그 셋을 스타일로 한 번만

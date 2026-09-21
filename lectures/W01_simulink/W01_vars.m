@@ -10,14 +10,14 @@ function V = W01_vars(model)
 %       Run 을 누르기만 하면 되게 하려는 것이다. 이 함수는 같은 값들을 구조체로
 %       돌려준다. 절 스크립트가 run_sim 으로 값 하나만 바꾸어 여러 번 돌릴 때,
 %       작업공간이 마지막 실행의 상태로 남지 않게 하려는 것이다. 값을 적어 두는
-%       곳은 한 군데여야 하므로 둘은 같은 숫자를 읽는다. 2주차와 3주차도 같은 구조다.
+%       곳은 한 군데여야 하므로 둘은 같은 숫자를 읽는다. 3주차와 4주차도 같은 구조다.
 %
 %       W01_0_setup places the same values in the base workspace, so that
 %       opening the model and pressing Run is enough. This function returns
 %       them as a struct instead, so that a section script can vary one value
 %       through run_sim without leaving the workspace in the state of the last
 %       run. A gain must be written down in exactly one place, so both read
-%       the same numbers. Weeks 2 and 3 are arranged the same way.
+%       the same numbers. Weeks 3 and 4 are arranged the same way.
 %
 %   인자가 필요한 이유 / why there is an argument
 %       두 모델은 필요한 시뮬레이션 길이와 궤적 표시 범위가 다르다. 하나는 130 m

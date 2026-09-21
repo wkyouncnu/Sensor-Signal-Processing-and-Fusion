@@ -1,16 +1,18 @@
-# Week 3 · Laboratory Problems — build the heading autopilot in Simulink
+# Week 3 · Laboratory Problems — close the speed loop in Simulink
 
 - Course: Sensor Signal Processing and Fusion · Department of Autonomous Vehicle System Engineering
 - Time: **one hour**, immediately after the Week 3 lecture hour
-- Three problems, in order. Each one adds one branch to the previous answer.
+- Three problems, in order. Each one adds one block to the previous answer.
 
 ---
 
 ## What this hour is for
 
-Week 2 closed a loop around a **velocity** and found that the error never reached zero. This hour closes a loop around an **angle** and finds the opposite. The whole point is that the difference is **structural** — a property of the axis being controlled — and not a better controller.
+Week 1 drove the hull with a command someone typed. This hour closes a loop around it, and the whole point is to see **what closing a loop can and cannot buy**.
 
-The hull and the control allocation are provided. The allocation is Appendix A1's subject; Week 3 is about the loop that decides what yaw moment to demand.
+The hull and the thrust map are provided. The thrust map is provided because turning a demanded force into two shaft speeds is Appendix A1's subject, and repeating it here would spend the hour on the wrong thing. Everything between the reference and the plant — the summing junction, the gains, the integrator — is built by hand.
+
+Each problem ends with a **number measured in the lecture** and a **picture of the correct result**. There is no single correct diagram; the checker tests the physics.
 
 ---
 
@@ -18,36 +20,43 @@ The hull and the control allocation are provided. The allocation is Appendix A1'
 
 ```matlab
 cd lectures/W03_simulink/problems
-W03_P1_start                 % creates W03_P1.slx — hull and allocation only
+W03_P1_start                 % creates W03_P1.slx — hull and thrust map only
 W03_check(1)                 % run this whenever, as often as needed
 ```
 
 The solver is already set to fixed-step `ode4` at `h = 0.02` s. **Do not change it.**
 
-> [!important] One requirement on every model
-> A To Workspace block named **`xlog`**, format **`Structure With Time`**, fed by the plant's twelve-state output. The heading is state **12** and the yaw rate is state **6**.
+> [!important] Two requirements on every model
+> - a To Workspace block named **`xlog`**, format **`Structure With Time`**, fed by the plant's twelve-state output
+> - a second one named **`Xlog`**, same format, carrying the demanded surge force that enters `X to n`
+>
+> Two logs and not one, because Week 3's subject is the relation between a demanded **force** and the **speed** it buys. A log of the states alone cannot show that a proportional controller has run out of force.
 
 ---
 
-## Problem 1 · Proportional only (20 minutes)
+## Problem 1 · The open loop (20 minutes)
 
-**Build.** Command, error, one gain, into the allocation.
+**Build.** A constant force straight into the thrust map, and two logs coming out.
 
 ```
-Step ψ_d [deg] → deg2rad → (+)(−) → Kp → τ_N → Control allocation → Otter USV
-                              ↑                                          ↓
-                              └──────────────  ψ  ←──────────────────────┘
+Constant X_open  →  X to n  →  Otter USV  →  To Workspace (xlog)
 ```
 
-**Predict before running.** Week 2's plant had no free integrator and its steady error was $u_d\,/(1+K_pK_u)$ — 44 % at $K_p = 100$. Ask the same question here **before** running: what is the steady heading error at $K_p = 30$?
+**Predict before running.** In steady state the thrust balances linear surge damping, so
 
-**Verify.** `W03_check(1)`, step to $60°$.
+$$
+u_{ss} = K_u X, \qquad K_u = \frac{1}{\lvert X_u \rvert} = 0.012894\ \text{(m/s)/N}
+$$
 
-| $K_p$ | steady error | overshoot |
-|---|---|---|
-| $30$ | $0$ | $-0.01$ % |
-| $100$ | $0$ | $0.24$ % |
-| $300$ | $0$ | $1.53$ % |
+Write down what $X = 50$, $100$ and $200$ N should give.
+
+**Verify.** `W03_check(1)`.
+
+| What the checker expects | |
+|---|---|
+| $u_{ss}$ at $X = 50$ N | $0.6447$ m/s |
+| $u_{ss}$ at $X = 100$ N | $1.2894$ m/s |
+| $u_{ss}$ at $X = 200$ N | $2.5788$ m/s |
 
 **What a correct model produces**
 
@@ -55,41 +64,41 @@ Step ψ_d [deg] → deg2rad → (+)(−) → Kp → τ_N → Control allocation 
 
 | Reading the figure | |
 |---|---|
-| left | all three gains arrive at $60°$. Higher gain arrives faster and rings more |
-| right | the same runs as error. **All three go to zero**, and nothing was tuned to make that happen |
-| the check | if any trace settles short of $60°$, the feedback is not the heading — check that the Selector picks state 12 |
+| left | three first-order rises, each landing exactly on its own dashed $K_u X$ line. No overshoot: there is no loop yet |
+| right | the same three results as points on the straight line $u = K_u X$, with the actuator ceiling marked |
+| the check | if the rises overshoot, something is already fed back; if they land off the dashed lines, the thrust map is being bypassed |
 
-**The point.** $\psi = \int r$, so the plant carries a **free integrator** and the loop is **type 1**. Week 2's was type 0. That one structural fact — not a better controller — is why the error is zero here at every gain.
+**The point.** The relation is **exact**, not approximate. Surge damping in `otter.m` is linear, so the steady state is a straight line and not a curve that merely looks like one.
 
 ---
 
-## Problem 2 · Derivative action (20 minutes)
+## Problem 2 · Proportional control (20 minutes)
 
-**Build.** One more branch: $-K_d\,r$, added to the proportional term.
+**Build.** Add the reference, the summing junction, and one gain.
 
-> [!warning] Feed back the yaw rate, not the derivative of the error
-> The two agree while $\psi_d$ is constant and disagree at **every step**, where $\mathrm{d}\psi_d/\mathrm{d}t$ is an impulse. Differentiating the error puts that impulse straight into the actuator. The plant already **measures** $r$ — it is state 6 — so nothing in a correct model is differentiated anywhere.
+```
+Step u_d  →  (+)(−)  →  Kp  →  X to n  →  Otter USV
+                ↑                              ↓
+                └──────────  u  ←──────────────┘
+```
 
-**Predict before running.** Substitute the law into the yaw equation:
+The feedback signal is **$u$, state 1** — not the speed over ground $\sqrt{u^2+v^2}$. With no current and no steering the two agree here, and in Week 5 they do not. A loop written against the wrong signal keeps working until exactly the moment it matters.
+
+**Predict before running.** The final value theorem gives
 
 $$
-M_{66}\,\ddot\psi + \big(\lvert N_r\rvert + K_d\big)\dot\psi + K_p\,\psi = K_p\,\psi_d
+\frac{u_{ss}}{u_d} = \frac{K_p K_u}{1 + K_p K_u}
 $$
 
-$$
-\omega_n = \sqrt{\frac{K_p}{M_{66}}}, \qquad
-\zeta = \frac{\lvert N_r\rvert + K_d}{2\sqrt{K_p M_{66}}}
-$$
+Work out the steady error at $K_p = 100$ before touching the model.
 
-**Which coefficient does $K_d$ sit beside?** Answer that, and the direction of the effect follows without simulating anything.
+**Verify.** `W03_check(2)`, with $u_d = 1.5$ m/s.
 
-**Verify.** `W03_check(2)`, $K_p = 100$, $5°$ step.
-
-| $K_d$ | $\zeta$ | overshoot |
+| $K_p$ | expected $u_{ss}$ | error |
 |---|---|---|
-| $0$ | $0.327$ | $11.74$ % |
-| $25$ | $0.518$ | $4.10$ % |
-| $74.9$ | $0.900$ | $\approx 0$ |
+| $100$ | $0.8448$ m/s | $44$ % |
+| $500$ | $1.2986$ m/s | $13$ % |
+| $2000$ | $1.4440$ m/s | $3.7$ % |
 
 **What a correct model produces**
 
@@ -97,33 +106,27 @@ $$
 
 | Reading the figure | |
 |---|---|
-| left | four responses to the same step. **Overshoot falls as $K_d$ rises** |
-| right | the same four as overshoot against $\zeta$, landing on the second-order curve |
-| the check | if overshoot *rises* with $K_d$, the derivative is being taken of the error rather than fed back as $r$ — or its sign is wrong |
+| left | three settled values, and **none of them touches the dashed reference** |
+| right | the measured points land on the theoretical curve $K_pK_u/(1+K_pK_u)$, which approaches zero error and never arrives |
+| the check | if any trace reaches $1.5$ m/s, an integrator has been added early |
 
-**The point.** $K_d$ sits beside the **damping**. In Week 2 the controlled variable was a velocity, its derivative was an acceleration, and the same term sat beside the **mass**, where it made the response worse. **The term did not change; the axis did.**
-
-Note also that the hull alone already gives $\zeta = 0.327$ at $K_p = 100$, because $N_r$ is large. Most of the damping in this loop is not the controller's.
+**The point.** The plant has no free integrator, so the loop is **type 0**. The steady force that the damping demands can only be produced by a **non-zero error**. This is not a tuning failure and no value of $K_p$ removes it.
 
 ---
 
-## Problem 3 · The wrap (20 minutes)
+## Problem 3 · Add the integrator (20 minutes)
 
-**Build.** Nothing new — one line inside the control law, and a switch to turn it off.
+**Build.** One more branch: $K_i$ into a **discrete-time** integrator, summed with the proportional term.
 
-$$
-e = \psi_d - \psi, \qquad
-\text{ssa}(e) = \big((e + \pi) \bmod 2\pi\big) - \pi \ \in (-\pi,\ \pi]
-$$
+The integrator must be discrete because the model is fixed-step. A continuous integrator inside a fixed-step loop invites a solver-order mismatch that shows up as a slow drift rather than as an error message.
 
-**Set up the test.** Start the vessel at $\psi = 170°$ and command $\psi_d = -170°$. The two headings are **$20°$ apart**.
+**Verify.** `W03_check(3)`, with $K_p = 102$, $K_i = 192.38$.
 
-**Verify.** `W03_check(3)`.
-
-| | turn executed |
+| What the checker expects | |
 |---|---|
-| with the wrap | $+20°$ |
-| without it | $-340°$ |
+| steady speed | $1.5000$ m/s |
+| steady error | $0$, to tolerance |
+| overshoot | **present** — the checker fails a response with none |
 
 **What a correct model produces**
 
@@ -131,11 +134,11 @@ $$
 
 | Reading the figure | |
 |---|---|
-| left | heading, **unwrapped**. Blue rises $20°$ to $190°$; orange falls $340°$ to $-170°$. Both end at the same physical heading |
-| right | the yaw rates have **opposite sign** for the whole manoeuvre |
-| the check | if the two traces are identical, `use_ssa` is not reaching the control law |
+| left | the P trace stops short; the PI trace arrives at the dashed reference |
+| right | the same runs as error. The P error settles on a non-zero value; **the PI error crosses zero and comes back** |
+| the check | that crossing *is* the overshoot. A PI response with no crossing means $K_i$ is not actually in the loop |
 
-**The point.** Without the wrap the error is computed as $-340°$ and the vessel goes the long way round — **seventeen times further, for the same commanded heading**. `ssa` is one line of code and it is not optional. Week 4's guidance produces commands anywhere in $(-180°, 180°]$, so this seam is crossed routinely.
+**The point.** The integrator supplies the steady force that the damping demands, so the error no longer has to. The price is a state that keeps acting after the error has passed through zero — which is overshoot, and, when the actuator saturates, **windup**. Sections F to H of the lecture are about paying that price down.
 
 ---
 
@@ -143,9 +146,11 @@ $$
 
 | | Weight | What is being marked |
 |---|---|---|
-| Problem 1 | 30 | `W03_check(1)` passes; the type-1 argument is stated in one sentence |
-| Problem 2 | 40 | `W03_check(2)` passes; the answer to "which coefficient does $K_d$ sit beside" is stated **and** the rate feedback is $r$, not $\mathrm{d}e/\mathrm{d}t$ |
-| Problem 3 | 30 | `W03_check(3)` passes; the cost of omitting `ssa` is quantified |
+| Problem 1 | 30 | `W03_check(1)` passes, and the three predicted speeds were written down **before** running |
+| Problem 2 | 40 | `W03_check(2)` passes; the type-0 argument is stated in one sentence |
+| Problem 3 | 30 | `W03_check(3)` passes; the answer to "what did the integrator cost" is stated |
+
+A model that fails a check but whose written reasoning is right earns more than one that passes with no reasoning.
 
 ---
 
@@ -154,11 +159,10 @@ $$
 | Symptom | Cause | Fix |
 |---|---|---|
 | `The model has no To Workspace block whose variable name is xlog` | the variable name is still `simout` | rename it |
-| Heading settles short of the command | the feedback is not state 12 | the Selector index must be 12 for $\psi$, 6 for $r$ |
-| The vessel spins continuously | the error sign is reversed | the sum is $\psi_d - \psi$, not $\psi - \psi_d$ |
-| Overshoot rises with $K_d$ | the derivative is taken of the error | feed back $r$ directly; the sign is $-K_d r$ |
-| Huge spike in the actuator at each step | same cause | same fix |
-| The two Problem 3 traces are identical | `use_ssa` never reaches the law | wire it in as a Constant, like $K_p$ and $K_d$ |
-| Angles look 57 times too large or small | degrees and radians mixed | every angle inside the loop is in **radians**; convert once, at the command |
+| `xlog has 1 column` | a matrix signal reached the log | insert a Reshape set to `1-D array` |
+| The speed settles at the reference in Problem 2 | an integrator is present | set $K_i = 0$; Problem 2 is proportional only |
+| The response drifts slowly upward with PI | a **continuous** integrator in a fixed-step model | use Discrete-Time Integrator with sample time `h` |
+| Dimension error at the thrust map | the loop is feeding the whole 12-state vector back | select state 1 first |
+| Every number is slightly off | the solver was changed | fixed-step `ode4`, `h = 0.02` s |
 
 Reference answers are in `../solutions/`. Read them **after** attempting the problem.

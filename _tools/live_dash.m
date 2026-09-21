@@ -91,7 +91,7 @@ if newRun
 
     hTrail = plot(axT, nan, nan, '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
     %  요구 선수각. 실선(선수)이 파선(명령) 위로 올라앉는 것을 보는 것이
-    %  W03·W04 의 전부다. o.psi_d 를 주지 않는 주차에서는 그냥 비어 있다.
+    %  W04·W05 의 전부다. o.psi_d 를 주지 않는 주차에서는 그냥 비어 있다.
     hRef   = plot(axT, nan, nan, '--', 'Color',[0.35 0.35 0.35], 'LineWidth',1.4);
     hHull  = patch('Parent',axT, 'XData',nan, 'YData',nan, ...
                    'FaceColor',[0.85 0.33 0.10], 'FaceAlpha',0.85, ...
@@ -148,13 +148,13 @@ if isempty(o.psi_d)
     set(hRef, 'XData', nan, 'YData', nan);
 else
     %  선수 지시선(1.6 Lship)보다 확실히 길게. 짧으면 선체에 묻혀서
-    %  "실선이 파선 위로 올라앉는" 것이 안 보인다 — 그게 W03 의 전부인데.
+    %  "실선이 파선 위로 올라앉는" 것이 안 보인다 — 그게 W04 의 전부인데.
     set(hRef, 'XData', [E, E + 3.6*Lship*sin(o.psi_d)], ...
               'YData', [N, N + 3.6*Lship*cos(o.psi_d)]);
 end
 
-%  두 줄로 나눈다. 한 줄로 이으면 W04 처럼 제목이 긴 주차에서 가운데 정렬된
-%  글이 축 밖으로 나가 첫 글자가 잘린다 ("W04" 가 "04" 로 보였다).
+%  두 줄로 나눈다. 한 줄로 이으면 W05 처럼 제목이 긴 주차에서 가운데 정렬된
+%  글이 축 밖으로 나가 첫 글자가 잘린다 ("W05" 가 "04" 로 보였다).
 set(hInfo, 'String', {o.title, ...
      sprintf('t = %.1f s     u = %.2f m/s     \\psi = %.1f\\circ', t, u, psi_deg)});
 

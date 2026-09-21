@@ -64,7 +64,7 @@ c = add_subsys(m, 'Heading autopilot', P.controller, ...
 % ... c 안에 블록을 채운다 ...
 
 add_otter_plant(m, 'Otter USV', P.plant, cfg);
-add_measurement(m, P.measurement, 'W03', {'psi_d','tau_N','n1','n2'});
+add_measurement(m, P.measurement, 'W04', {'psi_d','tau_N','n1','n2'});
 ```
 
 체인 전체가 x = 950 에서 끝나므로 내보낸 PNG 가 **2000 px** 안에 들어온다.
@@ -106,9 +106,9 @@ add_measurement(m, P.measurement, 'W03', {'psi_d','tau_N','n1','n2'});
 1 u    2 v    3 r[rad/s]    4 N    5 E    6 psi[deg]    7.. 그 주차의 추가 신호
 ```
 
-- 베이스 워크스페이스의 변수 이름은 주차 태그 (`W01`, `W02`, `W03`)
+- 베이스 워크스페이스의 변수 이름은 주차 태그 (`W01`, `W03`, `W04`)
 - 주차가 다른 열 순서로 일하고 싶으면 **읽는 곳 한 군데에서** 재배열한다
-  (`W02_run.m` 의 `o.y = y(:, [7 1 8 9 10 11]);`). 지수를 여기저기 고치지 않는다
+  (`W03_run.m` 의 `o.y = y(:, [7 1 8 9 10 11]);`). 지수를 여기저기 고치지 않는다
 
 ---
 
@@ -172,7 +172,7 @@ end
 
 > [!warning] `Simulink.BlockDiagram.arrangeSystem` 을 쓰지 않는다 — 서브시스템 안쪽에도
 > 시험해 봤고 버렸다. 더 조밀하게 싸주기는 하는데 **블록 순서를 바꾼다.**
-> W02 `Surge controller` 에 걸었더니 출력 포트 `X_cmd` 를 **왼쪽 맨 위**, 입력 포트보다
+> W03 `Surge controller` 에 걸었더니 출력 포트 `X_cmd` 를 **왼쪽 맨 위**, 입력 포트보다
 > 앞에 놓았다. 조밀함이 목적이 아니라 **왼쪽에서 오른쪽으로 읽히는 것**이 목적이다.
 > 안쪽도 최상위와 같은 방식으로 **손으로 열을 잡아** 배치한다.
 
@@ -186,7 +186,7 @@ end
 > 0 이어야 그 모델이 끝난 것이다.
 >
 > ```matlab
-> check_overlaps('W02_surge_control', true)   % true 면 건건이 출력
+> check_overlaps('W03_surge_control', true)   % true 면 건건이 출력
 > ```
 >
 > **한 신호의 분기는 지적하지 않는다.** 팬아웃은 일부러 한 줄기를 공유하며 그것이 옳다.
@@ -205,7 +205,7 @@ row_feed(a, 'allocation', [{'tau_N','X_ff'} KK]);   % 빈 칸 '' 은 그 포트�
 
 - 소스는 **출력 포트가 하나**여야 한다 (Constant · Inport · Gain · Selector)
 - 세로로만 옮긴다. x 는 빌더가 정한 자리에 남는다
-- **그 블록만을 위해 존재하는 블록에만 쓴다.** W02 에서 `PID block` 을 스위치 행에
+- **그 블록만을 위해 존재하는 블록에만 쓴다.** W03 에서 `PID block` 을 스위치 행에
   맞추게 했더니 비교 대상인 손으로 만든 경로 **위로 끌려 올라갔다**. 선택 상수는 옮겨도
   되고, 경로 전체를 이루는 블록은 옮기면 안 된다
 
@@ -222,7 +222,7 @@ lane_line(sub, 'N', 1, 'Animate', 1, 360);   % 360 이 이 신호의 수직 통�
 
 ### 규칙 3 — 한 행에 한 뜻. 두 경로는 두 높이
 
-W02 `Controller bank` 는 행마다 비례 경로와 미분 경로가 같이 있다. 둘을 같은 높이에 두면
+W03 `Controller bank` 는 행마다 비례 경로와 미분 경로가 같이 있다. 둘을 같은 높이에 두면
 미분 블록들이 비례 신호선 **위에** 그려진다. 미분 경로를 70 px 아래로 내리고 Sum 의
 아래쪽 입력으로 되올렸다.
 
@@ -248,7 +248,7 @@ Simulink 의 포트 간격은 블록 종류마다 다르고, 맞을 것 같은 �
 2. `port_xy` 로 행 높이를 읽는다
 3. 나머지 블록을 그 행에 놓고 잇는다
 
-`add_measurement` 과 W02 `Controller bank` · `Plant bank` 가 이 순서로 되어 있다.
+`add_measurement` 과 W03 `Controller bank` · `Plant bank` 가 이 순서로 되어 있다.
 
 ### 간격은 52 px 이상
 
@@ -283,8 +283,8 @@ WXX_simulink/
 | 규칙 | 이유 |
 |---|---|
 | 접두 `0_`·`1_` 다음에 **강의 절 문자** | 숫자가 문자보다 먼저 정렬되므로 setup·build 가 맨 위에 온다 |
-| 파일명에 **절 문자와 내용**이 함께 | `W02_H_antiwindup.m` 이면 강의 H 절이라는 것과 무엇인지가 한눈에 |
-| 모델과 스크립트가 **같은 접두사** | `W02_H_antiwindup.m` ↔ `W02_H_antiwindup.slx`. 짝을 찾을 필요가 없다 |
+| 파일명에 **절 문자와 내용**이 함께 | `W03_H_antiwindup.m` 이면 강의 H 절이라는 것과 무엇인지가 한눈에 |
+| 모델과 스크립트가 **같은 접두사** | `W03_H_antiwindup.m` ↔ `W03_H_antiwindup.slx`. 짝을 찾을 필요가 없다 |
 | **`function` 이 아니라 스크립트** | 위에서 아래로 읽힌다. 변수가 워크스페이스에 남아 학생이 이어서 만져볼 수 있다 |
 | 공용 코드만 `_tools/` 의 함수로 | `run_sim` 처럼 여러 주차가 쓰는 것만 |
 
@@ -297,8 +297,8 @@ WXX_simulink/
   Scope 는 실행 중에 보이고, StopFcn 그림은 끝나고 남는다. 둘 다 필요하다
 
 > [!caution] 스크립트와 모델에 **같은 이름**을 주지 않는다 — 조용히 아무것도 안 한다
-> `W02_H_antiwindup.m` 과 `W02_H_antiwindup.slx` 를 나란히 두었더니, 명령창에
-> `W02_H_antiwindup` 을 치면 MATLAB 이 **모델을 여는 쪽**을 골랐다. 스크립트는
+> `W03_H_antiwindup.m` 과 `W03_H_antiwindup.slx` 를 나란히 두었더니, 명령창에
+> `W03_H_antiwindup` 을 치면 MATLAB 이 **모델을 여는 쪽**을 골랐다. 스크립트는
 > 실행되지 않는데 **에러도 안 난다.** "OK" 가 찍히고 그림만 갱신되지 않았다.
 >
 > 게다가 그 뒤에 숨어 있던 진짜 문법 오류(함수를 스크립트로 바꾸며 남은 `end`)까지
@@ -307,8 +307,8 @@ WXX_simulink/
 > **규칙: 모델은 `<주차>_<절>_<이름>.slx`, 그 절의 스크립트는 `..._run.m`.**
 >
 > ```
-> W02_H_antiwindup.slx        모델
-> W02_H_antiwindup_run.m      그 절을 돌리는 스크립트
+> W03_H_antiwindup.slx        모델
+> W03_H_antiwindup_run.m      그 절을 돌리는 스크립트
 > ```
 >
 > 자기 모델이 없는 절(공용 모델을 쓰는 C~G)은 이름이 겹칠 일이 없으므로 `_run` 이 필요 없다.

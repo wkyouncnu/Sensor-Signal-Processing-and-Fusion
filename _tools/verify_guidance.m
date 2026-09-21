@@ -1,6 +1,6 @@
 function verify_guidance()
-%VERIFY_GUIDANCE  4주차 유도법칙의 계산을 MSS 와 수치로 대조한다.
-%                 Check Week 4's guidance arithmetic against MSS, numerically.
+%VERIFY_GUIDANCE  5주차 유도법칙의 계산을 MSS 와 수치로 대조한다.
+%                 Check Week 5's guidance arithmetic against MSS, numerically.
 %
 %   >> verify_guidance
 %
@@ -27,7 +27,7 @@ function verify_guidance()
 %   plotted and nothing is written: this is a gate, not an experiment.
 
 mss_path();
-fprintf('\n  verify_guidance — Week 4 arithmetic against MSS\n\n');
+fprintf('\n  verify_guidance — Week 5 arithmetic against MSS\n\n');
 fprintf('    %-46s %14s %10s\n', 'check', 'largest error', 'verdict');
 fprintf('    %s\n', repmat('-', 1, 74));
 
@@ -128,7 +128,7 @@ fprintf('        (that point is %.2f m short along the leg and %.2f m to the sid
 %% ---- verdict -----------------------------------------------------------
 fprintf('\n');
 if ok
-    fprintf('  ALL CHECKS PASSED — the Week 4 arithmetic matches MSS.\n\n');
+    fprintf('  ALL CHECKS PASSED — the Week 5 arithmetic matches MSS.\n\n');
 else
     error('verify_guidance:failed', 'At least one check failed. Do not publish.');
 end

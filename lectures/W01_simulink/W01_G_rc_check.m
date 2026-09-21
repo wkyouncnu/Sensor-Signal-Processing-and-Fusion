@@ -8,12 +8,12 @@
 %  강의에서의 위치 / place in the lecture
 %      Part 2 의 절 G 이다. 절 F 까지는 프로펠러 회전수를 직접 지시했으나,
 %      여기서부터는 원하는 힘을 지시하고 그 힘을 낼 회전수를 계산하게 한다.
-%      이 계산이 추력 배분이며, 부록 A1 과 5주차가 본격적으로 다루는 주제이다.
+%      이 계산이 추력 배분이며, 부록 A1 과 6주차가 본격적으로 다루는 주제이다.
 %
 %      This is section G of Part 2. Up to section F the propeller speeds were
 %      commanded directly; from here on a force is commanded and the propeller
 %      speeds that produce it are computed. That computation is control
-%      allocation, the subject of Appendix A1 and of Week 5.
+%      allocation, the subject of Appendix A1 and of Week 6.
 %
 %  절차 / procedure
 %      1. 추력 배분의 행렬을 출력한다. B 행렬과 그 역행렬을 보이고, 의사역행렬

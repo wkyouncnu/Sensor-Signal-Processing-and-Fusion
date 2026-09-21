@@ -8,29 +8,32 @@ function W04_P1_start(mdl)
 %   무엇을 주고 무엇을 주지 않는가
 %   what this script gives, and what it withholds
 %
-%   It creates a complete Week 3 vessel — heading autopilot, control
-%   allocation, hull — with ONE input left dangling: the commanded heading.
-%   Producing that command is guidance, and it is the whole exercise.
+%   It creates a model containing the hull and the control allocation, wired
+%   together. The AUTOPILOT is the exercise.
 %
-%       [ your Guidance ] --> psi_d --> Heading autopilot --> allocation --> hull
-%
-%   That split is the point of the week. Guidance and control are separate
-%   layers, and this model makes the seam visible: nothing inside the
-%   autopilot changes between Week 3 and Week 4.
+%   The allocation is provided because turning a demanded yaw moment into two
+%   shaft speeds is Appendix A1's subject. Week 4 is about the loop that
+%   decides what that moment should be.
 %
 %   THE BLOCKS THAT ARE PROVIDED
 %
-%     Heading autopilot    tau_N = Kp ssa(psi_d - psi) - Kd r      (Week 3)
-%     Control allocation   tau_N, X_ff -> two shaft speeds         (A1)
-%     Otter USV            n -> twelve states
+%     Control allocation   Inport  1 : tau_N, demanded yaw moment [N m]
+%                          Inport  2 : X_ff,  feed-forward surge force [N]
+%                          Outport 1 : n, the two shaft speeds [rad/s]
+%
+%                          T1 = X/2 + N/(2 y_pont),  T2 = X/2 - N/(2 y_pont)
+%                          then n = sign(T) sqrt(|T|/k) per propeller.
+%
+%     Otter USV            Inport  1 : n
+%                          Outport 1 : x, the twelve states
 %
 %   WHAT IS MISSING, AND THEREFORE WHAT THE PROBLEMS ARE
 %
-%     the guidance block, and the log
+%     the heading command, the error, the wrap, the proportional gain,
+%     the rate feedback, and the log
 %
-%   The waypoints are already in the workspace as WP_N and WP_E, five of them,
-%   from W04_vars.m. The starting model wires a Constant of zero into the
-%   autopilot so that it compiles before anything is built; replace it.
+%   The solver is already set to fixed step, ode4, h = 0.02 s, from
+%   W04_0_setup.m. The checker's numbers were measured with those settings.
 %
 %   See also W04_CHECK, W04_0_SETUP.
 
@@ -51,47 +54,42 @@ set_param(mdl, 'SolverType','Fixed-step', 'Solver','ode4', ...
                'FixedStep','h', 'StartTime','0', 'StopTime','T_final', ...
                'ReturnWorkspaceOutputs','off');
 
-%  A placeholder so the model compiles before the guidance exists.
-add_block('simulink/Sources/Constant', [mdl '/psi_d placeholder'], ...
-          'Value','0', 'Position',[60 150 180 190]);
+add_alloc(mdl, [430 180 590 280]);
+add_otter_plant(mdl, 'Otter USV', [670 180 880 290], otter_config('base'));
+set_param([mdl '/Otter USV'], 'BackgroundColor', gnc_colour('plant'));
+add_line(mdl, 'Control allocation/1', 'Otter USV/1', 'autorouting','smart');
 
-w04_lab_vessel(mdl, 260);
-add_line(mdl, 'psi_d placeholder/1', 'Heading autopilot/1', 'autorouting','smart');
+add_block('simulink/Sources/Constant', [mdl '/X_ff'], ...
+          'Value','X_ff', 'Position',[300 250 360 280]);
+add_line(mdl, 'X_ff/1', 'Control allocation/2', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 4 LABORATORY  -  BUILD THE GUIDANCE LAYER YOURSELF'
+'WEEK 4 LABORATORY  -  BUILD THE HEADING AUTOPILOT YOURSELF'
 ''
-'A complete Week 3 vessel is given. Only the COMMAND is missing.'
-'Delete the placeholder and put your own guidance block in its place.'
+'The hull and the allocation are given. The AUTOPILOT is the exercise.'
 ''
-'PROBLEM 1   The LOS law. From the vessel position and the two waypoints of'
-'            the active leg, compute'
+'PROBLEM 1   Proportional only. Step the command to 60 deg and measure the'
+'            steady-state error at Kp = 30, 100 and 300. Compare with'
+'            Week 3, where the error was 44 per cent at Kp = 100.'
 ''
-'               pi_p  = atan2(y_{i+1} - y_i,  x_{i+1} - x_i)'
-'               y_e^p = -(x - x_i) sin(pi_p) + (y - y_i) cos(pi_p)'
-'               psi_d = pi_p - atan(y_e^p / Delta)'
+'PROBLEM 2   Add rate feedback. Feed back the YAW RATE r, not the'
+'            derivative of the error, and show overshoot FALLS as Kd rises.'
 ''
-'            Use leg 1 only (waypoint 1 to waypoint 2). No switching yet.'
-''
-'PROBLEM 2   atan2 against LOS. Replace the law by psi_d = atan2 aimed at the'
-'            waypoint and show it cannot hold the LINE, only reach the POINT.'
-''
-'PROBLEM 3   A current. Turn on V_c and measure the offset LOS is left'
-'            holding. Compare it with Delta tan(beta_c).'
+'PROBLEM 3   The wrap. Command a heading across the +-180 deg seam with and'
+'            without the smallest-signed-angle wrap, and watch the vessel'
+'            turn the long way round without it.'
 ''
 'THE MODEL MUST CONTAIN'
 ''
 '   xlog   To Workspace, Structure With Time, the plant''s 12 states'
-'   glog   To Workspace, Structure With Time, [pi_p ; y_e^p ; psi_d]'
-'          -- all three in RADIANS and metres, in that order'
 ''
 'CHECK YOUR WORK AT ANY TIME'
 ''
 ['   >> W04_check(1, ''' mdl ''')      and 2, and 3']
 ''
 'DO NOT CHANGE the solver settings: fixed-step ode4 at h = 0.02 s.'}, newline);
-a.Position = [40 420 900 800];
+a.Position = [40 340 860 700];
 a.HorizontalAlignment = 'left';
 a.BackgroundColor = 'lightBlue';
 
@@ -101,4 +99,56 @@ close_system(mdl, 0);
 
 fprintf('\n  created %s\n', out);
 fprintf('  open it, build Problem 1, then run:  W04_check(1, ''%s'')\n\n', mdl);
+end
+
+% =========================================================================
+function add_alloc(mdl, pos)
+%ADD_ALLOC  The control allocation of W04_1_build_heading, given to the student.
+%
+%  Identical to the lecture's own, so a model built here behaves exactly like
+%  W04_heading_control.slx once the autopilot around it is right.
+a = add_subsys(mdl, 'Control allocation', pos, {'tau_N','X_ff'}, {'n'}, ...
+               gnc_colour('allocation'));
+blk = [a '/allocation'];
+add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
+          'Position',[250 60 420 220]);
+set_mlfcn(blk, { ...
+'function n = allocation(tau_N, X_ff, k_pos, k_neg, n_max, n_min, y_pont)'
+'%#codegen'
+'% Demanded surge force and yaw moment to two shaft speeds.'
+'%'
+'% Step 1, the exact inverse of tau = B f:'
+'%     T1 = X/2 + N/(2 y_pont)'
+'%     T2 = X/2 - N/(2 y_pont)'
+'%'
+'% Step 2, the propeller curve inverted one propeller at a time:'
+'%     n = sign(T) sqrt(|T| / k),  with k_pos ahead and k_neg astern.'
+'T = [X_ff/2 + tau_N/(2*y_pont);'
+'     X_ff/2 - tau_N/(2*y_pont)];'
+'n = zeros(2,1);'
+'for i = 1:2'
+'    if T(i) >= 0'
+'        ni =  sqrt( T(i) / k_pos);'
+'    else'
+'        ni = -sqrt(-T(i) / k_neg);'
+'    end'
+'    n(i) = min(max(ni, n_min), n_max);'
+'end'
+'end'}, 'n', '[2 1]');
+
+%  Offset so that no constant's centre lands on an inport row (90 or 140).
+KK = {'k_pos','k_neg','n_max','n_min','y_pont'};
+for i = 1:numel(KK)
+    add_block('simulink/Sources/Constant', [a '/' KK{i}], ...
+              'Value', KK{i}, 'Position', [90 78+34*i 150 102+34*i]);
+    add_line(a, [KK{i} '/1'], sprintf('allocation/%d', i+2), 'autorouting','smart');
+end
+add_block('simulink/Math Operations/Reshape', [a '/as vector'], ...
+          'OutputDimensionality','1-D array', 'Position',[470 118 510 162]);
+add_line(a, 'tau_N/1',     'allocation/1', 'autorouting','smart');
+add_line(a, 'X_ff/1',      'allocation/2', 'autorouting','smart');
+add_line(a, 'allocation/1','as vector/1',  'autorouting','smart');
+add_line(a, 'as vector/1', 'n/1',          'autorouting','smart');
+set_param([a '/tau_N'], 'Position',[ 40  80  70 100]);
+set_param([a '/X_ff'],  'Position',[ 40 130  70 150]);
 end

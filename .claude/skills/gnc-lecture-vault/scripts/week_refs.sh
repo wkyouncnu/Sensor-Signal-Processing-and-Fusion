@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # week_refs.sh — 주차 번호를 바꿨을 때 낡은 상호참조를 찾는다.
 #
-#   2026-09-05 에 W04(유도)와 W05(배분)의 순서를 바꿨더니 다섯 자료에서
+#   2026-09-05 에 W05(유도)와 W06(배분)의 순서를 바꿨더니 다섯 자료에서
 #   14 군데가 조용히 어긋났고, 전부 사람이 읽어서 찾아야 했다.
 #
 #   낱말 하나로 대조하면 오탐이 너무 많다("following" 은 아무 데나 나온다).
@@ -17,15 +17,18 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 cd "$ROOT" || exit 1
 
 #  구절|그 구절이 가리키는 주차 번호
-PHRASES='control allocation|5
-line-of-sight|4
-line of sight|4
-LOS guidance|4
-waypoint following|4
-waypoint switching|4
-cross-track error|4
-wave filtering|6
-dynamic positioning|7'
+PHRASES='control allocation|6
+line-of-sight|5
+line of sight|5
+LOS guidance|5
+waypoint following|5
+waypoint switching|5
+cross-track error|5
+wave filtering|7
+dynamic positioning|8
+PID fundamentals|2
+surge speed control|3
+heading control|4'
 
 bad=0
 while IFS='|' read -r phrase wk; do

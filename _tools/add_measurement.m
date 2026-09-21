@@ -53,7 +53,7 @@ function add_measurement(mdl, pos, tag, extra, opts)
 %       7..        the week's extra signals, in the order given
 %
 %   The variable in the base workspace is named after the tag, so `W01` holds
-%   Week 1's log and `W03` holds Week 3's.
+%   Week 1's log and `W04` holds Week 4's.
 %
 %   THE LAYOUT: ONE ROW PER LOGGED CHANNEL
 %

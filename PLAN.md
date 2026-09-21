@@ -5,7 +5,7 @@
 > **이제 계획은 여기 하나뿐이다.** 새 지침이 오면 이 파일부터 고친다.
 
 - **볼트 위치** `C:\Users\admin\Dropbox\센서신호처리및융합\00_GradCourse_2026\`
-- **최종 갱신** 2026-09-05
+- **최종 갱신** 2026-09-21
 - **형식 규칙** → [CLAUDE.md](CLAUDE.md) · **작업 순서** → `.claude/skills/gnc-lecture-vault/`
 
 ---
@@ -14,7 +14,7 @@
 
 | | |
 |---|---|
-| 분량 | 본과정 **8주** + 선체·구동기 변형 **3주** = 11주 |
+| 분량 | 본과정 **9주** + 선체·구동기 변형 **3주** = 12주 |
 | 도구 | **Simulink 하나.** 선체는 Fossen 의 Otter (`otter.m`, 손대지 않는다) |
 | 근거 | MSS 툴박스 · Fossen Handbook |
 | 산출물 | 주차마다 `.md` + `.pdf` + `WXX_simulink/` (빌더·러너·모델·그림) |
@@ -30,28 +30,36 @@
 | 주차 | 제목 | 상태 |
 |---|---|---|
 | **W01** | Vessel Kinematics and the Otter Motion Model | **완료** |
-| **W02** | Surge Speed Control | **완료** |
-| **W03** | Heading Control | **완료** |
+| **W02** | PID Control Fundamentals | **완료** (2026-09-21 신설) |
+| **W03** | Surge Speed Control | **완료** |
+| **W04** | Heading Control | **완료** |
 | **A1** | Actuation and the Control Effectiveness Matrix (부록) | **완료** |
-| **W04** | Waypoint Following and LOS Guidance | **완료** |
-| W05 | Control Allocation | 미착수 |
-| W06 | Environmental Loads and Wave Filtering | 미착수 |
-| W07 | Dynamic Positioning and Mission Integration | 미착수 |
-| W08 | 본과정 마무리 / 통합 | 미착수 |
-| W09 | Variant A — Aft Azimuth Thrusters | 미착수 |
-| W10 | Variant B — Bow Tunnel Thruster | 미착수 |
-| W11 | Variant C — Four Tilting Thrusters, and a Comparison | 미착수 |
+| **W05** | Waypoint Following and LOS Guidance | **완료** |
+| W06 | Control Allocation | 미착수 |
+| W07 | Environmental Loads and Wave Filtering | 미착수 |
+| W08 | Dynamic Positioning and Mission Integration | 미착수 |
+| W09 | 본과정 마무리 / 통합 | 미착수 |
+| W10 | Variant A — Aft Azimuth Thrusters | 미착수 |
+| W11 | Variant B — Bow Tunnel Thruster | 미착수 |
+| W12 | Variant C — Four Tilting Thrusters, and a Comparison | 미착수 |
 | 기말 | Final-Project 명세 | 미착수 |
 
-> [!note] W04 와 W05 의 순서를 바꿨다
-> 사용자 결정(2026-09-05): **W04 = 유도, W05 = Control Allocation.** W03 §3-4 가 크랩각을
+> [!note] PID 입문을 새 W02 로 넣고 뒤를 한 칸씩 밀었다 (2026-09-21)
+> 사용자 지시: 캡스톤디자인 6주차 E절(PID 입문 ①) 이후를 참조해 PID 실습 강의를 "최대한 쉽게"
+> 2주차로 만들고 나머지를 한 주씩 미룬다. 옛 W02(속도)→W03, W03(선수각)→W04, W04(유도)→W05,
+> 계획상의 W05~W11 → W06~W12. 파일·폴더·그림은 `git mv` 로 옮기고(지운 파일 없음), 파일 안의
+> 참조 1832 줄은 `_tools/vault_shift_weeks.m` 이 한 번의 정규식 치환으로 고쳤다.
+> 아래 기록의 주차 번호는 **새 번호로 고쳐 적었다.**
+
+> [!note] W05 와 W06 의 순서를 바꿨다
+> 사용자 결정(2026-09-05): **W05 = 유도, W06 = Control Allocation.** W04 §4-4 가 크랩각을
 > 재고 "경로추종 법칙이 이것 때문에 영구적인 cross-track error 를 남긴다" 고 예고해 두었으므로,
-> 그 빚을 바로 다음 주에 갚는 편이 강의 흐름에 맞는다. W03 의 "Next Week" 과 §3-4·§3-6 의
+> 그 빚을 바로 다음 주에 갚는 편이 강의 흐름에 맞는다. W04 의 "Next Week" 과 §4-4·§4-6 의
 > 앞뒤 참조도 함께 바꿨다.
 
 > [!note] 검토는 아직 남아 있다
-> W01~W03 + A1 검토를 사용자에게 받는다 → 기억 `usv-lecture-review-deferred`.
-> W04 도 이제 검토 대상에 들어간다.
+> W01~W04 + A1 검토를 사용자에게 받는다 → 기억 `usv-lecture-review-deferred`.
+> W05 도 이제 검토 대상에 들어간다.
 
 ### W01 · Vessel Kinematics and the Otter Motion Model — 완료
 
@@ -63,22 +71,36 @@
 - 실습: **직진 → 좌회전 → 직진 → 우회전 → 직진**. 후진 없음. 선회는 좌우 추진기의
   작은 차이($dn$)로 만든다
 
-### W02 · Surge Speed Control — 완료
+### W02 · PID Control Fundamentals — 완료 (2026-09-21)
+
+- 근거: 캡스톤디자인 6주차 E–G 절(같은 플랜트, 같은 수치를 재현), MATLAB Tech Talk
+  "Understanding PID Control" 1~7편, 제어조교(Ctrl튜브) "PID 제어기 짬튜닝". 두 영상은
+  **W02 첫 장에만** 핵심 참고자료로 싣는다 (사용자 지시)
+- 플랜트 $G(s) = 1/(s^2+2s+2)$ — 배가 아니다. MSS 불필요
+- 이론 10절: 플랜트와 모델의 세 출처 · 루프와 오차 하나 · P(강성) · D(감쇠, 영점) · I(type 1,
+  Routh $K_i < 72$, 필터 포함 한계 87.07) · 두 영점과 한 극점, PID 블록 = 손으로 만든 것 ·
+  미분 필터와 킥 · 와인드업과 $I^\star$ · **튜닝 순서도** (사용자 요청 "최대한 쉽게") · 샘플링과 캐스케이드
+- 모델 `W02_pid.slx`: PID 블록 한 줄 + 상자 셋(P · I with anti-windup · D with filter)으로
+  손수 조립한 한 줄. 포화·잡음 아래에서 두 줄의 차이 **정확히 0**
+- 절 스크립트 C~J 8개, 결과 그림 9장, 개념도 `w02-pid-loop` · `w02-tuning-order`
+- `_tools/verify_w02_pid.m` 8개 검사, 실습 문제 3개 + 채점기 + 모범답안
+
+### W03 · Surge Speed Control — 완료
 
 - type 0 · 최종값 정리 · PI 영점 · 미분항이 속도루프에서 **질량**으로 들어가는 것
 - 와인드업 = 포화 문제. clamping vs back-calculation
 - 손으로 만든 PID 와 Simulink PID 블록 **둘 다**, 선택 가능
-- 별도 모델 둘: `W02_antiwindup` ($1/(s+1)$) · `W02_pseudo` ($1/(s^2+0.4s)$)
+- 별도 모델 둘: `W03_H_antiwindup` ($1/s$, Franklin 8E 그림 9.22) · `W03_I_pseudo_derivative` ($1/(s^2+0.4s)$)
 - §I **pseudo-derivative** — 왜 직접 미분하지 않는가, Ns/(s+N), N 고르는 법
-- 개념도 2장(2026-09-05): `w02-pseudo-derivative.svg` — 이상미분에는 천장이 없다.
+- 개념도 2장(2026-09-05): `w03-pseudo-derivative.svg` — 이상미분에는 천장이 없다.
   wn=2 에서 4.00 대 3.92, pi/Ts=314 에서 628 대 20.0 (31.4 배) ·
-  `w02-windup.svg` — 루프가 끊기는 자리와 요구가 한계 밖으로 나간 정도 (3480 N 요구, 239 N 전달)
+  `w03-windup.svg` — 루프가 끊기는 자리와 요구가 한계 밖으로 나간 정도 (3480 N 요구, 239 N 전달)
 
-### W03 · Heading Control — 완료
+### W04 · Heading Control — 완료
 
 - type 1 · `ssa()` · $r$ 에 대한 P–D · 비선형 요 감쇠 · course/crab angle
 
-### W04 · Waypoint Following and LOS Guidance — 완료
+### W05 · Waypoint Following and LOS Guidance — 완료
 
 - 회전변환 **하나**에서 $(x_e, y_e)$ 둘 다 유도. `crosstrack.m` 의 $\tan\pi_p$ 특이점 경고
 - LOS 유도: 조준점 → 다리 좌표계에서 $[\Delta,\ -y_e]^\top$ → $\psi_d = \pi_p - \arctan(y_e/\Delta)$
@@ -101,8 +123,8 @@
 - $V(t)$ 는 **단조가 아니다** (62.2 %). 오토파일럿 지연 때문이며, 그것을 그대로 쓴다
 - 네 척(atan2·LOS·ILOS·ALOS)이 같은 웨이포인트·조류·게인으로 나란히 달린다
 - 개념도 6장 + 결과 그림 6장, 절 스크립트 8개
-- 초보자용 보강(2026-09-05): `w04-ilos-alos-idea.svg` — 세 법칙이 **같은 15.7도를 어떻게 다르게 사는가**.
-  §4-8-5a·§4-9-6a 가 적분기·추정기가 차오르는 과정을 초 단위 표로 보인다 (러너는 W04_G)
+- 초보자용 보강(2026-09-05): `w05-ilos-alos-idea.svg` — 세 법칙이 **같은 15.7도를 어떻게 다르게 사는가**.
+  §5-8-5a·§5-9-6a 가 적분기·추정기가 차오르는 과정을 초 단위 표로 보인다 (러너는 W05_G)
 
 ### A1 · Actuation and the Control Effectiveness Matrix — 완료
 
@@ -121,7 +143,7 @@
 
 ## 3. 다음에 할 일
 
-1. ~~W01~W04 + A1 검토~~ — **2026-09-05 완료.** 절 스크립트 30 개를 전부 돌려 문서의
+1. ~~W01~W05 + A1 검토~~ — **2026-09-05 완료.** 절 스크립트 30 개를 전부 돌려 문서의
    수와 대조했고, 낡은 주차 상호참조 14 건·수치 불일치 4 건·그림 설명 자기모순 1 건·
    표기 불일치 1 건을 고쳤다. 방법은 `standing-orders.md` §6, 기계 검사는
    `scripts/week_refs.sh` (= `vault_check.sh` §14)
@@ -131,10 +153,10 @@
    `check_overlaps` 전부 0, 절 스크립트 26 개 전부 통과, **수치 불변**.
    `W01_simulink/problems/` 와 `solutions/` 에 1시간짜리 문제 3개와 모범답안,
    그리고 강의 수치로 PASS/FAIL 을 내는 `W01_check.m`.
-   **다음:** 같은 모양을 W02·W03·W04·A1 에도.
+   **다음:** 같은 모양을 W03·W04·W05·A1 에도.
 1-2. **강의자료를 "읽으면 강의가 되는" 형태로** — 사용자 지시 2026-09-08.
    개념마다 ① 왜 필요한가 ② 원리 ③ 수식 ④ 적용 ⑤ 특징과 결과.
-   W04 §4-8·§4-9 에 시범 적용 완료. **나머지 절과 W01~W03·A1 이 남았다**
+   W05 §5-8·§5-9 에 시범 적용 완료. **나머지 절과 W01~W04·A1 이 남았다**
    → `standing-orders.md` §9
 2. **문서를 논문 형태로** — 사용자 지시 2026-09-06.
    `_tools/pdf-template.html` 을 저널 조판으로: 번호 붙은 그림 캡션(`Fig. 1.`),
@@ -143,9 +165,9 @@
 3. **실습·설치 절에 실제 출력과 대처를 붙인다** — 사용자 지시 2026-09-06.
    이 PC 의 WSL2 Ubuntu 22.04.5 + ROS 2 Humble + Gazebo Sim 7.9.0 + `~/vrx_ws` 에서
    **실제로 돌려** 출력을 받아 온다. 지어내지 않는다 → `standing-orders.md` §8
-4. W05 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`.
-   A1 이 선수 자료이고, W04 가 네 척 모두에 **같은 정사각 배분**을 쓴 것이 출발점이다
-5. 이후 W06~W11
+4. W06 Control Allocation — 가중 최소자승, 제약 배분, `quadprog`.
+   A1 이 선수 자료이고, W05 가 네 척 모두에 **같은 정사각 배분**을 쓴 것이 출발점이다
+5. 이후 W07~W12
 
 ---
 
@@ -160,7 +182,7 @@
 | `Proj_SHI_USV_MILS` → `10_연구_USV_MILS` 이름 변경 | **완료** (훅이 처리, 1361개 그대로) |
 | `강의자료` → `20_강의자료` 이름 변경 | **미완 — 아직 잠김.** 훅이 세션마다 재시도한다 |
 | Simulink 블록 치수를 MSS 에 맞춤 (`add_sum` · `mss_style`) | 완료 |
-| W02 §2-1 · W03 §3-1 유도 추가, Nomoto 1·2차 추가 | 완료 |
+| W03 §3-1 · W04 §4-1 유도 추가, Nomoto 1·2차 추가 | 완료 |
 | 계수 검증 `verify_constants.m` — 16개 전부 `otter.m` 과 일치 | 완료 |
 
 > [!caution] 남은 두 개는 재부팅 뒤에 스크립트로 한다
@@ -190,7 +212,7 @@
 
 ## 5. 플랜트 구조 — 이 설계의 핵심 결정
 
-`otter.m` 은 `numel(n) == 2` 를 강제하므로 W09~W11 에 그대로 못 쓴다.
+`otter.m` 은 `numel(n) == 2` 를 강제하므로 W10~W12 에 그대로 못 쓴다.
 네 번 복사하는 것은 **틀린 답**이다. 파라미터화된 플랜트 하나를 쓴다.
 
 ```matlab
@@ -215,7 +237,7 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 
 ## 6. 환경
 
-- MATLAB **R2024b** + Simulink (+ Stateflow: W07, Optimization Toolbox: W05·W11)
+- MATLAB **R2024b** + Simulink (+ Stateflow: W08, Optimization Toolbox: W06·W12)
 - MSS 는 `10_연구_USV_MILS/Proj_SHI_USV_MILS/Tools/MSS` — `_tools/mss_path.m` 이 찾는다
 - **문서 PDF 파이프라인은 Git Bash + Chrome 뿐이다. pandoc 없음** — `md2pdf.sh` 는
   MathJax 를 브라우저에서 돌린다. 이건 안 바뀐다
@@ -244,22 +266,22 @@ bash _tools/git_autopush.sh
 
 ## 8. 실습 파일 구조 — 강의 절 하나에 스크립트 하나
 
-사용자 지시로 2026-09-05 에 바꿨다. **W01·W02·W03·W04·A1 다섯 모두 끝났다.**
+사용자 지시로 2026-09-05 에 바꿨다. **W01·W03·W04·W05·A1 다섯 모두 끝났다.**
 
 ```
-lectures/W02_simulink/
-├── W02_0_setup.m                     파라미터. 세션마다 한 번
-├── W02_1_build_surge_control.m       ->  W02_surge_control.slx
-├── W02_C_identify_plant.m            강의 C 절
-├── W02_D_proportional_only.m         강의 D 절
-├── W02_E_integral_and_derivative.m   강의 E 절
-├── W02_F_windup.m                    강의 F 절
-├── W02_G_block_vs_handbuilt.m        강의 G 절
-├── W02_H_build_antiwindup.m          ->  W02_H_antiwindup.slx
-├── W02_H_antiwindup_run.m            강의 H 절
-├── W02_I_build_pseudo_derivative.m   ->  W02_I_pseudo_derivative.slx
-├── W02_I_pseudo_derivative_run.m     강의 I 절
-├── W02_vars.m   W02_cols.m           공용 — 값과 로그 열 이름
+lectures/W03_simulink/
+├── W03_0_setup.m                     파라미터. 세션마다 한 번
+├── W03_1_build_surge_control.m       ->  W03_surge_control.slx
+├── W03_C_identify_plant.m            강의 C 절
+├── W03_D_proportional_only.m         강의 D 절
+├── W03_E_integral_and_derivative.m   강의 E 절
+├── W03_F_windup.m                    강의 F 절
+├── W03_G_block_vs_handbuilt.m        강의 G 절
+├── W03_H_build_antiwindup.m          ->  W03_H_antiwindup.slx
+├── W03_H_antiwindup_run.m            강의 H 절
+├── W03_I_build_pseudo_derivative.m   ->  W03_I_pseudo_derivative.slx
+├── W03_I_pseudo_derivative_run.m     강의 I 절
+├── W03_vars.m   W03_cols.m           공용 — 값과 로그 열 이름
 └── img/
 ```
 
@@ -268,33 +290,33 @@ lectures/W02_simulink/
 - 강의 MD 의 절마다 **"To produce every figure in this section"** 블록이 있어
   어떤 `.m` 과 어떤 `.slx` 를 돌리면 그 그림이 나오는지 적혀 있다
 
-W03 과 A1 도 같은 모양이다.
+W04 과 A1 도 같은 모양이다.
 
 ```
-lectures/W03_simulink/                 lectures/A1_simulink/
-├── W03_0_setup.m                      ├── A1_0_setup.m
-├── W03_1_build_heading.m              ├── A1_1_build_actuation.m
-├── W03_C_proportional_only.m          ├── A1_C_four_layouts.m
-├── W03_D_derivative_action.m          ├── A1_D_attainable_set.m
-├── W03_E_the_wrap.m                   ├── A1_E_command_that_turns.m
-├── W03_F_big_turns_overshoot_less.m   ├── A1_F_sway_without_force.m
-├── W03_vars.m  W03_read.m             ├── A1_vars.m  A1_read.m
+lectures/W04_simulink/                 lectures/A1_simulink/
+├── W04_0_setup.m                      ├── A1_0_setup.m
+├── W04_1_build_heading.m              ├── A1_1_build_actuation.m
+├── W04_C_proportional_only.m          ├── A1_C_four_layouts.m
+├── W04_D_derivative_action.m          ├── A1_D_attainable_set.m
+├── W04_E_the_wrap.m                   ├── A1_E_command_that_turns.m
+├── W04_F_big_turns_overshoot_less.m   ├── A1_F_sway_without_force.m
+├── W04_vars.m  W04_read.m             ├── A1_vars.m  A1_read.m
 └── img/                               └── img/
 ```
 
-W04 도 같은 모양이다. 절이 여섯이라 절 스크립트가 여섯이다.
+W05 도 같은 모양이다. 절이 여섯이라 절 스크립트가 여섯이다.
 
 ```
-lectures/W04_simulink/
-├── W04_0_setup.m                     학생이 고치는 유일한 파일
-├── W04_1_build_guidance.m            ->  W04_guidance.slx  (네 척이 나란히)
-├── W04_C_aim_at_the_waypoint.m       C 절 — atan2 는 왜 경로추종이 아닌가
-├── W04_D_line_of_sight.m             D 절 — 법칙을 두 조각으로 분해
-├── W04_E_lookahead_distance.m        E 절 — Delta 스윕 다섯
-├── W04_F_waypoint_switching.m        F 절 — 판정 둘, R 스윕 넷
-├── W04_G_current_and_integral.m      G 절 — 조류 아래 네 법칙
-├── W04_H_adaptive_and_stability.m    H 절 — kappa·gamma 스윕과 V(t)
-├── W04_vars.m  W04_read.m  W04_plot.m
+lectures/W05_simulink/
+├── W05_0_setup.m                     학생이 고치는 유일한 파일
+├── W05_1_build_guidance.m            ->  W05_guidance.slx  (네 척이 나란히)
+├── W05_C_aim_at_the_waypoint.m       C 절 — atan2 는 왜 경로추종이 아닌가
+├── W05_D_line_of_sight.m             D 절 — 법칙을 두 조각으로 분해
+├── W05_E_lookahead_distance.m        E 절 — Delta 스윕 다섯
+├── W05_F_waypoint_switching.m        F 절 — 판정 둘, R 스윕 넷
+├── W05_G_current_and_integral.m      G 절 — 조류 아래 네 법칙
+├── W05_H_adaptive_and_stability.m    H 절 — kappa·gamma 스윕과 V(t)
+├── W05_vars.m  W05_read.m  W05_plot.m
 └── img/
 ```
 
@@ -316,7 +338,7 @@ lectures/W01_simulink/
 
 | 항목 | 상태 |
 |---|---|
-| W02·W03·A1·W01 을 절 단위로 분할 | **완료** (2026-09-05) |
+| W03·W04·A1·W01 을 절 단위로 분할 | **완료** (2026-09-05) |
 | 그림마다 "읽어서 강의가 되는" 자세한 설명 | **완료** — 결과 그래프 **29장 전부** |
 | Simulink 만 눌러도 그 주차 신호가 뜨는 Scope | **완료** — `add_measurement` 이 `<tag> this week` 스코프를 만든다 |
 
@@ -326,10 +348,10 @@ lectures/W01_simulink/
 | 주차 | 결과 그래프 | 설명 |
 |---|---|---|
 | W01 | 6 | 6 |
-| W02 | 10 | 10 |
-| W03 | 4 | 4 |
+| W03 | 10 | 10 |
+| W04 | 4 | 4 |
 | A1 | 3 | 3 |
-| W04 | 6 | 6 |
+| W05 | 6 | 6 |
 
 ---
 
@@ -350,12 +372,12 @@ lectures/W01_simulink/
 | 모델 | 고치기 전 | 지금 |
 |---|---|---|
 | `W01_openloop` · `W01_current` | 0 | 0 |
-| `W02_surge_control` | 6 | **0** |
-| `W02_H_antiwindup` | 4 | **0** |
-| `W02_I_pseudo_derivative` | 29 | **0** |
-| `W03_heading_control` | 2 | **0** |
+| `W03_surge_control` | 6 | **0** |
+| `W03_H_antiwindup` | 4 | **0** |
+| `W03_I_pseudo_derivative` | 29 | **0** |
+| `W04_heading_control` | 2 | **0** |
 | `A1_actuation` | 4 | **0** |
-| `W04_guidance` | 572 | **0** |
+| `W05_guidance` | 572 | **0** |
 
 `add_measurement` 을 다시 썼다. Mux 를 먼저 만들고 포트 높이를 읽은 뒤 셀렉터와 여분
 입력을 그 행에 놓으므로, 로깅 열 하나가 **직선 한 토막**이다. 모든 주차가 이 함수를

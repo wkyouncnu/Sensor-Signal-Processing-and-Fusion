@@ -2,65 +2,41 @@ function y = W04_read(o)
 %W04_READ  이번 주의 로그를 이름 붙은 필드로 바꾸고, 각도를 도 단위로 맞춘다.
 %          Convert this week's log into named fields, with the angles in degrees.
 %
-%   y = W04_read(run_sim('W04_guidance', V))
-%   plot(y.t, y.y_e(:,2))          % LOS 로 항해한 배의 경로이탈 오차
-%                                  % the cross-track error of the LOS vessel
+%   y = W04_read(run_sim('W04_heading_control', V))
+%   plot(y.t, y.psi)
 %
-%   네 척이 한 모델 안에 있으므로 대부분의 필드는 **열 하나가 배 한 척**이다.
-%   그래서 y.y_e(:,2) 처럼 열 번호로 배를 고른다. 열의 순서는 유도법칙의 순서와
-%   같다 — atan2, LOS, ILOS, ALOS.
+%   왜 열 이름만 붙이지 않고 변환까지 하는가
+%   why a conversion and not merely column names
+%       add_measurement 은 이 강의가 공유하는 규약
 %
-%   Four vessels share one model, so most fields carry one column per vessel
-%   and a vessel is selected by column, as in y.y_e(:,2). The columns are in
-%   the order of the guidance laws: atan2, LOS, ILOS, ALOS.
+%           [u v r N E psi | psi_d tau_N n1 n2]
 %
-%   로그의 구성 / the log
+%       에 따라 기록하되 단위는 모델이 쓰는 그대로이다. psi 는 add_measurement 이
+%       이미 도로 바꾸어 주지만 r 은 rad/s 이고 psi_d 는 라디안이다. otter.m 과
+%       제어기가 라디안으로 계산하기 때문이다. 선수방위를 다루는 주차는 처음부터
+%       끝까지 도로 읽으므로, 그 변환을 이 한 곳에서 한 번만 한다.
 %
-%   add_measurement logs the course-wide contract followed by this week's
-%   four bank signals, each four wide:
+%       add_measurement logs the contract shared by the whole course in the
+%       units the model itself works in: psi has been converted to degrees
+%       already, but r is in rad/s and psi_d in radians, because otter.m and
+%       the controller compute in radians. A week about heading is read in
+%       degrees throughout, so the conversion happens once, here, and nowhere
+%       else.
 %
-%       [u v r N E psi | psi_d(4) y_e(4) wp(4) aux(4) | trk(48)]
-%         1 2 3 4 5  6    7..10    11..14  15..18 19..22   23..70
-%
-%   The first six columns belong to VESSEL 1 only, by the logging contract of
-%   this course. The four-wide signals carry all four vessels, in the order
-%
-%       1 atan2   2 LOS   3 ILOS   4 ALOS
-%
-%   so y.y_e(:,3) is the ILOS vessel's cross-track error. The column order is
-%   the same in every field, which is what lets a plotting loop index them
-%   with one variable.
-%
-%   `trk` is the four 12-state vectors end to end, so vessel i occupies
-%   columns 12(i-1)+1 .. 12i of it, and within that block N is 7, E is 8 and
-%   psi is 12. y.trkN, y.trkE and y.trkPsi unpack that into one column per
-%   vessel, which is what the track figures plot.
+%   행렬을 재배열해 돌려주지 않고 구조체를 돌려주는 이유는, 스크립트가 y(:,2) 가
+%   아니라 y.psi 라고 쓸 수 있게 하기 위해서다. 읽는 사람이 열을 세지 않아도 된다.
+%   A struct is returned rather than a reordered matrix so that a script can
+%   say y.psi instead of y(:,2), and a reader never has to count columns.
 
-y.u   = o.y(:,1);                % surge velocity, vessel 1      [m/s]
-y.v   = o.y(:,2);                % sway velocity,  vessel 1      [m/s]
-y.r   = rad2deg(o.y(:,3));       % yaw rate,       vessel 1      [deg/s]
-y.N   = o.y(:,4);                % north position, vessel 1      [m]
-y.E   = o.y(:,5);                % east position,  vessel 1      [m]
-y.psi = o.y(:,6);                % heading,        vessel 1      [deg]
-y.t   = o.t;
-
-y.psi_d = rad2deg(o.y(:,  7:10));  % commanded heading, four laws [deg]
-y.y_e   =         o.y(:, 11:14);   % cross-track error            [m]
-y.wp    =         o.y(:, 15:18);   % active waypoint index
-y.aux   =         o.y(:, 19:22);   % ILOS y_int (col 3), ALOS b_hat (col 4)
-
-%  All four tracks, one column per vessel.
-trk      = o.y(:, 23:70);
-y.trkN   = trk(:, 7:12:end);
-y.trkE   = trk(:, 8:12:end);
-y.trkPsi = rad2deg(trk(:, 12:12:end));
-y.trkU   = trk(:, 1:12:end);
-y.trkV   = trk(:, 2:12:end);
-
-%  The crab angle of every vessel, which section G compares with b_hat.
-y.beta   = atan2d(y.trkV, y.trkU);
-y.beta_c = y.beta(:,1);
-y.chi    = y.psi + y.beta_c;
-
-y.name = {'atan2','LOS','ILOS','ALOS'};
+y.u     = o.y(:,1);              % surge velocity        [m/s]
+y.v     = o.y(:,2);              % sway velocity         [m/s]
+y.r     = rad2deg(o.y(:,3));     % yaw rate              [deg/s]  <- converted
+y.N     = o.y(:,4);              % north position        [m]
+y.E     = o.y(:,5);              % east position         [m]
+y.psi   = o.y(:,6);              % heading               [deg]    already degrees
+y.psi_d = rad2deg(o.y(:,7));     % heading command       [deg]    <- converted
+y.tau_N = o.y(:,8);              % commanded yaw moment  [N m]
+y.n1    = o.y(:,9);              % left propeller        [rad/s]
+y.n2    = o.y(:,10);             % right propeller       [rad/s]
+y.t     = o.t;
 end

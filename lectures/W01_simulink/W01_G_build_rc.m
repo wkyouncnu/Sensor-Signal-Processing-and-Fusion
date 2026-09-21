@@ -21,13 +21,13 @@ function W01_G_build_rc(src)
 %       Part 2 절 G 가 쓰는 모델이다. 절 F 까지는 프로펠러 회전수 n 을 직접
 %       명령했으나, 이 모델에서는 사람이 원하는 힘을 요구하고 추력 배분이 그
 %       힘을 n 으로 바꾼다. 무인수상정을 실제로 조종할 때의 구조가 이것이며,
-%       배분을 본격적으로 다루는 것은 부록 A1 과 5주차이다.
+%       배분을 본격적으로 다루는 것은 부록 A1 과 6주차이다.
 %
 %       This is the model used by section G of Part 2. Through section F the
 %       propeller speeds were commanded directly; here a force is demanded and
 %       control allocation converts it into propeller speeds. This is the
 %       structure a real USV is driven with, and allocation itself is treated
-%       in Appendix A1 and in Week 5.
+%       in Appendix A1 and in Week 6.
 %
 %   신호의 흐름 / the chain (gnc_chain, MSS 데모와 같은 순서 / the MSS order)
 %
@@ -264,7 +264,7 @@ L('Control allocation/1', 'Measurements/2');
 L('Joystick/1',           'Measurements/3');
 L('Control allocation/2', 'Measurements/4');
 
-mss_style(m);                            % Dashboard 블록은 이 뒤에 넣는다 (§8-4)
+mss_style(m);                            % Dashboard 블록은 이 뒤에 넣는다 (§9-4)
 
 %% ---- 실시간 화면으로 가는 탭 ----------------------------------------------
 %  요구한 힘, 낸 힘, n 의 지금 값은 실시간 화면의 제목에 숫자로 나온다. 그래서

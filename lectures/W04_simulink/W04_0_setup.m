@@ -2,104 +2,118 @@
 %  W04_0_setup — the only file to be edited in Week 4
 %
 %  강의에서의 위치 / place in the lecture
-%      Part 2 의 절 A 이다. 웨이포인트 목록, 전방주시거리 Delta, 전환반경,
-%      조류, 그리고 ILOS 와 ALOS 의 적응 게인이 모두 여기에 있다.
-%      This is section A of Part 2. The waypoint list, the look-ahead distance
-%      Delta, the switching radius, the current, and the adaptive gains of
-%      ILOS and ALOS are all defined here.
+%      Part 2 의 절 A 이다. 이후의 모든 절이 여기서 만든 변수를 쓰므로 가장
+%      먼저 실행한다.
+%      This is section A of Part 2, run first because every later section uses
+%      the variables it defines.
+%
+%  이 파일의 역할 / what this file is for
+%      W04_heading_control.slx 의 모든 Constant, Gain, Step 블록이 여기서 정의한
+%      변수의 이름을 갖고 있다. 게인이나 명령을 바꾸려면 모델을 열 것 없이 이
+%      파일을 고치고 다시 실행한다.
+%      Every Constant, Gain and Step block in W04_heading_control.slx holds the
+%      name of a variable defined here, so a gain or a command is changed by
+%      editing this file and running it again, without opening the model.
 %
 %  실행 / to run
 %      W04_0_setup
 %
-%  그다음 절을 하나씩 / then, one laboratory section at a time
-%      W04_C_aim_at_the_waypoint     절 C — atan2 가 경로추종이 아닌 이유
-%                                    why atan2 is not path following
-%      W04_D_line_of_sight           절 D — LOS 법칙과 그것이 고치는 것
-%                                    the LOS law, and what it repairs
-%      W04_E_lookahead_distance      절 E — Delta 가 맞바꾸는 것
-%                                    what Delta trades against what
-%      W04_F_waypoint_switching      절 F — 두 가지 전환 판정
-%                                    the two switching criteria
-%      W04_G_current_and_integral    절 G — 조류, ILOS, ALOS
-%                                    the current, ILOS and ALOS
-%      W04_H_adaptive_and_stability  절 H — 적응 게인과 Lyapunov 함수
-%                                    the gains, and the Lyapunov function
-%
 %  모델이 망가졌을 때 / to rebuild a model that has been damaged
-%      W04_1_build_guidance
+%      W04_1_build_heading
 
 clear; close all; bdclose('all');
 
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));            % ...\GradCourse
 addpath(fullfile(root,'_tools'), here);
-mss_path();
+mss_path();                                   % locates MSS wherever it lives
 
-V = W04_vars;
+cfg = otter_config('base');
 
-%% ---- the mission --------------------------------------------------------
-%  Five waypoints, four legs. Three sides of a square and then a diagonal, so
-%  the pattern has two 90 deg corners AND one of 135 deg: a gentle turn and a
-%  hard one. Section F needs both.
-WP   = V.WP;
-WP_N = V.WP_N;
-WP_E = V.WP_E;
+%% ---- the plant, as two numbers ------------------------------------------
+%  The yaw axis of Week 1, keeping only the linear part:
+%
+%     M66 psi_ddot = tau_N + Nr psi_dot
+%
+M66 = 42.65;                 % yaw inertia including added mass [kg m^2]
+Nr  = -42.65;                % linear yaw damping [N m per rad/s]
 
-%% ---- the guidance tuning ------------------------------------------------
-Delta    = V.Delta;        % look-ahead distance [m]. 8 m is 4 x hull length
-R_switch = V.R_switch;     % switching parameter [m]. MUST be < shortest leg
-sw_mode  = V.sw_mode;      % 1 = along-track (MSS), 2 = circle of acceptance
-kappa    = V.kappa;        % ILOS integral gain constant, Ki = kappa/Delta
-gamma    = V.gamma;        % ALOS adaptation gain
+%% ---- the reference ------------------------------------------------------
+%  Two steps in DEGREES, summed. Setting psi_2 = psi_1 turns the second off.
+psi_1 = 60;                  % first commanded heading [deg]
+psi_2 = 60;                  % second commanded heading [deg]
+t_up  = 5;                   % time of the first step [s]
+t_dn  = 1e6;                 % time of the second step [s]
 
-%  0 plots all four laws, 1..4 plots one of them
-%  (1 atan2, 2 LOS, 3 ILOS, 4 ALOS)
-guid_show = V.guid_show;
+%  A constant forward force, so the vessel travels while it turns and the
+%  track is something to look at. It plays no part in the heading loop.
+X_ff = 60;                   % surge force [N]
 
-%% ---- the heading autopilot, from Week 3 ---------------------------------
-%  Not retuned. All four rows carry an identical copy, so no difference in
-%  the results can come from the inner loop.
-Kp   = V.Kp;
-Kd   = V.Kd;
-X_ff = V.X_ff;             % constant surge force [N]
+%% ---- the controller -----------------------------------------------------
+%  선수방위에 대한 P-D 제어. 미분항은 오차의 미분이 아니라 요 각속도에 작용한다.
+%  W03 §3-4 의 일반형으로 쓰면
+%
+%     tau_N = Kp ssa(psi_d - psi) + Kd (c_d r_d - r)
+%
+%  이고, c_d = 0 이면 흔히 보는 tau_N = Kp ssa(psi_d - psi) - Kd r 이 된다.
+%
+%  P-D on the heading, with the derivative acting on the yaw rate rather than
+%  on the derivative of the error. Written in the general form of §3-4 in
+%  Week 3 it is the expression above, and at c_d = 0 it reduces to the
+%  familiar tau_N = Kp ssa(psi_d - psi) - Kd r.
+%
+%  §4-3 에서 다음 두 식으로 설계했다 / designed in §4-3 from
+%
+%     wn = sqrt(Kp/M66),   zeta = (|Nr| + Kd) / (2 sqrt(Kp M66))
+%
+%  wn = 1.53 rad/s, zeta = 0.9 로 두면 아래 두 값이 나온다.
+%  With wn = 1.53 rad/s and zeta = 0.9 this gives the pair below.
+Kp = 100.00;                 % [N m per rad]
+Kd = 74.90;                  % [N m per rad/s]
 
-%% ---- actuator and plant -------------------------------------------------
-k_pos = V.k_pos;  k_neg = V.k_neg;
-n_max = V.n_max;  n_min = V.n_min;  y_pont = V.y_pont;
-mp = V.mp;  rp = V.rp;  x0 = V.x0;
+%  미분항의 설정값 가중. 0 이면 측정한 요 각속도만 되먹임한다 (이번 주의 기본값).
+%  1 이면 명령한 각속도 r_d 와의 차이를 되먹임하며, 명령이 계단인 이번 주에는
+%  r_d = 0 이므로 결과가 같다. 8주차의 기준모델이 r_d 를 실제 값으로 채운다.
+%  The setpoint weight of the derivative term. At 0 the measured yaw rate
+%  alone is fed back, which is this week's default. At 1 the error in rate is
+%  fed back; this week's command is a step, so r_d is zero and the result is
+%  the same. The reference model of Week 8 fills r_d with a real value.
+c_d = 0;
 
-%% ---- the current --------------------------------------------------------
-%  Off here. Sections G and H switch it on; that is where ILOS and ALOS earn
-%  their keep and plain LOS cannot.
-V_c    = V.V_c;
-beta_c = V.beta_c;
+%  use_ssa = 0 removes the smallest-signed-angle wrap, so the vessel steers
+%  the long way round a +-180 deg boundary. Section E is that experiment.
+use_ssa = 1;
+
+%% ---- actuator -----------------------------------------------------------
+k_pos = cfg.k_pos;   k_neg = cfg.k_neg;
+n_max = cfg.n_max;   n_min = cfg.n_min;
+y_pont = cfg.y_pont;         % 0.395 m, the moment arm of each propeller
+
+%% ---- vessel and environment --------------------------------------------
+mp     = 25;
+rp     = [0.05 0 -0.35]';
+V_c    = 0;
+beta_c = 0;
+x0     = zeros(12,1);
 
 %% ---- simulation ---------------------------------------------------------
-h       = V.h;
-T_final = V.T_final;
+h       = 0.02;
+T_final = 40;
 
 %% ---- live view -----------------------------------------------------------
 animate       = 1;
-animate_every = V.animate_every;
-track_Nmin = V.track_Nmin;   track_Nmax = V.track_Nmax;
-track_Emin = V.track_Emin;   track_Emax = V.track_Emax;
+animate_every = 0.5;
+track_Nmin = -10;   track_Nmax = 40;
+track_Emin = -25;   track_Emax = 25;
 
 %% ---- report -------------------------------------------------------------
-legs = hypot(diff(WP(:,1)), diff(WP(:,2)));
+wn = sqrt(Kp/M66);
+ze = (abs(Nr) + Kd)/(2*sqrt(Kp*M66));
 fprintf('\n  W04 setup complete\n');
-fprintf('    mission         %d waypoints, %d legs, shortest %.1f m\n', ...
-        size(WP,1), numel(legs), min(legs));
-fprintf('    guidance        Delta = %g m, R_switch = %g m, mode = %d (%s)\n', ...
-        Delta, R_switch, sw_mode, ternary(sw_mode==1,'along-track','circle'));
-fprintf('    feasibility     R_switch < shortest leg?  %s\n', ...
-        ternary(R_switch < min(legs), 'yes', 'NO — a waypoint would be skipped'));
-fprintf('    Delta / L       %.1f x hull length (rule of thumb: 2 to 5)\n', Delta/2.0);
-fprintf('    ILOS            kappa = %g   ->  Ki = %.4f\n', kappa, kappa/Delta);
-fprintf('    ALOS            gamma = %g\n', gamma);
-fprintf('    autopilot       Kp = %g, Kd = %g,  X_ff = %g N\n', Kp, Kd, X_ff);
-fprintf('    current         %.2f m/s at %.0f deg\n', V_c, rad2deg(beta_c));
+fprintf('    plant           M66 = %.2f kg m^2,  Nr = %.2f\n', M66, Nr);
+fprintf('    controller      Kp = %g, Kd = %g, ssa = %d\n', Kp, Kd, use_ssa);
+fprintf('    closed loop     wn = %.4f rad/s,  zeta = %.4f\n', wn, ze);
+fprintf('    hull alone      zeta = %.4f  (Kd = 0)\n', abs(Nr)/(2*sqrt(Kp*M66)));
+fprintf('    reference       %g -> %g deg at t = %g s\n', psi_1, psi_2, t_up);
+fprintf('    forward force   %g N\n', X_ff);
 fprintf('    simulation      %g s at h = %g s\n\n', T_final, h);
-
-function s = ternary(c, a, b)
-if c, s = a; else, s = b; end
-end

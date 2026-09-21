@@ -1,9 +1,10 @@
-function vault_runall(logfile)
+function vault_runall(logfile, WK)
 %VAULT_RUNALL  모든 주차의 절 스크립트를 실제로 돌려 본다.
 %              Actually run every section script of every week.
 %
 %      vault_runall
 %      vault_runall('run.log')
+%      vault_runall('', {'W02','W03'})     주차 일부만 / only some weeks
 %
 %  왜 필요한가 / why this exists
 %      문서를 고치다 보면 스크립트도 함께 고치게 되고, 그때 한두 개만 돌려 보고
@@ -36,7 +37,7 @@ LOG = {};
 root = fileparts(fileparts(mfilename('fullpath')));
 addpath(fullfile(root,'_tools'));  mss_path();
 
-WK   = {'W01','W02','W03','W04','A1'};
+if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','A1'}; end
 %  '_check' 는 빼지 않는다. 학생용 채점기(problems/WXX_check.m)는 하위 폴더에 있어
 %  이 목록(최상위 WXX_*.m)에 원래 안 잡히고, 최상위의 W01_F_button_check 같은 것은
 %  **강의 절 스크립트**다 — 2026-09-14 까지 잘못 빼고 있었다.
@@ -91,7 +92,7 @@ fprintf('\n  %d개 실행, 실패 %d개\n\n', numel(names), nf);
 
 %% ---- 검증 도구: 강의에 적힌 상수·유도를 원천과 대조한다 ----------------
 V = {'verify_constants','verify_w01_theory','verify_guidance','verify_alos', ...
-     'verify_review_math','verify_w02_derivative','verify_w02_antiwindup'};
+     'verify_review_math','verify_w02_pid','verify_w03_derivative','verify_w03_antiwindup'};
 fprintf('  ================ 검증 도구 ================\n\n');
 for i = 1:numel(V)
     if ~exist(V{i}, 'file'), fprintf('  %-22s 없음\n', V{i}); continue; end
@@ -119,7 +120,7 @@ end
 fprintf('\n');
 
 %% ---- 그림 생성기 : 강의가 그 수치를 인용한다 ---------------------------
-G = {'w01_euler_R','w03_ssa','w03_second_order','w04_losgeo'};
+G = {'w01_euler_R','w04_ssa','w04_second_order','w05_losgeo'};
 for i = 1:numel(G)
     if ~exist(G{i}, 'file'), continue; end
     try

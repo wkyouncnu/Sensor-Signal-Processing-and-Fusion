@@ -1,98 +1,50 @@
-function f = W02_plot(R, LBL, ttl)
-%W02_PLOT  W02 실행 결과의 설정값·응답·요구한 힘·적분기 상태를 그린다.
-%          Reference, response, demand and integrator state of Week 2 runs.
+function W02_plot(R)
+%W02_PLOT  한 번의 실행을 그린다: 위치와 목표, 그리고 힘과 세 항.
+%          Draw one run: position against setpoint, and the force with its
+%          three terms.
 %
-%   W02_plot                      기본 작업공간에 있는 실행 결과
-%                                 the run sitting in the base workspace
-%   W02_plot(R, LBL, ttl)         실행 결과들의 셀 배열 / a cell array of runs
-%   f = W02_plot(...)             그림 핸들 / the figure handle
+%   W02_plot            모델의 StopFcn 이 부른다. Run 이 끝나면 저절로 뜬다
+%                       called by the model's StopFcn when Run finishes
+%   W02_plot(R)         W02_read 가 돌려준 실행 하나를 그린다
+%                       draws one run returned by W02_read
 %
-%   모델의 StopFcn 이 자동으로 부르므로, Run 을 누르면 다른 명령 없이 그림이 뜬다.
-%   절 스크립트도 같은 함수를 부르므로 화면의 그림과 강의노트의 그림이 어긋나지 않는다.
-%   Called automatically by the model's StopFcn, so pressing Run produces the
-%   figure without any further command. The section scripts call the same
-%   function, so the figure on screen and the one in the notes cannot differ.
-%
-%   R is a cell array of structs with fields t and y, where the nine columns of
-%   y are
-%
-%     1 u_d   2 u   3 X_cmd   4 X_sat   5 I   6 n1
-%
-%   The model logs the course-wide contract of add_measurement,
-%   [u v r N E psi u_d X_cmd X_sat I n1]. w02_cols reorders it into the six
-%   columns this week actually plots, at the single point where it is read.
+%   그림 읽는 법 / how to read it
+%       위 칸: 목표 y_d (검은 점선) 와 위치 y. 둘 사이의 간격이 오차 e 이다.
+%       아래 칸: 제어기가 낸 힘 tau 와, 그것을 이루는 세 항 가운데 적분항 I 와
+%       미분항 D. 비례항은 tau - I - D 이므로 따로 그리지 않는다.
+%       Top: the setpoint y_d (black dashed) and the position y; the gap
+%       between them is the error e. Bottom: the force tau and two of the three
+%       terms it is made of, the integral I and the derivative D. The
+%       proportional term is tau - I - D and is not drawn separately.
 
-if nargin < 1 || isempty(R)
-    if evalin('base', '~exist(''W02'',''var'')'), return, end
-    W = evalin('base', 'W02');
-    y = squeeze(W.signals.values);  if size(y,1) < size(y,2), y = y.'; end
-    R = {struct('t', W.time, 'y', w02_cols(y))};
-    LBL = {'run'};
-    ttl = 'W02 surge speed control — result of the last simulation';
-end
-if nargin < 2 || isempty(LBL), LBL = arrayfun(@(k) sprintf('run %d', k), ...
-                                              1:numel(R), 'UniformOutput', false); end
-if nargin < 3 || isempty(ttl), ttl = 'W02 surge speed control'; end
-
-COL = [0    0.45 0.74
-       0.85 0.33 0.10
-       0.47 0.67 0.19
-       0.49 0.18 0.56];
-c = @(i) COL(1+mod(i-1,4),:);
-
-%  The actuator limits, drawn on every force axis. A demand outside them is
-%  not a demand at all.
-cfg   = otter_config('base');
-X_hi  =  2*cfg.k_pos*cfg.n_max^2;
-X_lo  = -2*cfg.k_neg*cfg.n_min^2;
-K_u   = (6*0.5144)/(24.4*9.81);          % 1/|X_u|, [(m/s) per N]
-
-f = lab_fig('W02  speed loop', 1150, 680);
-
-% -- speed -----------------------------------------------------------------
-subplot(2,3,[1 2]); hold on;
-plot(R{1}.t, R{1}.y(:,1), '--', 'Color',[0.35 0.35 0.35], 'LineWidth',1.4);
-for i = 1:numel(R), plot(R{i}.t, R{i}.y(:,2), 'Color', c(i), 'LineWidth',1.3); end
-%  Full ahead gives exactly U_max = 3.0864 m/s. No gain can move this line.
-yline(X_hi*K_u, ':', 'u_{max} = 3.0864', ...
-      'Color',[0.75 0.2 0.2], 'LabelHorizontalAlignment','left');
-xlabel('time [s]'); ylabel('u  surge speed [m/s]');
-legend([{'u_d'} LBL], 'Location','best', 'Interpreter','none');
-title('speed');
-
-% -- error -----------------------------------------------------------------
-subplot(2,3,3); hold on;
-for i = 1:numel(R), plot(R{i}.t, R{i}.y(:,1)-R{i}.y(:,2), 'Color', c(i)); end
-yline(0, 'k:');
-xlabel('time [s]'); ylabel('e = u_d - u  [m/s]');
-title('error — does it reach zero?');
-
-% -- demanded against delivered force --------------------------------------
-subplot(2,3,[4 5]); hold on;
-for i = 1:numel(R)
-    plot(R{i}.t, R{i}.y(:,3), '--', 'Color', c(i));
-    plot(R{i}.t, R{i}.y(:,4), '-',  'Color', c(i), 'LineWidth',1.3);
-end
-yline(X_hi, ':', 'X_{max}', 'Color',[0.75 0.2 0.2]);
-yline(X_lo, ':', 'X_{min}', 'Color',[0.75 0.2 0.2]);
-xlabel('time [s]'); ylabel('surge force [N]');
-title('dashed = demanded X_{cmd},  solid = delivered X_{sat}');
-
-% -- the integrator --------------------------------------------------------
-subplot(2,3,6); hold on;
-for i = 1:numel(R), plot(R{i}.t, R{i}.y(:,5), 'Color', c(i)); end
-yline(0, 'k:');
-xlabel('time [s]'); ylabel('integrator state [N]');
-title('what the integrator is holding');
-
-sgtitle(ttl, 'FontWeight','bold');
+if nargin < 1
+    %  run_sim 으로 돌린 실행은 로그를 작업공간이 아니라 결과 객체에 담는다.
+    %  그때는 그릴 것이 없으므로 조용히 돌아간다 — 절 스크립트가 따로 그린다.
+    %  A run made through run_sim keeps its log in the result object, not in
+    %  the workspace; there is nothing to draw then, and the section script
+    %  draws its own figure.
+    if ~evalin('base', 'exist(''W02log'', ''var'')'), return; end
+    o = evalin('base', 'W02log');
+    y = squeeze(o.signals.values);
+    if size(y,1) < size(y,2), y = y.'; end
+    R = W02_read(struct('t', o.time, 'y', y));
 end
 
-% -------------------------------------------------------------------------
-function z = w02_cols(y)
-%W02_COLS  The course logging contract, reordered for this week.
-%
-%   add_measurement logs [u v r N E psi | u_d X_cmd X_sat I n1].
-%   This week plots  [u_d u X_cmd X_sat I n1].
-z = y(:, [7 1 8 9 10 11]);
+f = lab_fig('W02  one run', 900, 560); %#ok<NASGU>
+subplot(2,1,1); hold on;
+plot(R.t, R.y_d, 'k--', 'LineWidth', 1.2);
+plot(R.t, R.y, 'Color',[0 0.45 0.74], 'LineWidth', 2);
+ylabel('position [m]');
+legend({'y_d  setpoint','y  position'}, 'Location','southeast');
+title('what the controller achieved');
+grid on;
+
+subplot(2,1,2); hold on;
+plot(R.t, R.tau, 'Color',[0.85 0.33 0.10], 'LineWidth', 2);
+plot(R.t, R.I, 'Color',[0.47 0.67 0.19], 'LineWidth', 1.4);
+plot(R.t, R.D, 'Color',[0.49 0.18 0.56], 'LineWidth', 1.2);
+ylabel('force [N]');  xlabel('time [s]');
+legend({'\tau  total','I  integral term','D  derivative term'}, 'Location','northeast');
+title('what it took');
+grid on;
 end

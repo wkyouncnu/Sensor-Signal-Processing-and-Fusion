@@ -2,24 +2,28 @@
 %  W03_0_setup — the only file to be edited in Week 3
 %
 %  강의에서의 위치 / place in the lecture
-%      Part 2 의 절 A 이다. 이후의 모든 절이 여기서 만든 변수를 쓰므로 가장
-%      먼저 실행한다.
-%      This is section A of Part 2, run first because every later section uses
-%      the variables it defines.
+%      Part 2 의 절 A 이다. 이후의 모든 절이 여기서 만든 변수를 쓰므로 가장 먼저
+%      실행한다.
+%      This is section A of Part 2, and it is run first because every later
+%      section uses the variables it defines.
 %
 %  이 파일의 역할 / what this file is for
-%      W03_heading_control.slx 의 모든 Constant, Gain, Step 블록이 여기서 정의한
-%      변수의 이름을 갖고 있다. 게인이나 명령을 바꾸려면 모델을 열 것 없이 이
-%      파일을 고치고 다시 실행한다.
-%      Every Constant, Gain and Step block in W03_heading_control.slx holds the
-%      name of a variable defined here, so a gain or a command is changed by
-%      editing this file and running it again, without opening the model.
+%      W03_surge_control.slx 의 모든 Constant, Gain, Step 블록은 숫자가 아니라
+%      여기서 정의한 변수의 이름을 갖고 있다. 게인을 바꾸려면 모델을 열 것 없이
+%      이 파일을 고치고 다시 실행한다. 실험 조건이 한곳에 모여 있어야 무엇을
+%      바꾸어 무엇이 달라졌는지 말할 수 있다.
+%
+%      Every Constant, Gain and Step block in W03_surge_control.slx holds the
+%      name of a variable defined here rather than a number, so a gain is
+%      changed by editing this file and running it again. Keeping the
+%      conditions of an experiment in one place is what makes it possible to
+%      say which change produced which result.
 %
 %  실행 / to run
 %      W03_0_setup
 %
 %  모델이 망가졌을 때 / to rebuild a model that has been damaged
-%      W03_1_build_heading
+%      W03_1_build_surge_control
 
 clear; close all; bdclose('all');
 
@@ -30,64 +34,84 @@ mss_path();                                   % locates MSS wherever it lives
 
 cfg = otter_config('base');
 
-%% ---- the plant, as two numbers ------------------------------------------
-%  The yaw axis of Week 1, keeping only the linear part:
-%
-%     M66 psi_ddot = tau_N + Nr psi_dot
-%
-M66 = 42.65;                 % yaw inertia including added mass [kg m^2]
-Nr  = -42.65;                % linear yaw damping [N m per rad/s]
+%% ---- the plant, as three numbers ----------------------------------------
+%  Week 1 reduced the surge axis to  M11 u_dot = X + Xu u.  Everything the
+%  controller design needs is in the two derived constants.
+M11  = 85.50;                       % surge mass including added mass [kg]
+Xu   = 24.4*9.81/(6*0.5144);        % linear surge damping [N per m/s]
+K_u  = 1/Xu;                        % DC gain  [(m/s) per N]
+T_u = M11/Xu;                     % time constant [s]
 
 %% ---- the reference ------------------------------------------------------
-%  Two steps in DEGREES, summed. Setting psi_2 = psi_1 turns the second off.
-psi_1 = 60;                  % first commanded heading [deg]
-psi_2 = 60;                  % second commanded heading [deg]
-t_up  = 5;                   % time of the first step [s]
-t_dn  = 1e6;                 % time of the second step [s]
-
-%  A constant forward force, so the vessel travels while it turns and the
-%  track is something to look at. It plays no part in the heading loop.
-X_ff = 60;                   % surge force [N]
+%  Two steps are summed, so one model covers a single step and the up-then-down
+%  profile that the windup experiment needs.
+%
+%     u_d = u_d1  for  t_up  <= t < t_dn
+%     u_d = u_d2  for  t_dn  <= t
+%
+%  Setting u_d2 = u_d1 turns the second step off.
+u_d1 = 1.5;                  % first commanded speed [m/s]
+u_d2 = 1.5;                  % second commanded speed [m/s]
+t_up = 5;                    % time of the first step [s]
+t_dn = 1e6;                  % time of the second step [s]
 
 %% ---- the controller -----------------------------------------------------
-%  선수방위에 대한 P-D 제어. 미분항은 오차의 미분이 아니라 요 각속도에 작용한다.
-%  W02 §2-4 의 일반형으로 쓰면
+%  Designed in §4-4 for a closed-loop damping ratio and natural frequency:
 %
-%     tau_N = Kp ssa(psi_d - psi) + Kd (c_d r_d - r)
+%     K_i = wn^2 T_u / K_u,     K_p = (2 zeta sqrt(T_u K_u K_i) - 1)/K_u
 %
-%  이고, c_d = 0 이면 흔히 보는 tau_N = Kp ssa(psi_d - psi) - Kd r 이 된다.
-%
-%  P-D on the heading, with the derivative acting on the yaw rate rather than
-%  on the derivative of the error. Written in the general form of §2-4 in
-%  Week 2 it is the expression above, and at c_d = 0 it reduces to the
-%  familiar tau_N = Kp ssa(psi_d - psi) - Kd r.
-%
-%  §3-3 에서 다음 두 식으로 설계했다 / designed in §3-3 from
-%
-%     wn = sqrt(Kp/M66),   zeta = (|Nr| + Kd) / (2 sqrt(Kp M66))
-%
-%  wn = 1.53 rad/s, zeta = 0.9 로 두면 아래 두 값이 나온다.
-%  With wn = 1.53 rad/s and zeta = 0.9 this gives the pair below.
-Kp = 100.00;                 % [N m per rad]
-Kd = 74.90;                  % [N m per rad/s]
+%  With zeta = 0.7 and wn = 1.5 rad/s this gives the pair below.
+Kp = 102.00;                 % proportional gain [N per m/s]
+Ki = 192.38;                 % integral gain     [N per m]
+Kd = 0;                      % derivative gain   [N per m/s^2]
+Nf = 20;                     % derivative filter bandwidth [rad/s]
 
-%  미분항의 설정값 가중. 0 이면 측정한 요 각속도만 되먹임한다 (이번 주의 기본값).
-%  1 이면 명령한 각속도 r_d 와의 차이를 되먹임하며, 명령이 계단인 이번 주에는
-%  r_d = 0 이므로 결과가 같다. 7주차의 기준모델이 r_d 를 실제 값으로 채운다.
-%  The setpoint weight of the derivative term. At 0 the measured yaw rate
-%  alone is fed back, which is this week's default. At 1 the error in rate is
-%  fed back; this week's command is a step, so r_d is zero and the result is
-%  the same. The reference model of Week 7 fills r_d with a real value.
+%  미분항은 (c_d*u_d - u) 를 미분한다. c_d 가 그 설정값 가중이다.
+%    c_d = 0  측정값을 미분한다. 설정값이 계단으로 변해도 미분 킥이 없다
+%    c_d = 1  오차를 미분한다. 교과서형이며 Simulink PID 블록과 같아진다
+%  The derivative acts on (c_d*u_d - u), and c_d is its setpoint weight:
+%    c_d = 0  differentiate the measurement, so a step in u_d produces no kick
+%    c_d = 1  differentiate the error, the textbook form, which is what
+%             Simulink's PID Controller block does
 c_d = 0;
 
-%  use_ssa = 0 removes the smallest-signed-angle wrap, so the vessel steers
-%  the long way round a +-180 deg boundary. Section E is that experiment.
-use_ssa = 1;
+%% ---- anti-windup --------------------------------------------------------
+%  aw_mode  0  none            the integrator never stops
+%           1  clamping        integration is frozen while the actuator is
+%                              saturated and the error drives it further in
+%           2  back-calculation the excess (X_sat - X_cmd) is fed back into
+%                              the integrator through K_aw
+aw_mode = 2;
+%  역계산 게인 [1/s]. 1/K_aw 가 추종 시상수이므로 이것은 비가 아니라 **율**이다.
+%  2026-09-16 까지 이 파일은 1/T_u = 0.9071 을, W03_vars 는 5 를 갖고 있었다.
+%  같은 수를 담아야 하는 두 파일이 갈라져 있었고, 그래서 학생이 Run 을 눌러 얻는
+%  결과와 강의노트의 표가 서로 달랐다. 강의의 모든 측정값이 5 로 재어진 것이므로
+%  5 로 맞춘다. §3-6 의 표가 그 선택의 근거를 수치로 보인다.
+%
+%  The back-calculation gain [1/s]. Since 1/K_aw is the tracking time constant
+%  this is a rate, not a ratio. Until 2026-09-16 this file held 1/T_u = 0.9071
+%  while W03_vars held 5: two files that must carry the same number had drifted
+%  apart, so what a student got by pressing Run did not match the tables in the
+%  notes. Every measurement in the lecture was taken at 5, and §3-6 shows the
+%  evidence for that choice.
+K_aw    = 5;
+
+%% ---- open loop ----------------------------------------------------------
+%  loop_closed = 0 disconnects the controller and applies X_open directly,
+%  which is how the plant constants are identified in Part 2, section C.
+pid_mode    = 0;             % 0 = the hand-built PID, 1 = Simulink's PID Controller block
+loop_closed = 1;
+X_open      = 100;           % surge force applied in open loop [N]
 
 %% ---- actuator -----------------------------------------------------------
 k_pos = cfg.k_pos;   k_neg = cfg.k_neg;
 n_max = cfg.n_max;   n_min = cfg.n_min;
-y_pont = cfg.y_pont;         % 0.395 m, the moment arm of each propeller
+
+%  The surge force the propellers can actually produce. These are the limits
+%  the allocation imposes, and the same numbers are given to the PID block so
+%  that its internal saturation and the real one coincide.
+X_hi  =  2*k_pos*n_max^2;    %  239.36 N
+X_lo  = -2*k_neg*n_min^2;    % -133.42 N
 
 %% ---- vessel and environment --------------------------------------------
 mp     = 25;
@@ -98,22 +122,29 @@ x0     = zeros(12,1);
 
 %% ---- simulation ---------------------------------------------------------
 h       = 0.02;
-T_final = 40;
+T_final = 30;
 
 %% ---- live view -----------------------------------------------------------
 animate       = 1;
 animate_every = 0.5;
-track_Nmin = -10;   track_Nmax = 40;
-track_Emin = -25;   track_Emax = 25;
+track_Nmin = -5;    track_Nmax = 65;
+track_Emin = -35;   track_Emax = 35;
 
 %% ---- report -------------------------------------------------------------
-wn = sqrt(Kp/M66);
-ze = (abs(Nr) + Kd)/(2*sqrt(Kp*M66));
+X_lim = [2*k_neg*n_min*abs(n_min), 2*k_pos*n_max*abs(n_max)];
 fprintf('\n  W03 setup complete\n');
-fprintf('    plant           M66 = %.2f kg m^2,  Nr = %.2f\n', M66, Nr);
-fprintf('    controller      Kp = %g, Kd = %g, ssa = %d\n', Kp, Kd, use_ssa);
-fprintf('    closed loop     wn = %.4f rad/s,  zeta = %.4f\n', wn, ze);
-fprintf('    hull alone      zeta = %.4f  (Kd = 0)\n', abs(Nr)/(2*sqrt(Kp*M66)));
-fprintf('    reference       %g -> %g deg at t = %g s\n', psi_1, psi_2, t_up);
-fprintf('    forward force   %g N\n', X_ff);
+fprintf('    plant           T_u = %.4f s,  K_u = %.6f (m/s)/N\n', T_u, K_u);
+fprintf('    actuator        X in [%.2f, %.2f] N  ->  u_ss in [%.4f, %.4f] m/s\n', ...
+        X_lim(1), X_lim(2), X_lim(1)*K_u, X_lim(2)*K_u);
+fprintf('    controller      Kp = %g, Ki = %g, Kd = %g, Nf = %g\n', Kp, Ki, Kd, Nf);
+if Ki > 0
+    wn = sqrt(K_u*Ki/T_u);
+    ze = (1 + K_u*Kp)/(2*sqrt(T_u*K_u*Ki));
+    fprintf('    closed loop     wn = %.4f rad/s,  zeta = %.4f\n', wn, ze);
+else
+    fprintf('    closed loop     P only, steady-state error = %.2f %%\n', 100/(1+K_u*Kp));
+end
+AW = {'none','clamping','back-calculation'};
+fprintf('    anti-windup     %s\n', AW{aw_mode+1});
+fprintf('    reference       %g -> %g m/s at t = %g s\n', u_d1, u_d2, t_up);
 fprintf('    simulation      %g s at h = %g s\n\n', T_final, h);

@@ -17,7 +17,7 @@ function live_track(N, E, psi, t, o)
 %     psi    heading [rad], from North, positive clockwise
 %     t      simulation time [s]
 %     o      options struct:
-%              o.tag     short identifier, e.g. 'W03'. Changing it starts a new
+%              o.tag     short identifier, e.g. 'W04'. Changing it starts a new
 %                        figure, which is what happens when a different week's
 %                        model is run in the same MATLAB session
 %              o.name    figure name
@@ -31,7 +31,7 @@ function live_track(N, E, psi, t, o)
 %
 %   A track shows where the vessel went. It does not show where the vessel was
 %   POINTING while it went there, and for a marine vehicle those differ by the
-%   crab angle beta = atan2(v, u). Weeks 1 and 4 both contain runs in which the
+%   crab angle beta = atan2(v, u). Weeks 1 and 5 both contain runs in which the
 %   hull points one way and moves another, and no track drawn on its own can
 %   show it.
 %

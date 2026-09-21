@@ -56,7 +56,7 @@
 │   ├── A1_….md / .pdf       부록 — 본과정에서 빼낸 심화. W 다음에 정렬된다
 │   └── A1_simulink/
 │
-├── figures/                 개념도 SVG (w01-… … w11-…). 러너가 만든 PNG 는 여기 아니다
+├── figures/                 개념도 SVG (w01-… … w12-…). 러너가 만든 PNG 는 여기 아니다
 │   └── src/                 그 SVG 의 TikZ 원본 (*.tex) + gnc-style.tex
 │                            `tikz2svg.sh` 이 여기서 ../*.svg 를 만든다
 ├── _templates/              week.md
@@ -69,27 +69,29 @@
 │                            port_xy.m · row_feed.m · lane_line.m · check_overlaps.m
 │                            ensure_base_vars.m · hmi_bind.m · image_button.m  (대화형 모델)
 │                            crosstrack_err.m · wp_switch.m · path_plot.m
-│                            verify_guidance.m · verify_alos.m        (W04 유도)
+│                            verify_guidance.m · verify_alos.m        (W05 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · verify_w01_theory.m · live_track.m · base_var.m
-│                            verify_w02_derivative.m                   (§2-4 미분항 부호)
-│                            verify_w02_antiwindup.m                   (§2-6 안티와인드업 회귀)
+│                            verify_w02_pid.m                          (W02 PID 입문의 식 8개)
+│                            vault_shift_weeks.m                       (주차 번호 일괄 이동, 2026-09-21)
+│                            verify_w03_derivative.m                   (W03 §3-4 미분항 부호)
+│                            verify_w03_antiwindup.m                   (W03 §3-6 안티와인드업 회귀)
 │                            vault_runall.m · vault_number_audit.m · verify_review_math.m  (전체 검토:
 │                              전 스크립트 실행 → 문서 수치를 실행 로그와 대조 → 검토에서 실은 수치 재현)
-│                            vault_rename_tau_u.m · vault_unify_ypont.m · w04_beta_fix.m   (기호 통일 변환기)
+│                            vault_rename_tau_u.m · vault_unify_ypont.m · w05_beta_fix.m   (기호 통일 변환기)
 │                            git_autopush.sh · hook_matlab_rules.sh  (PostToolUse 훅: 맨 clear 금지)
 │                            svg2png.sh · svgzoom.sh                 (렌더해서 눈으로 보기)
 │                            tikz2svg.sh                             (그림 조판. 지금 쓰는 것)
-│                            w01_euler_R.m · w04_track_curves.awk     (그림 기하 계산)
+│                            w01_euler_R.m · w05_track_curves.awk     (그림 기하 계산)
 │                            ── 아래는 TikZ 이전의 그림 도구다. 기록으로 남겨 두고
 │                               **새 그림에는 쓰지 않는다** (figures/*.svg 20장 전부
 │                               figures/src/*.tex 로 옮겼다, 2026-09-05)
 │                            tex2svg.sh · labels/ · bdiag.sh
 │                            w01_6dof_arcs.awk · w01_euler_geo.awk
-│                            w02_pseudo_geo.awk · w02_windup_geo.awk
-│                            w02_windup_fig.sh · w04_three_laws.sh
+│                            w03_pseudo_geo.awk · w03_windup_geo.awk
+│                            w03_windup_fig.sh · w05_three_laws.sh
 │                            a1_column_geo.awk · a1_layouts_geo.awk
-│                            w04_los_geo.awk
+│                            w05_los_geo.awk
 └── .claude/skills/          gnc-lecture-vault · simulink-gnc-models
 ```
 
@@ -141,7 +143,7 @@ lectures/WXX_simulink/
 > `gradient` 로 재서 강의의 시종점 정의와 0.56° 어긋나 오답 처리된 적이 있다.
 
 > [!important] `.m` 과 `.slx` 이름이 겹치면 안 된다
-> `W02_H_antiwindup.m` 과 `W02_H_antiwindup.slx` 가 함께 있으면 MATLAB 이 **모델을 열고**
+> `W03_H_antiwindup.m` 과 `W03_H_antiwindup.slx` 가 함께 있으면 MATLAB 이 **모델을 열고**
 > 스크립트는 **조용히 아무것도 하지 않는다.** 러너는 `_run` 을 붙인다.
 
 ---
@@ -156,11 +158,17 @@ lectures/WXX_simulink/
 >   각각 YouTube 재생목록 + Google Drive. **"이 강의의 강사가 직접 한 강의"임을 밝힌다**
 > - **MATLAB · Simulink Onramp** 와 윤원근 교수 Simulink 강의 2편 —
 >   선수 지식이 부족한 사람이 먼저 볼 것
+> - 바로 뒤에 `[!tip] Getting the course files, and keeping them current (Windows)` —
+>   Git for Windows 설치, **처음 한 번 `git clone`, 수업 전마다 `git pull`**, 로컬 수정과
+>   충돌할 때(`git stash`), MSS 는 저장소에 없다는 것. 사용자 지시(2026-09-21): "매번 수업 전에
+>   수정된 부분만 다운로드 하는 방법을 첫장에 정리해서 항상 넣어줄래". 모든 주차·부록에 같은 문구
+> - 그 주차에만 해당하는 핵심 외부 자료(예: W02 의 MATLAB Tech Talk PID 재생목록과 제어조교
+>   영상)는 **그 주차 첫 장에만** 별도 콜아웃으로 둔다. 다른 주차에 복사하지 않는다
 >
 > `_templates/week.md` 에 원본이 있으니 복사하면 따라온다. 주차마다 문구를 바꾸지 않는다.
 > 자세한 것은 `gnc-lecture-vault/references/standing-orders.md` §1.
 
-`_templates/week.md` 를 복사한다. **골격을 바꾸지 않는다** — 학생이 11주 내내 같은 자리에서
+`_templates/week.md` 를 복사한다. **골격을 바꾸지 않는다** — 학생이 12주 내내 같은 자리에서
 같은 것을 찾게 하는 것이 목적이다.
 
 ```

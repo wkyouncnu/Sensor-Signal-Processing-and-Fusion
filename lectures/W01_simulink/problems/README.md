@@ -128,7 +128,7 @@ Nothing ever goes astern. At $n_0 = 60$ and $\delta n = 3.5$ the slower propelle
 > [!warning] The Reshape block is not decoration
 > A MATLAB Function block whose output is written `n = [nL; nR]` produces a $2\times1$ **matrix** signal. The plant does not care. The log does: one matrix input makes the whole To Workspace record three-dimensional, and the checker then finds one column where it expects twelve.
 
-**The point.** $Y$ is exactly zero at every instant — both propellers face forward, so no combination of them has a component across the hull. Yet $v$ is non-zero in **both** turns and **changes sign** between them. That sway is produced by the hull rotating, through the Coriolis term, and not by any side force. It is the crab angle, and Week 3 has to steer around it.
+**The point.** $Y$ is exactly zero at every instant — both propellers face forward, so no combination of them has a component across the hull. Yet $v$ is non-zero in **both** turns and **changes sign** between them. That sway is produced by the hull rotating, through the Coriolis term, and not by any side force. It is the crab angle, and Week 4 has to steer around it.
 
 ---
 

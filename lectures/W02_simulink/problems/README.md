@@ -1,18 +1,16 @@
-# Week 2 · Laboratory Problems — close the speed loop in Simulink
+# Week 2 · Laboratory Problems — build the PID by hand in Simulink
 
-- Course: Sensor Signal Processing and Fusion · Department of Autonomous Vehicle System Engineering
+- Course: USV Guidance, Navigation and Control (Graduate) · Department of Autonomous Vehicle System Engineering
 - Time: **one hour**, immediately after the Week 2 lecture hour
-- Three problems, in order. Each one adds one block to the previous answer.
+- Three problems, in order. Each one adds to the previous answer.
 
 ---
 
 ## What this hour is for
 
-Week 1 drove the hull with a command someone typed. This hour closes a loop around it, and the whole point is to see **what closing a loop can and cannot buy**.
+The lecture measured what P, I and D do on one mass-spring-damper, with a model that was generated for it. This hour builds the controller by hand, block by block, until the model reproduces the lecture's numbers. A PID that has been assembled from gains and integrators can be read; a PID block that has only been double-clicked cannot.
 
-The hull and the thrust map are provided. The thrust map is provided because turning a demanded force into two shaft speeds is Appendix A1's subject, and repeating it here would spend the hour on the wrong thing. Everything between the reference and the plant — the summing junction, the gains, the integrator — is built by hand.
-
-Each problem ends with a **number measured in the lecture** and a **picture of the correct result**. There is no single correct diagram; the checker tests the physics.
+The setpoint, the plant and the log are provided. The controller is the exercise.
 
 ---
 
@@ -20,43 +18,36 @@ Each problem ends with a **number measured in the lecture** and a **picture of t
 
 ```matlab
 cd lectures/W02_simulink/problems
-W02_P1_start                 % creates W02_P1.slx — hull and thrust map only
+W02_P1_start                 % creates W02_P1.slx — setpoint, plant and log only
 W02_check(1)                 % run this whenever, as often as needed
 ```
 
-The solver is already set to fixed-step `ode4` at `h = 0.02` s. **Do not change it.**
+The solver is already set to fixed-step `ode4` at `h = 1` ms. **Do not change it.**
 
 > [!important] Two requirements on every model
-> - a To Workspace block named **`xlog`**, format **`Structure With Time`**, fed by the plant's twelve-state output
-> - a second one named **`Xlog`**, same format, carrying the demanded surge force that enters `X to n`
->
-> Two logs and not one, because Week 2's subject is the relation between a demanded **force** and the **speed** it buys. A log of the states alone cannot show that a proportional controller has run out of force.
+> - The To Workspace block **`ylog`** stays as provided. Its Mux takes $y_d$ on input 1, the force $\tau$ on input **2**, and $y$ on input 3. Input 2 is the one wire the student adds.
+> - Every gain is written as a **variable name** — `Kp`, `Ki`, `Kd`, `Nf`, `tau_max`, `Kb` — never as a number. `W02_check` sets those names itself.
 
 ---
 
-## Problem 1 · The open loop (20 minutes)
+## Problem 1 · Proportional only (15 minutes)
 
-**Build.** A constant force straight into the thrust map, and two logs coming out.
+**Build.** Error, one gain, into the plant.
 
 ```
-Constant X_open  →  X to n  →  Otter USV  →  To Workspace (xlog)
+setpoint → (+)(−) → Kp → τ → plant → y
+              ↑                      │
+              └──────────────────────┘
 ```
 
-**Predict before running.** In steady state the thrust balances linear surge damping, so
-
-$$
-u_{ss} = K_u X, \qquad K_u = \frac{1}{\lvert X_u \rvert} = 0.012894\ \text{(m/s)/N}
-$$
-
-Write down what $X = 50$, $100$ and $200$ N should give.
+**Predict before running.** From §2-3, $y_{ss} = K_p/(k + K_p)$ and $\zeta = b/(2\sqrt{m(k + K_p)})$ with $m = 1$, $b = 2$, $k = 2$. Write down both numbers for $K_p = 2$ and $K_p = 10$ **before** pressing Run.
 
 **Verify.** `W02_check(1)`.
 
-| What the checker expects | |
-|---|---|
-| $u_{ss}$ at $X = 50$ N | $0.6447$ m/s |
-| $u_{ss}$ at $X = 100$ N | $1.2894$ m/s |
-| $u_{ss}$ at $X = 200$ N | $2.5788$ m/s |
+| $K_p$ | steady value | overshoot |
+|---|---|---|
+| $2$ | $0.500$ | $16.3$ % |
+| $10$ | $0.833$ | $38.8$ % |
 
 **What a correct model produces**
 
@@ -64,41 +55,36 @@ Write down what $X = 50$, $100$ and $200$ N should give.
 
 | Reading the figure | |
 |---|---|
-| left | three first-order rises, each landing exactly on its own dashed $K_u X$ line. No overshoot: there is no loop yet |
-| right | the same three results as points on the straight line $u = K_u X$, with the actuator ceiling marked |
-| the check | if the rises overshoot, something is already fed back; if they land off the dashed lines, the thrust map is being bypassed |
+| left | both gains settle on their dotted line $K_p/(k+K_p)$, never on the setpoint |
+| right | the force jumps to $K_p$ newtons at the step, then settles on $k\,y_{ss}$ |
+| the check | if the response settles on 1, the loop is not proportional-only — check that nothing else is summed into $\tau$ |
 
-**The point.** The relation is **exact**, not approximate. Surge damping in `otter.m` is linear, so the steady state is a straight line and not a curve that merely looks like one.
+**The point.** The spring needs a steady force $k\,y$, and a proportional controller makes force only from error, so some error must remain. No value of $K_p$ removes it.
 
 ---
 
-## Problem 2 · Proportional control (20 minutes)
+## Problem 2 · Add I and D, by hand (25 minutes)
 
-**Build.** Add the reference, the summing junction, and one gain.
-
-```
-Step u_d  →  (+)(−)  →  Kp  →  X to n  →  Otter USV
-                ↑                              ↓
-                └──────────  u  ←──────────────┘
-```
-
-The feedback signal is **$u$, state 1** — not the speed over ground $\sqrt{u^2+v^2}$. With no current and no steering the two agree here, and in Week 4 they do not. A loop written against the wrong signal keeps working until exactly the moment it matters.
-
-**Predict before running.** The final value theorem gives
+**Build.** Two more branches, from **Gain, Sum and Integrator blocks only**. No PID Controller block, no Derivative block — the checker looks for both.
 
 $$
-\frac{u_{ss}}{u_d} = \frac{K_p K_u}{1 + K_p K_u}
+\tau = K_p\,e + K_i\!\int e\,\mathrm{d}t + d,
+\qquad
+d = N_f\,(K_d\,e - x), \quad \dot x = d
 $$
 
-Work out the steady error at $K_p = 100$ before touching the model.
+> [!warning] The derivative is filtered, and it is built as a loop
+> The second line is $K_d\,N_f s/(s+N_f)$ applied to $e$ (§2-7). Build it as a gain $N_f$ with an integrator in its feedback path, exactly as box D of `W02_pid.slx`. A Derivative block would differentiate the corner of the step into an impulse.
 
-**Verify.** `W02_check(2)`, with $u_d = 1.5$ m/s.
+**Predict before running.** These are the gains the tuning order of §2-9 arrived at: $K_p = 10$, $K_d = 6$, $K_i = 8$, $N_f = 20$. From §2-7, what is the force at the instant of the step?
 
-| $K_p$ | expected $u_{ss}$ | error |
-|---|---|---|
-| $100$ | $0.8448$ m/s | $44$ % |
-| $500$ | $1.2986$ m/s | $13$ % |
-| $2000$ | $1.4440$ m/s | $3.7$ % |
+**Verify.** `W02_check(2)`.
+
+| Quantity | Lecture value |
+|---|---|
+| overshoot | $0.16$ % |
+| inside 1 % of the setpoint after | $2.77$ s |
+| largest force | $129.6$ N |
 
 **What a correct model produces**
 
@@ -106,27 +92,30 @@ Work out the steady error at $K_p = 100$ before touching the model.
 
 | Reading the figure | |
 |---|---|
-| left | three settled values, and **none of them touches the dashed reference** |
-| right | the measured points land on the theoretical curve $K_pK_u/(1+K_pK_u)$, which approaches zero error and never arrives |
-| the check | if any trace reaches $1.5$ m/s, an integrator has been added early |
+| left | the response enters the dotted 1 % band and stays: the integral has removed the error |
+| right | the force at the step, $K_d N_f + K_p \approx 130$ N: the derivative kick |
+| the check | an overshoot near $8.6$ % means $K_i$ is not reaching the sum; a force of thousands of newtons means the derivative is not filtered |
 
-**The point.** The plant has no free integrator, so the loop is **type 0**. The steady force that the damping demands can only be produced by a **non-zero error**. This is not a tuning failure and no value of $K_p$ removes it.
+**The point.** Every block of the model is one symbol of the equation above. The PID block's dialog — P, I, D, N — is the same four numbers, and nothing else.
 
 ---
 
-## Problem 3 · Add the integrator (20 minutes)
+## Problem 3 · A limit on the force, and anti-windup (20 minutes)
 
-**Build.** One more branch: $K_i$ into a **discrete-time** integrator, summed with the proportional term.
+**Build.** A Saturation block on $\tau$, limits `-tau_max` and `tau_max`, and one more input to the integrator:
 
-The integrator must be discrete because the model is fixed-step. A continuous integrator inside a fixed-step loop invites a solver-order mismatch that shows up as a slow drift rather than as an error message.
+$$
+\dot I = K_i\,e + K_b\,(\tau - u), \qquad u = P + I + D,\quad \tau = \mathrm{sat}(u)
+$$
 
-**Verify.** `W02_check(3)`, with $K_p = 102$, $K_i = 192.38$.
+**Predict before running.** The checker sets $\lvert\tau\rvert \le 2.5$ N. Holding $y = 1$ against the spring needs $2$ N, so the target is reachable. With $K_b = 0$, what happens to the integrator while the force sits on the limit?
 
-| What the checker expects | |
-|---|---|
-| steady speed | $1.5000$ m/s |
-| steady error | $0$, to tolerance |
-| overshoot | **present** — the checker fails a response with none |
+**Verify.** `W02_check(3)`, gains $K_p = 10$, $K_i = 8$, $K_d = 4$.
+
+| | overshoot | settling (2 %) |
+|---|---|---|
+| $K_b = 0$ | $28.67$ % | $5.54$ s |
+| $K_b = 2$ | $0.03$ % | $3.56$ s |
 
 **What a correct model produces**
 
@@ -134,11 +123,11 @@ The integrator must be discrete because the model is fixed-step. A continuous in
 
 | Reading the figure | |
 |---|---|
-| left | the P trace stops short; the PI trace arrives at the dashed reference |
-| right | the same runs as error. The P error settles on a non-zero value; **the PI error crosses zero and comes back** |
-| the check | that crossing *is* the overshoot. A PI response with no crossing means $K_i$ is not actually in the loop |
+| left | the same gains and the same limit; only the orange run overshoots |
+| right | the force: orange sits on $2.5$ N for more than two seconds, blue leaves the limit almost at once |
+| the check | if the two runs are identical, $\tau - u$ is not reaching the integrator, or `Kb` is written as a number |
 
-**The point.** The integrator supplies the steady force that the damping demands, so the error no longer has to. The price is a state that keeps acting after the error has passed through zero — which is overshoot, and, when the actuator saturates, **windup**. Sections F to H of the lecture are about paying that price down.
+**The point.** Without anti-windup the integrator stores what the actuator could not deliver and pays it back as overshoot. Back-calculation tells it how much was cut off.
 
 ---
 
@@ -146,23 +135,6 @@ The integrator must be discrete because the model is fixed-step. A continuous in
 
 | | Weight | What is being marked |
 |---|---|---|
-| Problem 1 | 30 | `W02_check(1)` passes, and the three predicted speeds were written down **before** running |
-| Problem 2 | 40 | `W02_check(2)` passes; the type-0 argument is stated in one sentence |
-| Problem 3 | 30 | `W02_check(3)` passes; the answer to "what did the integrator cost" is stated |
-
-A model that fails a check but whose written reasoning is right earns more than one that passes with no reasoning.
-
----
-
-## If something goes wrong
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `The model has no To Workspace block whose variable name is xlog` | the variable name is still `simout` | rename it |
-| `xlog has 1 column` | a matrix signal reached the log | insert a Reshape set to `1-D array` |
-| The speed settles at the reference in Problem 2 | an integrator is present | set $K_i = 0$; Problem 2 is proportional only |
-| The response drifts slowly upward with PI | a **continuous** integrator in a fixed-step model | use Discrete-Time Integrator with sample time `h` |
-| Dimension error at the thrust map | the loop is feeding the whole 12-state vector back | select state 1 first |
-| Every number is slightly off | the solver was changed | fixed-step `ode4`, `h = 0.02` s |
-
-Reference answers are in `../solutions/`. Read them **after** attempting the problem.
+| Problem 1 | 25 | `W02_check(1)` passes; why $y_{ss} \ne 1$ is stated in one sentence |
+| Problem 2 | 45 | `W02_check(2)` passes, with no PID or Derivative block; the force at the step is predicted before it is measured |
+| Problem 3 | 30 | `W02_check(3)` passes; the role of $\tau - u$ is explained |

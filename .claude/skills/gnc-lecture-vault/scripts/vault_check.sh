@@ -244,6 +244,23 @@ check_style() {
   done < <(mds)
   note "미지원 콜아웃" "$badc"
   FAIL=$((FAIL+badc))
+
+  head2 "11a. 첫 장 — 참고자료 콜아웃과 git clone/pull 안내"
+  #  사용자 지시 2026-09-21: "매번 수업 전에 수정된 부분만 다운로드 하는 방법을 첫장에
+  #  정리해서 항상 넣어줄래". 주차·부록마다 두 콜아웃이 있고, 순서가 참고자료 → git 이다.
+  #  → standing-orders.md §1 · §1-1
+  local miss=0 a b
+  while IFS= read -r f; do
+    a=$(grep -n 'Reference material — read this first' "$f" | head -1 | cut -d: -f1)
+    b=$(grep -n 'Getting the course files, and keeping them current (Windows)' "$f" | head -1 | cut -d: -f1)
+    if [ -z "$a" ] || [ -z "$b" ] || [ "$a" -gt "$b" ] \
+       || ! grep -q 'git clone https://github.com/wkyouncnu/Sensor-Signal-Processing-and-Fusion.git' "$f" \
+       || ! grep -q '`git pull`' "$f"; then
+      echo "     $f"; miss=$((miss+1))
+    fi
+  done < <(labdocs)
+  note "첫 장 콜아웃 누락 · 순서 어긋남" "$miss"
+  FAIL=$((FAIL+miss))
   return 0
 }
 
@@ -296,7 +313,7 @@ check_code() {
     # .m 스크립트든 .slx 모델이든 폴더든, 무엇으로든 실재하면 통과다.
     while IFS= read -r name; do
       [ -z "$name" ] && continue
-      case "$name" in *_) continue ;; esac      # 산문에서 잘린 조각 (W02_C_ 등)
+      case "$name" in *_) continue ;; esac      # 산문에서 잘린 조각 (W03_C_ 등)
       #  .m 이든 .slx 든 img/ 의 .png 든 폴더든, 무엇으로든 실재하면 통과다.
       #  WXX_P1 처럼 학생이 WXX_P1_start 로 만들어 내는 모델도 통과시킨다 —
       #  저장소에 없는 것이 정상이기 때문이다.
@@ -323,7 +340,7 @@ check_legend() {
   # CLAUDE.md §4 규칙 5: 「그림마다 뒤에 reading the figure 표를 붙인다」.
   #
   # 왜 기계로 세는가. 2026-09-08 에 눈으로 훑어서는 못 찾다가, 그림 수와 표 수를
-  # 세어 보고서야 W04 의 **결과 그래프 여섯 장 전부**에 범례 표가 없다는 것을
+  # 세어 보고서야 W05 의 **결과 그래프 여섯 장 전부**에 범례 표가 없다는 것을
   # 찾았다. 학생은 키 없는 그림을 여섯 장 보고 있었다. 사람이 놓치는 종류의
   # 누락이므로 검사기로 내린다 → standing-orders.md §0-0
   #

@@ -153,7 +153,7 @@ a.Text = strjoin({ ...
 'v is non-zero in BOTH turns and changes SIGN between them, while Y is'
 'exactly zero throughout. The sway comes from the hull rotating - the'
 'Coriolis term - and not from any side force. That is the crab angle,'
-'and Week 3 has to steer around it.'
+'and Week 4 has to steer around it.'
 ''
 'The Reshape is not decoration: without it the To Workspace record is'
 '3-dimensional and the checker finds one column instead of twelve.'}, newline);

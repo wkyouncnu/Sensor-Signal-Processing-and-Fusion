@@ -29,6 +29,21 @@ summary: One line, no full stop
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · instructor's Simulink lectures [part 1](https://youtu.be/a-afHg_fSaU) · [part 2](https://youtu.be/070Yn0Hw5a0) |
 
 
+> [!tip] Getting the course files, and keeping them current (Windows)
+> <span style="font-size:0.88em">The notes, models and scripts are kept in one Git repository that is updated through the semester. Clone it once; before every class, pull. A pull downloads only what has changed since the last one.</span>
+>
+> | When | Where to run it | Command |
+> |---|---|---|
+> | once | PowerShell — installs Git for Windows | `winget install --id Git.Git -e` |
+> | once | the folder that will hold the course, e.g. `Documents` | `git clone https://github.com/wkyouncnu/Sensor-Signal-Processing-and-Fusion.git` |
+> | before every class | inside the cloned folder `Sensor-Signal-Processing-and-Fusion` | `git pull` |
+>
+> - `git pull` prints `Already up to date.` when nothing has changed, and otherwise lists the files it updated.
+> - The repository is private. When Git asks, sign in with the GitHub account the instructor has given access.
+> - Experiment on copies, not on the cloned files: copy a week's `WXX_simulink` folder elsewhere first, and a pull can never collide with local edits. If it already has, `git stash`, then `git pull`, then `git stash pop` sets the edits aside, updates, and puts them back.
+> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder.
+
+
 - **Course**: USV Guidance, Navigation and Control (Graduate)
 - **Department**: Autonomous Vehicle System Engineering, Chungnam National University
 - **This week**: ① … ② … ③ …

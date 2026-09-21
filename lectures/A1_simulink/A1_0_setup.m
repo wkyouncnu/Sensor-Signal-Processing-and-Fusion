@@ -38,7 +38,7 @@ cfg = otter_config('base');
 %
 %     [ 60 ;  60   ]   straight ahead
 %     [ 60 ; -60   ]   the command that LOOKS like a pure turn, but is not
-%     [ 60 ; -78.67]   the command that IS a pure turn, derived in §2-5
+%     [ 60 ; -78.67]   the command that IS a pure turn, derived in §3-5
 
 n_cmd = [60; -60];
 

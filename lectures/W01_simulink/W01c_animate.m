@@ -24,7 +24,7 @@ function W01c_animate(u, v, r, N, E, psi, t)
 %       W01c_animate 를 부르는 Animate 블록을 만들었고 W01_0_setup 도 처음부터
 %       animate = 1 로 두었으나, 정작 함수가 없었다. 그래서 W01_current.slx 를
 %       열고 Run 을 누르면 정의되지 않은 함수 오류가 났다. 절 스크립트만 그것을
-%       피했는데, 스윕 전에 animate = 0 으로 두기 때문이다. 4주차에도 같은 구멍이
+%       피했는데, 스윕 전에 animate = 0 으로 두기 때문이다. 5주차에도 같은 구멍이
 %       있었다. 스크립트만 돌려 보고 모델을 열어 보지 않으면 놓치는 종류의 결함이다.
 %
 %       This wrapper did not exist until 2026-09-08. W01_E_build_current had
@@ -32,7 +32,7 @@ function W01c_animate(u, v, r, N, E, psi, t)
 %       had always set animate = 1, but the function itself was absent, so
 %       opening W01_current.slx and pressing Run raised an undefined-function
 %       error. Only the section script escaped it, because it sets animate = 0
-%       before sweeping. Week 4 had the same hole. It is the kind of defect
+%       before sweeping. Week 5 had the same hole. It is the kind of defect
 %       that survives as long as the scripts are run but the model is not
 %       opened.
 

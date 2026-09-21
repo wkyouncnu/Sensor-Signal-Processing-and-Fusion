@@ -2,7 +2,7 @@ function f = export_diagram(mdl, folder)
 %EXPORT_DIAGRAM  모델의 블록도를 강의노트가 싣는 PNG 로 저장한다.
 %                Save a model's block diagram as the PNG the lecture embeds.
 %
-%   export_diagram('W02_surge_control')            -> ./img/W02_surge_control.png
+%   export_diagram('W03_surge_control')            -> ./img/W03_surge_control.png
 %   export_diagram(mdl, '/path/to/img')
 %
 %   **빌더의 끝에서 부른다.** 절 스크립트에서 부르지 않는다.

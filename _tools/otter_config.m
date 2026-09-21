@@ -4,12 +4,12 @@ function cfg = otter_config(name)
 %
 %   cfg = otter_config('base')          폰툰마다 고정 프로펠러 하나씩
 %                                       two fixed propellers, one per pontoon
-%   cfg = otter_config('aft_azimuth')   방향을 바꿀 수 있는 선미 추진기 둘 (9주차)
-%                                       two tilting stern thrusters (Week 9)
-%   cfg = otter_config('bow_thruster')  기본 구성에 선수 터널 추진기 하나 (10주차)
-%                                       base plus one bow tunnel thruster (Week 10)
-%   cfg = otter_config('quad_tilt')     ±45 도로 기우는 추진기 넷 (11주차)
-%                                       four tilting thrusters, ±45 deg (Week 11)
+%   cfg = otter_config('aft_azimuth')   방향을 바꿀 수 있는 선미 추진기 둘 (10주차)
+%                                       two tilting stern thrusters (Week 10)
+%   cfg = otter_config('bow_thruster')  기본 구성에 선수 터널 추진기 하나 (11주차)
+%                                       base plus one bow tunnel thruster (Week 11)
+%   cfg = otter_config('quad_tilt')     ±45 도로 기우는 추진기 넷 (12주차)
+%                                       four tilting thrusters, ±45 deg (Week 12)
 %
 %   네 구성은 모두 **같은 선체**를 쓴다. 다른 것은 추진기 모델과 제어 유효행렬 B
 %   뿐이다. 그래야 네 구성을 비교했을 때 그 차이가 구동장치의 차이이고 다른
@@ -35,9 +35,9 @@ function cfg = otter_config(name)
 %     alpha_max   azimuth limit [rad], NaN for a fixed thruster
 %     alpha_rlim  azimuth rate limit [rad/s], NaN for a fixed thruster
 %     input_mode  'n' for shaft speeds (Week 1), 'f' for the extended thrust
-%                 vector (Week 2 onward)
+%                 vector (Week 3 onward)
 %
-%   THE COLUMN RULE (Week 2). A thruster at (x, y) pushing along the unit
+%   THE COLUMN RULE (Week 3). A thruster at (x, y) pushing along the unit
 %   vector e = (e_x, e_y) contributes one column
 %
 %       [ e_x ; e_y ; x*e_y - y*e_x ]
@@ -85,7 +85,7 @@ switch cfg.name
         cfg.input_mode = 'n';                % Week 1 drives shaft speeds
 
     case 'aft_azimuth'
-        % Week 9. The two pontoon thrusters move aft and gain a servo.
+        % Week 10. The two pontoon thrusters move aft and gain a servo.
         cfg.n_thr = 2;
         cfg.tilt  = [true true];
         cfg.pos   = [ -l_a     -l_a   ;
@@ -95,7 +95,7 @@ switch cfg.name
         cfg.alpha_rlim = deg2rad([90 90]);
 
     case 'bow_thruster'
-        % Week 10. The base hull plus one fixed transverse thruster forward.
+        % Week 11. The base hull plus one fixed transverse thruster forward.
         cfg.n_thr = 3;
         cfg.tilt  = [false false false];
         cfg.pos   = [   0        0      l_f ;
@@ -106,7 +106,7 @@ switch cfg.name
         cfg.alpha_rlim = [NaN NaN NaN];
 
     case 'quad_tilt'
-        % Week 11. Four thrusters, each on a servo limited to +-45 deg.
+        % Week 12. Four thrusters, each on a servo limited to +-45 deg.
         cfg.n_thr = 4;
         cfg.tilt  = [true true true true];
         cfg.pos   = [  l_f      l_f     -l_a     -l_a  ;

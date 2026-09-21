@@ -1,6 +1,6 @@
 function ok = verify_alos(verbose)
-%VERIFY_ALOS  §4-9 의 ALOS 유도를 MSS 의 ALOSpsi.m 과 한 스텝씩 대조한다.
-%             Compare the ALOS derivation of §4-9 with MSS's ALOSpsi.m, one
+%VERIFY_ALOS  §5-9 의 ALOS 유도를 MSS 의 ALOSpsi.m 과 한 스텝씩 대조한다.
+%             Compare the ALOS derivation of §5-9 with MSS's ALOSpsi.m, one
 %             step at a time.
 %
 %   ok = verify_alos()        조용히 돌리고, 통과하면 true
@@ -9,11 +9,11 @@ function ok = verify_alos(verbose)
 %
 %   왜 대조 대상이 없을 수도 있는가 / why the reference may be missing
 %       이 볼트가 쓰는 MSS 는 2021 릴리스이고 거기에는 ALOSpsi.m 이 없다. ALOS 가
-%       MSS 에 들어간 것은 2023 이다. 그래서 §4-9 는 법칙을 직접 유도했고, 이
+%       MSS 에 들어간 것은 2023 이다. 그래서 §5-9 는 법칙을 직접 유도했고, 이
 %       함수는 그 유도를 최신 MSS 구현과 대조한다 — 그 파일을 찾을 수 있을 때만.
 %
 %       The MSS release used by this vault is from 2021 and does not contain
-%       ALOSpsi.m; ALOS entered MSS in 2023. §4-9 therefore derives the law
+%       ALOSpsi.m; ALOS entered MSS in 2023. §5-9 therefore derives the law
 %       itself, and this function checks that derivation against the newer
 %       implementation whenever that file can be found.
 %
@@ -56,7 +56,7 @@ end
 oldp = path;  cleanup = onCleanup(@() path(oldp));
 addpath(gnc);
 
-%% ---- W04 의 미션과 게인 -------------------------------------------------
+%% ---- W05 의 미션과 게인 -------------------------------------------------
 Delta = 8; gamma = 0.005; h = 0.02; R = 5;
 wpt.pos.x = [0 60 60  0 60]';
 wpt.pos.y = [0  0 60 60 120]';

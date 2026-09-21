@@ -47,7 +47,7 @@ function [k_new, done] = wp_switch(k, N, E, WP, R, mode)
 %
 %   THEY DIFFER WHENEVER y_e IS LARGE. With the vessel R metres short of the
 %   waypoint but 2R to the side, criterion 1 switches and criterion 2 does
-%   not. Section F of Week 4 measures that.
+%   not. Section F of Week 5 measures that.
 %
 %   MSS DOCUMENTATION SLIP, worth knowing before reading the source: the help
 %   text of ILOSpsi.m says "go to next waypoint when the along-track distance

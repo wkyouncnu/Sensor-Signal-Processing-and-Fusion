@@ -1,7 +1,7 @@
 # Week 3 · Laboratory Solutions
 
 - These are **reference** answers, not the only correct ones. The checker tests the physics, not the diagram.
-- Read them after attempting the problem.
+- Read them after attempting the problem. The scripts explain what to build **and why the alternatives were rejected**.
 
 ---
 
@@ -9,7 +9,7 @@
 
 ```matlab
 cd lectures/W03_simulink/solutions
-W03_S1_heading_loop          % builds W03_S1.slx — all three problems in one model
+W03_S1_speed_loop            % builds W03_S1.slx — all three problems in one model
 W03_S_expected               % regenerates the expected-result figures
 
 W03_check(1,'W03_S1')
@@ -17,72 +17,60 @@ W03_check(2,'W03_S1')
 W03_check(3,'W03_S1')
 ```
 
-All three pass and `check_overlaps('W03_S1')` is **0**. The output below is the measured one.
+All three pass, and `check_overlaps('W03_S1')` is **0**. The output below is the measured one.
 
 ```
   W03 problem 1
-  steady error at Kp = 30                   0.0362  (expected   0.0000 +- 0.05 deg)  PASS
-     overshoot at Kp = 30                  -0.0389  (expected  -0.0100 +- 0.25 %)  PASS
-  steady error at Kp = 100                  0.0065  (expected   0.0000 +- 0.05 deg)  PASS
-     overshoot at Kp = 100                  0.2400  (expected   0.2400 +- 0.25 %)  PASS
-  steady error at Kp = 300                  0.0019  (expected   0.0000 +- 0.05 deg)  PASS
-     overshoot at Kp = 300                  1.5261  (expected   1.5300 +- 0.25 %)  PASS
+  u_ss at X = 50 N                          0.6447  (expected   0.6447 +- 0.005 m/s)  PASS
+  u_ss at X = 100 N                         1.2894  (expected   1.2894 +- 0.005 m/s)  PASS
+  u_ss at X = 200 N                         2.5788  (expected   2.5788 +- 0.005 m/s)  PASS
 
   W03 problem 2
-  overshoot at Kd = 0  [%]                 11.7355  (zeta = 0.3265)
-  overshoot at Kd = 25  [%]                 4.0964  (zeta = 0.5179)
-  overshoot at Kd = 74.9  [%]              -0.0366  (zeta = 0.9000)
-  overshoot falls as Kd rises                                        PASS
+  u_ss at Kp = 100                          0.8448  (expected   0.8448 +- 0.005 m/s)  PASS
+  u_ss at Kp = 500                          1.2986  (expected   1.2986 +- 0.005 m/s)  PASS
+  u_ss at Kp = 2000                         1.4440  (expected   1.4440 +- 0.005 m/s)  PASS
 
   W03 problem 3
-  turn WITH the wrap                       19.9987  (expected  20.0000 +- 3 deg)  PASS
-  turn WITHOUT the wrap                  -339.9969  (expected -340.0000 +- 12 deg)  PASS
+  steady speed with PI                      1.5000  (expected   1.5000 +- 0.005 m/s)  PASS
+  steady error with PI                      0.0000  (expected   0.0000 +- 0.005 m/s)  PASS
+  overshoot with PI                         8.8327  [%]  (P alone had none)
 ```
 
 ---
 
-## The law, and the three decisions in it
+## Why one model and not three
 
-$$
-\tau_N = K_p\,\text{ssa}(\psi_d - \psi) - K_d\,r
-$$
+The three problems differ only in which parts of the loop are switched on:
 
-| | The choice | Why the alternative is worse |
-|---|---|---|
-| **The D term feeds back $r$** | one Selector on state 6 | $\mathrm{d}e/\mathrm{d}t$ agrees with $-r$ while $\psi_d$ is constant and disagrees at **every step**, where the command's derivative is an impulse that goes straight into the actuator. Nothing in this model is differentiated |
-| **The error is wrapped before the gain** | `ssa` inside the law | Without it a $20°$ command across the seam is executed as a $340°$ turn. Problem 3 measures exactly that |
-| **Both feedbacks are Goto/From tags** | `psi_fb`, `r_fb` | Two lines crossing the whole model backwards land on the forward path. `check_overlaps` is the check |
+| | `loop_closed` | $K_i$ | |
+|---|---|---|---|
+| Problem 1 | 0 | — | $X$ comes straight from `X_open` |
+| Problem 2 | 1 | 0 | proportional only |
+| Problem 3 | 1 | > 0 | proportional plus integral |
+
+Three separate models would hide the one fact the week is about: **the plant never changed and the thrust map never changed.** Every difference in the result came from the controller. The lecture's own `W03_surge_control.slx` is arranged the same way, which is why its section scripts can sweep a gain without rebuilding anything.
 
 ---
 
-## Why the steady error is zero, and why that is not a compliment to the controller
+## The three decisions worth defending
 
-$$
-M_{66}\,\ddot\psi + \big(\lvert N_r\rvert + K_d\big)\dot\psi + K_p\,\psi = K_p\,\psi_d
-$$
-
-The heading is the integral of the yaw rate, so the plant carries a **free integrator** and the loop is **type 1**. Week 2's plant had none, and no value of $K_p$ could reach the setpoint there.
-
-The same substitution answers Problem 2 without simulating anything: $K_d$ appears **beside the damping coefficient**, so raising it raises $\zeta$ and overshoot falls. In Week 2 the controlled variable was a velocity, its derivative was an acceleration, and the identical term sat beside the **mass**. The term did not change; the axis did.
+| | The choice | Why the alternative is worse |
+|---|---|---|
+| **Discrete integrator** | Discrete-Time Integrator at sample time `h` | A continuous integrator in a fixed-step model gives a solver-order mismatch. It does not raise an error — it produces a slow drift that looks like a physical effect |
+| **Feedback is $u$, state 1** | one Selector, then one line | Feeding back $\sqrt{u^2+v^2}$ agrees here and disagrees in Week 5. A loop written against the wrong signal keeps working until exactly the moment it matters |
+| **Feedback is a Goto/From tag** | `u_fb` | Drawn as a line it crosses the whole model backwards and lands on the forward path. `check_overlaps` reported exactly one overlapping pair when it was a line |
 
 ---
 
 ## The layout trap this model walked into
 
-The five constants inside the allocation were laid out at `[90, 60+34i, 150, 84+34i]`. That puts `k_neg`'s centre on $y = 140$ — which is exactly the row the `X_ff` inport feeds along. `check_overlaps` found the two lines drawn on top of each other.
+All three inputs of a Switch block arrive on its **left edge**. Autorouting therefore gives them the same vertical lane, and two of them end up drawn on top of each other — `check_overlaps` found precisely that at $x = 425$.
 
-The fix is to offset the ladder so that **no constant's centre lands on an inport row**:
+The fix is `_tools/lane_line.m`, which forces a chosen vertical lane per signal:
 
 ```matlab
-'Position', [90 78+34*i 150 102+34*i]
+lane_line(mdl, 'loop_closed', 1, 'loop', 2, 424);
+lane_line(mdl, 'X_open',      1, 'loop', 3, 412);
 ```
 
-The general lesson: when a subsystem has inports at fixed heights and a column of constants beside them, the two ladders have to be interleaved deliberately. Autorouting will not do it, and the diagram looks fine until it is printed.
-
----
-
-## One measurement subtlety in Problem 3
-
-The checker reads $\psi$ **unwrapped** — straight from state 12, without applying `ssa`. That is deliberate: a wrapped angle cannot tell $+20°$ from $-340°$, because both end at the same physical heading. The quantity the problem is about is the **turn executed**, not the heading reached.
-
-The two runs also command from $t = 0$ rather than stepping at $t = 5$ s. With a step, the two runs are already in different places when it arrives, and the comparison stops being about the wrap.
+This is worth knowing before building any model with a Switch or a multi-input Mux, which is most of the models from Week 5 onward.

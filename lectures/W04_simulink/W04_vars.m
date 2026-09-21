@@ -1,83 +1,58 @@
 function V = W04_vars()
-%W04_VARS  W04_guidance.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
-%          Every variable W04_guidance.slx needs, in one struct.
+%W04_VARS  W04_heading_control.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
+%          Every variable W04_heading_control.slx needs, in one struct.
 %
-%   1주차부터 3주차까지와 같은 구조이다. W04_0_setup 은 같은 값들을 기본
-%   작업공간에 채워 학생이 모델을 열고 Run 을 누를 수 있게 하고, 이 함수는 같은
-%   값들을 구조체로 돌려주어 run_sim 이 값 하나만 바꾸어 돌릴 때 작업공간이
-%   마지막 실행의 상태로 남지 않게 한다.
+%   3주차와 같은 구조이다. W04_0_setup 은 같은 값들을 기본 작업공간에 채워
+%   학생이 모델을 열고 Run 을 누를 수 있게 하고, 이 함수는 같은 값들을 구조체로
+%   돌려주어 run_sim 이 값 하나만 바꾸어 돌릴 때 작업공간이 마지막 실행의 상태로
+%   남지 않게 한다.
 %
-%   The same arrangement as Weeks 1 to 3: W04_0_setup fills the base workspace
-%   so that opening the model and pressing Run is enough, while this returns
-%   the same numbers as a struct so that run_sim can vary one of them without
+%   The same arrangement as Week 3: W04_0_setup fills the base workspace so
+%   that opening the model and pressing Run is enough, while this returns the
+%   same numbers as a struct so that run_sim can vary one of them without
 %   leaving the workspace in the state of the last run.
+%
+%   The two plant numbers are checked against otter.m by verify_constants.
 
 mss_path();
 c = otter_config('base');
 
-%  ---- the mission -------------------------------------------------------
-%  Five waypoints, four legs of 60 m. Three sides of a square and then a
-%  diagonal, so the pattern contains a 90 deg corner AND a 135 deg one: a
-%  gentle turn and a hard one, which is what section F needs.
-V.WP = [   0    0
-          60    0
-          60   60
-           0   60
-          60  120 ];
+%  ---- the yaw axis, from otter.m -----------------------------------------
+V.M66 = 42.65;          % (6,6) of M, incl. added mass   [kg m^2]
+V.Nr  = -42.65;         % linear yaw damping, = -M66/T_yaw with T_yaw = 1 s
 
-%  The model reads the two columns separately, because a Constant block holds
-%  a vector and not a matrix. WP stays for the plotting functions.
-V.WP_N = V.WP(:,1);
-V.WP_E = V.WP(:,2);
+%  ---- command -------------------------------------------------------------
+V.psi_1 = 60;   V.psi_2 = 60;   V.t_up = 5;   V.t_dn = 1e6;
+V.X_ff  = 60;                   % constant surge command, so the vessel moves
 
-V.Delta    = 8;        % look-ahead distance [m] — 4 x hull length
-V.R_switch = 5;        % switching parameter [m] — must be < shortest leg
-V.sw_mode  = 1;        % 1 = along-track (MSS), 2 = circle of acceptance
-
-%  ---- the four guidance laws --------------------------------------------
-%  Row 1 atan2, row 2 LOS, row 3 ILOS, row 4 ALOS. They differ in one thing
-%  each and share everything else, which is what makes the comparison honest.
-V.kappa = 0.3;         % ILOS integral gain constant, Ki = kappa/Delta
-V.gamma = 0.005;       % ALOS adaptation gain [rad per metre-second]
-V.guid_show = 0;       % 0 = all four on the plots, 1..4 = one of them
-
-%  BOTH GAINS ARE SMALL, AND THE UNITS SAY WHY. The ALOS update is
+%  ---- 제어기 / the controller --------------------------------------------
+%  tau_N = Kp ssa(psi_d - psi) + Kd (c_d r_d - r)
 %
-%      d/dt b_hat = gamma * Delta * y_e / sqrt(Delta^2 + y_e^2)
+%  c_d 는 미분항의 설정값 가중이며, W03 §3-4 의 것과 같은 뜻이다.
+%    c_d = 0  측정한 요 각속도만 되먹임한다. MSS 의 관용이며 이번 주의 기본값
+%    c_d = 1  명령한 각속도와의 차이를 되먹임한다. 명령이 계단인 이번 주에는
+%             r_d = 0 이므로 두 값이 같은 결과를 준다
 %
-%  whose right-hand side approaches gamma*Delta as y_e grows. With Delta = 8 m
-%  a gamma of 0.02 gives 0.16 rad/s, which drives the estimate through a
-%  radian in six seconds and makes it chase the corner transients instead of
-%  the current. Section H sweeps both gains and these two values are what it
-%  chose: gamma = 0.005 settles the ALOS vessel at 0.006 m and kappa = 0.3
-%  settles the ILOS one at 0.010 m, both in a 0.3 m/s beam current.
+%  c_d is the setpoint weight of the derivative term, in the sense of §3-4 in
+%  Week 3:
+%    c_d = 0  feed back the measured yaw rate alone, the MSS convention and
+%             this week's default
+%    c_d = 1  feed back the error in rate. This week's command is a step, so
+%             r_d is zero and the two give the same result
+V.Kp = 100.00;  V.Kd = 74.90;   V.use_ssa = 1;
+V.c_d = 0;
 
-%  ---- the heading autopilot, one set of gains for all four rows ---------
-%  The same P-D law as Week 3, at the same gains. Nothing here is retuned
-%  between rows: every difference in the results belongs to the guidance.
-V.Kp = 100.00;         % [N m per rad]
-V.Kd = 74.90;          % [N m per rad/s]
-V.X_ff = 60;           % constant surge force [N] -> about 0.77 m/s
-
-%  ---- actuator and plant -------------------------------------------------
+%  ---- actuator and plant --------------------------------------------------
 V.k_pos = c.k_pos;  V.k_neg = c.k_neg;
 V.n_max = c.n_max;  V.n_min = c.n_min;  V.y_pont = c.y_pont;
 V.mp = 25;  V.rp = [0.05 0 -0.35]';
-V.x0 = zeros(12,1);
+V.V_c = 0;  V.beta_c = 0;  V.x0 = zeros(12,1);
 
-%  ---- the current --------------------------------------------------------
-%  Off by default. Sections G and H switch it on; that is where ILOS and ALOS
-%  earn their keep and plain LOS cannot.
-V.V_c = 0;  V.beta_c = 0;
+%  ---- simulation ----------------------------------------------------------
+V.h = 0.02;  V.T_final = 40;
 
-%  ---- simulation ---------------------------------------------------------
-%  500 s is chosen so the last quarter of the run is well clear of the final
-%  135 deg corner at about 222 s: a settled number measured across a corner
-%  is not a settled number.
-V.h = 0.02;  V.T_final = 500;
-
-%  ---- live view (off; the section scripts plot at the end) ---------------
-V.animate = 0;  V.animate_every = 1.0;
-V.track_Nmin = -20;  V.track_Nmax = 200;
-V.track_Emin = -30;  V.track_Emax = 220;
+%  ---- live view (off; the section scripts plot at the end) ----------------
+V.animate = 0;  V.animate_every = 0.5;
+V.track_Nmin = -10;  V.track_Nmax = 40;
+V.track_Emin = -25;  V.track_Emax = 25;
 end

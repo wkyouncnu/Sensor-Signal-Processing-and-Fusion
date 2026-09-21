@@ -1,6 +1,6 @@
 # Week 4 · Laboratory Solutions
 
-- Reference answers, not the only correct ones. The checker tests the physics, not the diagram.
+- These are **reference** answers, not the only correct ones. The checker tests the physics, not the diagram.
 - Read them after attempting the problem.
 
 ---
@@ -9,7 +9,7 @@
 
 ```matlab
 cd lectures/W04_simulink/solutions
-W04_S1_los                   % builds W04_S1.slx — both laws in one model
+W04_S1_heading_loop          % builds W04_S1.slx — all three problems in one model
 W04_S_expected               % regenerates the expected-result figures
 
 W04_check(1,'W04_S1')
@@ -17,61 +17,72 @@ W04_check(2,'W04_S1')
 W04_check(3,'W04_S1')
 ```
 
-All three pass and `check_overlaps('W04_S1')` is **0**.
+All three pass and `check_overlaps('W04_S1')` is **0**. The output below is the measured one.
 
 ```
   W04 problem 1
-  pi_p on leg 1                             0.0000  (expected   0.0000 +- 1e-09 rad)  PASS
-  settled cross-track error                -0.0306  (expected   0.0000 +- 0.05 m)  PASS
-  settled heading command                   0.0038  (expected   0.0000 +- 0.01 rad)  PASS
-  it started 18 m off the line             18.0000  (expected  18.0000 +- 0.05 m)  PASS
+  steady error at Kp = 30                   0.0362  (expected   0.0000 +- 0.05 deg)  PASS
+     overshoot at Kp = 30                  -0.0389  (expected  -0.0100 +- 0.25 %)  PASS
+  steady error at Kp = 100                  0.0065  (expected   0.0000 +- 0.05 deg)  PASS
+     overshoot at Kp = 100                  0.2400  (expected   0.2400 +- 0.25 %)  PASS
+  steady error at Kp = 300                  0.0019  (expected   0.0000 +- 0.05 deg)  PASS
+     overshoot at Kp = 300                  1.5261  (expected   1.5300 +- 0.25 %)  PASS
 
   W04 problem 2
-  LOS   worst |y_e| after 90 s              0.0945 m
-  atan2 worst |y_e| after 90 s              3.7812 m
-  atan2 still reaches the waypoint          1.4216  (expected   0.0000 +- 6 m)  PASS
+  overshoot at Kd = 0  [%]                 11.7355  (zeta = 0.3265)
+  overshoot at Kd = 25  [%]                 4.0964  (zeta = 0.5179)
+  overshoot at Kd = 74.9  [%]              -0.0366  (zeta = 0.9000)
+  overshoot falls as Kd rises                                        PASS
 
   W04 problem 3
-  measured crab angle beta_c               22.4615 deg
-  settled offset y_e                        3.3011  (expected   3.3074 +- 0.15 m)  PASS
-  the prediction Delta tan(beta_c)          3.3074  (expected   3.3011 +- 0.15 m)  PASS
-  heading error while offset persists      -0.0036  (expected   0.0000 +- 0.5 deg)  PASS
+  turn WITH the wrap                       19.9987  (expected  20.0000 +- 3 deg)  PASS
+  turn WITHOUT the wrap                  -339.9969  (expected -340.0000 +- 12 deg)  PASS
 ```
-
-Problem 3 is the one worth pausing on. The prediction $\Delta\tan\beta_c = 3.3074$ m and the measurement $3.3011$ m agree to **six millimetres**, and they do so while the heading error is $-0.004°$. Section 4-7's claim is not an approximation.
 
 ---
 
-## The three decisions worth defending
+## The law, and the three decisions in it
+
+$$
+\tau_N = K_p\,\text{ssa}(\psi_d - \psi) - K_d\,r
+$$
 
 | | The choice | Why the alternative is worse |
 |---|---|---|
-| **One rotation, both errors** | $x_e^{\,p}$ and $y_e^{\,p}$ from the same matrix product | A distance formula plus a sign test gives $y_e^{\,p}$ and throws $x_e^{\,p}$ away. Section 4-6's switching test needs the along-track coordinate, and computing it separately invites the two to disagree |
-| **`atan2` for $\pi_p$, `atan` for the correction** | two different functions on purpose | A leg can point into any quadrant, so $\pi_p$ needs both arguments. The aim-point vector cannot leave the right half-plane of $\{p\}$ because $\Delta > 0$, so the correction does not |
-| **The command is not wrapped** | wrapping happens in the autopilot, on the **error** | A wrapped command is harmless here and wrong in general: differentiate it for a feed-forward term and the $2\pi$ jump becomes an impulse |
+| **The D term feeds back $r$** | one Selector on state 6 | $\mathrm{d}e/\mathrm{d}t$ agrees with $-r$ while $\psi_d$ is constant and disagrees at **every step**, where the command's derivative is an impulse that goes straight into the actuator. Nothing in this model is differentiated |
+| **The error is wrapped before the gain** | `ssa` inside the law | Without it a $20°$ command across the seam is executed as a $340°$ turn. Problem 3 measures exactly that |
+| **Both feedbacks are Goto/From tags** | `psi_fb`, `r_fb` | Two lines crossing the whole model backwards land on the forward path. `check_overlaps` is the check |
 
 ---
 
-## Why both laws live in one block
+## Why the steady error is zero, and why that is not a compliment to the controller
 
-The comparison in Problem 2 is only worth making if the plant, the autopilot and the allocation are **bit-for-bit identical** between the two runs. A flag inside one guidance block guarantees that; two models do not.
+$$
+M_{66}\,\ddot\psi + \big(\lvert N_r\rvert + K_d\big)\dot\psi + K_p\,\psi = K_p\,\psi_d
+$$
 
-It is the same reason the lecture's own `W04_guidance.slx` runs four laws through one autopilot bank, and the same reason Week 2 held three controllers in one model.
+The heading is the integral of the yaw rate, so the plant carries a **free integrator** and the loop is **type 1**. Week 3's plant had none, and no value of $K_p$ could reach the setpoint there.
 
----
-
-## The measurement window, and why it matters
-
-Problem 2's first draft compared the two laws from $t = 60$ s and the LOS vessel **failed its own check** at $0.44$ m. Nothing was wrong with the model: at $60$ s the LOS vessel is still finishing its approach, so the comparison was between a transient and a steady state.
-
-Moving the window to $t \geq 90$ s — the same window Problem 1 uses — gives $0.09$ m against $3.78$ m.
-
-The general lesson is the one this course applies to its own figures: **a measured number means nothing without the sentence that says what was measured.** Choosing a window that flatters one side is as much an error as computing the wrong quantity.
+The same substitution answers Problem 2 without simulating anything: $K_d$ appears **beside the damping coefficient**, so raising it raises $\zeta$ and overshoot falls. In Week 3 the controlled variable was a velocity, its derivative was an acceleration, and the identical term sat beside the **mass**. The term did not change; the axis did.
 
 ---
 
-## What is deliberately missing
+## The layout trap this model walked into
 
-No waypoint switching, no ILOS, no ALOS. Leg 1 only.
+The five constants inside the allocation were laid out at `[90, 60+34i, 150, 84+34i]`. That puts `k_neg`'s centre on $y = 140$ — which is exactly the row the `X_ff` inport feeds along. `check_overlaps` found the two lines drawn on top of each other.
 
-Switching is section 4-6 and needs the along-track error the guidance already computes; the two adaptive laws are sections 4-8 and 4-9. Problem 3 exists to make the reader want them: it ends with a vessel that is holding its commanded heading perfectly and is still $3.3$ m from where it was asked to be.
+The fix is to offset the ladder so that **no constant's centre lands on an inport row**:
+
+```matlab
+'Position', [90 78+34*i 150 102+34*i]
+```
+
+The general lesson: when a subsystem has inports at fixed heights and a column of constants beside them, the two ladders have to be interleaved deliberately. Autorouting will not do it, and the diagram looks fine until it is printed.
+
+---
+
+## One measurement subtlety in Problem 3
+
+The checker reads $\psi$ **unwrapped** — straight from state 12, without applying `ssa`. That is deliberate: a wrapped angle cannot tell $+20°$ from $-340°$, because both end at the same physical heading. The quantity the problem is about is the **turn executed**, not the heading reached.
+
+The two runs also command from $t = 0$ rather than stepping at $t = 5$ s. With a step, the two runs are already in different places when it arrives, and the comparison stops being about the wrap.
