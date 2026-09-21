@@ -49,8 +49,7 @@ summary: Turning a list of waypoints into a heading command, and the three laws 
 - **This week**: where the heading command comes from; the two errors that define path following, both from one rotation; and three guidance laws — LOS, ILOS, ALOS — each derived, each with its stability argument, all four vessels racing side by side on one model
 
 > [!important] Prerequisites from the previous week
-> - Week 4 must run. `W04_0_setup` followed by `W04_C_proportional_only` should report $\zeta = 0.9000$ and a heading that settles at $60°$.
-> - This week reuses that heading autopilot **unchanged and unretuned**. If Week 4 does not run, nothing in this week will.
+> - Week 4 tuned a heading autopilot on the Otter. This week's models carry their own copy of a heading autopilot of that kind — proportional on the wrapped heading error, derivative on the yaw rate, gains in `W05_0_setup.m` — and use it **unchanged and unretuned** in every vessel.
 > - Week 4 §4-4 measured the crab angle and predicted that a path-following law would pay for it. §5-7 is that bill.
 
 ---
@@ -75,7 +74,7 @@ After this week the learner should be able to:
 | Week 1 §1-4 | body velocity is not the rate of change of position — the same rotation reappears in §5-3 |
 | Week 1 §1-13 | the ocean current enters as a velocity, so the vessel's speed **through the water** differs from its speed over ground |
 | Week 4 §4-4 | the crab angle and the course $\chi = \psi + \beta$, with $\beta = \operatorname{atan2}(v,u)$. The same symbol is used here, and §5-9 adds $\hat\beta$ for the estimate of it and $\tilde\beta$ for the estimation error |
-| Week 4 §4-5 | the P–D heading autopilot, used here **unchanged** so that the only difference between the four vessels is the guidance law |
+| Week 4 §4-5 | how a heading autopilot is tuned on the Otter; a P–D autopilot of that kind is used here **unchanged** so that the only difference between the four vessels is the guidance law |
 | Appendix A1 | the column rule and the allocation $\boldsymbol{\tau} = \mathbf{B}\mathbf{f}$ |
 
 | Software | Requirement |

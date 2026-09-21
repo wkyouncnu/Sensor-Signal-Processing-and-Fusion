@@ -44,7 +44,7 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W01 | [Vessel Kinematics and the Otter Motion Model](lectures/W01_Vessel_Kinematics_and_the_Otter_Model.md) | `W01_openloop` |
 | W02 | [PID Control Fundamentals](lectures/W02_PID_Control_Fundamentals.md) | `W02_B_three_ways` · `W02_B_second_order` · `W02_C_P` … `W02_I_tuning` (MSS 불필요) |
 | W03 | [Surge Speed Control](lectures/W03_Surge_Speed_Control.md) | `W03_C_open_loop` · `W03_D_P` · `W03_E_PID` · `W03_F_windup` · `W03_G_tuning` (model-free tuning) |
-| W04 | [Heading Control](lectures/W04_Heading_Control.md) | `W04_heading_control` |
+| W04 | [Heading Control](lectures/W04_Heading_Control.md) | `W04_C_open_loop` · `W04_D_P` · `W04_E_PD` · `W04_F_PID` · `W04_G_wrap` · `W04_H_tuning` (model-free tuning) |
 | W05 | [Waypoint Following and LOS Guidance](lectures/W05_Waypoint_Following_and_LOS_Guidance.md) | `W05_guidance` |
 | A1 | [Actuation and the Control Effectiveness Matrix](lectures/A1_Actuation_and_the_Control_Effectiveness_Matrix.md) (부록) | `A1_actuation` |
 

@@ -6,25 +6,19 @@ function pass = W04_check(problem, mdl)
 %   W04_check(2, 'W04_P1_kim')  다른 모델을 검사한다 / checks another model
 %   pass = W04_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   아래 목표값은 모두 강의의 절 스크립트가 실제로 측정한 것이다. 체커는 강의와
-%   **같은 정의**로 재야 한다 — 다른 정의로 재면 옳은 제출물이 떨어진다.
-%   Every target below was measured by the lecture's own section scripts, and
-%   the checker must measure by the same definitions: measured differently, a
-%   correct submission fails.
+%   목표값은 모두 강의 절 스크립트가 잰 것이다 (10 도 선회, t_step = 5 s).
+%   Every target was measured by the lecture's section scripts (a 10 deg turn at 5 s).
 %
-%   무엇을 검사하며 이 수치들은 어디서 왔는가
-%   what is being checked, and where these numbers come from
+%     Problem 1   P only: steady error 0 at every gain;
+%                 overshoot 5.8 % at Kp = 100, 12.2 % at Kp = 300          §D
+%     Problem 2   filtered D on the error, Kp = 300:
+%                 overshoot 12.18 / 4.10 / 0.39 % at Kd = 0 / 50 / 100     §E
+%     Problem 3   the wrap: from 170 deg, command -170 deg:
+%                 a 20 deg turn with ssa, 340 deg the other way without     §G
 %
-%     Problem 1   steady heading error, proportional only     0, at EVERY gain
-%                 overshoot grows with Kp: 0.24 % at 100, 1.53 % at 300   §3-C
-%     Problem 2   overshoot FALLS as Kd rises                 §3-D
-%                 zeta = (|Nr| + Kd) / (2 sqrt(Kp M66))
-%     Problem 3   with the wrap, a command across the seam is answered by the
-%                 SHORT turn; without it, by the long way round
-%
-%   WHAT THE MODEL MUST CONTAIN
-%
+%   모델에 필요한 것 / what the model must contain
 %     xlog   To Workspace, 'Structure With Time', the plant's 12 states
+%     변수 이름 / variable names: Kp, Ki, Kd, Nf, use_ssa, psi_step, t_step
 %
 %   See also W04_P1_START, W04_0_SETUP.
 
@@ -51,107 +45,66 @@ end
 
 % =========================================================================
 function pass = check_p1(mdl)
-%  Proportional only. The steady error is zero at every gain — that is the
-%  whole contrast with Week 3, and it is structural.
-%  The overshoot targets are section C's measured values. Comparing wn with
-%  sqrt(Kp/M66) would be comparing a number with itself and would pass on a
-%  model that does nothing at all.
+%  P 만. 모든 게인에서 정상상태 오차가 0 이다 — 3주차와의 차이 / P only: no error at any gain
 pass = true;
-G = [30 100 300];  MPWANT = [-0.01 0.24 1.53];
-for i = 1:3
-    y = run_student(mdl, struct('Kp',G(i), 'Kd',0, 'use_ssa',1, ...
-                                'psi_1',60, 'psi_2',60, 'T_final',40));
-    k = y.t >= 30;
-    pass = report(pass, sprintf('steady error at Kp = %g', G(i)), ...
-                  mean(60 - y.psi(k)), 0, 0.05, 'deg');
-    kk = y.t >= 5;
-    pass = report(pass, sprintf('   overshoot at Kp = %g', G(i)), ...
-                  100*(max(y.psi(kk)) - 60)/60, MPWANT(i), 0.25, '%');
+G = [100 300];  WANT = [5.8 12.2];
+for i = 1:2
+    y = run_student(mdl, struct('Kp',G(i), 'Kd',0));
+    pass = report(pass, sprintf('steady error at Kp = %g', G(i)), 10 - y.psi(end), 0, 0.05, 'deg');
+    [Mp, ~] = step_metrics(y.t, y.psi, 10, 5);
+    pass = report(pass, sprintf('   overshoot at Kp = %g', G(i)), Mp, WANT(i), 0.5, '%');
 end
-fprintf('\n     Zero at EVERY gain, and nothing was tuned to achieve it. The\n');
-fprintf('     heading is the integral of the yaw rate, psi = int r, so the\n');
-fprintf('     plant carries a free integrator and the loop is TYPE 1. Week 3\n');
-fprintf('     could not reach its setpoint at any gain. The difference is one\n');
-fprintf('     structural fact about the axis, not a better controller.\n');
+fprintf('\n     No error at any gain: the heading is the sum of the turn rate, so\n');
+fprintf('     the plant already contains an integrator. Week 3 left an error at\n');
+fprintf('     every gain. And unlike Week 3, a larger gain rings more.\n');
 end
 
 % =========================================================================
 function pass = check_p2(mdl)
-%  Derivative action. Overshoot falls as Kd rises — the opposite of Week 3.
-pass = true;  M66 = 42.65;  Nr = -42.65;  Kp = 100;
-Mp = zeros(1,3);  K = [0 25 74.9];
+%  거른 미분 Kd Nf s/(s + Nf) 를 오차에 / the filtered derivative on the error
+pass = true;
+K = [0 50 100];  WANT = [12.18 4.10 0.39];
 for i = 1:3
-    y = run_student(mdl, struct('Kp',Kp, 'Kd',K(i), 'use_ssa',1, ...
-                                'psi_1',5, 'psi_2',5, 'T_final',40));
-    k = y.t >= 5;
-    Mp(i) = 100*(max(y.psi(k)) - 5)/5;
-    z = (abs(Nr) + K(i))/(2*sqrt(Kp*M66));
-    fprintf('  %-38s %9.4f  (zeta = %.4f)\n', ...
-            sprintf('overshoot at Kd = %g  [%%]', K(i)), Mp(i), z);
+    y = run_student(mdl, struct('Kp',300, 'Kd',K(i)));
+    [Mp, ~] = step_metrics(y.t, y.psi, 10, 5);
+    pass = report(pass, sprintf('overshoot at Kd = %g', K(i)), max(Mp,0), WANT(i), 0.5, '%');
 end
-pass = report(pass, 'overshoot at Kd = 0', Mp(1), 11.74, 1.0, '%');
-if ~(Mp(1) > Mp(2) && Mp(2) > Mp(3))
-    fprintf('  %-38s %s\n', 'overshoot must FALL as Kd rises', 'FAIL');
-    pass = false;
-else
-    fprintf('  %-38s %s\n', 'overshoot falls as Kd rises', 'PASS');
-end
-pass = report(pass, 'overshoot at Kd = 74.9 (zeta = 0.9)', Mp(3), 0, 0.5, '%');
-fprintf('\n     Substituting the law into the yaw equation gives\n');
-fprintf('        M66 psi_ddot + (|Nr| + Kd) psi_dot + Kp psi = Kp psi_d\n');
-fprintf('     so Kd sits beside the DAMPING. In Week 3 the controlled variable\n');
-fprintf('     was a velocity, its derivative was an acceleration, and the same\n');
-fprintf('     term sat beside the MASS. The term did not change; the axis did.\n');
+fprintf('\n     On the heading the derivative damps, as on the mass of Week 2 —\n');
+fprintf('     and unlike the speed loop of Week 3, where it made things worse.\n');
 end
 
 % =========================================================================
 function pass = check_p3(mdl)
-%  The wrap. A command 20 deg the other side of the seam.
-%
-%  The vessel starts at psi = 170 deg and is asked for -170 deg. The short
-%  way is +20 deg through the seam; the long way is -340 deg.
+%  감김: 170 도에서 -170 도로. 두 실행 모두 t = 0 에 같은 오차로 시작한다
+%  The wrap: from 170 deg to -170 deg; both runs start at t = 0 with the same error
 pass = true;
 x0 = zeros(12,1);  x0(12) = deg2rad(170);
-
-yOn  = run_student(mdl, struct('Kp',100,'Kd',74.9,'use_ssa',1, ...
-                              'psi_1',-170,'psi_2',-170,'t_up',0,'T_final',60), x0);
-yOff = run_student(mdl, struct('Kp',100,'Kd',74.9,'use_ssa',0, ...
-                              'psi_1',-170,'psi_2',-170,'t_up',0,'T_final',60), x0);
-
-swOn  = yOn.psi(end)  - 170;      % unwrapped: how far the hull actually turned
-swOff = yOff.psi(end) - 170;
-pass = report(pass, 'turn WITH the wrap',    swOn,  20,   3.0, 'deg');
-pass = report(pass, 'turn WITHOUT the wrap', swOff, -340, 12.0, 'deg');
-fprintf('\n     With the wrap the vessel takes the 20 deg turn through the seam.\n');
-fprintf('     Without it the error is computed as -340 deg and the vessel goes\n');
-fprintf('     the long way round — seventeen times further, for the same\n');
-fprintf('     commanded heading. ssa is one line of code and it is not optional.\n');
+V = struct('Kp',300, 'Kd',100, 'psi_step',-170, 't_step',0, 'T_final',60);
+V.use_ssa = 1;  yOn  = run_student(mdl, V, x0);
+V.use_ssa = 0;  yOff = run_student(mdl, V, x0);
+pass = report(pass, 'turn WITH the wrap',    yOn.psi(end)  - 170,   20,  3.0, 'deg');
+pass = report(pass, 'turn WITHOUT the wrap', yOff.psi(end) - 170, -340, 12.0, 'deg');
+fprintf('\n     With ssa the vessel turns 20 deg through the seam; without it,\n');
+fprintf('     340 deg the other way for the same commanded heading.\n');
 end
 
 % =========================================================================
 function y = run_student(mdl, V, x0)
 if nargin < 3, x0 = zeros(12,1); end
+D = struct('Kp',300, 'Ki',0, 'Kd',0, 'Nf',20, 'use_ssa',1, 'psi_step',10, 't_step',5, 'T_final',40);
+f = fieldnames(V);
+for i = 1:numel(f), D.(f{i}) = V.(f{i}); end
 cfg = otter_config('base');
 b = 'base';
-assignin(b,'h',0.02);          assignin(b,'T_final',V.T_final);
-assignin(b,'Kp',V.Kp);         assignin(b,'Kd',V.Kd);
-assignin(b,'use_ssa',V.use_ssa);
-assignin(b,'psi_1',V.psi_1);   assignin(b,'psi_2',V.psi_2);
-%  Problem 3 commands from t = 0 so that both runs start with the SAME error
-%  and differ only in how that error is computed. With a step at t = 5 the two
-%  runs are already in different places when the step arrives, and the
-%  comparison stops being about the wrap.
-if isfield(V,'t_up'), t_up = V.t_up; else, t_up = 5; end
-assignin(b,'t_up',t_up);       assignin(b,'t_dn',1e6);
-assignin(b,'X_ff',60);
-assignin(b,'M66',42.65);       assignin(b,'Nr',-42.65);
+f = fieldnames(D);
+for i = 1:numel(f), assignin(b, f{i}, D.(f{i})); end
+assignin(b,'h',0.02);          assignin(b,'X_ff',60);
 assignin(b,'k_pos',cfg.k_pos); assignin(b,'k_neg',cfg.k_neg);
 assignin(b,'n_max',cfg.n_max); assignin(b,'n_min',cfg.n_min);
-assignin(b,'y_pont',0.395);
+assignin(b,'y_pont',cfg.y_pont);
 assignin(b,'mp',25);           assignin(b,'rp',[0.05 0 -0.35]');
 assignin(b,'V_c',0);           assignin(b,'beta_c',0);
 assignin(b,'x0',x0);
-assignin(b,'animate',0);       assignin(b,'animate_every',0.5);
 
 evalin(b, sprintf('bdclose(''%s'');', mdl));
 load_system(mdl);
@@ -168,15 +121,14 @@ x = squeeze(S.signals.values);  if size(x,1)==12, x = x.'; end
 if size(x,2) < 12
     error('W04_check:width', 'xlog has %d columns; feed it all 12 states.', size(x,2));
 end
-%  psi is NOT wrapped here. Problem 3 needs the accumulated turn, and a
-%  wrapped angle cannot tell 20 deg from -340 deg.
-y.t = S.time;  y.psi = rad2deg(x(:,12));  y.r = rad2deg(x(:,6));
+%  psi 를 감지 않는다 — 문제 3 은 실제로 돈 각이 필요하다
+%  psi is not wrapped: problem 3 needs the accumulated turn
+y.t = S.time;  y.psi = rad2deg(x(:,12));
 end
 
 function ok = report(ok, what, got, want, tol, unit)
 good = abs(got - want) <= tol;
 if good, verdict = 'PASS'; else, verdict = 'FAIL'; end
-fprintf('  %-38s %9.4f  (expected %8.4f +- %.3g %s)  %s\n', ...
-        what, got, want, tol, unit, verdict);
+fprintf('  %-38s %9.4f  (expected %8.4f +- %.3g %s)  %s\n', what, got, want, tol, unit, verdict);
 ok = ok && good;
 end

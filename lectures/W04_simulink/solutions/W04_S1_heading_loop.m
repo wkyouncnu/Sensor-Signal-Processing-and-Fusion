@@ -5,187 +5,70 @@ function W04_S1_heading_loop(mdl)
 %   >> W04_S1_heading_loop      W04_S1.slx 를 만든다 / builds W04_S1.slx
 %   >> W04_check(1,'W04_S1')    1, 2, 3 을 차례로 / and 2, and 3
 %
-%   제어법칙 / the law
+%   제어법칙 / the law — 강의 모델과 같은 식 / the same as the lecture's models
 %
-%       tau_N = Kp * ssa(psi_d - psi) - Kd * r
+%       e     = ssa(psi_d - psi)       (use_ssa = 0 이면 감지 않음 / raw when use_ssa = 0)
+%       tau_N = Kp e + Ki int(e) + Kd Nf s/(s + Nf) e
 %
-%   THE THREE DECISIONS, AND WHY EACH ONE GOES THAT WAY
-%
-%   1  THE DERIVATIVE TERM FEEDS BACK THE YAW RATE r, NOT THE DERIVATIVE OF
-%      THE ERROR. The two agree while psi_d is constant and disagree at every
-%      step, where d(psi_d)/dt is an impulse. Differentiating the error puts
-%      that impulse straight into the actuator; feeding back r does not.
-%      The plant already measures r - it is state 6 - so nothing is
-%      differentiated anywhere in this model.
-%
-%   2  THE ERROR IS WRAPPED BEFORE THE GAIN SEES IT. ssa maps any angle to
-%      (-pi, pi], so a command 10 deg the other side of the +-180 deg seam is
-%      answered by a 10 deg turn and not by a 350 deg one. Problem 3 removes
-%      the wrap to show what it was doing.
-%
-%   3  Kd SITS BESIDE THE DAMPING, NOT BESIDE THE INERTIA. Substituting the
-%      law into the yaw equation gives
-%
-%          M66 psi_ddot + (|Nr| + Kd) psi_dot + Kp psi = Kp psi_d
-%
-%      so raising Kd raises zeta and overshoot FALLS. In Week 3 the controlled
-%      variable was a velocity, its derivative was an acceleration, the same
-%      term sat beside the MASS, and the response got worse. The term did not
-%      change; the axis did.
-%
-%   WHY THE STEADY ERROR IS ZERO AT EVERY GAIN
-%
-%   The heading is the integral of the yaw rate, psi = int r, so the plant
-%   carries a free integrator and the loop is TYPE 1. Week 3's plant had none
-%   and could not reach its setpoint at any gain. That difference is one
-%   structural fact about the axis, not a better controller.
-%
-%   See also W04_CHECK, W04_P1_START.
+%   세 문제가 한 모델인 이유: 문제 1 은 Kd = 0, 문제 2 는 Kd > 0, 문제 3 은 use_ssa 만
+%   바꾼다. 게인이 이름이므로 체커가 값을 넣어 한 모델로 셋을 모두 돌린다.
+%   One model for three problems: problem 1 is Kd = 0, problem 2 Kd > 0, problem 3
+%   changes only use_ssa. The gains are names, so the checker sets them.
 
 if nargin < 1 || isempty(mdl), mdl = 'W04_S1'; end
-
 here = fileparts(mfilename('fullpath'));
 week = fileparts(here);
 root = fileparts(fileparts(week));
-addpath(fullfile(root,'_tools'), week, fullfile(week,'problems'));
+addpath(fullfile(root,'_tools'), week);
 mss_path();
 
 out = fullfile(here, [mdl '.slx']);
 bdclose(mdl);
 if isfile(out), delete(out); end
-
 new_system(mdl);
-set_param(mdl, 'SolverType','Fixed-step', 'Solver','ode4', ...
-               'FixedStep','h', 'StartTime','0', 'StopTime','T_final', ...
-               'ReturnWorkspaceOutputs','off');
+set_param(mdl, 'SolverType','Fixed-step', 'Solver','ode4', 'FixedStep','h', ...
+               'StartTime','0', 'StopTime','T_final', 'ReturnWorkspaceOutputs','off');
+Y = 150;
+P = @(name, lib, pos, varargin) add_block(lib, [mdl '/' name], 'Position', pos, varargin{:});
+L = @(a, b) add_line(mdl, a, b, 'autorouting','smart');
 
-%% ---- command -----------------------------------------------------------
-%  Two steps summed, so psi_2 = psi_1 turns the second one off. Degrees in,
-%  radians out: every angle inside the loop is in radians because otter.m is.
-add_block('simulink/Sources/Step', [mdl '/step 1'], ...
-          'Time','t_up', 'Before','0', 'After','psi_1', 'Position',[40 100 70 130]);
-add_block('simulink/Sources/Step', [mdl '/step 2'], ...
-          'Time','t_dn', 'Before','0', 'After','psi_2-psi_1', 'Position',[40 160 70 190]);
-add_sum(mdl, 'psi_cmd', '++', [110 145]);
-add_block('simulink/Math Operations/Gain', [mdl '/deg2rad'], ...
-          'Gain','pi/180', 'Position',[150 125 190 165]);
-add_line(mdl, 'step 1/1',  'psi_cmd/1', 'autorouting','smart');
-add_line(mdl, 'step 2/1',  'psi_cmd/2', 'autorouting','smart');
-add_line(mdl, 'psi_cmd/1', 'deg2rad/1', 'autorouting','smart');
+P('step', 'simulink/Sources/Step', [30 Y-15 60 Y+15], 'Time','t_step', 'Before','0', 'After','psi_step');
+P('deg to rad', 'simulink/Math Operations/Gain', [100 Y-18 150 Y+18], 'Gain','pi/180');
+add_sum(mdl, 'e', '+-', [200 Y]);
+P('ssa', 'simulink/User-Defined Functions/Fcn', [240 Y-15 300 Y+15], 'Expr','atan2(sin(u), cos(u))');
+P('use_ssa', 'simulink/Sources/Constant', [250 Y+40 300 Y+60], 'Value','use_ssa');
+P('which error', 'simulink/Signal Routing/Switch', [340 Y-20 370 Y+20], ...
+  'Criteria','u2 > Threshold', 'Threshold','0.5');
+P('Kp', 'simulink/Math Operations/Gain', [430 Y-78 480 Y-42], 'Gain','Kp');
+P('D filter', 'simulink/Continuous/Transfer Fcn', [430 Y-18 490 Y+18], 'Numerator','[Kd*Nf 0]', 'Denominator','[1 Nf]');
+P('Ki', 'simulink/Math Operations/Gain', [430 Y+42 480 Y+78], 'Gain','Ki');
+P('I', 'simulink/Continuous/Integrator', [510 Y+45 540 Y+75]);
+P('sum', 'simulink/Math Operations/Sum', [580 Y-20 600 Y+20], 'Inputs','+++', 'IconShape','rectangular');
+L('step/1', 'deg to rad/1');  L('deg to rad/1', 'e/1');
+L('e/1', 'ssa/1');  L('ssa/1', 'which error/1');  L('use_ssa/1', 'which error/2');  L('e/1', 'which error/3');
+L('which error/1', 'Kp/1');  L('which error/1', 'D filter/1');  L('which error/1', 'Ki/1');
+L('Ki/1', 'I/1');  L('Kp/1', 'sum/1');  L('D filter/1', 'sum/2');  L('I/1', 'sum/3');
 
-%% ---- the autopilot -----------------------------------------------------
-c = add_subsys(mdl, 'Heading autopilot', [250 110 400 230], ...
-               {'psi_d','psi','r'}, {'tau_N'}, gnc_colour('controller'));
-blk = [c '/law'];
-add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
-          'Position',[240 60 420 220]);
-set_mlfcn(blk, { ...
-'function tau_N = law(psi_d, psi, r, Kp, Kd, use_ssa)'
-'%#codegen'
-'%LAW  Heading autopilot:  tau_N = Kp ssa(psi_d - psi) - Kd r'
-'%'
-'%  ssa maps an angle to (-pi, pi], so a command just the other side of the'
-'%  +-180 deg seam is answered by the SHORT turn. Setting use_ssa = 0 removes'
-'%  the wrap, which is what Problem 3 asks for.'
-'%'
-'%  The damping term uses r, the measured yaw rate, and not d(error)/dt. The'
-'%  two agree while psi_d is constant and disagree at every step, where the'
-'%  derivative of the command is an impulse.'
-'e = psi_d - psi;'
-'if use_ssa > 0.5'
-'    e = mod(e + pi, 2*pi) - pi;'
-'end'
-'tau_N = Kp*e - Kd*r;'}, 'tau_N', '[1 1]');
-
-KK = {'Kp','Kd','use_ssa'};
-for i = 1:numel(KK)
-    add_block('simulink/Sources/Constant', [c '/' KK{i}], ...
-              'Value', KK{i}, 'Position', [90 90+42*i 150 114+42*i]);
-    add_line(c, [KK{i} '/1'], sprintf('law/%d', i+3), 'autorouting','smart');
-end
-add_line(c, 'psi_d/1', 'law/1', 'autorouting','smart');
-add_line(c, 'psi/1',   'law/2', 'autorouting','smart');
-add_line(c, 'r/1',     'law/3', 'autorouting','smart');
-add_line(c, 'law/1',   'tau_N/1', 'autorouting','smart');
-set_param([c '/psi_d'], 'Position',[40  70  70  90]);
-set_param([c '/psi'],   'Position',[40 110  70 130]);
-set_param([c '/r'],     'Position',[40 150  70 170]);
-
-add_line(mdl, 'deg2rad/1', 'Heading autopilot/1', 'autorouting','smart');
-
-%% ---- allocation and hull ----------------------------------------------
-add_alloc(mdl, [460 130 620 230]);
-add_block('simulink/Sources/Constant', [mdl '/X_ff'], ...
-          'Value','X_ff', 'Position',[380 250 440 280]);
-add_otter_plant(mdl, 'Otter USV', [690 130 890 240], otter_config('base'));
+add_alloc(mdl, [660 110 820 210]);
+P('X_ff', 'simulink/Sources/Constant', [600 200 640 220], 'Value','X_ff');
+add_otter_plant(mdl, 'Otter USV', [880 110 1060 220], otter_config('base'));
 set_param([mdl '/Otter USV'], 'BackgroundColor', gnc_colour('plant'));
-add_line(mdl, 'Heading autopilot/1', 'Control allocation/1', 'autorouting','smart');
-add_line(mdl, 'X_ff/1',              'Control allocation/2', 'autorouting','smart');
-add_line(mdl, 'Control allocation/1','Otter USV/1',          'autorouting','smart');
-
-%% ---- logging and the two feedback signals ------------------------------
-add_block('simulink/Sinks/To Workspace', [mdl '/xlog'], ...
-          'VariableName','xlog', 'SaveFormat','Structure With Time', ...
-          'Position',[960 140 1030 180]);
-add_line(mdl, 'Otter USV/1', 'xlog/1', 'autorouting','smart');
-
-%  psi is state 12, r is state 6.
-add_block('simulink/Signal Routing/Selector', [mdl '/psi'], ...
-          'IndexOptions','Index vector (dialog)', 'Indices','12', ...
-          'InputPortWidth','12', 'Position',[930 320 980 355]);
-add_block('simulink/Signal Routing/Selector', [mdl '/r'], ...
-          'IndexOptions','Index vector (dialog)', 'Indices','6', ...
-          'InputPortWidth','12', 'Position',[930 380 980 415]);
-add_line(mdl, 'Otter USV/1', 'psi/1', 'autorouting','smart');
-add_line(mdl, 'Otter USV/1', 'r/1',   'autorouting','smart');
-
-%  Two feedbacks, both as tags. Drawn as lines they would cross the whole
-%  model backwards and land on the forward path; check_overlaps catches that.
-add_block('simulink/Signal Routing/Goto', [mdl '/psi out'], ...
-          'GotoTag','psi_fb', 'Position',[1010 328 1060 348]);
-add_block('simulink/Signal Routing/Goto', [mdl '/r out'], ...
-          'GotoTag','r_fb',   'Position',[1010 388 1060 408]);
-add_block('simulink/Signal Routing/From', [mdl '/psi in'], ...
-          'GotoTag','psi_fb', 'Position',[150 195 200 215]);
-add_block('simulink/Signal Routing/From', [mdl '/r in'], ...
-          'GotoTag','r_fb',   'Position',[150 235 200 255]);
-add_line(mdl, 'psi/1',    'psi out/1', 'autorouting','smart');
-add_line(mdl, 'r/1',      'r out/1',   'autorouting','smart');
-add_line(mdl, 'psi in/1', 'Heading autopilot/2', 'autorouting','smart');
-add_line(mdl, 'r in/1',   'Heading autopilot/3', 'autorouting','smart');
-
-add_block('simulink/Sinks/Scope', [mdl '/heading'], 'Position',[960 210 990 240]);
-add_line(mdl, 'Otter USV/1', 'heading/1', 'autorouting','smart');
-set_param([mdl '/heading'], 'Open','on');
+L('sum/1', 'Control allocation/1');  L('X_ff/1', 'Control allocation/2');
+L('Control allocation/1', 'Otter USV/1');
+P('xlog', 'simulink/Sinks/To Workspace', [1120 100 1190 130], 'VariableName','xlog', 'SaveFormat','Structure With Time');
+P('psi', 'simulink/Signal Routing/Selector', [1120 180 1160 210], 'Indices','12', 'InputPortWidth','12');
+L('Otter USV/1', 'xlog/1');  L('Otter USV/1', 'psi/1');
+P('Goto psi', 'simulink/Signal Routing/Goto', [1190 185 1240 205], 'GotoTag','psi_fb');
+P('From psi', 'simulink/Signal Routing/From', [120 Y+60 170 Y+80], 'GotoTag','psi_fb');
+L('psi/1', 'Goto psi/1');  L('From psi/1', 'e/2');
 
 a = Simulink.Annotation([mdl '/brief']);
-a.Text = strjoin({ ...
-'SOLUTION  -  ALL THREE WEEK 4 PROBLEMS IN ONE MODEL'
-''
-'   tau_N = Kp ssa(psi_d - psi) - Kd r'
-''
-'PROBLEM 1   Kd = 0. The steady error is ZERO at every gain, because the'
-'            heading is the integral of the yaw rate: psi = int r, so the'
-'            plant carries a free integrator and the loop is TYPE 1.'
-'            Week 3 could not reach its setpoint at any gain.'
-''
-'PROBLEM 2   Kd > 0. Substituting the law into the yaw equation gives'
-''
-'               M66 psi_ddot + (|Nr| + Kd) psi_dot + Kp psi = Kp psi_d'
-''
-'            so Kd sits beside the DAMPING and overshoot FALLS as it rises.'
-'            In Week 3 the same term sat beside the MASS and made things'
-'            worse. The term did not change; the axis did.'
-''
-'PROBLEM 3   use_ssa = 0 removes the wrap and the vessel turns the LONG'
-'            way round the +-180 deg seam.'
-''
-'The damping term feeds back r, the MEASURED yaw rate, and not d(e)/dt.'
-'Nothing in this model is differentiated.'}, newline);
-a.Position = [40 470 900 760];
-a.HorizontalAlignment = 'left';
-a.BackgroundColor = 'lightBlue';
-
+a.Text = strjoin({'SOLUTION  -  ALL THREE WEEK 4 PROBLEMS IN ONE MODEL', '', ...
+  '   e = ssa(psi_d - psi),   tau_N = Kp e + Ki int(e) + Kd Nf s/(s + Nf) e', '', ...
+  'PROBLEM 1   Kd = 0: no error at any gain; overshoot grows with Kp.', ...
+  'PROBLEM 2   Kd > 0: the derivative damps the heading; overshoot falls.', ...
+  'PROBLEM 3   use_ssa = 1 turns 20 deg through the seam; 0 turns 340 deg.'}, newline);
+a.Position = [40 300 700 400];  a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
 mss_style(mdl);
 save_system(mdl, out);
 close_system(mdl, 0);

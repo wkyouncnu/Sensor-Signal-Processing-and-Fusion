@@ -1,6 +1,6 @@
 # Week 4 · Laboratory Problems — build the heading autopilot in Simulink
 
-- Course: Sensor Signal Processing and Fusion · Department of Autonomous Vehicle System Engineering
+- Course: USV Guidance, Navigation and Control (Graduate) · Department of Autonomous Vehicle System Engineering
 - Time: **one hour**, immediately after the Week 4 lecture hour
 - Three problems, in order. Each one adds one branch to the previous answer.
 
@@ -8,9 +8,9 @@
 
 ## What this hour is for
 
-Week 3 closed a loop around a **velocity** and found that the error never reached zero. This hour closes a loop around an **angle** and finds the opposite. The whole point is that the difference is **structural** — a property of the axis being controlled — and not a better controller.
+Week 3 closed a loop around a **speed** and found an error that no gain removed, no ringing, and a derivative term that only hurt. This hour closes the same loop around an **angle** and finds the opposite on all three counts. The difference lies in the axis, not in the controller.
 
-The hull and the control allocation are provided. The allocation is Appendix A1's subject; Week 4 is about the loop that decides what yaw moment to demand.
+The hull and the control allocation are provided. The loop that decides what yaw moment to demand is the exercise.
 
 ---
 
@@ -24,30 +24,30 @@ W04_check(1)                 % run this whenever, as often as needed
 
 The solver is already set to fixed-step `ode4` at `h = 0.02` s. **Do not change it.**
 
-> [!important] One requirement on every model
-> A To Workspace block named **`xlog`**, format **`Structure With Time`**, fed by the plant's twelve-state output. The heading is state **12** and the yaw rate is state **6**.
+> [!important] Two requirements on every model
+> - A To Workspace block named **`xlog`**, format **`Structure With Time`**, fed by the plant's twelve-state output. The heading is state **12**.
+> - The blocks use the variable names `Kp`, `Ki`, `Kd`, `Nf`, `use_ssa`, `psi_step` and `t_step`. The checker sets them; a number typed into a block is not changed by the checker.
 
 ---
 
 ## Problem 1 · Proportional only (20 minutes)
 
-**Build.** Command, error, one gain, into the allocation.
+**Build.** A Step of `psi_step` degrees at `t_step`, converted to radians, the error, `ssa`, one gain, into the allocation's `tau_N`.
 
 ```
-Step ψ_d [deg] → deg2rad → (+)(−) → Kp → τ_N → Control allocation → Otter USV
-                              ↑                                          ↓
-                              └──────────────  ψ  ←──────────────────────┘
+Step ψ_d [deg] → pi/180 → (+)(−) → ssa → Kp → τ_N → Control allocation → Otter USV
+                             ↑                                              ↓
+                             └──────────────────  ψ (state 12)  ←──────────┘
 ```
 
-**Predict before running.** Week 3's plant had no free integrator and its steady error was $u_d\,/(1+K_pK_u)$ — 44 % at $K_p = 100$. Ask the same question here **before** running: what is the steady heading error at $K_p = 30$?
+**Predict before running.** In Week 3, P alone left a speed error at every gain. What error will P leave on the heading, and why?
 
-**Verify.** `W04_check(1)`, step to $60°$.
+**Verify.** `W04_check(1)`, a $10°$ step.
 
 | $K_p$ | steady error | overshoot |
 |---|---|---|
-| $30$ | $0$ | $-0.01$ % |
-| $100$ | $0$ | $0.24$ % |
-| $300$ | $0$ | $1.53$ % |
+| $100$ | $0$ | $5.8$ % |
+| $300$ | $0$ | $12.2$ % |
 
 **What a correct model produces**
 
@@ -55,41 +55,27 @@ Step ψ_d [deg] → deg2rad → (+)(−) → Kp → τ_N → Control allocation 
 
 | Reading the figure | |
 |---|---|
-| left | all three gains arrive at $60°$. Higher gain arrives faster and rings more |
-| right | the same runs as error. **All three go to zero**, and nothing was tuned to make that happen |
-| the check | if any trace settles short of $60°$, the feedback is not the heading — check that the Selector picks state 12 |
+| left | both gains arrive at $10°$; the larger one arrives sooner and rings more |
+| right | the same runs as error; both go to zero |
+| the check | if a trace settles short of $10°$, the feedback is not the heading — the Selector must pick state 12 |
 
-**The point.** $\psi = \int r$, so the plant carries a **free integrator** and the loop is **type 1**. Week 3's was type 0. That one structural fact — not a better controller — is why the error is zero here at every gain.
+**The point.** The heading is the running sum of the turn rate, so the plant already contains an integrator: the error goes to zero with P alone. Unlike the speed of Week 3, the heading also rings, because the heading, like the position of Week 2, can overshoot.
 
 ---
 
-## Problem 2 · Derivative action (20 minutes)
+## Problem 2 · The derivative (20 minutes)
 
-**Build.** One more branch: $-K_d\,r$, added to the proportional term.
+**Build.** One more branch: the error through **one Transfer Fcn**, numerator `[Kd*Nf 0]`, denominator `[1 Nf]`, added to the proportional term — the `D filter` of Week 2.
 
-> [!warning] Feed back the yaw rate, not the derivative of the error
-> The two agree while $\psi_d$ is constant and disagree at **every step**, where $\mathrm{d}\psi_d/\mathrm{d}t$ is an impulse. Differentiating the error puts that impulse straight into the actuator. The plant already **measures** $r$ — it is state 6 — so nothing in a correct model is differentiated anywhere.
+**Predict before running.** In Week 3 the derivative made the speed loop worse. The heading is an angle, like a position. Which way will the overshoot move as $K_d$ rises?
 
-**Predict before running.** Substitute the law into the yaw equation:
+**Verify.** `W04_check(2)`, $K_p = 300$, a $10°$ step.
 
-$$
-M_{66}\,\ddot\psi + \big(\lvert N_r\rvert + K_d\big)\dot\psi + K_p\,\psi = K_p\,\psi_d
-$$
-
-$$
-\omega_n = \sqrt{\frac{K_p}{M_{66}}}, \qquad
-\zeta = \frac{\lvert N_r\rvert + K_d}{2\sqrt{K_p M_{66}}}
-$$
-
-**Which coefficient does $K_d$ sit beside?** Answer that, and the direction of the effect follows without simulating anything.
-
-**Verify.** `W04_check(2)`, $K_p = 100$, $5°$ step.
-
-| $K_d$ | $\zeta$ | overshoot |
-|---|---|---|
-| $0$ | $0.327$ | $11.74$ % |
-| $25$ | $0.518$ | $4.10$ % |
-| $74.9$ | $0.900$ | $\approx 0$ |
+| $K_d$ | overshoot |
+|---|---|
+| $0$ | $12.18$ % |
+| $50$ | $4.10$ % |
+| $100$ | $0.39$ % |
 
 **What a correct model produces**
 
@@ -97,28 +83,25 @@ $$
 
 | Reading the figure | |
 |---|---|
-| left | four responses to the same step. **Overshoot falls as $K_d$ rises** |
-| right | the same four as overshoot against $\zeta$, landing on the second-order curve |
-| the check | if overshoot *rises* with $K_d$, the derivative is being taken of the error rather than fed back as $r$ — or its sign is wrong |
+| left | four responses to the same step; the overshoot falls as $K_d$ rises |
+| right | the overshoot against $K_d$ |
+| the check | if the overshoot rises with $K_d$, the sign of the derivative branch is reversed |
 
-**The point.** $K_d$ sits beside the **damping**. In Week 3 the controlled variable was a velocity, its derivative was an acceleration, and the same term sat beside the **mass**, where it made the response worse. **The term did not change; the axis did.**
-
-Note also that the hull alone already gives $\zeta = 0.327$ at $K_p = 100$, because $N_r$ is large. Most of the damping in this loop is not the controller's.
+**The point.** On the heading the derivative is a damper again, as on the mass of Week 2. The term did not change between Weeks 3 and 4; the axis did.
 
 ---
 
 ## Problem 3 · The wrap (20 minutes)
 
-**Build.** Nothing new — one line inside the control law, and a switch to turn it off.
+**Build.** A Switch driven by the Constant `use_ssa`: its upper input is the error through `ssa`, a Fcn block with `atan2(sin(u), cos(u))`; its lower input is the raw error.
 
 $$
-e = \psi_d - \psi, \qquad
-\text{ssa}(e) = \big((e + \pi) \bmod 2\pi\big) - \pi \ \in (-\pi,\ \pi]
+\text{ssa}(e) = \operatorname{atan2}(\sin e,\ \cos e) \ \in (-\pi,\ \pi]
 $$
 
-**Set up the test.** Start the vessel at $\psi = 170°$ and command $\psi_d = -170°$. The two headings are **$20°$ apart**.
+**Set up the test.** The checker starts the vessel at $\psi = 170°$ and commands $\psi_d = -170°$ from $t = 0$. The two headings are **$20°$ apart**.
 
-**Verify.** `W04_check(3)`.
+**Verify.** `W04_check(3)`, $K_p = 300$, $K_d = 100$.
 
 | | turn executed |
 |---|---|
@@ -131,11 +114,11 @@ $$
 
 | Reading the figure | |
 |---|---|
-| left | heading, **unwrapped**. Blue rises $20°$ to $190°$; orange falls $340°$ to $-170°$. Both end at the same physical heading |
+| left | heading, **unwrapped**; one run turns $20°$, the other $340°$ the other way; both end at the same physical heading |
 | right | the yaw rates have **opposite sign** for the whole manoeuvre |
-| the check | if the two traces are identical, `use_ssa` is not reaching the control law |
+| the check | if the two traces are identical, `use_ssa` is not reaching the Switch |
 
-**The point.** Without the wrap the error is computed as $-340°$ and the vessel goes the long way round — **seventeen times further, for the same commanded heading**. `ssa` is one line of code and it is not optional. Week 5's guidance produces commands anywhere in $(-180°, 180°]$, so this seam is crossed routinely.
+**The point.** Without the wrap the error is computed as $-340°$ and the vessel goes the long way round — seventeen times further, for the same commanded heading.
 
 ---
 
@@ -143,8 +126,8 @@ $$
 
 | | Weight | What is being marked |
 |---|---|---|
-| Problem 1 | 30 | `W04_check(1)` passes; the type-1 argument is stated in one sentence |
-| Problem 2 | 40 | `W04_check(2)` passes; the answer to "which coefficient does $K_d$ sit beside" is stated **and** the rate feedback is $r$, not $\mathrm{d}e/\mathrm{d}t$ |
+| Problem 1 | 30 | `W04_check(1)` passes; why the error is zero is stated in one sentence |
+| Problem 2 | 40 | `W04_check(2)` passes; why the derivative damps here and hurt in Week 3 is stated |
 | Problem 3 | 30 | `W04_check(3)` passes; the cost of omitting `ssa` is quantified |
 
 ---
@@ -154,11 +137,10 @@ $$
 | Symptom | Cause | Fix |
 |---|---|---|
 | `The model has no To Workspace block whose variable name is xlog` | the variable name is still `simout` | rename it |
-| Heading settles short of the command | the feedback is not state 12 | the Selector index must be 12 for $\psi$, 6 for $r$ |
-| The vessel spins continuously | the error sign is reversed | the sum is $\psi_d - \psi$, not $\psi - \psi_d$ |
-| Overshoot rises with $K_d$ | the derivative is taken of the error | feed back $r$ directly; the sign is $-K_d r$ |
-| Huge spike in the actuator at each step | same cause | same fix |
-| The two Problem 3 traces are identical | `use_ssa` never reaches the law | wire it in as a Constant, like $K_p$ and $K_d$ |
-| Angles look 57 times too large or small | degrees and radians mixed | every angle inside the loop is in **radians**; convert once, at the command |
+| the heading settles short of the command | the feedback is not state 12 | the Selector index must be 12 |
+| the vessel spins continuously | the error sign is reversed | the sum is $\psi_d - \psi$ |
+| the overshoot rises with $K_d$ | the derivative branch has the wrong sign | add it with $+$, the error already carries the sign |
+| the two Problem 3 traces are identical | `use_ssa` never reaches the Switch | a Constant block with the value `use_ssa`, into the Switch's middle input |
+| angles 57 times too large or small | degrees and radians mixed | every angle inside the loop is in radians; convert once, at the command |
 
-Reference answers are in `../solutions/`. Read them **after** attempting the problem.
+Reference answers are in `../solutions/`. Read them **after** attempting the problems.
