@@ -30,6 +30,9 @@ R.V = V;
 if strcmp(model, 'W02_B_three_ways')                                   % 세 줄 / three rows
     R.x_ode = y(:,1);  R.x_tf = y(:,2);  R.x_ss = y(:,3);  return
 end
+if strcmp(model, 'W02_G_lowpass')                                      % 필터 입출력 / filter in and out
+    R.in = y(:,1);  R.out = y(:,2);  return
+end
 switch size(y,2)
     case 2, R.y_d = y(:,1); R.y = y(:,2);                                          % 표준 2차 / standard form
     case 3, R.y_d = y(:,1); R.y = y(:,2); R.tau = y(:,3); R.I = z; R.D = z;        % P

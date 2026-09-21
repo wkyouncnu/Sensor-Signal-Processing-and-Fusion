@@ -37,6 +37,7 @@ V.bench_w = 0.5;   V.bench_noise = 0.005;   V.bench_T = 20;
 
 V.F_step = 1;      V.x0_pos = 0;     V.x0_vel = 0;
 V.zeta = 0.5;      V.wn = 2;
+V.lp_a1 = 1;       V.lp_w1 = 1;      V.lp_a2 = 0.3;    V.lp_w2 = 100;    V.lp_T = 10;
 
 V.T_final = 10;    V.h = 1e-3;
 end

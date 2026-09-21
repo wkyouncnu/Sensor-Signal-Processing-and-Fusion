@@ -93,6 +93,13 @@ x0_vel = 0;           % 처음 속도 / initial velocity                     [m/
 zeta = 0.5;           % 감쇠비. 클수록 덜 출렁인다 / damping ratio; larger rings less
 wn   = 2;             % 고유진동수. 클수록 빠르다 / natural frequency; larger is faster  [rad/s]
 
+%% ---- 저역통과 필터 (W02_G_lowpass) / the low-pass filter -----------------
+lp_a1 = 1;            % 느린 사인의 진폭 / amplitude of the slow sine
+lp_w1 = 1;            % 느린 사인의 각주파수 / its frequency           [rad/s]
+lp_a2 = 0.3;          % 빠른 사인("잡음")의 진폭 / amplitude of the fast sine ("noise")
+lp_w2 = 100;          % 빠른 사인의 각주파수 / its frequency           [rad/s]
+lp_T  = 10;           % 시험 시간 / run length                        [s]
+
 %% ---- 시뮬레이션 / simulation -----------------------------------------------
 T_final = 10;         % [s]
 h       = 1e-3;       % 고정 스텝 / fixed step (ode4)          [s]

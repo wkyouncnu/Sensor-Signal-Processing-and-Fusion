@@ -73,6 +73,45 @@ end
 if nargin == 0 || strcmp(which, 'W02_G_derivative_bench'), build_bench(here); end
 if nargin == 0 || strcmp(which, 'W02_B_three_ways'),       build_three(here); end
 if nargin == 0 || strcmp(which, 'W02_B_second_order'),     build_second(here); end
+if nargin == 0 || strcmp(which, 'W02_G_lowpass'),          build_lowpass(here); end
+end
+
+% =========================================================================
+%  저역통과 필터 Nf/(s+Nf) 하나 (절 G) — 느린 사인 + 빠른 사인을 넣고 무엇이 남는지 본다
+%  One low-pass filter Nf/(s+Nf) (section G): a slow sine plus a fast sine in; what comes out
+function build_lowpass(here)
+m = 'W02_G_lowpass';
+m0 = new_model(m, here);
+set_param(m, 'StopTime','lp_T');
+blk(m, 'simulink/Sources/Sine Wave', 'slow sine', 60, 100, [30 30], ...
+    {'Amplitude','lp_a1', 'Frequency','lp_w1', 'Phase','0'});
+blk(m, 'simulink/Sources/Sine Wave', 'fast sine', 60, 180, [30 30], ...
+    {'Amplitude','lp_a2', 'Frequency','lp_w2', 'Phase','0'});
+add_sum(m, 'slow + fast', '++', [150 100]);
+set_param([m '/slow + fast'], 'NamePlacement','alternate');
+route(m, 'slow sine', 1, 'slow + fast', 1, zeros(0,2));
+route(m, 'fast sine', 1, 'slow + fast', 2, [150 180]);
+blk(m, 'simulink/Continuous/Transfer Fcn', 'low-pass', 280, 100, [80 40], ...
+    {'Numerator','[Nf]', 'Denominator','[1 Nf]'});
+route(m, 'slow + fast', 1, 'low-pass', 1, zeros(0,2));
+goto_at(m, {'slow + fast', 1}, [200 100], 'down', 'in');
+set_param([m '/Goto in'], 'ShowName','off');
+add_block('simulink/Signal Routing/Mux', [m '/two'], 'Inputs','2', 'Position',[420 50 425 190]);
+q = port_xy(m, 'two', 'Inport', 1);
+add_block('simulink/Signal Routing/From', [m '/From in'], 'GotoTag','in', 'ShowName','off', ...
+          'Position', [330 q(2)-10 380 q(2)+10]);
+h1 = route(m, 'From in', 1, 'two', 1, zeros(0,2));
+q = port_xy(m, 'two', 'Inport', 2);  h2 = route(m, 'low-pass', 1, 'two', 2, [380 100; 380 q(2)]);
+set_param(h1, 'Name','input');  set_param(h2, 'Name','output');
+finish_scope(m, 'two', 500);
+a = Simulink.Annotation([m '/note']);
+a.Text = strjoin({'WEEK 2, SECTION G  -  THE LOW-PASS FILTER  Nf / (s + Nf)', '', ...
+  '   input  = sin(lp_w1 t) + lp_a2 sin(lp_w2 t)      slow wanted signal + fast "noise"', ...
+  '   output = the input through Nf / (s + Nf)          bandwidth = Nf rad/s', '', ...
+  'Frequencies below Nf pass; frequencies above Nf are cut.', ...
+  'Change Nf in the Command Window (5, 20, 200) and press Run.'}, newline);
+a.Position = [40 250 560 370];  a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
+save_model(m, m0, here);
 end
 
 % =========================================================================
