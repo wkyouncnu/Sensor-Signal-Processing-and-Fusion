@@ -1,112 +1,61 @@
-%% W02 · 절 H — 액추에이터에는 한계가 있고, 적분기는 그것을 모른다
-%  W02 · Section H — the actuator has a limit, and the integrator does not know it
-%
-%  실행 순서 / order of execution
-%      W02_0_setup
-%      W02_H_windup
-%
-%  강의에서의 위치 / place in the lecture
-%      Part 2 절 H 이며, §2-8 의 와인드업과 되감기(back-calculation)를 잰다.
-%      3주차 §3-6 이 같은 문제를 Otter 위에서 세 가지 방식으로 자세히 다룬다.
-%      Section H of Part 2. It measures the windup and back-calculation of
-%      §2-8. Week 3 §3-6 treats the same problem on the Otter, three schemes
-%      in full.
-%
-%  무엇을 하는가 / what it does
-%      힘을 |tau| <= 2.5 N 으로 제한한다. y = 1 을 붙잡는 데 필요한 힘은 k y = 2 N
-%      이므로 목표는 도달할 수 있다. 다만 올라가는 동안 제어기는 한계보다 큰 힘을
-%      요구하고, 그동안 적분기는 한계를 모른 채 계속 쌓는다. 되감기 이득 Kb 를 0 과
-%      2 로 두고 두 번 돌린다.
-%      The force is limited to |tau| <= 2.5 N. Holding y = 1 needs k y = 2 N,
-%      so the target is reachable; but on the way up the controller asks for
-%      more than the limit, and meanwhile the integrator keeps accumulating
-%      without knowing about it. The run is made with back-calculation gain
-%      Kb = 0 and Kb = 2.
-%
-%  결과를 읽는 법 / how to read the result
-%      Kb = 0 이면 목표에 도달한 순간에도 적분기에 쌓인 값이 계속 밀어붙여 크게
-%      지나친다. Kb = 2 이면 잘려 나간 만큼이 적분기로 되돌아간다. 포화 중에 적분기는
-%      요구가 한계와 같아지는 값 I* = tau_max - P - D + (Ki/Kb) e 로 끌려가는데,
-%      계단 직후에는 P 와 D 만으로 이미 한계를 넘으므로 I* 가 음수이다. 적분기가
-%      음수로 내려가는 것은 오류가 아니라 이 식 그대로이다.
-%      With Kb = 0 the charge stored in the integrator keeps pushing after the
-%      target is reached, and the response overshoots a long way. With Kb = 2
-%      the part that was cut off is fed back: while saturated the integrator is
-%      pulled towards I* = tau_max - P - D + (Ki/Kb) e, the value that makes
-%      the demand equal to the limit. Just after the step P and D alone exceed
-%      the limit, so I* is negative; the integrator dipping below zero is that
-%      formula, not a fault.
-%
-%  만드는 것 / what it produces
-%      표 하나, img/W02_result_windup.png
+%% W02 · 절 H — 안티와인드업, 깊이 / Section H — anti-windup, in depth
+%  모델 W02_H_antiwindup. 힘은 |tau| <= 2.5 N 이므로 스프링 k = 2 에 대해 닿을 수 있는 위치는 1.25 m 까지다.
+%  목표를 닿을 수 없는 2 m 로 14 초 동안 두었다가(t = 1~15 s), 닿을 수 있는 0.5 m 로 내린다.
+%  세 방식(없음, clamping, back-calculation)이 0.5 m 로 돌아오는 데 걸리는 시간을 잰다.
+%  위 줄은 손으로 만든 back-calculation(Kb = 0 이면 없음), 아래 줄은 라이브러리 PID 블록이다.
+%  W02_H_antiwindup. With |tau| <= 2.5 N and k = 2 N/m the mass can reach at most 1.25 m.
+%  The target is held at an unreachable 2 m from t = 1 to 15 s, then lowered to a reachable 0.5 m.
+%  How long does each scheme (none, clamping, back-calculation) take to come back?
+%  만드는 것 / produces: img/W02_result_windup.png
 
 here = fileparts(mfilename('fullpath'));
-root = fileparts(fileparts(here));
-addpath(fullfile(root,'_tools'), here);
-if ~isfile(fullfile(here,'W02_pid.slx')), W02_1_build_pid(); end
+addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
+S = {'tau_max',2.5, 'y_step',2, 't_step2',15, 'y_step2',0.5, 'T_final',30};
 
-V  = W02_vars();
-V.tau_max = 2.5;
-KB = [0 2];
-LBL = {'Kb = 0   no anti-windup', 'Kb = 2   back-calculation'};
+R0 = W02_read('W02_H_antiwindup', S{:}, 'Kb', 0, 'block_mode', 'none');
+R1 = W02_read('W02_H_antiwindup', S{:}, 'Kb', 2, 'block_mode', 'clamping');
+R2 = W02_read('W02_H_antiwindup', S{:}, 'Kb', 2, 'block_mode', 'back-calculation');
+ROW = {'none (block)',             R0.t, R0.y_blk
+       'clamping (block)',         R1.t, R1.y_blk
+       'back-calculation (block)', R2.t, R2.y_blk
+       'none (by hand, Kb = 0)',   R0.t, R0.y
+       'back-calc (by hand, Kb = 2)', R2.t, R2.y};
 
-fprintf('\n  W02 section H — saturation and windup (|tau| <= %g N; holding y = 1 takes %g N)\n', ...
-        V.tau_max, V.pid_k*V.y_step);
-fprintf('\n    %-28s %11s %14s %11s %11s %11s %13s\n', 'anti-windup', 'peak y [m]', ...
-        'overshoot [%]', 'settle [s]', 'I max [N]', 'I min [N]', 'on limit [s]');
-fprintf('    %s\n', repmat('-', 1, 106));
-R = cell(1,2);
-for i = 1:2
-    R{i} = W02_read(run_sim('W02_pid', V, 'Kb', KB(i)));
-    [Mp, ts] = step_metrics(R{i}.t, R{i}.y, V.y_step, V.t_step);
-    onl = sum(abs(abs(R{i}.tau) - V.tau_max) < 1e-9) * V.h;
-    fprintf('    %-28s %11.3f %14.2f %11.2f %11.2f %11.2f %13.2f\n', LBL{i}, max(R{i}.y), ...
-            Mp, ts, max(R{i}.I), min(R{i}.I), onl);
-    R{i}.Mp = Mp;  R{i}.ts = ts;  R{i}.onl = onl;
+fprintf('\n  W02 H  unreachable 2 m for 14 s, then a reachable 0.5 m  (|tau| <= 2.5 N)\n');
+fprintf('    %-30s  y at 15 s [m]  back within 2 %% of 0.5 m after [s]\n', 'anti-windup');
+for i = 1:size(ROW,1)
+    fprintf('    %-30s  %12.3f  %14.2f\n', ROW{i,1}, interp1(ROW{i,2}, ROW{i,3}, 15), back(ROW{i,2}, ROW{i,3}));
 end
-fprintf(['\n    WHAT THE TABLE SAYS.\n' ...
-         '\n      Without anti-windup the integrator climbs to %.2f N while the actuator\n' ...
-         '      can give %g N. That excess has to be unwound by NEGATIVE error, which\n' ...
-         '      means overshooting the target: %.1f %%, and %.2f s on the limit.\n' ...
-         '\n      With back-calculation the integrator does more than stop. While the\n' ...
-         '      actuator is saturated it is driven towards the value that makes the\n' ...
-         '      demand equal to the limit,\n' ...
-         '\n          I* = tau_max - P - D + (Ki/Kb) e ,\n' ...
-         '\n      and just after the step P and D alone already ask for far more than\n' ...
-         '      %g N, so I* is NEGATIVE: the integrator dips to %.2f N. It gives the\n' ...
-         '      actuator back as soon as the demand falls inside the limit - %.2f s on\n' ...
-         '      the limit instead of %.2f s - and the overshoot is %.2f %%.\n' ...
-         '\n      Nothing about the linear controller was changed: the gains are\n' ...
-         '      identical. Only what the integrator does while the actuator is\n' ...
-         '      saturated. Week 3 §3-6 derives I* and compares three schemes.\n'], ...
-         max(R{1}.I), V.tau_max, R{1}.Mp, R{1}.onl, V.tau_max, min(R{2}.I), ...
-         R{2}.onl, R{1}.onl, R{2}.Mp);
+fprintf('    by hand vs block, back-calculation: max |y diff| = %.2e\n', max(abs(R2.y - R2.y_blk)));
+fprintf('    integrator at t = 15 s: %.1f N without anti-windup, %.2f N with back-calculation\n', ...
+        interp1(R0.t, R0.I, 15), interp1(R2.t, R2.I, 15));
 
-%% ---- figure ------------------------------------------------------------
-col = [0.85 0.33 0.10; 0 0.45 0.74];
-f = lab_fig('W02 H  windup', 1000, 720);
-subplot(3,1,1); hold on;
-plot(R{1}.t, R{1}.y_d, 'k--', 'LineWidth', 1.1, 'DisplayName', 'setpoint');
-for i = 1:2
-    plot(R{i}.t, R{i}.y, 'Color', col(i,:), 'LineWidth', 2, 'DisplayName', LBL{i});
+fprintf('\n    the back-calculation gain Kb (by hand)\n    Kb     back within 2 %% after [s]\n');
+for Kb = [0.5 2 10 50]
+    R = W02_read('W02_H_antiwindup', S{:}, 'Kb', Kb);
+    fprintf('    %-5g  %10.2f\n', Kb, back(R.t, R.y));
 end
-ylabel('position [m]');  legend('Location','southeast');  grid on;
-title('same gains, same limit: only what the integrator does while saturated differs');
-subplot(3,1,2); hold on;
-for i = 1:2
-    plot(R{i}.t, R{i}.tau, 'Color', col(i,:), 'LineWidth', 2, 'DisplayName', LBL{i});
-end
-yline([-1 1]*V.tau_max, 'k:', 'HandleVisibility','off');
-ylabel('force \tau [N]');  legend('Location','southeast');  grid on;
-title(sprintf('the actuator gives at most %g N; dotted lines are the limit', V.tau_max));
-subplot(3,1,3); hold on;
-for i = 1:2
-    plot(R{i}.t, R{i}.I, 'Color', col(i,:), 'LineWidth', 2, 'DisplayName', LBL{i});
-end
-yline(V.tau_max, 'k:', 'the limit, 2.5 N', 'LabelHorizontalAlignment','left', ...
-      'LabelVerticalAlignment','top', 'HandleVisibility','off');
-yline(V.pid_k*V.y_step, 'k-.', 'k y_d = 2 N', 'LabelHorizontalAlignment','left', ...
-      'LabelVerticalAlignment','bottom', 'HandleVisibility','off');
-ylabel('integral term I [N]');  xlabel('time [s]');  legend('Location','northeast');  grid on;
-title('the integrator: wound up past the limit, or pulled below it by the excess');
+
+f = lab_fig('W02 H  anti-windup', 1000, 720);
+subplot(2,1,1); hold on;
+plot(R0.t, R0.y_d, 'k--', 'DisplayName', 'setpoint');
+plot(R0.t, R0.y_blk, 'LineWidth', 2, 'DisplayName', 'none');
+plot(R1.t, R1.y_blk, 'LineWidth', 2, 'DisplayName', 'clamping');
+plot(R2.t, R2.y_blk, 'LineWidth', 2, 'DisplayName', 'back-calculation');
+yline(1.25, ':', 'the most the force can hold: 1.25 m', 'LabelHorizontalAlignment','left', 'HandleVisibility','off');
+ylabel('position y [m]'); legend('Location','northeast'); grid on;
+title('after t = 15 s the target is reachable again — without anti-windup the mass does not come back');
+subplot(2,1,2); hold on;
+plot(R0.t, R0.I, 'LineWidth', 2, 'DisplayName', 'integrator, none');
+plot(R2.t, R2.I, 'LineWidth', 2, 'DisplayName', 'integrator, back-calculation');
+ylabel('integral term I [N]'); xlabel('time [s]'); legend('Location','northwest'); grid on;
+title('what the integrator stored while the force sat on its limit');
 exportgraphics(f, fullfile(here, 'img', 'W02_result_windup.png'), 'Resolution', 150);
+
+% -------------------------------------------------------------------------
+function ts = back(t, y)
+%  t = 15 s 뒤, 0.5 m 의 2 % 띠를 마지막으로 벗어난 때까지 / last exit from the 2 % band after 15 s
+k = t >= 15;  t = t(k) - 15;  y = y(k);
+o = find(abs(y - 0.5) > 0.01, 1, 'last');
+if isempty(o), ts = 0; elseif o == numel(t), ts = inf; else, ts = t(o); end
+end

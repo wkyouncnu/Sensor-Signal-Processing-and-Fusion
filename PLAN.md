@@ -80,9 +80,13 @@
 - 이론 10절: 플랜트와 모델의 세 출처 · 루프와 오차 하나 · P(강성) · D(감쇠, 영점) · I(type 1,
   Routh $K_i < 72$, 필터 포함 한계 87.07) · 두 영점과 한 극점, PID 블록 = 손으로 만든 것 ·
   미분 필터와 킥 · 와인드업과 $I^\star$ · **튜닝 순서도** (사용자 요청 "최대한 쉽게") · 샘플링과 캐스케이드
-- 모델 `W02_pid.slx`: PID 블록 한 줄 + 상자 셋(P · I with anti-windup · D with filter)으로
-  손수 조립한 한 줄. 포화·잡음 아래에서 두 줄의 차이 **정확히 0**
-- 절 스크립트 C~J 8개, 결과 그림 9장, 개념도 `w02-pid-loop` · `w02-tuning-order`
+- **예제마다 모델 하나** (사용자 지시): `W02_C_P` · `W02_D_PD` · `W02_E_PID` · `W02_F_block_vs_hand` ·
+  `W02_G_derivative_bench`(유사미분 시험대) · `W02_G_noise_kick` · `W02_H_antiwindup`(닿을 수 없는 목표) ·
+  `W02_I_tuning`. 서브시스템 없이 평평하게, 미분은 Transfer Fcn 하나, **캔버스의 Scope 하나**에
+  위치·힘을 모두. 라이브러리 PID 블록과 손으로 만든 법칙의 차이 $10^{-15}$
+- 절 스크립트 C~J 8개(짧게, 공통 도우미 `W02_read`), 결과 그림 10장, 개념도 `w02-pid-loop` · `w02-tuning-order`
+- 옛 단일 모델 `W02_pid.slx` 와 그 그림 넷(`W02_pid`, `_bank`, `_by_hand`, `W02_d_filter`)은 더 쓰지 않는다
+  — 지우지 않고 남겨 두었다 (사용자 확인 대기)
 - `_tools/verify_w02_pid.m` 8개 검사, 실습 문제 3개 + 채점기 + 모범답안
 
 ### W03 · Surge Speed Control — 완료

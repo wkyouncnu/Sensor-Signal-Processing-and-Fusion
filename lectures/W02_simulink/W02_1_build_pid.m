@@ -1,467 +1,452 @@
-function W02_1_build_pid()
-%W02_1_BUILD_PID  2주차 모델 W02_pid.slx 를 코드로 만든다.
-%                 Generate the Week 2 model, W02_pid.slx.
+function W02_1_build_pid(which)
+%W02_1_BUILD_PID  2주차 실습 모델 일곱 개를 코드로 만든다 — 절 하나에 모델 하나.
+%                 Generate the seven Week 2 models, one model per section.
 %
 %   실행 / to run
-%       W02_1_build_pid
+%       W02_1_build_pid                  일곱 개 전부 / all seven
+%       W02_1_build_pid('W02_E_PID')     하나만 / one of them
 %
 %   강의에서의 위치 / place in the lecture
-%       Part 2 절 B 이다. 이 주의 모든 실험이 이 모델 하나를 쓴다. 절 스크립트는
-%       모델을 고치지 않고 변수만 바꾸어 돌린다.
-%       Section B of Part 2. Every experiment of the week uses this one model;
-%       the section scripts change variables, never the model.
+%       Part 2 절 B 이다. 절 C~I 가 각자 자기 모델을 연다. 모델을 열고 Run 을 누르면
+%       캔버스의 Scope 하나에 위치(목표와 응답)와 힘(과 그 항들)이 함께 뜬다.
+%       명령창에서 Kp 를 바꾸고 다시 Run 을 누르면 바뀐 응답이 바로 보인다.
+%       Section B of Part 2. Sections C to I each open their own model. Opening
+%       a model and pressing Run shows, in one Scope on the canvas, the position
+%       (setpoint and response) and the force (with its terms). Changing Kp in
+%       the Command Window and pressing Run again shows the new response at once.
 %
-%   모델의 모양 / what the model looks like
+%   모델 / the models
+%       W02_C_P             P 만                         / P only
+%       W02_D_PD            P + D                        / P + D
+%       W02_E_PID           P + I + D                    / P + I + D
+%       W02_F_block_vs_hand 라이브러리 PID 블록과 손으로 만든 PID, 한계와 잡음 아래에서
+%                           the library PID block against the hand-built law,
+%                           with a force limit and sensor noise
+%       W02_G_noise_kick    PID + 센서 잡음 + 부드러운 목표값 + 순수 미분 스위치
+%                           PID with sensor noise, a smoothed setpoint and a
+%                           pure-derivative switch
+%       W02_H_antiwindup    PID + 힘의 한계 + 되감기 / PID with a limit and back-calculation
+%       W02_I_tuning        PID + 부드러운 목표값 / PID with a smoothed setpoint
 %
-%       Setpoint --> PID bank --> Plant bank --> Measurements
-%                       ^              |
-%                       +---- y_m -----+        (되먹임 선 하나 / one feedback line)
+%   모든 블록이 최상위 캔버스에 있다. 서브시스템으로 감추지 않는다 — 블록 하나가
+%   식의 기호 하나이므로, 캔버스를 읽으면 식을 읽는 것이다. 미분항은 전달함수
+%   블록 하나, Kd Nf s/(s + Nf) 이다.
+%   Every block is on the top-level canvas; nothing is hidden in a subsystem.
+%   Each block is one symbol of the law, so reading the canvas is reading the
+%   equation. The derivative is one Transfer Fcn block, Kd Nf s/(s + Nf).
 %
-%   PID bank 안에는 같은 PID 가 두 줄 있다 / two rows of the same PID
-%       1줄 / row 1   Simulink 라이브러리의 PID Controller 블록
-%                     the library PID Controller block
-%       2줄 / row 2   같은 제어기를 상자 셋으로 손수 조립한 것
-%                     the same controller assembled by hand from three boxes:
-%                     P, I with anti-windup, D with filter
-%
-%       두 줄은 같은 목표값, 같은 플랜트, 같은 센서 잡음을 받는다. 그래서 두 줄의
-%       결과가 기계 정밀도까지 같으면, 라이브러리 블록 안에서 일어나는 일이
-%       강의가 적은 식 그대로라는 뜻이 된다 (절 F).
-%       Both rows receive the same setpoint, the same plant and the same sensor
-%       noise. If their results agree to machine precision, the library block
-%       is doing exactly what the lecture's equations say (section F).
-%
-%   다시 만들어도 안전하다 / regenerating is safe
-%       이미 있는 W02_pid.slx 는 덮어쓴다. 모델을 손으로 고치지 말고 이 파일을
-%       고친 뒤 다시 돌린다.
-%       An existing W02_pid.slx is overwritten. Edit this file, not the model.
+%   기록할 신호는 Goto 태그로 오른쪽의 Scope 와 로그로 간다. 긴 선이 루프를
+%   가로지르지 않게 하려는 것이다.
+%   The logged signals travel by Goto tag to the Scope and the log on the
+%   right, so that no long line has to cross the loop.
 
-m    = 'W02_pid';
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));
-out  = fullfile(here, [m '.slx']);
 addpath(fullfile(root,'_tools'), here);
-evalin('base', 'W02_0_setup');          % 블록이 부르는 변수가 있어야 저장된다
+evalin('base', 'W02_0_setup');
 
+M = struct( ...
+  'name',  {'W02_C_P','W02_D_PD','W02_E_PID','W02_F_block_vs_hand','W02_G_noise_kick','W02_H_antiwindup','W02_I_tuning'}, ...
+  'D',     {false, true,  true,  true,  true,  true,  true }, ...
+  'I',     {false, false, true,  true,  true,  true,  true }, ...
+  'limit', {false, false, false, true,  false, true,  false}, ...
+  'noise', {false, false, false, true,  true,  false, false}, ...
+  'smooth',{false, false, false, false, true,  false, true }, ...
+  'pure',  {false, false, false, false, true,  false, false}, ...
+  'block', {false, false, false, true,  false, true,  false}, ...
+  'twostep',{false, false, false, false, false, true,  false}, ...
+  'mode',  {'', '', '', 'back-calculation', '', 'clamping', ''}, ...
+  'title', {'P ONLY', 'P + D', 'P + I + D', 'THE PID BLOCK AGAINST THE SAME LAW BY HAND', ...
+            'NOISE, AND THE CORNER OF A STEP', 'A FORCE LIMIT, AND ANTI-WINDUP', ...
+            'THE TUNING ORDER'}, ...
+  'sec',   {'C','D','E','F','G','H','I'});
+if nargin == 1, M = M(strcmp({M.name}, which)); end
+
+for k = 1:numel(M)
+    build_one(M(k), here);
+end
+if nargin == 0 || strcmp(which, 'W02_G_derivative_bench'), build_bench(here); end
+end
+
+% =========================================================================
+%  미분 시험대 — 루프 없이, 잡음 섞인 사인파를 세 가지로 미분한다 (절 G)
+%  The derivative bench: no loop; a noisy sine differentiated three ways (section G)
+%
+%      signal = sin(0.5 t) + noise
+%      true      0.5 cos(0.5 t)          what the derivative should be
+%      pure      d/dt (signal)           the textbook derivative
+%      filtered  Nf s/(s + Nf) (signal)  the pseudo-derivative
+function build_bench(here)
+m = 'W02_G_derivative_bench';
+out = fullfile(here, [m '.slx']);
+bdclose(m);
+if isfile(out), delete(out); end
+new_system(m);
+set_param(m, 'SolverType','Fixed-step', 'Solver','ode4', 'FixedStep','h', ...
+             'StartTime','0', 'StopTime','bench_T', 'ReturnWorkspaceOutputs','off');
+blk(m, 'simulink/Sources/Sine Wave', 'sin(0.5 t)', 60, 100, [30 30], ...
+    {'Amplitude','1', 'Frequency','bench_w', 'Phase','0'});
+blk(m, 'simulink/Sources/Random Number', 'sensor noise', 60, 180, [30 28], ...
+    {'Mean','0', 'Variance','bench_noise^2', 'Seed','23341', 'SampleTime','noise_ts'});
+add_sum(m, 'measured', '++', [140 100]);
+route(m, 'sin(0.5 t)', 1, 'measured', 1, zeros(0,2));
+route(m, 'sensor noise', 1, 'measured', 2, [140 180]);
+add_block('simulink/Continuous/Derivative', [m '/pure derivative'], 'Position',[260 62 310 98]);
+blk(m, 'simulink/Continuous/Transfer Fcn', 'pseudo-derivative', 285, 160, [60 36], ...
+    {'Numerator','[Nf 0]', 'Denominator','[1 Nf]'});
+blk(m, 'simulink/Sources/Sine Wave', 'true derivative', 285, 240, [30 30], ...
+    {'Amplitude','bench_w', 'Frequency','bench_w', 'Phase','pi/2'});
+route(m, 'measured', 1, 'pure derivative', 1, [200 100; 200 80]);
+route(m, 'measured', 1, 'pseudo-derivative', 1, [200 100; 200 160]);
+add_block('simulink/Signal Routing/Mux', [m '/three'], 'Inputs','3', 'Position',[420 20 425 260]);
+q = port_xy(m, 'three', 'Inport', 1);  route(m, 'pure derivative', 1, 'three', 1, [360 80; 360 q(2)]);
+q = port_xy(m, 'three', 'Inport', 2);  route(m, 'pseudo-derivative', 1, 'three', 2, [370 160; 370 q(2)]);
+q = port_xy(m, 'three', 'Inport', 3);  route(m, 'true derivative', 1, 'three', 3, [380 240; 380 q(2)]);
+blk(m, 'simulink/Sinks/Scope', 'Scope', 520, 140, [30 30], {});
+set_param([m '/Scope'], 'Position',[490 110 550 170]);
+route(m, 'three', 1, 'Scope', 1, zeros(0,2));
+blk(m, 'simulink/Sinks/To Workspace', 'W02bench', 520, 260, [60 30], ...
+    {'VariableName','W02bench', 'SaveFormat','Structure With Time'});
+route(m, 'three', 1, 'W02bench', 1, [460 140; 460 260]);
+L = get_param([m '/three'], 'LineHandles');
+nm = {'pure','pseudo','true'};
+for i = 1:3, set_param(L.Inport(i), 'Name', nm{i}); end
+try, set_param([m '/Scope'], 'ShowLegend','on'); catch, end
+set_param([m '/Scope'], 'Open','on');
+a = Simulink.Annotation([m '/note']);
+a.Text = strjoin({'WEEK 2, SECTION G  -  THE DERIVATIVE BENCH (no loop)', '', ...
+  '   measured = sin(0.5 t) + noise of standard deviation bench_noise', ...
+  '   pure     = d/dt (measured)                 the textbook derivative', ...
+  '   pseudo   = Nf s / (s + Nf) (measured)      the filtered derivative', ...
+  '   true     = 0.5 cos(0.5 t)                  what both should show', '', ...
+  'The noise is tiny, yet the pure derivative is buried under spikes.', ...
+  'Change Nf in the Command Window (5, 20, 200) and press Run.'}, newline);
+a.Position = [40 300 620 440];  a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
+mss_style(m);
+set_param([m '/Scope'], 'Position',[490 110 550 170]);
+save_system(m, out);
+export_diagram(m, fullfile(here, 'img'));
+n = check_overlaps(m);
+close_system(m, 0);
+fprintf('  built  %-22s (overlapping lines: %d)\n', [m '.slx'], n);
+end
+
+% =========================================================================
+function build_one(o, here)
+m = o.name;
+out = fullfile(here, [m '.slx']);
 bdclose(m);
 if isfile(out), delete(out); end
 new_system(m);
 set_param(m, 'SolverType','Fixed-step', 'Solver','ode4', ...
-             'FixedStep','h', 'StartTime','0', 'StopTime','T_final');
+             'FixedStep','h', 'StartTime','0', 'StopTime','T_final', ...
+             'ReturnWorkspaceOutputs','off');
 
-P = gnc_chain({'command','controller','plant','measurement'}, ...
-              'Height', struct('controller',150, 'plant',110, 'measurement',150), ...
-              'Y', 110);
-
-%% =====================================================================
-%  1. Setpoint — 계단, 또는 부드럽게 한 계단 / a step, or a smoothed step
-%  =====================================================================
-s = add_subsys(m, 'Setpoint', P.command, {}, {'y_d'}, gnc_colour('command'));
-%  블록은 처음부터 MSS 크기로 만든다. mss_style 이 나중에 줄이면 입력이 여럿인
-%  Switch 의 포트가 옮겨 가서, 이미 그어 둔 선이 비스듬해진다.
-%  Blocks are created at MSS size from the start: if mss_style shrank them
-%  later, a multi-input Switch would move its ports and leave the lines
-%  already drawn to it slanted.
-add_block('simulink/Sources/Step', [s '/step'], ...
-          'Time','t_step', 'Before','0', 'After','y_step', ...
-          'Position',[70 175 100 205]);
-add_block('simulink/Continuous/Transfer Fcn', [s '/smooth'], ...
-          'Numerator','[1]', 'Denominator','[ref_Tf 1]', ...
-          'Position',[220 52 280 88]);
-add_block('simulink/Sources/Constant', [s '/ref_filter'], ...
-          'Value','ref_filter', 'Position',[250 115 305 145]);
-add_block('simulink/Signal Routing/Switch', [s '/which'], ...
-          'Criteria','u2 > Threshold', 'Threshold','0.5', ...
-          'Position',[420 115 450 145]);
-q = port_xy(s, 'which', 'Inport', 2);  mv(s, 'ref_filter', q(2));
-q = port_xy(s, 'which', 'Outport', 1);
-set_param([s '/y_d'], 'Position',[520 q(2)-7 550 q(2)+7]);
-q1 = port_xy(s, 'which', 'Inport', 1);
-q3 = port_xy(s, 'which', 'Inport', 3);
-route(s, 'step', 1, 'smooth', 1, [150 190; 150 70]);
-route(s, 'smooth', 1, 'which', 1, [380 70; 380 q1(2)]);
-route(s, 'ref_filter', 1, 'which', 2, zeros(0,2));
-route(s, 'step', 1, 'which', 3, [390 190; 390 q3(2)]);
-route(s, 'which', 1, 'y_d', 1, zeros(0,2));
-note_at(s, 'what', [60 240 560 330], { ...
-'y_d = step                          when ref_filter = 0'
-'y_d = step through 1/(ref_Tf s + 1)  when ref_filter = 1'
-''
-'The smoothed step is what section G uses to remove the'
-'derivative kick: a setpoint with no corner has a finite slope.'});
-
-%% =====================================================================
-%  2. PID bank — 같은 PID 두 줄 / the same PID twice
-%  =====================================================================
-c = add_subsys(m, 'PID bank', P.controller, {'y_d','y_m'}, {'tau','terms'}, ...
-               gnc_colour('controller'));
-ROW = [100 320];                                   % 두 줄의 높이 / the two rows
-
-%  오차는 한 번만 만든다: e = y_d - y_m. y_m 은 두 줄의 측정값을 담은 벡터이고
-%  y_d 는 스칼라이므로, 합산점 하나가 두 줄의 오차를 한꺼번에 낸다. 그 벡터를
-%  Demux 가 두 줄로 나눈다.
-%  The error is formed once: e = y_d - y_m. y_m carries both rows'
-%  measurements and y_d is a scalar, so one junction produces both errors
-%  and a Demux sends one to each row.
-YM = (ROW(1) + ROW(2))/2;
-add_sum(c, 'e', '+-', [180 YM]);
-set_param([c '/y_d'], 'Position',[40 YM-10 70 YM+10]);
-set_param([c '/y_m'], 'Position',[40 YM+80 70 YM+100]);
-add_line(c, 'y_d/1','e/1','autorouting','on');
-route(c, 'y_m', 1, 'e', 2, [180 YM+90]);
-%  두 출력 Demux 의 포트는 높이의 1/4 과 3/4 — 높이를 줄 간격의 두 배로 잡는다.
-%  A two-output Demux has its ports at 1/4 and 3/4 of its height.
-D2 = ROW(2) - ROW(1);
-add_block('simulink/Signal Routing/Demux', [c '/split e'], ...
-          'Outputs','2', 'Position',[260 ROW(1)-D2/2 265 ROW(2)+D2/2]);
-route(c, 'e', 1, 'split e', 1, zeros(0,2));
-set_param([c '/e'], 'NamePlacement','alternate');
-
-%  ---- 1줄: 라이브러리 블록 / row 1: the library block --------------------
-add_block('simulink/Continuous/PID Controller', [c '/PID block'], ...
-          'Controller','PID', 'Form','Parallel', ...
-          'P','Kp', 'I','Ki', 'D','Kd', 'N','Nf', ...
-          'LimitOutput','on', ...
-          'UpperSaturationLimit','tau_max', 'LowerSaturationLimit','-tau_max', ...
-          'AntiWindupMode','back-calculation', 'Kb','Kb', ...
-          'Position',[380 ROW(1)-30 500 ROW(1)+30]);
-route(c, 'split e', 1, 'PID block', 1, zeros(0,2));
-
-%  ---- 2줄: 손으로 / row 2: by hand ---------------------------------------
-hb = add_subsys(c, 'PID by hand', [380 ROW(2)-40 500 ROW(2)+80], ...
-                {'e'}, {'tau','I','D'}, gnc_colour('controller'));
-build_by_hand(hb);
-q = port_xy(c, 'PID by hand', 'Inport', 1);
-set_param([c '/PID by hand'], 'Position',[380 ROW(2)-40+(ROW(2)-q(2)) 500 ROW(2)+80+(ROW(2)-q(2))]);
-route(c, 'split e', 2, 'PID by hand', 1, zeros(0,2));
-
-%  ---- 모으기 / collect ---------------------------------------------------
-%  두 입력 Mux 의 포트는 높이 H 의 1/4 과 3/4 에 있다. 그래서 H 를 두 줄 간격의
-%  두 배로 잡으면 두 힘이 곧은 선으로 들어온다.
-%  A two-input Mux has its ports at 1/4 and 3/4 of its height H, so H equal
-%  to twice the row spacing brings both forces in on straight lines.
-p2 = port_xy(c, 'PID by hand', 'Outport', 1);
-H  = 2*(p2(2) - ROW(1));
-add_block('simulink/Signal Routing/Mux', [c '/collect tau'], ...
-          'Inputs','2', 'Position',[700 ROW(1)-H/4 705 ROW(1)+3*H/4]);
-route(c, 'PID block', 1, 'collect tau', 1, zeros(0,2));
-route(c, 'PID by hand', 1, 'collect tau', 2, zeros(0,2));
-q = port_xy(c, 'collect tau', 'Outport', 1);
-set_param([c '/tau'], 'Position',[800 q(2)-10 830 q(2)+10]);
-route(c, 'collect tau', 1, 'tau', 1, zeros(0,2));
-
-%  적분항과 미분항은 힘을 모으는 Mux 아래로 돌아서 따로 모은다.
-%  The integral and derivative terms go round underneath the force Mux.
-yb = ROW(1) + 3*H/4 + 50;
-add_block('simulink/Signal Routing/Mux', [c '/collect terms'], ...
-          'Inputs','2', 'Position',[760 yb-20 765 yb+60]);
-pI = port_xy(c, 'PID by hand', 'Outport', 2);
-pD = port_xy(c, 'PID by hand', 'Outport', 3);
-qI = port_xy(c, 'collect terms', 'Inport', 1);
-qD = port_xy(c, 'collect terms', 'Inport', 2);
-route(c, 'PID by hand', 2, 'collect terms', 1, [560 pI(2); 560 qI(2)]);
-route(c, 'PID by hand', 3, 'collect terms', 2, [580 pD(2); 580 qD(2)]);
-q = port_xy(c, 'collect terms', 'Outport', 1);
-set_param([c '/terms'], 'Position',[840 q(2)-10 870 q(2)+10]);
-route(c, 'collect terms', 1, 'terms', 1, zeros(0,2));
-
-note_at(c, 'what', [40 560 830 700], { ...
-'ROW 1  the PID Controller block of the Simulink library'
-'ROW 2  the same controller built by hand - open it'
-''
-'Same gains (Kp Ki Kd Nf), same limit (tau_max), same anti-windup (Kb),'
-'same measurement y_m. Section F runs both and compares them: if the'
-'two rows agree to machine precision, the block does what the equations say.'});
-
-%% =====================================================================
-%  3. Plant bank — 질량-스프링-댐퍼 둘과 센서 / two plants and a sensor
-%  =====================================================================
-p = add_subsys(m, 'Plant bank', P.plant, {'tau'}, {'y','y_m'}, gnc_colour('plant'));
-set_param([p '/tau'], 'Position',[40 190 70 210]);
-add_block('simulink/Signal Routing/Demux', [p '/split'], ...
-          'Outputs','2', 'Position',[140 120 145 280]);
-add_line(p, 'tau/1','split/1','autorouting','on');
-add_block('simulink/Signal Routing/Mux', [p '/collect'], ...
-          'Inputs','2', 'Position',[430 120 435 280]);
-for i = 1:2
-    q = port_xy(p, 'split', 'Outport', i);
-    add_block('simulink/Continuous/Transfer Fcn', [p '/G' num2str(i)], ...
-              'Numerator','[1]', 'Denominator','[pid_m pid_b pid_k]', ...
-              'Position',[230 q(2)-25 350 q(2)+25]);
-    add_line(p, sprintf('split/%d', i), sprintf('G%d/1', i), 'autorouting','on');
-    add_line(p, sprintf('G%d/1', i), sprintf('collect/%d', i), 'autorouting','on');
+Y0 = 200;                                        % 손으로 만든 줄의 D 행 / D row of the hand-built loop
+yd_src = setpoint(m, o, Y0);                     % 목표값 / the setpoint
+loop_hand(m, o, Y0, yd_src);
+if o.block, loop_block(m, Y0 + 400, o.mode, o.noise); end
+measure(m, o);
+note(m, o);
+for b = find_system(m, 'SearchDepth',1, 'Regexp','on', 'BlockType','Goto|From')'
+    set_param(b{1}, 'ShowName','off');              % 태그가 블록 안에 이미 쓰여 있다
 end
-q = port_xy(p, 'collect', 'Outport', 1);
-set_param([p '/y'], 'Position',[700 q(2)-10 730 q(2)+10]);
-add_line(p, 'collect/1','y/1','autorouting','on');
 
-%  센서: 같은 잡음 한 줄기가 두 줄 모두에 더해진다 — 두 제어기가 같은 것을 본다.
-%  The sensor: one noise sequence is added to both rows, so both controllers
-%  see exactly the same measurement.
-add_block('simulink/Sources/Random Number', [p '/noise'], ...
-          'Mean','0', 'Variance','noise_std^2', 'Seed','23341', ...
-          'SampleTime','noise_ts', 'Position',[430 330 470 360]);
-add_sum(p, 'sensor', '++', [560 q(2)]);  set_param([p '/sensor'], 'NamePlacement','alternate');
-set_param([p '/sensor'], 'Position',[550 q(2)+80-10 570 q(2)+80+10]);
-add_line(p, 'collect/1','sensor/1','autorouting','on');
-add_line(p, 'noise/1','sensor/2','autorouting','on');
-q = port_xy(p, 'sensor', 'Outport', 1);
-set_param([p '/y_m'], 'Position',[700 q(2)-10 730 q(2)+10]);
-add_line(p, 'sensor/1','y_m/1','autorouting','on');
-note_at(p, 'what', [40 400 730 500], { ...
-'G(s) = 1 / (pid_m s^2 + pid_b s + pid_k),  one copy per row'
-'y_m  = y + noise,  noise ~ N(0, noise_std^2) held for noise_ts'});
-
-%% =====================================================================
-%  4. Measurements
-%  =====================================================================
-%  log = [y_d  tau(1:2)  y(1:2)  I  D  y_m(1:2)]   -> W02_read
-qq = add_subsys(m, 'Measurements', P.measurement, {'y_d','tau','y','terms','y_m'}, {}, ...
-               gnc_colour('measurement'));
-add_block('simulink/Signal Routing/Mux', [qq '/log'], ...
-          'Inputs','5', 'Position',[260 40 265 400]);
-row_feed(qq, 'log', {'y_d','tau','y','terms','y_m'});
-add_block('simulink/Sinks/To Workspace', [qq '/W02log'], ...
-          'VariableName','W02log', 'SaveFormat','Structure With Time', ...
-          'Position',[340 205 440 235]);
-add_line(qq, 'log/1','W02log/1','autorouting','on');
-q = port_xy(qq, 'log', 'Outport', 1);
-set_param([qq '/W02log'], 'Position',[340 q(2)-15 440 q(2)+15]);
-
-add_block('simulink/Signal Routing/Mux', [qq '/show y'], ...
-          'Inputs','2', 'Position',[260 -140 265 -40]);
-add_block('simulink/Sinks/Scope', [qq '/position'], 'Position',[340 -110 380 -70]);
-add_block('simulink/Sinks/Scope', [qq '/force'],    'Position',[340 460 380 500]);
-lane_line(qq, 'y_d', 1, 'show y', 1, 150);
-lane_line(qq, 'y',   1, 'show y', 2, 170);
-add_line(qq, 'show y/1','position/1','autorouting','on');
-lane_line(qq, 'tau', 1, 'force', 1, 190);
-set_param([qq '/position'], 'Open', 'on');
-
-%% ---- wiring ------------------------------------------------------------
-L = @(x,y) add_line(m, x, y, 'autorouting','smart');
-L('Setpoint/1',   'PID bank/1');
-L('Plant bank/2', 'PID bank/2');
-L('PID bank/1',   'Plant bank/1');
-L('Setpoint/1',   'Measurements/1');
-L('PID bank/1',   'Measurements/2');
-L('Plant bank/1', 'Measurements/3');
-L('PID bank/2',   'Measurements/4');
-L('Plant bank/2', 'Measurements/5');
-
-%% ---- what the model is for ---------------------------------------------
-note_at(m, 'note', [40 300 900 620], { ...
-'WEEK 2  -  PID ON ONE TRANSFER FUNCTION'
-''
-'No vessel. A mass on a spring with a damper:'
-''
-'      m y'''' + b y'' + k y = tau        G(s) = 1 / (s^2 + 2 s + 2)'
-''
-'The controller reads one error, e = y_d - y_m, in three ways and adds them:'
-''
-'      tau = Kp e  +  Ki * integral(e)  +  Kd * (Nf s / (s + Nf)) e'
-'            now      the past             where it is heading'
-''
-'PID bank holds the same controller twice: the library PID block (row 1)'
-'and the same thing built by hand (row 2). Open PID by hand to see it.'
-''
-'Change Kp, Ki, Kd in the Command Window and press Run again. The'
-'position scope opens with the model.'});
-
-set_param(m, 'StopFcn', 'W02_plot;');
-set_param(m, 'ReturnWorkspaceOutputs', 'off');
+set_param(m, 'StopFcn', '');                     % 그림은 캔버스의 Scope 가 보인다
 mss_style(m);
 save_system(m, out);
-export_diagram(m, fullfile(here, 'img'));
-export_inside(m, 'PID bank', fullfile(here, 'img', 'W02_pid_bank.png'));
-export_inside(m, 'PID bank/PID by hand', fullfile(here, 'img', 'W02_pid_by_hand.png'));
-export_inside(m, 'PID bank/PID by hand/D with filter', fullfile(here, 'img', 'W02_d_filter.png'));
+print(['-s' m], '-dpng', '-r100', fullfile(here, 'img', [m '.png']));   % 캔버스가 넓어 100 dpi (2000 px 이하)
 n = check_overlaps(m);
 close_system(m, 0);
-fprintf('  built  %s   (overlapping lines: %d)\n', out, n);
+fprintf('  built  %-22s (overlapping lines: %d)\n', [m '.slx'], n);
 end
 
 % =========================================================================
-function build_by_hand(hb)
-%  손으로 만든 PID 의 안쪽. 상자 셋이 식의 세 항이다.
-%  Inside the hand-built PID. The three boxes are the three terms.
-%
-%      u     = P + I + D                      (the demand)
-%      tau   = sat(u)                         (what the actuator gives)
-%      I_dot = Ki e + Kb (tau - u)            (the integrator, with back-calculation)
-ROW = [80 200 330];                                % P, I, D 의 높이
-
-set_param([hb '/e'], 'Position',[40 ROW(2)-10 70 ROW(2)+10]);
-
-%  P
-bP = add_subsys(hb, 'P', [200 ROW(1)-25 300 ROW(1)+25], {'e'}, {'p'});
-add_block('simulink/Math Operations/Gain', [bP '/Kp'], 'Gain','Kp', ...
-          'Position',[250 70 300 110]);
-set_param([bP '/e'], 'Position',[100 80 130 100]);
-set_param([bP '/p'], 'Position',[400 80 430 100]);
-add_line(bP, 'e/1','Kp/1','autorouting','on');
-add_line(bP, 'Kp/1','p/1','autorouting','on');
-note_at(bP, 'what', [100 150 430 190], {'p = Kp e'});
-
-%  I, with back-calculation
-bI = add_subsys(hb, 'I with anti-windup', [200 ROW(2)-30 300 ROW(2)+50], ...
-                {'e','excess'}, {'i'});
-set_param([bI '/e'],      'Position',[60  80  90 100]);
-set_param([bI '/excess'], 'Position',[60 180  90 200]);
-add_block('simulink/Math Operations/Gain', [bI '/Ki'], 'Gain','Ki', ...
-          'Position',[160 70 210 110]);
-add_block('simulink/Math Operations/Gain', [bI '/Kb'], 'Gain','Kb', ...
-          'Position',[160 170 210 210]);
-add_sum(bI, 'into I', '++', [290 90]);  set_param([bI '/into I'], 'NamePlacement','alternate');
-add_block('simulink/Continuous/Integrator', [bI '/integrate'], ...
-          'InitialCondition','0', 'Position',[350 72 385 108]);
-set_param([bI '/i'], 'Position',[470 80 500 100]);
-add_line(bI, 'e/1','Ki/1','autorouting','on');
-add_line(bI, 'excess/1','Kb/1','autorouting','on');
-add_line(bI, 'Ki/1','into I/1','autorouting','on');
-add_line(bI, 'Kb/1','into I/2','autorouting','on');
-add_line(bI, 'into I/1','integrate/1','autorouting','on');
-add_line(bI, 'integrate/1','i/1','autorouting','on');
-note_at(bI, 'what', [60 250 520 330], { ...
-'i_dot = Ki e + Kb (tau - u)'
-''
-'excess = tau - u is zero until the actuator saturates. Then it pulls'
-'the integrator back. Kb = 0 removes the anti-windup.'});
-
-%  D, filtered (or not)
-bD = add_subsys(hb, 'D with filter', [200 ROW(3)-25 300 ROW(3)+25], {'e'}, {'d'});
-set_param([bD '/e'], 'Position',[40 80 70 100]);
-add_block('simulink/Math Operations/Gain', [bD '/Kd'], 'Gain','Kd', ...
-          'Position',[120 70 170 110]);
-add_sum(bD, 'minus state', '+-', [230 90]);
-add_block('simulink/Math Operations/Gain', [bD '/Nf'], 'Gain','Nf', ...
-          'Position',[280 70 330 110]);
-%  적분기를 왼쪽으로 돌려 둔다: 입력이 오른쪽, 출력이 왼쪽. 그러면 Nf 뒤에서 갈라져
-%  아래로 내려와 되돌아가는 되먹임이 교과서의 그림 그대로 한 바퀴로 보인다.
-%  The integrator faces left, input on the right and output on the left, so
-%  the loop from Nf back to the junction reads as one turn, as in a textbook.
-add_block('simulink/Continuous/Integrator', [bD '/filter state'], ...
-          'InitialCondition','0', 'Orientation','left', ...
-          'Position',[260 160 295 196]);
-add_block('simulink/Continuous/Derivative', [bD '/pure derivative'], ...
-          'Position',[280 250 330 290]);
-add_block('simulink/Sources/Constant', [bD '/d_filtered'], ...
-          'Value','d_filtered', 'Position',[380 165 435 195]);
-add_block('simulink/Signal Routing/Switch', [bD '/which'], ...
-          'Criteria','u2 > Threshold', 'Threshold','0.5', ...
-          'Position',[490 165 520 195]);
-q = port_xy(bD, 'which', 'Inport', 2);  mv(bD, 'd_filtered', q(2));
-q = port_xy(bD, 'which', 'Outport', 1);
-set_param([bD '/d'], 'Position',[600 q(2)-7 630 q(2)+7]);
-set_param([bD '/minus state'], 'NamePlacement','alternate');
-route(bD, 'e', 1, 'Kd', 1, zeros(0,2));
-route(bD, 'Kd', 1, 'minus state', 1, zeros(0,2));
-route(bD, 'minus state', 1, 'Nf', 1, zeros(0,2));
-q1 = port_xy(bD, 'which', 'Inport', 1);
-route(bD, 'Nf', 1, 'which', 1, [440 90; 440 q1(2)]);
-qf = port_xy(bD, 'filter state', 'Inport', 1);
-route(bD, 'Nf', 1, 'filter state', 1, [360 90; 360 qf(2)]);
-qo = port_xy(bD, 'filter state', 'Outport', 1);
-route(bD, 'filter state', 1, 'minus state', 2, [230 qo(2)]);
-qp = port_xy(bD, 'pure derivative', 'Inport', 1);
-route(bD, 'Kd', 1, 'pure derivative', 1, [190 90; 190 qp(2)]);
-route(bD, 'd_filtered', 1, 'which', 2, zeros(0,2));
-q3 = port_xy(bD, 'which', 'Inport', 3);
-qd = port_xy(bD, 'pure derivative', 'Outport', 1);
-route(bD, 'pure derivative', 1, 'which', 3, [460 qd(2); 460 q3(2)]);
-route(bD, 'which', 1, 'd', 1, zeros(0,2));
-note_at(bD, 'what', [40 340 640 440], { ...
-'d = Nf (Kd e - x),  x_dot = d        which is   d = Kd (Nf s / (s + Nf)) e'
-''
-'Below Nf rad/s this differentiates; above it the gain stops growing at Kd Nf.'
-'d_filtered = 0 switches to the pure derivative instead (section G).'});
-
-%  I 상자를 옮겨 첫 입력이 e 의 높이에 오게 한다 — e 에서 I 로 가는 선이 곧은 한 도막.
-%  Move the I box so that its first input is at the height of e: the line
-%  from e to I is then one straight segment.
-q = port_xy(hb, 'I with anti-windup', 'Inport', 1);
-p = get_param([hb '/I with anti-windup'], 'Position');
-set_param([hb '/I with anti-windup'], 'Position', p + [0 ROW(2)-q(2) 0 ROW(2)-q(2)]);
-
-%  e 에서 세 상자로 / from e to the three boxes
-route(hb, 'e', 1, 'P', 1,                  [120 ROW(2); 120 ROW(1)]);
-route(hb, 'e', 1, 'I with anti-windup', 1, zeros(0,2));
-route(hb, 'e', 1, 'D with filter', 1,      [120 ROW(2); 120 ROW(3)]);
-
-%  더하기와 한계 / sum and limit
-add_sum(hb, 'p+i', '++', [400 ROW(1)]);
-add_sum(hb, 'u', '++', [460 ROW(1)]);
-add_block('simulink/Discontinuities/Saturation', [hb '/limit'], ...
-          'UpperLimit','tau_max', 'LowerLimit','-tau_max', ...
-          'Position',[530 ROW(1)-20 570 ROW(1)+20]);
-set_param([hb '/tau'], 'Position',[760 ROW(1)-10 790 ROW(1)+10]);
-qi = port_xy(hb, 'I with anti-windup', 'Outport', 1);
-route(hb, 'P', 1, 'p+i', 1, zeros(0,2));
-route(hb, 'I with anti-windup', 1, 'p+i', 2, [400 qi(2)]);
-route(hb, 'D with filter', 1, 'u', 2,        [460 ROW(3)]);
-route(hb, 'p+i', 1, 'u', 1, zeros(0,2));
-route(hb, 'u', 1, 'limit', 1, zeros(0,2));
-route(hb, 'limit', 1, 'tau', 1, zeros(0,2));
-
-%  되감기: excess = tau - u / back-calculation
-%  excess 는 아래쪽에 두고, 되감기 선은 맨 아래 y = 500 을 따라 왼쪽으로 간다.
-%  모델에서 오른쪽에서 왼쪽으로 가는 선은 이것 하나뿐이다.
-%  The excess junction sits low, and the line back to the integrator runs
-%  left along y = 500 underneath everything: the one backward line.
-add_sum(hb, 'excess', '+-', [560 440]);
-route(hb, 'limit', 1, 'excess', 1, [600 ROW(1); 600 400; 520 400; 520 440]);
-route(hb, 'u', 1, 'excess', 2,     [500 ROW(1); 500 470; 560 470]);
-qe = port_xy(hb, 'I with anti-windup', 'Inport', 2);
-route(hb, 'excess', 1, 'I with anti-windup', 2, ...
-      [590 440; 590 500; 160 500; 160 qe(2)]);
-
-%  두 항을 밖으로 / the two terms, out for logging
-set_param([hb '/I'], 'Position',[760 530 790 550]);
-set_param([hb '/D'], 'Position',[760 590 790 610]);
-route(hb, 'I with anti-windup', 1, 'I', 1, [330 qi(2); 330 540]);
-route(hb, 'D with filter', 1, 'D', 1,      [350 ROW(3); 350 600]);
-
-%  둥근 합산점의 이름은 아래 입력 화살표와 겹치므로 위로 올린다.
-%  A round sum's name collides with the arrow entering from below, so it goes on top.
-for nm = {'p+i','u','excess'}
-    set_param([hb '/' nm{1}], 'NamePlacement','alternate');
+%  목표값: 계단, 또는 (smooth) 1/(ref_Tf s + 1) 로 부드럽게 한 계단
+%  The setpoint: a step, or (smooth) the step through 1/(ref_Tf s + 1)
+function src = setpoint(m, o, Y)
+blk(m, 'simulink/Sources/Step', 'step', 55, Y, [30 30], ...
+    {'Time','t_step', 'Before','0', 'After','y_step'});
+if o.twostep
+    %  두 번째 계단: t_step2 에 목표가 y_step2 로 바뀐다 (절 H — 닿을 수 없는 목표 뒤에 닿을 수 있는 목표)
+    %  The second step: at t_step2 the target becomes y_step2 (section H)
+    blk(m, 'simulink/Sources/Step', 'step 2', 55, Y+60, [30 30], ...
+        {'Time','t_step2', 'Before','0', 'After','y_step2 - y_step'});
+    add_sum(m, 'two steps', '++', [150 Y]);
+    route(m, 'step', 1, 'two steps', 1, zeros(0,2));
+    route(m, 'step 2', 1, 'two steps', 2, [150 Y+60]);
+    set_param([m '/two steps'], 'NamePlacement','alternate');
+    src = {'two steps', 1};
+    return
+end
+if ~o.smooth
+    src = {'step', 1};
+    return
+end
+blk(m, 'simulink/Continuous/Transfer Fcn', 'smooth', 150, Y-50, [60 36], ...
+    {'Numerator','[1]', 'Denominator','[ref_Tf 1]'});
+blk(m, 'simulink/Sources/Constant', 'ref_filter', 188, Y+45, [55 30], {'Value','ref_filter'});
+blk(m, 'simulink/Signal Routing/Switch', 'which setpoint', 245, Y, [30 30], ...
+    {'Criteria','u2 > Threshold', 'Threshold','0.5'});
+q1 = port_xy(m, 'which setpoint', 'Inport', 1);
+q2 = port_xy(m, 'which setpoint', 'Inport', 2);
+q3 = port_xy(m, 'which setpoint', 'Inport', 3);
+route(m, 'step', 1, 'smooth', 1, [90 Y; 90 Y-50]);
+route(m, 'smooth', 1, 'which setpoint', 1, [212 Y-50; 212 q1(2)]);
+route(m, 'ref_filter', 1, 'which setpoint', 2, [220 Y+45; 220 q2(2)]);
+route(m, 'step', 1, 'which setpoint', 3, [100 Y; 100 q3(2)]);
+src = {'which setpoint', 1};
 end
 
-note_at(hb, 'what', [40 640 790 760], { ...
-'u     = p + i + d          what the controller asks for'
-'tau   = sat(u)             what the actuator can give, |tau| <= tau_max'
-'i_dot = Ki e + Kb (tau - u)   the integrator, told how much was cut off'
-''
-'Open each box: P, I and D are one term each.'});
+% =========================================================================
+%  손으로 만든 PID 한 줄 / the hand-built loop
+%     P 행 y = Y-80, D 행 y = Y, I 행 y = Y+100, 되감기 y = Y+160, 되먹임 y = Y+220
+function loop_hand(m, o, Y, yd)
+YP = Y - 80;  YI = Y + 100;  YB = Y + 160;  YF = Y + 220;
+
+add_sum(m, 'e', '+-', [340 Y]);
+route(m, yd{1}, yd{2}, 'e', 1, [290 Y]);
+goto_at(m, yd, [290 Y], 'up', 'y_d');
+
+% P
+blk(m, 'simulink/Math Operations/Gain', 'Kp', 440, YP, [50 36], {'Gain','Kp'});
+route(m, 'e', 1, 'Kp', 1, [380 Y; 380 YP]);
+last = {'Kp', 1};                                % 지금까지의 합 / the running sum
+
+% D : Kd Nf s / (s + Nf)
+if o.D
+    blk(m, 'simulink/Continuous/Transfer Fcn', 'D filter', 470, Y, [60 36], ...
+        {'Numerator','[Kd*Nf 0]', 'Denominator','[1 Nf]'});
+    route(m, 'e', 1, 'D filter', 1, zeros(0,2));
+    dsrc = {'D filter', 1};  dx = 520;
+    if o.pure
+        %  순수 미분: Kd 를 곱한 뒤 미분한다. d_filtered 로 고른다.
+        %  The pure derivative, Kd times d/dt, selected by d_filtered.
+        blk(m, 'simulink/Math Operations/Gain', 'Kd', 440, YB, [50 36], {'Gain','Kd'});
+        add_block('simulink/Continuous/Derivative', [m '/pure derivative'], ...
+                  'Position', [500 YB-18 550 YB+18]);
+        blk(m, 'simulink/Sources/Constant', 'd_filtered', 560, Y-38, [55 30], {'Value','d_filtered'});
+        blk(m, 'simulink/Signal Routing/Switch', 'which D', 630, Y, [30 30], ...
+            {'Criteria','u2 > Threshold', 'Threshold','0.5'});
+        q1 = port_xy(m, 'which D', 'Inport', 1);
+        q2 = port_xy(m, 'which D', 'Inport', 2);
+        q3 = port_xy(m, 'which D', 'Inport', 3);
+        route(m, 'D filter', 1, 'which D', 1, [590 Y; 590 q1(2)]);
+        route(m, 'd_filtered', 1, 'which D', 2, [597 Y-38; 597 q2(2)]);
+        route(m, 'e', 1, 'Kd', 1, [380 Y; 380 YB]);
+        route(m, 'Kd', 1, 'pure derivative', 1, zeros(0,2));
+        route(m, 'pure derivative', 1, 'which D', 3, [604 YB; 604 q3(2)]);
+        dsrc = {'which D', 1};  dx = 660;
+    end
+    add_sum(m, 'p+d', '++', [690 YP]);
+    route(m, 'Kp', 1, 'p+d', 1, zeros(0,2));
+    ds = port_xy(m, dsrc{1}, 'Outport', dsrc{2});
+    route(m, dsrc{1}, dsrc{2}, 'p+d', 2, [690 ds(2)]);
+    goto_at(m, dsrc, [dx ds(2)], 'down', 'D');
+    last = {'p+d', 1};
 end
 
-% -------------------------------------------------------------------------
-function mv(sys, blk, yc)
-%  블록을 세로로만 옮겨 그 출력 포트가 높이 yc 에 오게 한다.
-%  Move a block vertically so that its output port sits at height yc.
-p  = get_param([sys '/' blk], 'Position');
-q  = port_xy(sys, blk, 'Outport', 1);
-dy = yc - q(2);
-set_param([sys '/' blk], 'Position', p + [0 dy 0 dy]);
+% I : Ki e (+ Kb (tau - u)), integrated
+if o.I
+    blk(m, 'simulink/Math Operations/Gain', 'Ki', 445, YI, [50 36], {'Gain','Ki'});
+    blk(m, 'simulink/Continuous/Integrator', 'I', 560, YI, [30 30], {'InitialCondition','0'});
+    route(m, 'e', 1, 'Ki', 1, [380 Y; 380 YI]);
+    if o.limit
+        %  한계가 있을 때만 되감기 입력을 받는 합산점을 둔다 / the back-calculation junction, only with a limit
+        add_sum(m, 'into I', '++', [510 YI]);
+        route(m, 'Ki', 1, 'into I', 1, zeros(0,2));
+        route(m, 'into I', 1, 'I', 1, zeros(0,2));
+    else
+        route(m, 'Ki', 1, 'I', 1, zeros(0,2));
+    end
+    add_sum(m, 'u', '++', [750 YP]);
+    route(m, last{1}, last{2}, 'u', 1, zeros(0,2));
+    route(m, 'I', 1, 'u', 2, [750 YI]);
+    goto_at(m, {'I', 1}, [595 YI], 'down', 'I');
+    last = {'u', 1};
 end
 
-function route(sys, src, sp, dst, dp, via)
-%  출발 포트에서 도착 포트까지, 지나갈 꺾임점을 직접 준 선 하나.
-%  One line from a source port to a destination port through the corner
-%  points given. Autorouting chose the same corridor for unrelated lines here,
-%  so the corners are written out; nothing is left for the router to decide.
+% 힘의 한계와 되감기 / the force limit and back-calculation
+if o.limit
+    blk(m, 'simulink/Discontinuities/Saturation', 'limit', 800, YP, [30 30], ...
+        {'UpperLimit','tau_max', 'LowerLimit','-tau_max'});
+    route(m, last{1}, last{2}, 'limit', 1, zeros(0,2));
+    add_sum(m, 'tau - u', '+-', [830 Y+40]);
+    blk(m, 'simulink/Math Operations/Gain', 'Kb', 815, YB, [50 36], ...
+        {'Gain','Kb', 'Orientation','left'});
+    route(m, 'limit', 1, 'tau - u', 1, [860 YP; 860 Y; 805 Y; 805 Y+40]);
+    route(m, last{1}, last{2}, 'tau - u', 2, [770 YP; 770 Y+70; 830 Y+70]);
+    qk = port_xy(m, 'Kb', 'Inport', 1);
+    route(m, 'tau - u', 1, 'Kb', 1, [880 Y+40; 880 qk(2)]);
+    qk = port_xy(m, 'Kb', 'Outport', 1);
+    route(m, 'Kb', 1, 'into I', 2, [510 qk(2)]);
+    last = {'limit', 1};
+    for nm = {'tau - u'}, set_param([m '/' nm{1}], 'NamePlacement','alternate'); end
+end
+
+% 플랜트 / the plant
+blk(m, 'simulink/Continuous/Transfer Fcn', 'plant', 960, YP, [60 36], ...
+    {'Numerator','[1]', 'Denominator','[pid_m pid_b pid_k]', ...
+     'BackgroundColor', gnc_colour('plant')});
+route(m, last{1}, last{2}, 'plant', 1, zeros(0,2));
+lp = port_xy(m, last{1}, 'Outport', last{2});
+goto_at(m, last, [lp(1)+(900-lp(1))/2 YP], 'up', 'tau');
+goto_at(m, {'plant', 1}, [1020 YP], 'up', 'y');
+
+% 되먹임, 잡음이 있으면 센서를 거쳐 / the feedback, through the sensor if noisy
+if o.noise
+    add_sum(m, 'sensor', '++', [960 YF]);
+    set_param([m '/sensor'], 'Orientation','left');
+    blk(m, 'simulink/Sources/Random Number', 'noise', 900, YF+60, [30 28], ...
+        {'Mean','0', 'Variance','noise_std^2', 'Seed','23341', 'SampleTime','noise_ts'});
+    route(m, 'plant', 1, 'sensor', 1, [1040 YP; 1040 YF]);
+    qs = port_xy(m, 'sensor', 'Inport', 2);
+    route(m, 'noise', 1, 'sensor', 2, [qs(1) YF+60]);
+    route(m, 'sensor', 1, 'e', 2, [340 YF]);
+else
+    route(m, 'plant', 1, 'e', 2, [1040 YP; 1040 YF; 340 YF]);
+end
+for nm = {'e','p+d','u','into I'}
+    if getSimulinkBlockHandle([m '/' nm{1}]) > 0
+        set_param([m '/' nm{1}], 'NamePlacement','alternate');
+    end
+end
+end
+
+% =========================================================================
+%  라이브러리 PID 블록 한 줄 (F 만) / one row with the library PID block (F only)
+function loop_block(m, Y, mode, noisy)
+add_sum(m, 'e ', '+-', [340 Y]);
+set_param([m '/e '], 'NamePlacement','alternate');
+add_block('simulink/Signal Routing/From', [m '/From y_d (block row)'], 'GotoTag','y_d', ...
+          'Position', [255 Y-10 305 Y+10]);
+route(m, 'From y_d (block row)', 1, 'e ', 1, zeros(0,2));
+add_block('simulink/Continuous/PID Controller', [m '/PID block'], ...
+          'Controller','PID', 'Form','Parallel', 'P','Kp', 'I','Ki', 'D','Kd', 'N','Nf_blk', ...
+          'LimitOutput','on', 'UpperSaturationLimit','tau_max', 'LowerSaturationLimit','-tau_max', ...
+          'AntiWindupMode',mode, 'Kb','Kb', 'Position',[430 Y-30 550 Y+30]);
+route(m, 'e ', 1, 'PID block', 1, zeros(0,2));
+blk(m, 'simulink/Continuous/Transfer Fcn', 'plant ', 960, Y, [60 36], ...
+    {'Numerator','[1]', 'Denominator','[pid_m pid_b pid_k]', 'BackgroundColor', gnc_colour('plant')});
+route(m, 'PID block', 1, 'plant ', 1, zeros(0,2));
+goto_at(m, {'PID block', 1}, [720 Y], 'up', 'tau_blk');
+goto_at(m, {'plant ', 1}, [1020 Y], 'up', 'y_blk');
+if noisy
+    add_sum(m, 'sensor ', '++', [960 Y+80]);
+    set_param([m '/sensor '], 'Orientation','left');
+    blk(m, 'simulink/Sources/Random Number', 'noise ', 900, Y+140, [30 28], ...
+        {'Mean','0', 'Variance','noise_std^2', 'Seed','23341', 'SampleTime','noise_ts'});
+    route(m, 'plant ', 1, 'sensor ', 1, [1040 Y; 1040 Y+80]);
+    qs = port_xy(m, 'sensor ', 'Inport', 2);
+    route(m, 'noise ', 1, 'sensor ', 2, [qs(1) Y+140]);
+    route(m, 'sensor ', 1, 'e ', 2, [340 Y+80]);
+else
+    route(m, 'plant ', 1, 'e ', 2, [1040 Y; 1040 Y+80; 340 Y+80]);
+end
+for b = find_system(m, 'SearchDepth',1, 'Regexp','on', 'BlockType','Goto|From')'
+    set_param(b{1}, 'ShowName','off');
+end
+a = Simulink.Annotation([m '/row A']);
+a.Text = strjoin({sprintf('THE LIBRARY PID BLOCK, anti-windup = %s.', mode), ...
+    'Same gains and limit (tau_max) as the row above, and its own noise source with the', ...
+    'SAME seed, so both rows see the same noise. Its filter coefficient is Nf_blk (= Nf).'}, newline);
+a.Position = [420 Y+170 900 Y+230];  a.HorizontalAlignment = 'left';
+a.BackgroundColor = 'lightBlue';
+end
+
+% =========================================================================
+%  Scope 하나와 로그 / one Scope and the log
+%     Scope 위 칸: 위치 [y_d y (y_blk)],  아래 칸: 힘 [tau (tau_blk) (I) (D)]
+%     로그 W02log = [위 칸, 아래 칸]  -> W02_read
+function measure(m, o)
+pos = {'y_d','y'};                    if o.block, pos{end+1} = 'y_blk'; end
+frc = {'tau'};  if o.block, frc{end+1} = 'tau_blk'; end
+if o.I, frc{end+1} = 'I'; end
+if o.D, frc{end+1} = 'D'; end
+X = 1180;
+mux_of(m, 'position', pos, X, 40);
+mux_of(m, 'force', frc, X, 280);
+blk(m, 'simulink/Sinks/Scope', 'Scope', X+120, 200, [30 30], {});
+set_param([m '/Scope'], 'NumInputPorts','2');
+try, set_param([m '/Scope'], 'LayoutDimensionsString','[2 1]'); catch, end
+try, set_param([m '/Scope'], 'ShowLegend','on'); catch, end
+set_param([m '/Scope'], 'Position', [X+100 150 X+160 250]);
+p1 = port_xy(m, 'Scope', 'Inport', 1);  p2 = port_xy(m, 'Scope', 'Inport', 2);
+a = port_xy(m, 'position', 'Outport', 1);  b = port_xy(m, 'force', 'Outport', 1);
+route(m, 'position', 1, 'Scope', 1, [X+40 a(2); X+40 p1(2)]);
+route(m, 'force', 1, 'Scope', 2, [X+50 b(2); X+50 p2(2)]);
+add_block('simulink/Signal Routing/Mux', [m '/log'], 'Inputs','2', ...
+          'Position', [X+100 360 X+105 440]);
+route(m, 'position', 1, 'log', 1, [X+40 a(2); X+40 380]);
+route(m, 'force', 1, 'log', 2, [X+50 b(2); X+50 420]);
+blk(m, 'simulink/Sinks/To Workspace', 'W02log', X+190, 400, [60 30], ...
+    {'VariableName','W02log', 'SaveFormat','Structure With Time'});
+route(m, 'log', 1, 'W02log', 1, zeros(0,2));
+set_param([m '/Scope'], 'Open','on');
+end
+
+function mux_of(m, name, tags, X, Y)
+n = numel(tags);  H = 40*n;
+if n == 1
+    add_block('simulink/Signal Routing/Mux', [m '/' name], 'Inputs','1', ...
+              'Position', [X Y X+5 Y+H]);
+else
+    add_block('simulink/Signal Routing/Mux', [m '/' name], 'Inputs',num2str(n), ...
+              'Position', [X Y X+5 Y+H]);
+end
+for i = 1:n
+    q = port_xy(m, name, 'Inport', i);
+    f = ['From ' tags{i}];
+    add_block('simulink/Signal Routing/From', [m '/' f], 'GotoTag',tags{i}, ...
+              'Position', [X-90 q(2)-10 X-40 q(2)+10]);
+    h = route(m, f, 1, name, i, zeros(0,2));
+    set_param(h, 'Name', tags{i});
+end
+end
+
+% =========================================================================
+%  Goto 하나를 선의 한 점에서 위나 아래로 가지 쳐 단다
+%  Hang one Goto from a point on a line, branching up or down
+function goto_at(m, src, at, dirn, tag)
+if strcmp(dirn, 'up'), dy = -38; else, dy = 38; end
+at = round(at);                                  % 블록 좌표는 정수로 반올림된다 / block positions round
+g = ['Goto ' tag];
+add_block('simulink/Signal Routing/Goto', [m '/' g], 'GotoTag',tag, ...
+          'TagVisibility','local', 'Position', [at(1)+12 at(2)+dy-9 at(1)+62 at(2)+dy+9]);
+route(m, src{1}, src{2}, g, 1, [at; at(1) at(2)+dy]);
+end
+
+function blk(m, lib, name, cx, cy, wh, params)
+add_block(lib, [m '/' name], 'Position', ...
+          [cx-wh(1)/2 cy-wh(2)/2 cx+wh(1)/2 cy+wh(2)/2], params{:});
+end
+
+function h = route(sys, src, sp, dst, dp, via)
 a = port_xy(sys, src, 'Outport', sp);
 b = port_xy(sys, dst, 'Inport', dp);
-add_line(sys, [a; via; b]);
+try
+    h = add_line(sys, [a; via; b]);
+catch e
+    fprintf('route %s -> %s : a %s via %s b %s\n', src, dst, mat2str(size(a)), mat2str(size(via)), mat2str(size(b)));
+    rethrow(e);
+end
 end
 
-function note_at(sys, name, pos, lines)
-h = Simulink.Annotation([sys '/' name]);
-h.Text = strjoin(lines, newline);  h.Position = pos;
-h.HorizontalAlignment = 'left';  h.BackgroundColor = 'lightBlue';
-end
-
-function export_inside(m, sub, file)
-%  서브시스템 안쪽 도면도 강의에 싣는다 / the inside of a subsystem, for the notes
-print(['-s' m '/' sub], '-dpng', '-r120', file);
+% =========================================================================
+function note(m, o)
+L = {sprintf('WEEK 2, SECTION %s  -  %s', o.sec, o.title), ''};
+law = 'tau = Kp e';
+if o.I, law = [law ' + Ki * integral(e)']; end
+if o.D, law = [law ' + Kd (Nf s / (s + Nf)) e']; end
+L{end+1} = ['    e = y_d - y,    ' law];
+if o.limit, L{end+1} = '    tau limited to |tau| <= tau_max;  i_dot = Ki e + Kb (tau - u)'; end
+if o.noise, L{end+1} = '    y is measured with noise of standard deviation noise_std'; end
+if o.smooth, L{end+1} = '    ref_filter = 1 passes the step through 1/(ref_Tf s + 1)'; end
+if o.pure,  L{end+1} = '    d_filtered = 0 replaces the filtered derivative by a pure one'; end
+L = [L, {'', 'Change a gain in the Command Window (e.g. Kp = 20) and press Run:', ...
+         'the Scope shows the position (top) and the force (bottom) at once.'}];
+a = Simulink.Annotation([m '/note']);
+a.Text = strjoin(L, newline);
+if o.block, a.Position = [40 820 900 960]; else, a.Position = [40 480 900 620]; end
+a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
 end

@@ -30,7 +30,7 @@ function ok = verify_w02_pid()
 %        the derivative kick: the filtered derivative of a unit step starts at Kd Nf
 %     7  샘플 시간: 불안정해지는 첫 Ts 를 촘촘한 격자로 다시 찾아 절 J 의 이분법과 대조
 %        the first unstable sample time, found again on a fine grid
-%     8  손으로 만든 PID 와 PID 블록이 포화와 잡음 아래에서도 정확히 같다 (모델 한 번)
+%     8  손으로 만든 PID 와 PID 블록이 포화와 잡음 아래에서도 반올림 오차 안에서 같다
 %        the hand-built PID equals the PID block under saturation and noise
 
 root = fileparts(fileparts(mfilename('fullpath')));
@@ -104,11 +104,10 @@ ok = report(ok, '7 first unstable sample time (grid)', abs(Tfirst - 0.511) <= 0.
             sprintf('%.4f s (section J bisection: 0.511 s)', Tfirst));
 
 %% 8 ----------------------------------------------------------------------
-if ~isfile(fullfile(wk, 'W02_pid.slx')), W02_1_build_pid(); end
-V8 = V;  V8.tau_max = 2.5;  V8.noise_std = 0.005;
-R = W02_read(run_sim('W02_pid', V8));
+if ~isfile(fullfile(wk, 'W02_F_block_vs_hand.slx')), W02_1_build_pid('W02_F_block_vs_hand'); end
+R = W02_read('W02_F_block_vs_hand', 'tau_max', 2.5, 'noise_std', 0.005);
 d8 = max([abs(R.y - R.y_blk); abs(R.tau - R.tau_blk)]);
-ok = report(ok, '8 hand-built = PID block (saturation, noise)', d8 == 0, sprintf('%.1e', d8));
+ok = report(ok, '8 hand-built = PID block (saturation, noise)', d8 < 1e-12, sprintf('%.1e', d8));
 
 fprintf('\n  %s\n\n', ternary(ok, 'ALL CHECKS PASSED', '불일치 있음 — 위 FAIL 을 볼 것'));
 end

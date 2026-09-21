@@ -23,15 +23,17 @@ function V = W02_vars()
 
 V.pid_m = 1;   V.pid_b = 2;   V.pid_k = 2;
 
-V.Kp = 10;     V.Ki = 8;      V.Kd = 4;     V.Nf = 20;
+V.Kp = 10;     V.Ki = 8;      V.Kd = 4;     V.Nf = 20;   V.Nf_blk = 20;
 V.d_filtered = 1;
 
 V.y_step = 1;  V.t_step = 1;
 V.ref_filter = 0;  V.ref_Tf = 0.3;
+V.y_step2 = 0.5;   V.t_step2 = 1e6;
 
 V.tau_max = 1e6;   V.Kb = 2;
 
 V.noise_std = 0;   V.noise_ts = 0.01;
+V.bench_w = 0.5;   V.bench_noise = 0.005;   V.bench_T = 20;
 
 V.T_final = 10;    V.h = 1e-3;
 end

@@ -65,16 +65,14 @@ setpoint → (+)(−) → Kp → τ → plant → y
 
 ## Problem 2 · Add I and D, by hand (25 minutes)
 
-**Build.** Two more branches, from **Gain, Sum and Integrator blocks only**. No PID Controller block, no Derivative block — the checker looks for both.
+**Build.** Two more branches, on the top level: a Gain `Ki` and an Integrator for I, and one **Transfer Fcn** for D. No PID Controller block and no Derivative block — the checker looks for both.
 
 $$
-\tau = K_p\,e + K_i\!\int e\,\mathrm{d}t + d,
-\qquad
-d = N_f\,(K_d\,e - x), \quad \dot x = d
+\tau = K_p\,e + K_i\!\int e\,\mathrm{d}t + K_d\,\frac{N_f\,s}{s + N_f}\,e
 $$
 
-> [!warning] The derivative is filtered, and it is built as a loop
-> The second line is $K_d\,N_f s/(s+N_f)$ applied to $e$ (§2-7). Build it as a gain $N_f$ with an integrator in its feedback path, exactly as box D of `W02_pid.slx`. A Derivative block would differentiate the corner of the step into an impulse.
+> [!warning] The derivative is filtered
+> Set the Transfer Fcn to numerator `[Kd*Nf 0]` and denominator `[1 Nf]`, as the block `D filter` of `W02_E_PID.slx`. A Derivative block would differentiate the corner of the step into an impulse (§2-7).
 
 **Predict before running.** These are the gains the tuning order of §2-9 arrived at: $K_p = 10$, $K_d = 6$, $K_i = 8$, $N_f = 20$. From §2-7, what is the force at the instant of the step?
 

@@ -48,8 +48,7 @@ Problem 1 is the finished law with $K_i = K_d = 0$; problem 2 is the finished la
 
 $$
 e = y_d - y,\qquad
-u = K_p e + I + d,\qquad
-d = N_f(K_d e - x),\ \dot x = d,\qquad
+u = K_p e + I + K_d\,\frac{N_f s}{s + N_f}\,e,\qquad
 \dot I = K_i e + K_b(\tau - u),\qquad
 \tau = \mathrm{sat}(u)
 $$
@@ -60,10 +59,10 @@ $$
 
 | | The choice | Why the alternative is worse |
 |---|---|---|
-| **The derivative is a loop, not a block** | gain $N_f$ with an integrator in its feedback path | a Derivative block turns the corner of the step into an impulse and every step of sensor noise into a spike (§2-7); the loop form has the ceiling $K_d N_f$ built in |
+| **Every block on the top level** | no subsystem around the controller | each block is one symbol of the equation above, so the canvas can be read as the equation |
+| **The derivative is one Transfer Fcn** | numerator `[Kd*Nf 0]`, denominator `[1 Nf]` | a Derivative block turns the corner of the step into an impulse and every step of sensor noise into a spike (§2-7); the filter caps the gain at $K_d N_f$ |
 | **The excess is $\tau - u$, taken after the limit** | a Sum with $\tau$ on its plus input and $u$ on its minus input | taken the other way round the sign is wrong and the "anti-windup" winds the integrator faster; taken before the limit it is always zero |
 | **Rows P, D, I from the top** | the integrator's junction at the bottom | the back-calculation line then comes up into it from below without crossing any other line; `check_overlaps` is 0 |
-| **The plant sits at the height of the controller's output** | the force enters it on one straight segment | the lines to the plant and to the log would otherwise cross the plant block |
 
 ---
 
@@ -71,7 +70,7 @@ $$
 
 At the instant of the step the error jumps from 0 to 1 m. The proportional branch jumps to $K_p \cdot 1 = 10$ N. The filtered derivative of a unit jump starts at $K_d N_f = 6 \cdot 20 = 120$ N and decays with time constant $1/N_f = 50$ ms. Together, $130$ N.
 
-The checker measures $129.6$ N, and the $0.4$ N is the solver, not the law. The fourth stage of the `ode4` step that ends at $t = 1$ s already sees the step, so by the first logged sample the filter state has moved by $(h/6)\cdot 120 = 0.02$, and $d = N_f(K_d - x) = 20\,(6 - 0.02) = 119.6$ N. The log confirms $d = 119.6000$ N at $t = 1.0000$ s.
+The checker measures $129.6$ N, and the $0.4$ N is the solver, not the law. The fourth stage of the `ode4` step that ends at $t = 1$ s already sees the step, so by the first logged sample the filter has decayed by $(h/6)\cdot N_f \cdot 120 = 0.4$ N, and $d = 119.6$ N. The log confirms $d = 119.6000$ N at $t = 1.0000$ s.
 
 Nothing about the response reveals this number, which is the reason step 5 of the tuning order looks at the force separately (§2-9).
 

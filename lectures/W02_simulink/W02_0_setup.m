@@ -51,6 +51,9 @@ Kp = 10;              % 비례 / proportional                 [N/m]
 Ki = 8;               % 적분 / integral                     [N/(m s)]
 Kd = 4;               % 미분 / derivative                   [N s/m]
 Nf = 20;              % 미분 필터 계수 / derivative filter    [rad/s]
+Nf_blk = 20;          % 라이브러리 PID 블록의 필터 계수. 보통 Nf 와 같다 — 절 F 의 대조 실험만 바꾼다
+                      % filter coefficient of the library PID block; equal to Nf except
+                      % in the control run of section F
                       %   Simulink PID 블록 대화상자의 "Filter coefficient (N)"
                       %   the "Filter coefficient (N)" of the PID block dialog
 d_filtered = 1;       % 1 = Nf s/(s+Nf) 로 거른 미분, 0 = 순수 미분 (손으로 만든 쪽만)
@@ -61,6 +64,8 @@ y_step = 1;           % 목표 위치 / target position          [m]
 t_step = 1;           % 계단이 들어가는 시각 / step instant   [s]
 ref_filter = 0;       % 1 이면 목표를 1차 필터로 부드럽게 / 1 smooths the setpoint
 ref_Tf     = 0.3;     % 그 필터의 시상수 / its time constant  [s]
+y_step2 = 0.5;        % 두 번째 목표 (W02_H_windup 만) / the second target (W02_H_windup only) [m]
+t_step2 = 1e6;        % 그 시각. 1e6 은 "바뀌지 않음" / its instant; 1e6 means never  [s]
 
 %% ---- 액추에이터 한계와 안티와인드업 / actuator limit and anti-windup ------
 tau_max = 1e6;        % 힘의 한계. 1e6 은 사실상 한계가 없는 것
@@ -72,6 +77,11 @@ Kb      = 2;          % 되감기 이득. 0 이면 안티와인드업이 없다
 noise_std = 0;        % 위치 센서 잡음의 표준편차. 0 이면 잡음이 없다
                       % standard deviation of the position sensor noise; 0 = none   [m]
 noise_ts  = 0.01;     % 잡음이 새 값을 뽑는 주기 (100 Hz 센서) / noise sample time  [s]
+
+%% ---- 미분 시험대 (W02_G_derivative_bench) / the derivative bench ---------
+bench_w     = 0.5;    % 사인파의 각주파수 / frequency of the sine        [rad/s]
+bench_noise = 0.005;  % 사인파에 섞는 잡음의 표준편차 / noise on the sine
+bench_T     = 20;     % 시험 시간 / run length                           [s]
 
 %% ---- 시뮬레이션 / simulation -----------------------------------------------
 T_final = 10;         % [s]

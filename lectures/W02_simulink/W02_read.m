@@ -1,39 +1,36 @@
-function R = W02_read(o)
-%W02_READ  W02_pid.slx 의 로그를 이름 붙은 필드로 나눈다.
-%          Split the log of W02_pid.slx into named fields.
+function R = W02_read(model, varargin)
+%W02_READ  모델 하나를 강의 기본값으로 한 번 돌리고, 신호를 이름으로 돌려준다.
+%         Run one Week 2 model once with the lecture defaults; return named signals.
 %
-%   R = W02_read(run_sim('W02_pid', V))
+%   R = W02_read('W02_C_P', 'Kp', 10)
+%   R = W02_read('W02_H_antiwindup', 'block_mode', 'none')   PID 블록의 안티와인드업 방식
 %
-%   왜 필요한가 / why this exists
-%       로그는 아홉 열짜리 행렬 하나이다. 절 스크립트마다 "셋째 열이 무엇이었지"
-%       를 세면 언젠가 하나가 틀리고, 틀린 열은 그럴듯한 곡선을 그리므로 잘
-%       드러나지 않는다. 열 번호는 여기 한 곳에만 둔다.
-%
-%       The log is a single matrix of nine columns. If every section script
-%       counts columns for itself, one of them will eventually be wrong, and a
-%       wrong column still draws a plausible curve. The column numbers live
-%       here and nowhere else.
-%
-%   열 / columns (the order of the Mux in Measurements)
-%       1  y_d        목표 위치 / setpoint                               [m]
-%       2  tau_blk    PID 블록 줄의 힘 / force, PID block row             [N]
-%       3  tau        손으로 만든 줄의 힘 / force, hand-built row         [N]
-%       4  y_blk      PID 블록 줄의 위치 / position, PID block row        [m]
-%       5  y          손으로 만든 줄의 위치 / position, hand-built row    [m]
-%       6  I          손으로 만든 줄의 적분항 / its integral term         [N]
-%       7  D          손으로 만든 줄의 미분항 / its derivative term       [N]
-%       8  y_m_blk    PID 블록 줄이 받는 측정값 / measurement, PID block row [m]
-%       9  y_m        손으로 만든 줄이 받는 측정값 (위치 + 잡음)
-%                     measurement, hand-built row: position plus noise    [m]
+%   R.t, R.y_d, R.y, R.tau, R.I, R.D   (두 줄 모델은 R.y_blk, R.tau_blk 도)
 
-R.t       = o.t;
-R.y_d     = o.y(:,1);
-R.tau_blk = o.y(:,2);
-R.tau     = o.y(:,3);
-R.y_blk   = o.y(:,4);
-R.y       = o.y(:,5);
-R.I       = o.y(:,6);
-R.D       = o.y(:,7);
-R.y_m_blk = o.y(:,8);
-R.y_m     = o.y(:,9);
+V = W02_vars();
+in = Simulink.SimulationInput(model);
+for i = 1:2:numel(varargin)
+    if strcmp(varargin{i}, 'block_mode')
+        in = in.setBlockParameter([model '/PID block'], 'AntiWindupMode', varargin{i+1});
+    else
+        V.(varargin{i}) = varargin{i+1};
+    end
+end
+f = fieldnames(V);
+for i = 1:numel(f), in = in.setVariable(f{i}, V.(f{i})); end
+evalc('out = sim(in);');
+L = out.W02log;
+y = squeeze(L.signals.values);  if size(y,1) < size(y,2), y = y.'; end
+
+%  열 순서는 모델의 Scope 와 같다: [위치 칸, 힘 칸]
+%  Column order is the Scope's: [position panel, force panel]
+R.t = L.time;  z = zeros(size(R.t));
+switch size(y,2)
+    case 3, R.y_d = y(:,1); R.y = y(:,2); R.tau = y(:,3); R.I = z; R.D = z;        % P
+    case 4, R.y_d = y(:,1); R.y = y(:,2); R.tau = y(:,3); R.I = z; R.D = y(:,4);   % P + D
+    case 5, R.y_d = y(:,1); R.y = y(:,2); R.tau = y(:,3); R.I = y(:,4); R.D = y(:,5);
+    case 7, R.y_d = y(:,1); R.y = y(:,2); R.y_blk = y(:,3);                         % two rows
+            R.tau = y(:,4); R.tau_blk = y(:,5); R.I = y(:,6); R.D = y(:,7);
+end
+R.V = V;
 end
