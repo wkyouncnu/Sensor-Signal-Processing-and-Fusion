@@ -2071,7 +2071,7 @@ $$
 
 | Term | What it does |
 |---|---|
-| $X_d/2$ | splits the surge demand equally, as in Week 3 §3-5 |
+| $X_d/2$ | splits the surge demand equally, as in Week 3 §3-1 |
 | $+N_d/(2y_{\text{pont}})$ on the left, $-N_d/(2y_{\text{pont}})$ on the right | makes the difference $T_L - T_R = N_d/y_{\text{pont}}$, which is exactly the moment asked for. The difference does not change $X$ |
 
 - Check the sign against §1-10: a starboard demand $N_d > 0$ gives $T_L > T_R$, and $N = y_{\text{pont}}(T_L - T_R) > 0$. The model's block `B inverse` is this matrix, computed in `W01_G_build_rc.m` as `inv(Bxn)` from the $\mathbf{B}$ of `_tools/otter_B.m`.
@@ -2079,7 +2079,7 @@ $$
 
 ### Allocation, step 2 — invert the propeller curve
 
-- Each thrust is turned into a shaft speed separately, with the coefficient chosen by the sign of the thrust (§1-10; the same inversion as Week 3 §3-5, applied per propeller):
+- Each thrust is turned into a shaft speed separately, with the coefficient chosen by the sign of the thrust (§1-10; the same inversion as Week 3 §3-1, applied per propeller):
 
 $$
 n_i = \operatorname{sign}(T_i)\sqrt{\frac{\lvert T_i\rvert}{k_i}},

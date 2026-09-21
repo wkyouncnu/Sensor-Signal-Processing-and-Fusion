@@ -50,7 +50,7 @@ status: done
 
 > [!important] Prerequisites from the previous week
 > - The signal chain: **command → controller → allocation → plant → measurement**, each stage a subsystem.
-> - The finding of §3-4: a term must be substituted into the equation of motion before its effect is assumed. This week is that lesson applied a second time, with the opposite answer.
+> - The finding of Week 3 §3-3: the same derivative term that damps a position loop makes a speed loop worse, so a term's effect is read from the axis, not assumed. This week is that lesson applied a second time, with the opposite answer.
 > - From Week 1: $M_{66} = 42.65$ kg·m², $N_r = -42.65$ N·m per rad/s, and the nonlinear yaw damping $N_h = N_r(1 + 10|r|)r$.
 
 ---
@@ -104,7 +104,7 @@ $$
 
 ### Deriving the second-order heading equation
 
-- This equation is the **third row** of the 3-DOF model of §1-7, and the derivation matters because the terms dropped here are not zero, unlike those dropped in §3-1.
+- This equation is the **third row** of the 3-DOF model of §1-7, and the derivation matters because the terms dropped here are not zero, unlike those of the surge axis in straight running.
 - Start again from $\mathbf{M}\dot{\boldsymbol{\nu}} + \mathbf{C}(\boldsymbol{\nu})\boldsymbol{\nu} + \mathbf{D}(\boldsymbol{\nu})\boldsymbol{\nu} = \boldsymbol{\tau}$ with $\boldsymbol{\nu} = [u\ v\ r]^{\!\top}$. The yaw row is
 
 $$
@@ -115,7 +115,7 @@ $$
 $$
 
 - The middle term is the only one that reaches the scalar plant, and it reaches it **unchanged**: its coefficient is by definition the $(6,6)$ entry of $\mathbf{M} = \mathbf{M}_{RB} + \mathbf{M}_A$. The callout below works the number through.
-- Three terms stand between this and the scalar plant. Unlike §3-1, **none of them is identically zero**, and each is dropped for a stated reason:
+- Three terms stand between this and the scalar plant. Unlike those of the surge axis, **none of them is identically zero**, and each is dropped for a stated reason:
 
 | Term | Why it is dropped | When it bites |
 |---|---|---|
@@ -138,7 +138,7 @@ M_{66}\,\ddot\psi &= \tau_N + N_r\,\dot\psi
 $$
 
 > [!warning] This reduction is an approximation, and Week 1 already measured the error
-> In §3-1 the dropped terms were exactly zero and the reduction was exact. Here they are not. Week 1 measured $v = \pm 0.1264$ m/s in a turn — real sway, produced by the very Coriolis coupling dropped above. The linear model below is therefore a **design model**, and §4-5 shows where the vessel stops obeying it.
+> For the surge speed in straight running the corresponding terms are exactly zero, which is why Week 3 §3-2 found a clean first-order response. Here they are not. Week 1 measured $v = \pm 0.1264$ m/s in a turn — real sway, produced by the very Coriolis coupling dropped above. The linear model below is therefore a **design model**, and §4-5 shows where the vessel stops obeying it.
 
 > [!important] $M_{66}$ **is** $I_z - N_{\dot r}$ — provided $I_z$ is taken about the body origin
 > The substitution above is exact, not a relabelling: the coefficient of $\dot r$ in the yaw row *is* the $(6,6)$ entry of $\mathbf{M} = \mathbf{M}_{RB} + \mathbf{M}_A$. The one thing that must not be misread is **which point $I_z$ refers to**. It is the yaw inertia about the origin of $\{b\}$, not about the centre of gravity, and for this hull the two differ by $12\%$.
@@ -250,7 +250,7 @@ $$
 
 ## 3-2. The control law
 
-- The controller is proportional on the heading error and derivative on the **yaw rate**. Written in the general form of Week 3 §3-4, with a setpoint weight $c_d$ on the commanded rate:
+- The controller is proportional on the heading error and derivative on the **yaw rate**. Written in a general form, with a setpoint weight $c_d$ on the commanded rate (Week 2 §2-10):
 
 $$
 \boxed{\ \tau_N = K_p\,\operatorname{ssa}\!\left(\psi_d - \psi\right) + K_d\left(c_d\,r_d - r\right)\ }
@@ -261,7 +261,7 @@ $$
 | $r_d$ | commanded yaw rate | $0$ this week; supplied by the reference model of Week 8 |
 | $c_d$ | setpoint weight of the derivative term | $0$, `W04_0_setup.m` |
 
-- At $c_d = 0$ this is the familiar $\tau_N = K_p\operatorname{ssa}(\psi_d - \psi) - K_d r$, and the rest of this week works at that value. Writing it with the weight makes the minus a consequence rather than a convention: nothing is being negated, the bracket is simply empty on its commanded side. Week 3 §3-4 derives this and measures what the weight does and does not change.
+- At $c_d = 0$ this is the familiar $\tau_N = K_p\operatorname{ssa}(\psi_d - \psi) - K_d r$, and the rest of this week works at that value. Writing it with the weight makes the minus a consequence rather than a convention: nothing is being negated, the bracket is simply empty on its commanded side.
 
 - Three choices are being made, and all three are deliberate.
 
@@ -363,7 +363,7 @@ So the design splits cleanly in two. **Pick $\zeta$ for the shape wanted and $\o
 >
 > applies exactly. `_tools/w04_second_order.m` checks this before drawing: computed against formula, the overshoots agree at every $\zeta$ in the figure — $37.23$, $16.30$, $4.60$, $0.15$ per cent.
 >
-> Week 3 §3-3 and its section E got $8.15\%$ where the same formula predicted $4.60\%$, because a **PI** controller puts $K_i/s$ in the forward path and that leaves a zero at $s = -K_i/K_p$ in the closed loop. The controller here is **PD**: $K_d$ contributes to the denominator only. The formula did not become more accurate; the loop became simpler.
+> A **PI** controller puts $K_i/s$ in the forward path, and that leaves a zero at $s = -K_i/K_p$ in the closed loop; a zero lifts the early response and the formula underestimates the overshoot (Week 2 §2-3, note). The controller here is **PD**: $K_d$ contributes to the denominator only. The formula did not become more accurate; the loop became simpler.
 
 > [!important] The same term, the opposite effect
 > In Week 3 the controlled variable was a velocity, so $K_d$ multiplied an **acceleration** and landed beside the mass: $\left(M_{11} + K_d\right)\dot u$. Here the controlled variable is an angle, so $K_d$ multiplies a **rate** and lands beside the damping: $\left(|N_r| + K_d\right)\dot\psi$. Nothing about the controller changed. The axis did.

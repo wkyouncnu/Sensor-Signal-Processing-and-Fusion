@@ -17,11 +17,11 @@ function pass = W03_check(problem, mdl)
 %   Every target below was MEASURED by the lecture's own section scripts.
 %
 %     Problem 1   DC gain of the open-loop plant             0.012894 (m/s)/N
-%                 terminal speed at X = 100 N                1.2894 m/s   §2-C
+%                 terminal speed at X = 100 N                1.2894 m/s   §C
 %     Problem 2   steady speed at Kp = 100, u_d = 1.5        0.8448 m/s
-%                 the same at Kp = 500                       1.2986 m/s   §2-D
+%                 the same at Kp = 500                       1.2986 m/s   §D
 %                 and the error is NEVER zero
-%     Problem 3   steady error with the integrator present   0 to tolerance
+%     Problem 3   Kp = Ki = 200 (절 G): error 0, overshoot 0.05-5 %, settle 1.30 s   §E, §G
 %
 %   WHAT THE MODEL MUST CONTAIN
 %
@@ -92,23 +92,24 @@ end
 function pass = check_p3(mdl)
 %  With the integrator the error goes to zero, and overshoot appears.
 pass = true;
+%  강의 절 G 가 모델 없이 튜닝한 게인 / the gains tuned model-free in section G
 y = run_student(mdl, struct('loop_closed',1, 'X_open',0, 'u_d',1.5, ...
-                            'Kp',102, 'Ki',192.38, 'T_final',40));
+                            'Kp',200, 'Ki',200, 'T_final',40));
 pass = report(pass, 'steady speed with PI', y.u(end), 1.5, 5e-3, 'm/s');
 pass = report(pass, 'steady error with PI',  1.5 - y.u(end), 0, 5e-3, 'm/s');
 
-k = y.t >= 5;                            % after the step
-Mp = 100*(max(y.u(k)) - 1.5)/1.5;
+[Mp, ts] = step_metrics(y.t, y.u, 1.5, 5);
 fprintf('  %-38s %9.4f  %s\n', 'overshoot with PI', Mp, '[%]  (P alone had none)');
-if Mp <= 0.05
-    fprintf('  %-38s %s\n', 'overshoot is present', 'FAIL — expected some');
+if Mp <= 0.05 || Mp >= 5
+    fprintf('  %-38s %s\n', 'overshoot between 0.05 and 5 %', 'FAIL');
     pass = false;
 end
+pass = report(pass, 'inside 2 % after (section E: 1.30 s)', ts, 1.30, 0.1, 's');
 fprintf('\n     The integrator supplies the steady force that the damping\n');
 fprintf('     demands, so the error no longer has to. What it costs is a\n');
 fprintf('     state that keeps acting after the error has passed through\n');
 fprintf('     zero — which is overshoot, and, when the actuator saturates,\n');
-fprintf('     windup. Sections F to H of the lecture are about that.\n');
+fprintf('     windup. Section F of the lecture is about that.\n');
 end
 
 % =========================================================================

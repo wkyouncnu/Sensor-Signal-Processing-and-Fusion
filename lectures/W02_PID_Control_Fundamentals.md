@@ -122,7 +122,7 @@ These three sections follow the course *Control System Design* (course 2 in the 
 > | Route | What is known | Where in this course |
 > |---|---|---|
 > | first principles ("white box") | the physics, written as equations | this section; the Otter of Week 1, from Fossen's equations |
-> | system identification ("black box") | only input and output records | Week 3 §3-1 reduces the surge axis to two measured numbers |
+> | system identification ("black box") | only input and output records | Week 3 §3-2 reads the surge axis from one step input: a gain, a time constant and a ceiling |
 > | linearisation | a nonlinear model, about an operating point | Week 4, the yaw axis about straight running |
 
 ## 2-2. The plant from first principles: free-body diagram, equation of motion, transfer function, state space
@@ -515,7 +515,7 @@ $$
 - The numerator has gained a **zero** at $s = -K_p/K_d$. A zero closer to the origin than the poles lifts the early response, so the response can overshoot even when $\zeta > 1$.
 
 > [!note] The same term lands elsewhere on other axes
-> On this plant $K_d$ lands beside the damping, because the output is a position and its derivative a velocity. In Week 3 the output is a velocity, its derivative an acceleration, and the same term lands beside the **mass** (Week 3 §3-4). In Week 4 the output is an angle and $K_d$ is a damper again. The term does not change; the axis does.
+> On this plant $K_d$ lands beside the damping, because the output is a position and its derivative a velocity. In Week 3 the output is a velocity, its derivative an acceleration, and the same term lands beside the **mass** (Week 3 §3-3). In Week 4 the output is an angle and $K_d$ is a damper again. The term does not change; the axis does.
 
 Measured in section D, $K_p = 10$, $K_i = 0$:
 
@@ -681,7 +681,7 @@ In Simulink this is one **Transfer Fcn** block, numerator `[Kd*Nf 0]` and denomi
 **The corner of a step.** A step setpoint makes the error jump. The filtered derivative of a jump of height $\Delta$ starts at $K_d N_f \Delta$ and decays with time constant $1/N_f$ — the **derivative kick** (`verify_w02_pid` check 6: $80.000$ N for $K_d = 4$, $N_f = 20$, $\Delta = 1$). An unfiltered derivative of a step is an impulse. The 제어조교 Ctrl튜브 video's remedy is to take the corner off the setpoint by passing it through a first-order filter $1/(T_f s + 1)$, so that its slope is at most $\Delta/T_f$.
 
 > [!note] Two other remedies, used later
-> Differentiating the measurement instead of the error — setting the setpoint weight $c_d = 0$ — removes the kick altogether, and is the choice Week 3 §3-4 and Week 4 make. A reference model that produces a smooth setpoint together with its derivative is the complete answer; it is the subject of Week 8.
+> Differentiating the measurement instead of the error — setting the setpoint weight $c_d = 0$ — removes the kick altogether, and is the choice Week 4 makes. A reference model that produces a smooth setpoint together with its derivative is the complete answer; it is the subject of Week 8.
 
 In the loop (`W02_G_noise_kick`, $K_p = 10$, $K_i = 8$, $K_d = 4$), measured in section G:
 
@@ -731,7 +731,7 @@ $$
 
 - $I^\star$ is the value that makes the demand equal to the limit. When $P$ alone already asks for more than $\tau_{\max}$, $I^\star$ is **negative**: the integrator goes below zero, and that is the formula working, not a fault.
 - Tech Talk part 2 adds a practical rule: set the controller's limit a little below the actuator's physical one, because the physical limit drifts with temperature and wear.
-- Week 3 §3-6 derives all three schemes on the Otter and compares them with the Simulink block.
+- Week 3 §3-4 repeats the unreachable-target experiment on the Otter, where windup makes the vessel ignore an order to slow down.
 
 **The experiment that makes windup obvious.** Model `W02_H_antiwindup` limits the force to $\lvert\tau\rvert \le 2.5$ N. Against a spring of $k = 2$ N/m that can hold the mass at most at $2.5/2 = 1.25$ m. The target is set to an **unreachable** 2 m from $t = 1$ to 15 s, then lowered to a reachable 0.5 m. The top row is the law built from blocks with back-calculation ($K_b = 0$ turns it off); the bottom row is the library PID block, whose anti-windup method the script switches between none, clamping and back-calculation.
 
@@ -1422,7 +1422,7 @@ Compare the gains with those of this plant. Explain, from where $K_p$ and $K_d$ 
 - Control System Design (course 2), week 2 (modelling: free-body diagram, transfer function, state space, the three-way Simulink model), week 4 (time response and specifications), week 5 (steady-state error and system type) — the source of §2-2 to §2-4.
 - Capstone Design, week 6, sections E–G — the same plant and the undergraduate version of sections C to H.
 - The instructor's *Linear Control Systems*, chapter 13, Practical PID Controller Design using MATLAB and Simulink.
-- Week 3 §3-4 (where the derivative lands on a velocity loop) and §3-6 (three anti-windup schemes on the Otter).
+- Week 3 §3-3 (the derivative on a speed loop) and §3-4 (windup on the Otter).
 - `_tools/verify_w02_pid.m` — the ten checks quoted in Part 1.
 
 ---
@@ -1430,6 +1430,6 @@ Compare the gains with those of this plant. Explain, from where $K_p$ and $K_d$ 
 ## Next Week
 
 - **Week 3 — Surge Speed Control**
-- The first closed loop on the vessel. The surge equation of Week 1 §1-11 becomes the plant, the controller of this week is placed around it, and the steady speed is predicted before it is measured.
-- The derivative term turns out to land beside the mass rather than the damping, and the thruster limit makes the windup of §2-11 real.
-- Preparation: $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from Week 1 §1-11, and the MSS toolbox at `Tools\MSS`.
+- The first closed loop on the vessel. The controller of this week is placed, unchanged, around the Otter's surge speed and tuned **model-free**: the plant is read from one step input, and every gain from the Scope, by the tuning order of §2-12.
+- The derivative term turns out to act like extra mass and makes the loop worse, and the thruster limit makes the windup of §2-11 real.
+- Preparation: the MSS toolbox at `Tools\MSS`.

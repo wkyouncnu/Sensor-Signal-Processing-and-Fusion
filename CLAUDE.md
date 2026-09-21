@@ -74,8 +74,7 @@
 │                            verify_constants.m · verify_w01_theory.m · live_track.m · base_var.m
 │                            verify_w02_pid.m                          (W02 PID 입문의 식 8개)
 │                            vault_shift_weeks.m                       (주차 번호 일괄 이동, 2026-09-21)
-│                            verify_w03_derivative.m                   (W03 §3-4 미분항 부호)
-│                            verify_w03_antiwindup.m                   (W03 §3-6 안티와인드업 회귀)
+│                            verify_w03_speed.m                        (W03 모델 없는 속도 튜닝의 수치)
 │                            vault_runall.m · vault_number_audit.m · verify_review_math.m  (전체 검토:
 │                              전 스크립트 실행 → 문서 수치를 실행 로그와 대조 → 검토에서 실은 수치 재현)
 │                            vault_rename_tau_u.m · vault_unify_ypont.m · w05_beta_fix.m   (기호 통일 변환기)

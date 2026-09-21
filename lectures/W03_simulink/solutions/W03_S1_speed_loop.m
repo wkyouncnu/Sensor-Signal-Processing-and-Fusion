@@ -16,7 +16,7 @@ function W03_S1_speed_loop(mdl)
 %   Building three models would hide that. Building one, with a switch, makes
 %   the point of the week visible on the canvas: the plant never changed, the
 %   thrust map never changed, and every difference in the result came from the
-%   controller. That is also how the lecture's own W03_surge_control.slx is
+%   controller. That is also how the lecture's models are
 %   arranged, and why its section scripts can sweep a gain without rebuilding.
 %
 %   THE THREE DECISIONS

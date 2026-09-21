@@ -32,8 +32,9 @@ All three pass, and `check_overlaps('W03_S1')` is **0**. The output below is the
 
   W03 problem 3
   steady speed with PI                      1.5000  (expected   1.5000 +- 0.005 m/s)  PASS
-  steady error with PI                      0.0000  (expected   0.0000 +- 0.005 m/s)  PASS
-  overshoot with PI                         8.8327  [%]  (P alone had none)
+  steady error with PI                     -0.0000  (expected   0.0000 +- 0.005 m/s)  PASS
+  overshoot with PI                         1.1682  [%]  (P alone had none)
+  inside 2 % after (section E: 1.30 s)      1.2800  (expected   1.3000 +- 0.1 s)  PASS
 ```
 
 ---
@@ -48,7 +49,7 @@ The three problems differ only in which parts of the loop are switched on:
 | Problem 2 | 1 | 0 | proportional only |
 | Problem 3 | 1 | > 0 | proportional plus integral |
 
-Three separate models would hide the one fact the week is about: **the plant never changed and the thrust map never changed.** Every difference in the result came from the controller. The lecture's own `W03_surge_control.slx` is arranged the same way, which is why its section scripts can sweep a gain without rebuilding anything.
+Three separate models would hide the one fact the week is about: **the plant never changed and the thrust map never changed.** Every difference in the result came from the controller. The lecture's models hold every gain as a workspace variable for the same reason: a section script sweeps a gain without rebuilding anything.
 
 ---
 

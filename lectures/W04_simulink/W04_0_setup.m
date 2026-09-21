@@ -51,15 +51,15 @@ X_ff = 60;                   % surge force [N]
 
 %% ---- the controller -----------------------------------------------------
 %  선수방위에 대한 P-D 제어. 미분항은 오차의 미분이 아니라 요 각속도에 작용한다.
-%  W03 §3-4 의 일반형으로 쓰면
+%  2주차 §2-10 의 설정값 가중(c_d)을 넣은 일반형으로 쓰면
 %
 %     tau_N = Kp ssa(psi_d - psi) + Kd (c_d r_d - r)
 %
 %  이고, c_d = 0 이면 흔히 보는 tau_N = Kp ssa(psi_d - psi) - Kd r 이 된다.
 %
 %  P-D on the heading, with the derivative acting on the yaw rate rather than
-%  on the derivative of the error. Written in the general form of §3-4 in
-%  Week 3 it is the expression above, and at c_d = 0 it reduces to the
+%  on the derivative of the error. Written in the general form with a setpoint
+%  weight c_d (Week 2 §2-10) it is the expression above; at c_d = 0 it is the
 %  familiar tau_N = Kp ssa(psi_d - psi) - Kd r.
 %
 %  §4-3 에서 다음 두 식으로 설계했다 / designed in §4-3 from

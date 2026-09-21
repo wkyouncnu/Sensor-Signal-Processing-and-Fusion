@@ -1737,3 +1737,20 @@ W05(정상상태오차) 강의노트 (`_src/*_LectureNote_src.m` 이 `.mlx` 의 
 | 대역폭 계산 | `bandwidth(sys, -10*log10(2))` — 기본값 −3 dB 는 1/√2 와 0.2 % 어긋나 검증식과 맞지 않았다 |
 | 절 번호를 끼워 넣을 때 | `§2-n` 과 `## 2-n.` 만 바꾸는 split/join 스크립트(regexprep 의 `${}` 는 지역함수를 못 본다), UTF-8 로 읽고 쓰고, `git diff --word-diff` 로 숫자만 바뀌었는지 본다 |
 | PDF 를 눈으로 볼 때 | poppler 가 없다. md2pdf 와 같은 HTML 을 `<base href>` 를 붙여 scratchpad 에 만들고 headless Chrome `--screenshot --window-size=820,30000` → MATLAB 으로 잘라 본다 |
+
+### 15-8. 선박 주차는 "모델 없는 PID 튜닝" 으로 — W03 재작성 (2026-09-21)
+
+사용자 요청: "복잡한 수식이나 이론보다도 W02 주차에 맞게 PID 튜닝하는 것으로 … model-free PID
+tunning … m 파일은 아주 짧게 … 시뮬링크 파일을 여러개 별도로 … 시뮬링크 자체로도 plot".
+W03 이 첫 적용이고, 다음 주차(W04~)도 사용자가 요청하면 같은 틀로 다시 쓴다.
+
+| 규칙 | 어떻게 |
+|---|---|
+| 제어기는 2주차 것 그대로 | 빌더(`W03_1_build_speed.m`)는 W02 빌더의 `loop`/`measure`/`goto_at` 을 그대로 쓰고 플랜트만 바꾼다. 평평한 최상위, 미분은 Transfer Fcn, 캔버스의 Scope 하나(위: 출력, 아래: 힘 X·I·D) |
+| 플랜트 사슬 | `thrust limit`(Saturation) → `half each`(0.5) → `shaft speed`(Fcn) → Mux 둘 → `add_otter_plant` → Selector(상태 1). 추력 한계는 **모든 모델에** 둔다 |
+| Fcn 블록의 함정 | `sign` 이 아니라 **`sgn`**, 관계연산자(`>=`)는 쓸 수 없다. `k_pos*(1+sgn(u))/2 + k_neg*(1-sgn(u))/2` 로 방향을 고른다 |
+| 포트 높이 | 서브시스템(Otter)·Selector 는 크기가 달라 포트 높이가 어긋난다. 놓은 뒤 `port_xy` 로 읽어 블록을 옮겨 선을 곧게 한다 |
+| 이론은 측정으로 | 플랜트는 열린 루프 계단 하나로 읽는다(이득·시정수·천장). 식 대신 "W02 와 무엇이 다른가" 표. P/I/D 의 효과·안티와인드업·튜닝 순서 모두 **측정 표**가 근거 |
+| 옛 판은 옮겨 보관 | 지우지 않는다. `git mv` 로 `WXX_simulink/_previous_version/` 에, 옛 강의 `.md`/`.pdf` 도 `git show HEAD:… >` 로 같은 곳에. 옛 모델을 부르던 `verify_*` 도 함께 옮기고 `vault_runall` 목록을 바꾼다 |
+| 다른 주차의 참조 | 옛 절 번호를 가리키던 W01/W02/W04 문장은 **내용으로** 다시 쓴다(번호만 바꾸면 없는 내용을 가리킨다) |
+| 검증 | `verify_w03_speed`: 두 설정 파일 일치, 추력 한계, 측정 u/X = 1주차 K_u, 적분이 멈춘 힘 = 1.5/K_u, Fcn 역함수 |

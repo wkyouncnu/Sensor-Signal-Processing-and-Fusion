@@ -120,13 +120,14 @@ Work out the steady error at $K_p = 100$ before touching the model.
 
 The integrator must be discrete because the model is fixed-step. A continuous integrator inside a fixed-step loop invites a solver-order mismatch that shows up as a slow drift rather than as an error message.
 
-**Verify.** `W03_check(3)`, with $K_p = 102$, $K_i = 192.38$.
+**Verify.** `W03_check(3)`, with $K_p = 200$, $K_i = 200$ — the gains the lecture's section G reached by the tuning order, without a model.
 
 | What the checker expects | |
 |---|---|
 | steady speed | $1.5000$ m/s |
 | steady error | $0$, to tolerance |
-| overshoot | **present** — the checker fails a response with none |
+| overshoot | **present and small**, between 0.05 and 5 % — the checker fails a response with none |
+| inside 2 % of 1.5 m/s after | $1.30 \pm 0.1$ s, as measured in section E |
 
 **What a correct model produces**
 
@@ -138,7 +139,7 @@ The integrator must be discrete because the model is fixed-step. A continuous in
 | right | the same runs as error. The P error settles on a non-zero value; **the PI error crosses zero and comes back** |
 | the check | that crossing *is* the overshoot. A PI response with no crossing means $K_i$ is not actually in the loop |
 
-**The point.** The integrator supplies the steady force that the damping demands, so the error no longer has to. The price is a state that keeps acting after the error has passed through zero — which is overshoot, and, when the actuator saturates, **windup**. Sections F to H of the lecture are about paying that price down.
+**The point.** The integrator supplies the steady force that the damping demands, so the error no longer has to. The price is a state that keeps acting after the error has passed through zero — which is overshoot, and, when the actuator saturates, **windup**. Section F of the lecture is about paying that price down.
 
 ---
 

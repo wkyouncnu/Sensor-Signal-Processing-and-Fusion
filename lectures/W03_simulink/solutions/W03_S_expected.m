@@ -78,8 +78,8 @@ title('the error falls, and never reaches zero');
 save_png(f, fullfile(img,'W03_P2_expected.png'));
 
 %% ---- Problem 3 : the integrator closes it, and buys overshoot ----------
-yP  = run_one(struct('loop_closed',1,'X_open',0,'u_d',1.5,'Kp',102,'Ki',0,     'T_final',40));
-yPI = run_one(struct('loop_closed',1,'X_open',0,'u_d',1.5,'Kp',102,'Ki',192.38,'T_final',40));
+yP  = run_one(struct('loop_closed',1,'X_open',0,'u_d',1.5,'Kp',200,'Ki',0,     'T_final',40));
+yPI = run_one(struct('loop_closed',1,'X_open',0,'u_d',1.5,'Kp',200,'Ki',200,   'T_final',40));
 f = lab_fig('W03 P3 expected', 900, 360);
 subplot(1,2,1); hold on; grid on
 plot(yP.t,  yP.u,  'LineWidth',1.5);
