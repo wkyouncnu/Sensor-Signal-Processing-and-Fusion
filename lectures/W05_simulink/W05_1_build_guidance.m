@@ -1,564 +1,372 @@
-function W05_1_build_guidance()
-%W05_1_BUILD_GUIDANCE  유도 모델 W05_guidance.slx 를 코드로 만든다.
-%                      Generate W05_guidance.slx from code.
+function W05_1_build_guidance(which)
+%W05_1_BUILD_GUIDANCE  5주차 실습 모델 다섯 개를 코드로 만든다 — 절 하나에 모델 하나.
+%                      Generate the five Week 5 models, one model per section.
 %
 %   실행 / to run
-%       W05_1_build_guidance
+%       W05_1_build_guidance                 다섯 개 전부 / all five
+%       W05_1_build_guidance('W05_D_LOS')    하나만 / one of them
 %
-%   강의에서의 위치 / place in the lecture
-%       Part 2 의 절 B 이다. 절 C 부터 H 까지가 모두 이 모델 하나를 쓴다.
-%       This is section B of Part 2; sections C to H all use this one model.
+%   모델 / the models
+%       W05_C_atan2       다음 웨이포인트를 곧장 겨냥한다 / aim straight at the next waypoint
+%       W05_D_LOS         LOS: 경로 위 Delta 앞의 점을 겨냥한다 / aim at a point Delta ahead on the path
+%       W05_E_switching   LOS, 다섯 웨이포인트 임무 / LOS on the five-waypoint mission
+%       W05_F_ILOS        ILOS: LOS + 적분 (조류에 맞선다) / LOS plus an integral, against a current
+%       W05_G_tuning      ILOS, 임무 + 조류, 튜닝 순서 / ILOS, mission and current, the tuning order
 %
-%   네 척, 하나의 임무 / four vessels, one mission
-%       똑같은 Otter 네 척이 같은 웨이포인트 목록을, 같은 시각에, 같은 조류
-%       속에서, 같은 선수방위 오토파일럿으로 항해한다. 다른 것은 단 하나,
-%       웨이포인트 목록을 선수방위 명령으로 바꾸는 유도법칙뿐이다.
-%
-%         1행  atan2   다음 웨이포인트를 곧장 겨냥한다
-%         2행  LOS     경로 위에서 Delta 만큼 앞선 점을 겨냥한다
-%         3행  ILOS    LOS 에 조류를 흡수하는 적분 상태를 더한다
-%         4행  ALOS    LOS 에 크랩각의 추정값을 더한다
-%
-%         row 1   atan2   aim straight at the next waypoint
-%         row 2   LOS     aim at a point Delta ahead on the path
-%         row 3   ILOS    LOS with an integral state that absorbs the current
-%         row 4   ALOS    LOS with an estimate of the crab angle
-%
-%   왜 네 척을 동시에 돌리는가 / why they are run together
-%       비교를 정직하게 만들기 위해서다. 조류는 난류가 아니지만 초기 과도응답,
-%       전환이 일어나는 시점, 오토파일럿의 상태가 실행마다 미묘하게 달라질 수
-%       있다. 네 척을 한 번의 실행 안에 두면 유도법칙을 제외한 모든 것이 글자
-%       그대로 같은 실현을 공유하므로, 궤적의 차이는 전부 유도법칙의 몫이 된다.
-%       3주차 절 I 의 네 행과 같은 원칙이다.
-%
-%       To make the comparison honest. Placing all four in a single run means
-%       everything except the guidance law shares literally the same
-%       realisation, so every difference between the tracks belongs to the
-%       guidance law and to nothing else. This is the principle of the four
-%       rows in section I of Week 3.
-%
-%   THE SIGNAL CHAIN
-%
-%     Guidance bank --> Autopilot bank --> Allocation bank --> Plant bank --> Measurements
-%       psi_d (4)          tau_N (4)           n (8)            x (48)
-%          ^                                                       |
-%          +-------------------------------------------------------+
-%
-%   The four state vectors travel as one 48-wide signal and are split inside
-%   each bank, so the top level carries one line per stage.
-%
-%   WHY THE TUNING TRAVELS AS A VECTOR
-%
-%   Each row needs eight numbers. Wired as eight Constants to four blocks that
-%   is thirty-two lines crossing one corridor, and no amount of routing makes
-%   it readable - the first attempt at this model scored 572 overlapping line
-%   pairs. Collecting them into one `par` vector makes it four lines, each a
-%   fan-out from a single source, which is the one kind of shared trunk that
-%   is correct. The block unpacks the vector on its first six lines.
-%
-%   Regenerating is safe: any existing W05_guidance.slx is overwritten.
+%   모든 모델이 같은 모양이다 / every model has the same shape
+%       guidance -> heading autopilot -> allocation -> Otter
+%       세 블록은 모두 주석이 달린 MATLAB Function 이다. 두 번 누르면 식과 설명이 보인다.
+%       The three blocks are commented MATLAB Functions; double-click to read them.
+%       오른쪽: Scope (위: 횡방향 오차, 아래: 명령 선수각과 선수각) + XY Graph (항적).
+%       On the right: a Scope (top: cross-track error; bottom: commanded and
+%       actual heading) and an XY Graph that draws the track while it runs.
 
-m    = 'W05_guidance';
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));
-out  = fullfile(here, [m '.slx']);
-
 addpath(fullfile(root,'_tools'), here);
-mss_path();
+evalin('base', 'W05_0_setup');
 
-cfg  = otter_config('base');
-NROW = 4;
-LAW  = {'atan2','LOS','ILOS','ALOS'};
+M = struct( ...
+  'name',  {'W05_C_atan2','W05_D_LOS','W05_E_switching','W05_F_ILOS','W05_G_tuning'}, ...
+  'law',   {'atan2','LOS','LOS','ILOS','ILOS'}, ...
+  'title', {'AIM AT THE NEXT WAYPOINT', 'LINE OF SIGHT, AND THE LOOK-AHEAD DISTANCE', ...
+            'WAYPOINT SWITCHING ON A MISSION', 'A CURRENT, AND THE INTEGRAL (ILOS)', ...
+            'THE TUNING ORDER'}, ...
+  'sec',   {'C','D','E','F','G'});
+if nargin == 1, M = M(strcmp({M.name}, which)); end
+for k = 1:numel(M), build_one(M(k), here); end
+end
 
-%  Every Constant in this model holds a NAME, and Simulink checks the name
-%  against the base workspace as the block is created. In a fresh session
-%  there is nothing there yet, so the defaults go in first. Anything the
-%  student has already set is left alone.
-ensure_base_vars(W05_vars);
-
+% =========================================================================
+function build_one(o, here)
+m = o.name;
+out = fullfile(here, [m '.slx']);
 bdclose(m);
 if isfile(out), delete(out); end
 new_system(m);
-set_param(m, 'SolverType','Fixed-step', 'Solver','ode4', ...
-             'FixedStep','h', 'StartTime','0', 'StopTime','T_final');
+set_param(m, 'SolverType','Fixed-step', 'Solver','ode4', 'FixedStep','h', ...
+             'StartTime','0', 'StopTime','T_final', 'ReturnWorkspaceOutputs','off');
+Y = 200;
 
-P = gnc_chain({'reference','controller','allocation','plant','measurement'}, ...
-              'Height', struct('reference',150, 'controller',130, ...
-                               'allocation',130, 'plant',130), 'Y', 120);
+%% 유도 / guidance
+add_block('simulink/User-Defined Functions/MATLAB Function', [m '/guidance'], ...
+          'Position', [200 Y-80 420 Y+80]);
+set_mlfcn([m '/guidance'], guidance_code(o.law), 'psi_d', '[1 1]', 'h');
+mlfcn_params([m '/guidance'], {'WP_N','WP_E','Delta','R_switch','kappa','h'});
+q = port_xy(m, 'guidance', 'Inport', 1);
+from_at(m, 'x', [110 q(2)]);
+route(m, 'From x', 1, 'guidance', 1, zeros(0,2));
 
-%% =====================================================================
-%  1. Guidance bank — the only stage where the four rows differ
-%  =====================================================================
-g = add_subsys(m, 'Guidance bank', P.reference, {'x'}, ...
-               {'psi_d','y_e','wp','aux'}, gnc_colour('reference'));
-
-%  The four collector Muxes, interleaved with the lanes that reach them so
-%  that no two of the sixteen row outputs share a segment.
-GOUT = {'psi_d','y_e','wp','aux'};
-GMUX = cell(1,4);  GLANE = zeros(1,4);
-for j = 1:4
-    GMUX{j}  = [GOUT{j} ' mux'];
-    GLANE(j) = 640 + 90*(j-1);
-    add_block('simulink/Signal Routing/Mux', [g '/' GMUX{j}], 'Inputs', num2str(NROW), ...
-              'Position',[680 + 90*(j-1), 60, 685 + 90*(j-1), 580]);
+%% 선수각 오토파일럿 / heading autopilot
+add_block('simulink/User-Defined Functions/MATLAB Function', [m '/heading autopilot'], ...
+          'Position', [580 Y-50 760 Y+50]);
+set_mlfcn([m '/heading autopilot'], autopilot_code(), 'N', '[1 1]');
+mlfcn_params([m '/heading autopilot'], {'Kp','Kd','N_max'});
+p1 = port_xy(m, 'guidance', 'Outport', 1);  a1 = port_xy(m, 'heading autopilot', 'Inport', 1);
+route(m, 'guidance', 1, 'heading autopilot', 1, [500 p1(2); 500 a1(2)]);
+a2 = port_xy(m, 'heading autopilot', 'Inport', 2);
+add_block('simulink/Signal Routing/From', [m '/From x '], 'GotoTag','x', 'ShowName','off', ...
+          'Position', [515 a2(2)-10 555 a2(2)+10]);
+route(m, 'From x ', 1, 'heading autopilot', 2, zeros(0,2));
+goto_at(m, {'guidance', 1}, [450 p1(2)], 'up', 'psi_d');
+for i = 2:4                                   % y_e, aux, wp -> Goto 태그 / to Goto tags
+    p = port_xy(m, 'guidance', 'Outport', i);
+    tag = {'','y_e','aux','wp'};  tag = tag{i};
+    add_block('simulink/Signal Routing/Goto', [m '/Goto ' tag], 'GotoTag',tag, ...
+              'TagVisibility','local', 'ShowName','off', 'Position', [440 p(2)-9 485 p(2)+9]);
+    route(m, 'guidance', i, ['Goto ' tag], 1, zeros(0,2));
 end
 
-GROW = zeros(1,NROW);
-for i = 1:NROW
-    q = port_xy(g, GMUX{1}, 'Inport', i);
-    GROW(i) = q(2);
-end
-dp = GROW(2) - GROW(1);
+%% 배분 / allocation
+add_block('simulink/User-Defined Functions/MATLAB Function', [m '/allocation'], ...
+          'Position', [830 Y-30 1010 Y+30]);
+set_mlfcn([m '/allocation'], allocation_code(), 'n', '[2 1]');
+mlfcn_params([m '/allocation'], {'X_ff','y_pont','k_pos','k_neg'});
+p = port_xy(m, 'heading autopilot', 'Outport', 1);  q = port_xy(m, 'allocation', 'Inport', 1);
+set_param([m '/allocation'], 'Position', get_param([m '/allocation'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));
+route(m, 'heading autopilot', 1, 'allocation', 1, zeros(0,2));
 
-add_block('simulink/Signal Routing/Demux', [g '/split x'], 'Outputs', num2str(NROW), ...
-          'Position',[190 GROW(1)-dp/2 195 GROW(1)-dp/2+NROW*dp]);
-add_line(g, 'x/1','split x/1','autorouting','on');
-q = port_xy(g, 'split x', 'Inport', 1);
-set_param([g '/x'], 'Position',[40 q(2)-7 70 q(2)+7]);
+%% Otter
+cfg = otter_config('base');
+add_otter_plant(m, 'Otter', [1080 Y-30 1180 Y+30], cfg);
+set_param([m '/Otter'], 'BackgroundColor', gnc_colour('plant'));
+p = port_xy(m, 'allocation', 'Outport', 1);  q = port_xy(m, 'Otter', 'Inport', 1);
+set_param([m '/Otter'], 'Position', get_param([m '/Otter'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));
+q = port_xy(m, 'Otter', 'Inport', 1);
+add_line(m, [p; q]);
+p = port_xy(m, 'Otter', 'Outport', 1);
+goto_at(m, {'Otter', 1}, [p(1)+30 p(2)], 'up', 'x');
+add_block('simulink/Sinks/Terminator', [m '/end'], 'Position', [p(1)+70 p(2)-8 p(1)+86 p(2)+8]);
+route(m, 'Otter', 1, 'end', 1, zeros(0,2));
 
-%  The mission and the tuning: two waypoint columns, and one parameter vector.
-KP = {'Delta','R_switch','sw_mode','kappa','gamma','h'};
-add_block('simulink/Signal Routing/Mux', [g '/par'], 'Inputs', num2str(numel(KP)), ...
-          'Position',[240 700 245 700+52*numel(KP)]);
-for i = 1:numel(KP)
-    add_block('simulink/Sources/Constant', [g '/' KP{i}], 'Value', KP{i}, ...
-              'Position',[60 700 140 730]);
-end
-row_feed(g, 'par', KP);
-
-for nm = {'WP_N','WP_E'}
-    add_block('simulink/Sources/Constant', [g '/' nm{1}], 'Value', nm{1}, ...
-              'Position',[60 620 140 650]);
-end
-set_param([g '/WP_N'], 'Position',[60 600 140 630]);
-set_param([g '/WP_E'], 'Position',[60 660 140 690]);
-
-for i = 1:NROW
-    blk = sprintf('%s/%s', g, LAW{i});
-    add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
-              'Position',[300 GROW(i)-70 560 GROW(i)+70]);
-    %  A guidance law with memory is a DISCRETE algorithm and has to say so.
-    %  Left to inherit, the block picks up the plant's continuous rate and
-    %  Simulink refuses the persistent variables. Declaring 'h' is also honest
-    %  about what is implemented: the Euler updates inside already use h.
-    set_mlfcn(blk, guidance_code(i), '', '', 'h');
-
-    %  One lane per SOURCE. The four lines leaving WP_N share a lane, which is
-    %  correct - they are one signal - and no two different sources share one.
-    lane_line(g, 'split x', i, LAW{i}, 1, 205);
-    lane_line(g, 'WP_N', 1, LAW{i}, 2, 215);
-    lane_line(g, 'WP_E', 1, LAW{i}, 3, 235);
-    lane_line(g, 'par',  1, LAW{i}, 4, 255);
-
-    for j = 1:4
-        lane_line(g, LAW{i}, j, GMUX{j}, i, GLANE(j));
-    end
-end
-
-%  Each collector Mux leaves on its own row, turning down IMMEDIATELY to the
-%  right of itself. Four Muxes of the same height put their outputs on the
-%  same y, so a lane further away would put all four horizontals on one line.
-for j = 1:4
-    q = port_xy(g, GMUX{j}, 'Outport', 1);
-    set_param([g '/' GOUT{j}], 'Position',[1080 q(2)+110+34*(j-1) 1110 q(2)+124+34*(j-1)]);
-    lane_line(g, GMUX{j}, 1, GOUT{j}, 1, 700 + 90*(j-1));
-end
-
-note_in(g, [40 1180 1100 1440], strjoin({ ...
-'FOUR LAWS, ONE MISSION'
-''
-'Every row gets the same waypoints, the same Delta, the same R_switch and'
-'the same current. The only difference is the block in the middle.'
-''
-'   1  atan2   psi_d = atan2(E_next - E, N_next - N)'
-'      Aims at the WAYPOINT. Regulates a distance to a point, so a vessel'
-'      pushed off the line never returns to the line.'
-''
-'   2  LOS     psi_d = pi_p - atan(y_e / Delta)'
-'      Aims at a point Delta ahead ON THE PATH. Regulates the distance to'
-'      the LINE, which is what "follow a path" means.'
-''
-'   3  ILOS    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)'
-'      Adds an integral state whose gain SHRINKS as y_e grows, so the'
-'      anti-windup is part of the law and not an addition to it.'
-''
-'   4  ALOS    psi_d = pi_p - b_hat - atan(y_e / Delta)'
-'      Estimates the crab angle itself. b_hat can be read off and compared'
-'      with atan2(v, u); an ILOS integral state cannot.'
-''
-'Rows 3 and 4 do nothing that row 2 does not, until a current is switched'
-'on. That is the experiment of section G.'}, newline));
-
-%% =====================================================================
-%  2. Autopilot bank — the SAME law and the SAME gains on all four rows
-%  =====================================================================
-c = add_subsys(m, 'Autopilot bank', P.controller, {'psi_d','x'}, {'tau_N'}, ...
-               gnc_colour('controller'));
-add_block('simulink/Signal Routing/Mux', [c '/tau mux'], 'Inputs', num2str(NROW), ...
-          'Position',[780 60 785 580]);
-CROW = zeros(1,NROW);
-for i = 1:NROW
-    q = port_xy(c, 'tau mux', 'Inport', i);
-    CROW(i) = q(2);
-end
-cp = CROW(2) - CROW(1);
-add_block('simulink/Signal Routing/Demux', [c '/split psi_d'], 'Outputs', num2str(NROW), ...
-          'Position',[170 CROW(1)-cp/2 175 CROW(1)-cp/2+NROW*cp]);
-%  Offset by half a row. The autopilot's second input sits at the centre of
-%  its block, which is exactly the row height, so a Demux ON the rows would
-%  send this line straight along the row and on top of the psi_d line that
-%  arrives there too. Half a pitch down gives it a jog and a lane of its own.
-add_block('simulink/Signal Routing/Demux', [c '/split x'], 'Outputs', num2str(NROW), ...
-          'Position',[240 CROW(1)+cp/4 245 CROW(1)+cp/4+NROW*cp]);
-
-KC = {'Kp','Kd'};
-add_block('simulink/Signal Routing/Mux', [c '/gains'], 'Inputs', num2str(numel(KC)), ...
-          'Position',[300 700 305 804]);
-for i = 1:numel(KC)
-    add_block('simulink/Sources/Constant', [c '/' KC{i}], 'Value', KC{i}, ...
-              'Position',[120 700 200 730]);
-end
-row_feed(c, 'gains', KC);
-
-for i = 1:NROW
-    blk = sprintf('%s/autopilot %d', c, i);
-    add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
-              'Position',[380 CROW(i)-55 620 CROW(i)+55]);
-    set_mlfcn(blk, { ...
-'function tau_N = autopilot(psi_d, x, gains)'
-'%#codegen'
-'% The Week 4 heading autopilot, unchanged and untuned.'
-'%'
-'%   tau_N = Kp ssa(psi_d - psi) - Kd r'
-'%'
-'% P-D on the heading with the D term acting on the measured yaw RATE, not on'
-'% the derivative of the error. All four rows carry an identical copy, so no'
-'% difference in the results can come from the inner loop.'
-'Kp = gains(1);'
-'Kd = gains(2);'
-''
-'psi = x(12);'
-'r   = x(6);'
-'e   = psi_d - psi;'
-'e   = atan2(sin(e), cos(e));        % ssa: the smallest signed angle'
-'tau_N = Kp * e - Kd * r;'}, 'tau_N', '[1 1]');
-
-    lane_line(c, 'split psi_d', i, sprintf('autopilot %d', i), 1, 300);
-    lane_line(c, 'split x',     i, sprintf('autopilot %d', i), 2, 320);
-    lane_line(c, 'gains',       1, sprintf('autopilot %d', i), 3, 340);
-    add_line(c, sprintf('autopilot %d/1', i), sprintf('tau mux/%d', i));
-end
-
-%  Both inports sit on the row of the Demux they feed, so neither line bends.
-%  The x Demux is offset a QUARTER of a row: that keeps both its outputs and
-%  its input off the four autopilot rows, so nothing it carries ever runs
-%  along a row that a psi_d line is already using.
-for nm = {'psi_d','x'}
-    q = port_xy(c, ['split ' nm{1}], 'Inport', 1);
-    set_param([c '/' nm{1}], 'Position',[40 q(2)-7 70 q(2)+7]);
-    add_line(c, [nm{1} '/1'], ['split ' nm{1} '/1']);
-end
-q = port_xy(c, 'tau mux', 'Outport', 1);
-set_param([c '/tau_N'], 'Position',[860 q(2)-7 890 q(2)+7]);
-add_line(c, 'tau mux/1','tau_N/1');
-
-%% =====================================================================
-%  3. Allocation bank — the exact inverse of Week 4
-%  =====================================================================
-a = add_subsys(m, 'Allocation bank', P.allocation, {'tau_N'}, {'n'}, ...
-               gnc_colour('allocation'));
-add_block('simulink/Signal Routing/Mux', [a '/n mux'], 'Inputs', num2str(NROW), ...
-          'Position',[780 60 785 580]);
-AROW = zeros(1,NROW);
-for i = 1:NROW
-    q = port_xy(a, 'n mux', 'Inport', i);
-    AROW(i) = q(2);
-end
-ap = AROW(2) - AROW(1);
-add_block('simulink/Signal Routing/Demux', [a '/split tau'], 'Outputs', num2str(NROW), ...
-          'Position',[170 AROW(1)-ap/2 175 AROW(1)-ap/2+NROW*ap]);
-
-KA = {'X_ff','k_pos','k_neg','n_max','n_min','y_pont'};
-add_block('simulink/Signal Routing/Mux', [a '/apar'], 'Inputs', num2str(numel(KA)), ...
-          'Position',[300 700 305 700+52*numel(KA)]);
-for i = 1:numel(KA)
-    add_block('simulink/Sources/Constant', [a '/' KA{i}], 'Value', KA{i}, ...
-              'Position',[120 700 200 730]);
-end
-row_feed(a, 'apar', KA);
-
-for i = 1:NROW
-    blk = sprintf('%s/allocate %d', a, i);
-    add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
-              'Position',[380 AROW(i)-60 620 AROW(i)+60]);
-    set_mlfcn(blk, { ...
-'function n = allocate(tau_N, apar)'
-'%#codegen'
-'% Two demands, two propellers: the map is square and the inverse is unique.'
-'%'
-'%   X = T1 + T2,   N = y_pont (T1 - T2)'
-'%     ==>  T1 = X/2 + N/(2 y_pont),   T2 = X/2 - N/(2 y_pont)'
-'%'
-'% Then the propeller curve is inverted one propeller at a time. Allocating'
-'% THRUST and inverting afterwards is what makes the two shaft speeds come'
-'% out unequal by themselves - see Appendix A1.'
-'X_ff   = apar(1);  k_pos = apar(2);  k_neg  = apar(3);'
-'n_max  = apar(4);  n_min = apar(5);  y_pont = apar(6);'
-''
-'T = [X_ff/2 + tau_N/(2*y_pont);'
-'     X_ff/2 - tau_N/(2*y_pont)];'
-'n = zeros(2,1);'
-'for j = 1:2'
-'    if T(j) >= 0'
-'        nj =  sqrt( T(j) / k_pos);'
-'    else'
-'        nj = -sqrt(-T(j) / k_neg);'
-'    end'
-'    n(j) = min(max(nj, n_min), n_max);'
-'end'}, 'n', '[2 1]');
-
-    lane_line(a, 'split tau', i, sprintf('allocate %d', i), 1, 300);
-    lane_line(a, 'apar',      1, sprintf('allocate %d', i), 2, 330);
-    add_line(a, sprintf('allocate %d/1', i), sprintf('n mux/%d', i));
-end
-
-add_line(a, 'tau_N/1','split tau/1','autorouting','on');
-q = port_xy(a, 'split tau', 'Inport', 1);
-set_param([a '/tau_N'], 'Position',[40 q(2)-7 70 q(2)+7]);
-q = port_xy(a, 'n mux', 'Outport', 1);
-set_param([a '/n'], 'Position',[860 q(2)-7 890 q(2)+7]);
-add_line(a, 'n mux/1','n/1');
-
-%% =====================================================================
-%  4. Plant bank — four copies of one hull
-%  =====================================================================
-%  Two outputs. `x` is all four vessels, 48 wide, for the guidance and the
-%  autopilots. `x1` is the FIRST vessel alone, 12 wide, because the logging
-%  contract of this course starts with one vessel's [u v r N E psi] and
-%  add_measurement's selectors are built for twelve states, not forty-eight.
-p = add_subsys(m, 'Plant bank', P.plant, {'n'}, {'x','x1'}, gnc_colour('plant'));
-add_block('simulink/Signal Routing/Mux', [p '/x mux'], 'Inputs', num2str(NROW), ...
-          'Position',[700 60 705 580]);
-PROW = zeros(1,NROW);
-for i = 1:NROW
-    q = port_xy(p, 'x mux', 'Inport', i);
-    PROW(i) = q(2);
-end
-pp = PROW(2) - PROW(1);
-add_block('simulink/Signal Routing/Demux', [p '/split n'], 'Outputs', num2str(NROW), ...
-          'Position',[150 PROW(1)-pp/2 155 PROW(1)-pp/2+NROW*pp]);
-for i = 1:NROW
-    add_otter_plant(p, sprintf('Otter %d', i), ...
-                    [280 PROW(i)-55 560 PROW(i)+55], cfg);
-    add_line(p, sprintf('split n/%d', i), sprintf('Otter %d/1', i), 'autorouting','on');
-    add_line(p, sprintf('Otter %d/1', i), sprintf('x mux/%d', i));
-end
-add_line(p, 'n/1','split n/1','autorouting','on');
-q = port_xy(p, 'split n', 'Inport', 1);
-set_param([p '/n'], 'Position',[40 q(2)-7 70 q(2)+7]);
-q = port_xy(p, 'x mux', 'Outport', 1);
-set_param([p '/x'], 'Position',[780 q(2)-7 810 q(2)+7]);
-add_line(p, 'x mux/1','x/1');
-
-q = port_xy(p, 'Otter 1', 'Outport', 1);
-set_param([p '/x1'], 'Position',[780 q(2)-7 810 q(2)+7]);
-lane_line(p, 'Otter 1', 1, 'x1', 1, 640);
-
-%% =====================================================================
-%  5. Measurements
-%  =====================================================================
-%  log = [u v r N E psi | psi_d(4) y_e(4) wp(4) aux(4) | trk(48)]
-%  The first six columns are the FIRST vessel's, by the course-wide contract.
-%  `trk` is all four state vectors, because the figures of this week draw four
-%  tracks and the contract's six columns describe only one vessel.
-add_measurement(m, P.measurement, 'W05', {'psi_d','y_e','wp','aux','trk'}, ...
-                struct('dash', true, 'weekName', 'W05  guidance signals'));
-
-%% ---- wiring, top level -------------------------------------------------
-L = @(x,y) add_line(m, x, y, 'autorouting','smart');
-L('Guidance bank/1',   'Autopilot bank/1');     % psi_d
-L('Plant bank/1',      'Guidance bank/1');      % x, the one line that goes back
-L('Plant bank/1',      'Autopilot bank/2');
-L('Autopilot bank/1',  'Allocation bank/1');
-L('Allocation bank/1', 'Plant bank/1');
-
-L('Plant bank/2',    'Measurements/1');       % x1, one vessel, twelve states
-L('Guidance bank/1', 'Measurements/2');
-L('Guidance bank/2', 'Measurements/3');
-L('Guidance bank/3', 'Measurements/4');
-L('Guidance bank/4', 'Measurements/5');
-L('Plant bank/1',    'Measurements/6');       % trk, all four vessels
-
-%% ---- what the model is for ---------------------------------------------
-note(m, [40 400 940 900], strjoin({ ...
-'WEEK 5  -  WAYPOINT FOLLOWING AND LOS GUIDANCE'
-''
-'Weeks 1 to 4 were told what heading to hold. Nobody said where the'
-'number came from. This week it comes from a list of waypoints, and'
-'turning that list into psi_d is what GUIDANCE means.'
-''
-'FOUR VESSELS RUN THE SAME MISSION AT THE SAME TIME'
-''
-'   row 1  atan2   aim at the waypoint           - and never reach the path'
-'   row 2  LOS     aim Delta ahead on the path   - and converge to it'
-'   row 3  ILOS    LOS + an integral state       - and beat the current'
-'   row 4  ALOS    LOS + an estimated crab angle - and beat it knowingly'
-''
-'Same waypoints, same current, same autopilot gains, same hull. The only'
-'difference is the guidance block, so every difference in the tracks'
-'belongs to the guidance law. Set guid_show = 1..4 to plot one of them.'
-''
-'THE ONE SIGNAL THAT TRAVELS BACKWARDS'
-''
-'x, from the plant bank to the guidance bank. Guidance is feedback: it'
-'needs to know where the vessel IS before it can say where to point.'
-''
-'WHAT TO WATCH'
-''
-'1  WITH NO CURRENT, rows 2, 3 and 4 are nearly identical and row 1 is'
-'   not. That is the difference between following a path and visiting'
-'   points.'
-''
-'2  WITH A CURRENT, row 2 settles with a PERMANENT cross-track error of'
-'   about Delta*tan(beta), beta being the crab angle. Rows 3 and 4 remove'
-'   it, by different means. (beta_c is the direction of the current.)'
-''
-'3  b_hat in row 4 converges to the crab angle itself. Read it off the'
-'   scope and compare it with atan2(v, u).'}, newline));
-
-%% ---- plot when the run finishes ----------------------------------------
-set_param(m, 'StopFcn', 'W05_plot;');
-set_param(m, 'ReturnWorkspaceOutputs', 'off');
-
+measure(m, 1330);
+note(m, o);
 mss_style(m);
 save_system(m, out);
-export_diagram(m, fullfile(here, 'img'));
+print(['-s' m], '-dpng', '-r60', fullfile(here, 'img', [m '.png']));
+n = check_overlaps(m);
 close_system(m, 0);
-
-fprintf('  built  %s\n', out);
+fprintf('  built  %-20s (overlapping lines: %d)\n', [m '.slx'], n);
 end
 
+% =========================================================================
+%  기록과 표시 / logging and display
+%    readouts (MATLAB Function): psi_d, x -> 도 단위 선수각 둘, 북, 동 / two headings in degrees, north, east
+%    Scope 위: 횡방향 오차 y_e,  아래: [psi_d psi] [deg];  XY Graph: 동쪽(가로) 대 북쪽(세로)
+%    Scope top: cross-track error; bottom: [psi_d psi] [deg]; XY Graph: east (x) against north (y)
+%    W05log = [y_e psi_d psi N E aux wp]  -> W05_read
+function measure(m, X)
+add_block('simulink/User-Defined Functions/MATLAB Function', [m '/readouts'], ...
+          'Position', [X+80 60 X+260 180]);
+set_mlfcn([m '/readouts'], readouts_code(), 'psi_d_deg', '[1 1]');
+q1 = port_xy(m, 'readouts', 'Inport', 1);  q2 = port_xy(m, 'readouts', 'Inport', 2);
+from_at(m, 'psi_d', [X q1(2)], 'From psi_d');
+from_at(m, 'x', [X q2(2)], 'From x r');
+route(m, 'From psi_d', 1, 'readouts', 1, zeros(0,2));
+route(m, 'From x r', 1, 'readouts', 2, zeros(0,2));
+out = {'psi_d_deg','psi_deg','N','E'};
+for i = 1:4
+    p = port_xy(m, 'readouts', 'Outport', i);
+    add_block('simulink/Signal Routing/Goto', [m '/Goto ' out{i}], 'GotoTag',out{i}, ...
+              'TagVisibility','local', 'ShowName','off', 'Position', [X+290 p(2)-9 X+370 p(2)+9]);
+    route(m, 'readouts', i, ['Goto ' out{i}], 1, zeros(0,2));
+end
+
+%  Scope: 위 y_e, 아래 [psi_d psi] / top y_e, bottom [psi_d psi]
+S = X + 450;
+add_block('simulink/Signal Routing/Mux', [m '/heading pair'], 'Inputs','2', 'Position', [S+100 100 S+105 160]);
+add_block('simulink/Sinks/Scope', [m '/Scope'], 'NumInputPorts','2', 'Position', [S+180 50 S+230 150]);
+try, set_param([m '/Scope'], 'LayoutDimensionsString','[2 1]', 'ShowLegend','on'); catch, end
+s1 = port_xy(m, 'Scope', 'Inport', 1);
+from_at(m, 'y_e', [S s1(2)], 'From y_e');
+route(m, 'From y_e', 1, 'Scope', 1, zeros(0,2));
+h1 = port_xy(m, 'heading pair', 'Inport', 1);  h2 = port_xy(m, 'heading pair', 'Inport', 2);
+from_at(m, 'psi_d_deg', [S h1(2)], 'From psi_d_deg');
+from_at(m, 'psi_deg', [S h2(2)], 'From psi_deg');
+l1 = route(m, 'From psi_d_deg', 1, 'heading pair', 1, zeros(0,2));
+l2 = route(m, 'From psi_deg', 1, 'heading pair', 2, zeros(0,2));
+set_param(l1, 'Name','psi_d');  set_param(l2, 'Name','psi');
+p = port_xy(m, 'heading pair', 'Outport', 1);  s2 = port_xy(m, 'Scope', 'Inport', 2);
+route(m, 'heading pair', 1, 'Scope', 2, [S+140 p(2); S+140 s2(2)]);
+set_param([m '/Scope'], 'Open','on');
+
+%  XY Graph: 항적 / the track
+add_block('simulink/Sinks/XY Graph', [m '/track'], 'Position', [S+180 210 S+230 270]);
+set_param([m '/track'], 'xmin','-20', 'xmax','140', 'ymin','-20', 'ymax','140');
+t1 = port_xy(m, 'track', 'Inport', 1);  t2 = port_xy(m, 'track', 'Inport', 2);
+from_at(m, 'E', [S+60 t1(2)], 'From E');
+from_at(m, 'N', [S+60 t2(2)], 'From N');
+route(m, 'From E', 1, 'track', 1, zeros(0,2));
+route(m, 'From N', 1, 'track', 2, zeros(0,2));
+
+%  로그 / the log
+tags = {'y_e','psi_d_deg','psi_deg','N','E','aux','wp'};
+add_block('simulink/Signal Routing/Mux', [m '/log'], 'Inputs','7', 'Position', [S+400 40 S+405 320]);
+for i = 1:7
+    q = port_xy(m, 'log', 'Inport', i);
+    from_at(m, tags{i}, [S+300 q(2)], ['From log ' tags{i}]);
+    route(m, ['From log ' tags{i}], 1, 'log', i, zeros(0,2));
+end
+p = port_xy(m, 'log', 'Outport', 1);
+add_block('simulink/Sinks/To Workspace', [m '/W05log'], 'VariableName','W05log', ...
+          'SaveFormat','Structure With Time', 'Position', [S+450 p(2)-15 S+520 p(2)+15]);
+route(m, 'log', 1, 'W05log', 1, zeros(0,2));
+end
+
+function C = readouts_code()
+C = { ...
+'function [psi_d_deg, psi_deg, N, E] = readouts(psi_d, x)'
+'%#codegen'
+'%READOUTS  Scope 와 XY Graph 에 보낼 값을 꺼낸다. 제어에는 쓰지 않는다.'
+'%          Pick out what the Scope and the XY Graph show; not used for control.'
+''
+'% 1) 명령 선수각을 도로 / the commanded heading in degrees'
+'psi_d_deg = psi_d * 180/pi;'
+''
+'% 2) 선수각은 x(12). 여러 번 돌면 360 도를 넘으므로 (-180, 180] 로 감아 psi_d 와 같은 범위로.'
+'%    The heading is x(12); after turns it passes 360 deg, so it is wrapped into'
+'%    (-180, 180], the range of psi_d.'
+'psi_deg = atan2(sin(x(12)), cos(x(12))) * 180/pi;'
+''
+'% 3) 위치: 북 x(7), 동 x(8) / position: north x(7), east x(8)'
+'N = x(7);  E = x(8);'
+'end'};
+end
 
 % =========================================================================
+%  MATLAB Function 코드 / the code of the MATLAB Function blocks
 function C = guidance_code(law)
-%GUIDANCE_CODE  The four laws, as the MATLAB Function block sees them.
-%
-%   ONE function with the law fixed at build time, so the four blocks share
-%   every line except the handful that differ. Section 5-10 of the lecture
-%   prints this code beside the equations it implements.
-
 head = { ...
-'function [psi_d, y_e, wp, aux] = guidance(x, WP_N, WP_E, par)'
+'function [psi_d, y_e, aux, wp] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, h)'
 '%#codegen'
-'% One guidance law: waypoint list in, desired heading out.'
+'%GUIDANCE  웨이포인트 목록과 배의 위치에서 명령 선수각 psi_d 를 만든다.'
+'%          Make the commanded heading psi_d from the waypoint list and the position.'
 '%'
-'% STATE. k is the active leg, y_int the ILOS integral, b_hat the ALOS'
-'% estimate. They are persistent, which inside a Simulink block means the'
-'% BLOCK owns them: Simulink resets them at the start of every run and two'
-'% blocks never share a copy. That is the difference from calling MSS'
-'% ILOSpsi.m from a script, where one copy is shared by the whole session'
-'% and has to be cleared by hand with "clear ILOSpsi".'
-'persistent k y_int b_hat'
-'if isempty(k), k = 1; y_int = 0; b_hat = 0; end'
+'%   입력 x 는 Otter 의 12 상태 (위치 N = x(7), E = x(8)). 나머지는 작업공간 변수.'
+'%   The input x is the Otter''s 12 states (position N = x(7), E = x(8));'
+'%   the rest are workspace variables (W05_0_setup).'
+'%'
+'%   출력 / outputs'
+'%     psi_d  명령 선수각 [rad] -> 선수각 오토파일럿 / commanded heading -> the autopilot'
+'%     y_e    횡방향 오차 [m], 경로 오른쪽이 + / cross-track error, right of the path +'
+'%     aux    ILOS 의 적분 상태 (다른 법칙은 0) / the ILOS integral (0 for other laws)'
+'%     wp     지금 따라가는 다리 번호 / the leg being followed'
 ''
-'Delta = par(1);  R_switch = par(2);  sw_mode = par(3);'
-'kappa = par(4);  gamma    = par(5);  h       = par(6);'
-''
+'% 0) 기억하는 값: 지금 다리 k, 적분 y_int. 블록이 가지고 있다가 실행마다 처음으로 돌아간다.'
+'%    Remembered values: the leg k and the integral y_int. The block owns them,'
+'%    and they start afresh on every run.'
+'persistent k y_int'
+'if isempty(k), k = 1; y_int = 0; end'
 'N = x(7);  E = x(8);'
 'n = numel(WP_N);'
 ''
-'% ---- the active leg, and the path-tangential angle -------------------'
+'% 1) 지금 다리: 웨이포인트 k 에서 k+1 로. 그 방향이 경로 각 pi_p 다.'
+'%    The active leg runs from waypoint k to k+1; its direction is the path angle pi_p.'
 'kn = min(k+1, n);'
 'Nk = WP_N(k);   Ek = WP_E(k);'
 'Nn = WP_N(kn);  En = WP_E(kn);'
 'pi_p = atan2(En - Ek, Nn - Nk);'
 ''
-'% ---- along-track and cross-track error, from ONE rotation ------------'
-'%   [x_e]   [ cos pi_p   sin pi_p ] [N - Nk]'
-'%   [y_e] = [-sin pi_p   cos pi_p ] [E - Ek]'
+'% 2) 배의 위치를 경로 좌표로 돌린다: x_e = 다리를 따라 간 거리, y_e = 다리에서 옆으로 벗어난 거리.'
+'%    Rotate the position into path coordinates: x_e = distance along the leg,'
+'%    y_e = distance off it, to the side.'
 'dN = N - Nk;  dE = E - Ek;'
 'x_e =  dN*cos(pi_p) + dE*sin(pi_p);'
 'y_e = -dN*sin(pi_p) + dE*cos(pi_p);'
 ''
-'% ---- waypoint switching ----------------------------------------------'
-'d = sqrt((Nn-Nk)^2 + (En-Ek)^2);'
-'if sw_mode == 1'
-'    hit = (d - x_e) < R_switch;                   % along-track, as MSS does'
-'else'
-'    hit = sqrt((N-Nn)^2 + (E-En)^2) < R_switch;   % circle of acceptance'
-'end'
-'if hit && k < n-1'
+'% 3) 다리 끝까지 R_switch 보다 적게 남으면 다음 다리로 (MSS 와 같은 판정).'
+'%    With less than R_switch left to the end of the leg, move to the next leg'
+'%    (the same test as MSS).'
+'d = sqrt((Nn - Nk)^2 + (En - Ek)^2);'
+'if (d - x_e) < R_switch && k < n-1'
 '    k = k + 1;'
 'end'
 'wp = k;'
+'aux = y_int;'
 ''};
-
 switch law
-    case 1
+    case 'atan2'
         body = { ...
-'% ---- LAW 1: atan2 - aim straight at the next waypoint ----------------'
-'% The obvious answer, and the wrong one. It regulates the DISTANCE TO A'
-'% POINT, not the distance to the LINE, so a vessel pushed off the path'
-'% never comes back to it: it simply approaches the waypoint from wherever'
-'% it happens to be. y_e is still computed, so that the four rows are'
-'% measured with the same yardstick.'
+'% 4) 법칙: 다음 웨이포인트를 곧장 겨냥한다. 점까지의 방향이지 선까지가 아니다.'
+'%    The law: aim straight at the next waypoint. It points at a POINT, not at the LINE.'
 'psi_d = atan2(En - E, Nn - N);'
-'aux   = 0;'};
-    case 2
+'end'};
+    case 'LOS'
         body = { ...
-'% ---- LAW 2: LOS - aim at a point Delta ahead ON THE PATH -------------'
-'%   psi_d = pi_p - atan(y_e / Delta)'
-'% Two pieces. pi_p says "line up with the path"; the arctan says "and lean'
-'% towards it by an amount that grows with how far off you are". The'
-'% correction saturates at 90 deg, so the vessel heads almost perpendicular'
-'% to the path when far from it and never turns away from it.'
+'% 4) 법칙 LOS: 경로 위에서 Delta 만큼 앞의 점을 겨냥한다.'
+'%        psi_d = pi_p - atan(y_e / Delta)'
+'%    pi_p 는 "경로와 나란히", atan 은 "벗어난 만큼 경로 쪽으로 기울여라".'
+'%    y_e 가 작으면 atan(y_e/Delta) ~ y_e/Delta: 횡방향 오차에 대한 P 제어기, Kp = 1/Delta.'
+'%    The law LOS: aim at the point Delta ahead on the path.'
+'%    pi_p says "line up with the path"; the atan says "lean towards it by how'
+'%    far off you are". For small y_e, atan(y_e/Delta) ~ y_e/Delta: a P'
+'%    controller on the cross-track error with Kp = 1/Delta.'
 'psi_d = pi_p - atan(y_e / Delta);'
-'aux   = 0;'};
-    case 3
+'end'};
+    case 'ILOS'
         body = { ...
-'% ---- LAW 3: ILOS - an integral state absorbs the current -------------'
-'%   psi_d      = pi_p - atan(Kp y_e + Ki y_int),  Kp = 1/Delta, Ki = kappa Kp'
-'%   d/dt y_int = Delta y_e / (Delta^2 + (y_e + kappa y_int)^2)'
-'% Borhaug, Pavlov and Pettersen (2008). Look at the denominator: the'
-'% integrator gain SHRINKS as y_e grows, so it barely integrates while the'
-'% vessel is still far from the path. That is anti-windup built into the law'
-'% rather than bolted on afterwards - compare Week 3, section F.'
-'Kp = 1 / Delta;'
-'Ki = kappa * Kp;'
-'psi_d = pi_p - atan(Kp*y_e + Ki*y_int);'
+'% 4) 법칙 ILOS: LOS 에 적분을 더한다 — 횡방향 오차에 대한 PI 제어기.'
+'%        psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)'
+'%    조류가 배를 계속 밀면 LOS 는 오차를 남긴다 (P 가 남기는 오차와 같다). 적분이 그만큼을 맡는다.'
+'%    The law ILOS: LOS plus an integral — a PI controller on the cross-track'
+'%    error. A current that keeps pushing leaves an error with LOS alone (the'
+'%    error P leaves); the integral takes it over.'
+'psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);'
+''
+'% 5) 적분 갱신. 분모가 y_e 와 함께 커지므로 멀리 벗어나 있을 때는 거의 적분하지 않는다:'
+'%    법칙 안에 들어 있는 안티와인드업이다 (Borhaug, Pavlov, Pettersen 2008).'
+'%    Update the integral. The denominator grows with y_e, so it barely'
+'%    integrates while far off the path: anti-windup built into the law.'
 'y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);'
-'aux   = y_int;'};
-    otherwise
-        body = { ...
-'% ---- LAW 4: ALOS - estimate the crab angle and subtract it -----------'
-'%   psi_d      = pi_p - b_hat - atan(y_e / Delta)'
-'%   d/dt b_hat = gamma Delta y_e / sqrt(Delta^2 + y_e^2)'
-'% Fossen (2023). ILOS absorbs the current into an integral state whose'
-'% value has no physical meaning. ALOS estimates the CRAB ANGLE itself, so'
-'% b_hat converges to a number that can be read off and compared with'
-'% atan2(v, u). Section H checks that it does, and plots the Lyapunov'
-'% function whose derivative the adaptation law was chosen to make negative.'
-'psi_d = pi_p - b_hat - atan(y_e / Delta);'
-'b_hat = b_hat + h * gamma * Delta * y_e / sqrt(Delta^2 + y_e^2);'
-'aux   = b_hat;'};
+'end'};
 end
-
 C = [head; body];
 end
 
-% -------------------------------------------------------------------------
-function note(m, pos, txt)
-h = Simulink.Annotation([m '/note']);
-h.Text = txt;
-h.Position = pos;
-h.HorizontalAlignment = 'left';
-h.BackgroundColor = 'lightBlue';
+function C = autopilot_code()
+C = { ...
+'function N = autopilot(psi_d, x, Kp, Kd, N_max)'
+'%#codegen'
+'%AUTOPILOT  4주차 게인의 선수각 오토파일럿. 명령 선수각 psi_d 를 따라가도록 요 모멘트 N 을 낸다.'
+'%           A heading autopilot with the Week 4 gains: the yaw moment N that follows psi_d.'
+'%'
+'%   이번 주에는 튜닝하지 않는다 — 그 앞의 유도 법칙만 바꾼다.'
+'%   It is not retuned this week; only the guidance law in front of it changes.'
+''
+'% 1) 선수각 오차를 (-pi, pi] 로 감는다 (ssa, 4주차 §4-6).'
+'%    Wrap the heading error into (-pi, pi] (ssa, Week 4 section 4-6).'
+'psi = x(12);  r = x(6);'
+'e = atan2(sin(psi_d - psi), cos(psi_d - psi));'
+''
+'% 2) P 는 오차에, D 는 측정한 요각속도 r 에. 명령이 계단으로 바뀌어도 킥이 없다.'
+'%    P on the error, D on the measured yaw rate r: no kick when psi_d jumps.'
+'N = Kp*e - Kd*r;'
+''
+'% 3) 두 프로펠러가 낼 수 있는 만큼으로 자른다 / limit to what the propellers can give'
+'N = min(max(N, -N_max), N_max);'
+'end'};
 end
 
-function note_in(sub, pos, txt)
-h = Simulink.Annotation([sub '/note']);
-h.Text = txt;
-h.Position = pos;
-h.HorizontalAlignment = 'left';
-h.BackgroundColor = 'lightBlue';
+function C = allocation_code()
+C = { ...
+'function n = allocation(N, X_ff, y_pont, k_pos, k_neg)'
+'%#codegen'
+'%ALLOCATION  요 모멘트 N 을 두 프로펠러의 축 회전수 n 으로 (4주차와 같다).'
+'%            The yaw moment N to the two shaft speeds n (as in Week 4).'
+''
+'% 1) 둘 다 X_ff 의 절반씩 밀고, 모멘트는 한쪽을 더, 다른 쪽을 덜 밀어 만든다.'
+'%    Both push half of X_ff; the moment comes from pushing one side harder.'
+'T = [X_ff/2 + N/(2*y_pont);      % 좌현 / port'
+'     X_ff/2 - N/(2*y_pont)];     % 우현 / starboard'
+''
+'% 2) 프로펠러 곡선 T = k n|n| 을 n 에 대해 푼다 (앞 k_pos, 뒤 k_neg).'
+'%    Solve the propeller curve T = k n|n| for n (k_pos ahead, k_neg astern).'
+'n = zeros(2,1);'
+'for i = 1:2'
+'    if T(i) >= 0'
+'        n(i) =  sqrt( T(i) / k_pos);'
+'    else'
+'        n(i) = -sqrt(-T(i) / k_neg);'
+'    end'
+'end'
+'end'};
+end
+
+% =========================================================================
+function from_at(m, tag, at, name)
+if nargin < 4, name = ['From ' tag]; end
+add_block('simulink/Signal Routing/From', [m '/' name], 'GotoTag',tag, 'ShowName','off', ...
+          'Position', round([at(1) at(2)-10 at(1)+75 at(2)+10]));
+end
+
+function goto_at(m, src, at, dirn, tag)
+if strcmp(dirn, 'up'), dy = -38; else, dy = 38; end
+at = round(at);
+g = ['Goto ' tag];
+add_block('simulink/Signal Routing/Goto', [m '/' g], 'GotoTag',tag, 'ShowName','off', ...
+          'TagVisibility','local', 'Position', [at(1)+12 at(2)+dy-9 at(1)+72 at(2)+dy+9]);
+route(m, src{1}, src{2}, g, 1, [at; at(1) at(2)+dy]);
+end
+
+function h = route(sys, src, sp, dst, dp, via)
+a = port_xy(sys, src, 'Outport', sp);
+b = port_xy(sys, dst, 'Inport', dp);
+h = add_line(sys, [a; via; b]);
+end
+
+function note(m, o)
+L = {sprintf('WEEK 5, SECTION %s  -  %s', o.sec, o.title), '', ...
+     '   guidance -> heading autopilot (Week 4) -> allocation -> Otter', ...
+     '   double-click a block to read its code and comments', ''};
+switch o.law
+    case 'atan2', L{end+1} = '   psi_d = atan2(E_next - E, N_next - N)';
+    case 'LOS',   L{end+1} = '   psi_d = pi_p - atan(y_e / Delta)            a P controller on y_e, Kp = 1/Delta';
+    case 'ILOS',  L{end+1} = '   psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)   a PI controller on y_e';
+end
+L = [L, {'', 'Change Delta, R_switch, kappa or V_c in the Command Window and press Run:', ...
+         'the Scope shows the cross-track error and the heading; the XY Graph draws the track.'}];
+a = Simulink.Annotation([m '/note']);
+a.Text = strjoin(L, newline);
+a.Position = [40 330 760 470];
+a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
 end

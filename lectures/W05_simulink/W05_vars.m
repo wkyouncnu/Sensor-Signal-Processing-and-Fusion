@@ -1,83 +1,40 @@
 function V = W05_vars()
-%W05_VARS  W05_guidance.slx 가 필요로 하는 모든 변수를 하나의 구조체로.
-%          Every variable W05_guidance.slx needs, in one struct.
+%W05_VARS  W05_0_setup 과 같은 값을 구조체로 / the values of W05_0_setup, as a struct.
 %
-%   1주차부터 4주차까지와 같은 구조이다. W05_0_setup 은 같은 값들을 기본
-%   작업공간에 채워 학생이 모델을 열고 Run 을 누를 수 있게 하고, 이 함수는 같은
-%   값들을 구조체로 돌려주어 run_sim 이 값 하나만 바꾸어 돌릴 때 작업공간이
-%   마지막 실행의 상태로 남지 않게 한다.
-%
-%   The same arrangement as Weeks 1 to 4: W05_0_setup fills the base workspace
-%   so that opening the model and pressing Run is enough, while this returns
-%   the same numbers as a struct so that run_sim can vary one of them without
-%   leaving the workspace in the state of the last run.
+%   절 스크립트는 W05_read 를 통해 이 값에서 몇 개만 바꿔 돌린다. 값을 고치면 두 파일을
+%   함께 고친다 (verify_w05_guidance 가 대조한다).
+%   Section scripts change a few of these through W05_read. Edit both files
+%   together; verify_w05_guidance compares them.
 
-mss_path();
-c = otter_config('base');
+cfg = otter_config('base');
 
-%  ---- the mission -------------------------------------------------------
-%  Five waypoints, four legs of 60 m. Three sides of a square and then a
-%  diagonal, so the pattern contains a 90 deg corner AND a 135 deg one: a
-%  gentle turn and a hard one, which is what section F needs.
-V.WP = [   0    0
-          60    0
-          60   60
-           0   60
-          60  120 ];
+%  경로 / the path — 기본은 다섯 웨이포인트 임무, 한 다리 60 m
+%  the default is the five-waypoint mission, 60 m legs
+V.WP_N = [0 60 60  0  60]';
+V.WP_E = [0  0 60 60 120]';
 
-%  The model reads the two columns separately, because a Constant block holds
-%  a vector and not a matrix. WP stays for the plotting functions.
-V.WP_N = V.WP(:,1);
-V.WP_E = V.WP(:,2);
+%  유도 / guidance
+V.Delta    = 5;        % 앞보기 거리 / look-ahead distance         [m]
+V.R_switch = 3;        % 전환 거리 / switching distance            [m]
+V.kappa    = 0.3;      % ILOS 적분 계수 / ILOS integral constant
 
-V.Delta    = 8;        % look-ahead distance [m] — 4 x hull length
-V.R_switch = 5;        % switching parameter [m] — must be < shortest leg
-V.sw_mode  = 1;        % 1 = along-track (MSS), 2 = circle of acceptance
+%  출발점: 경로에서 동쪽으로 E0 만큼 떨어져 북쪽을 보고 선다
+%  start: E0 metres east of the path, at rest, facing north
+V.E0 = 20;
+V.x0 = zeros(12,1);  V.x0(8) = V.E0;
 
-%  ---- the four guidance laws --------------------------------------------
-%  Row 1 atan2, row 2 LOS, row 3 ILOS, row 4 ALOS. They differ in one thing
-%  each and share everything else, which is what makes the comparison honest.
-V.kappa = 0.3;         % ILOS integral gain constant, Ki = kappa/Delta
-V.gamma = 0.005;       % ALOS adaptation gain [rad per metre-second]
-V.guid_show = 0;       % 0 = all four on the plots, 1..4 = one of them
+%  선수각 오토파일럿 (4주차 식, 미분은 요각속도에) / heading autopilot (Week 4, D on the yaw rate)
+V.Kp = 300;  V.Kd = 100;
+V.X_ff  = 60;          % 전진력 / surge force  [N]  -> about 0.77 m/s
+V.N_max = min(2*cfg.y_pont*(cfg.k_pos*cfg.n_max^2 - V.X_ff/2), ...
+              2*cfg.y_pont*(V.X_ff/2 + cfg.k_neg*cfg.n_min^2));
 
-%  BOTH GAINS ARE SMALL, AND THE UNITS SAY WHY. The ALOS update is
-%
-%      d/dt b_hat = gamma * Delta * y_e / sqrt(Delta^2 + y_e^2)
-%
-%  whose right-hand side approaches gamma*Delta as y_e grows. With Delta = 8 m
-%  a gamma of 0.02 gives 0.16 rad/s, which drives the estimate through a
-%  radian in six seconds and makes it chase the corner transients instead of
-%  the current. Section H sweeps both gains and these two values are what it
-%  chose: gamma = 0.005 settles the ALOS vessel at 0.006 m and kappa = 0.3
-%  settles the ILOS one at 0.010 m, both in a 0.3 m/s beam current.
-
-%  ---- the heading autopilot, one set of gains for all four rows ---------
-%  The same P-D law as Week 4, at the same gains. Nothing here is retuned
-%  between rows: every difference in the results belongs to the guidance.
-V.Kp = 100.00;         % [N m per rad]
-V.Kd = 74.90;          % [N m per rad/s]
-V.X_ff = 60;           % constant surge force [N] -> about 0.77 m/s
-
-%  ---- actuator and plant -------------------------------------------------
-V.k_pos = c.k_pos;  V.k_neg = c.k_neg;
-V.n_max = c.n_max;  V.n_min = c.n_min;  V.y_pont = c.y_pont;
+%  선체와 추진기 / hull and thrusters
+V.k_pos = cfg.k_pos;  V.k_neg = cfg.k_neg;  V.y_pont = cfg.y_pont;
 V.mp = 25;  V.rp = [0.05 0 -0.35]';
-V.x0 = zeros(12,1);
 
-%  ---- the current --------------------------------------------------------
-%  Off by default. Sections G and H switch it on; that is where ILOS and ALOS
-%  earn their keep and plain LOS cannot.
-V.V_c = 0;  V.beta_c = 0;
+%  조류 / the current — 기본은 없음 / none by default
+V.V_c = 0;  V.beta_c = pi/2;   % 속도 [m/s], 향하는 방향 (pi/2 = 동쪽으로) / speed, direction it flows to
 
-%  ---- simulation ---------------------------------------------------------
-%  500 s is chosen so the last quarter of the run is well clear of the final
-%  135 deg corner at about 222 s: a settled number measured across a corner
-%  is not a settled number.
-V.h = 0.02;  V.T_final = 500;
-
-%  ---- live view (off; the section scripts plot at the end) ---------------
-V.animate = 0;  V.animate_every = 1.0;
-V.track_Nmin = -20;  V.track_Nmax = 200;
-V.track_Emin = -30;  V.track_Emax = 220;
+V.h = 0.02;  V.T_final = 400;
 end

@@ -1,105 +1,66 @@
-%% W05_0_setup — 이번 주에 학생이 고치는 유일한 파일
-%  W05_0_setup — the only file to be edited in Week 5
-%
-%  강의에서의 위치 / place in the lecture
-%      Part 2 의 절 A 이다. 웨이포인트 목록, 전방주시거리 Delta, 전환반경,
-%      조류, 그리고 ILOS 와 ALOS 의 적응 게인이 모두 여기에 있다.
-%      This is section A of Part 2. The waypoint list, the look-ahead distance
-%      Delta, the switching radius, the current, and the adaptive gains of
-%      ILOS and ALOS are all defined here.
+%% W05_0_SETUP  5주차 모델이 쓰는 모든 값을 기본 작업공간에 올린다.
+%                Put every value the Week 5 models use into the base workspace.
 %
 %  실행 / to run
 %      W05_0_setup
+%      open_system('W05_D_LOS')    그리고 Run / then press Run
 %
-%  그다음 절을 하나씩 / then, one laboratory section at a time
-%      W05_C_aim_at_the_waypoint     절 C — atan2 가 경로추종이 아닌 이유
-%                                    why atan2 is not path following
-%      W05_D_line_of_sight           절 D — LOS 법칙과 그것이 고치는 것
-%                                    the LOS law, and what it repairs
-%      W05_E_lookahead_distance      절 E — Delta 가 맞바꾸는 것
-%                                    what Delta trades against what
-%      W05_F_waypoint_switching      절 F — 두 가지 전환 판정
-%                                    the two switching criteria
-%      W05_G_current_and_integral    절 G — 조류, ILOS, ALOS
-%                                    the current, ILOS and ALOS
-%      W05_H_adaptive_and_stability  절 H — 적응 게인과 Lyapunov 함수
-%                                    the gains, and the Lyapunov function
+%  강의에서의 위치 / place in the lecture
+%      Part 2 절 A 이다. 학생이 고치는 유일한 파일이다. 블록에는 숫자가 아니라 이
+%      파일의 변수 이름이 들어 있다. Delta 를 명령창에서 바꾸고 Run 을 누르면 바로 보인다.
+%      Section A of Part 2 and the only file a student edits. Changing Delta in
+%      the Command Window and pressing Run shows the new track at once.
 %
-%  모델이 망가졌을 때 / to rebuild a model that has been damaged
-%      W05_1_build_guidance
+%  이번 주에 튜닝하는 것 / what is tuned this week
+%      선수각 오토파일럿(4주차)은 그대로 두고, 그 앞의 유도 법칙을 모델 없이 튜닝한다.
+%      LOS 는 횡방향 오차에 대한 P 제어기(Kp = 1/Delta), ILOS 는 PI 제어기다.
+%      The heading autopilot (Week 4) is left alone; the guidance law in front
+%      of it is tuned without a model. LOS is a P controller on the cross-track
+%      error (Kp = 1/Delta); ILOS is a PI controller.
 
-clear; close all; bdclose('all');
-
+clear; close all;
 here = fileparts(mfilename('fullpath'));
-root = fileparts(fileparts(here));            % ...\GradCourse
+root = fileparts(fileparts(here));
 addpath(fullfile(root,'_tools'), here);
-mss_path();
+mss_path();                                   % MSS 를 찾아 경로에 올린다 / finds MSS
+cfg = otter_config('base');
 
-V = W05_vars;
+%% ---- 경로 / the path -------------------------------------------------------
+%  다섯 웨이포인트 임무, 다리 넷, 각 60 m / the five-waypoint mission, four 60 m legs
+WP_N = [0 60 60  0  60]';     % 북쪽 좌표 / north coordinates   [m]
+WP_E = [0  0 60 60 120]';     % 동쪽 좌표 / east coordinates    [m]
 
-%% ---- the mission --------------------------------------------------------
-%  Five waypoints, four legs. Three sides of a square and then a diagonal, so
-%  the pattern has two 90 deg corners AND one of 135 deg: a gentle turn and a
-%  hard one. Section F needs both.
-WP   = V.WP;
-WP_N = V.WP_N;
-WP_E = V.WP_E;
+%% ---- 유도 / guidance ---------------------------------------------------------
+Delta    = 5;         % 앞보기 거리. 작을수록 세게 경로로 돌아온다 (P 게인 = 1/Delta)
+                      % look-ahead distance; smaller turns back harder (P gain = 1/Delta)  [m]
+R_switch = 3;         % 다음 다리로 넘어가는 거리 / distance at which the next leg starts  [m]
+kappa    = 0.3;       % ILOS 적분 계수 (I 게인 = kappa/Delta) / ILOS integral constant (I gain = kappa/Delta)
 
-%% ---- the guidance tuning ------------------------------------------------
-Delta    = V.Delta;        % look-ahead distance [m]. 8 m is 4 x hull length
-R_switch = V.R_switch;     % switching parameter [m]. MUST be < shortest leg
-sw_mode  = V.sw_mode;      % 1 = along-track (MSS), 2 = circle of acceptance
-kappa    = V.kappa;        % ILOS integral gain constant, Ki = kappa/Delta
-gamma    = V.gamma;        % ALOS adaptation gain
+%% ---- 출발점 / the start ------------------------------------------------------
+E0 = 20;              % 경로에서 동쪽으로 떨어진 거리 / distance east of the path  [m]
+x0 = zeros(12,1);  x0(8) = E0;   % 정지, 북쪽을 봄 / at rest, facing north
 
-%  0 plots all four laws, 1..4 plots one of them
-%  (1 atan2, 2 LOS, 3 ILOS, 4 ALOS)
-guid_show = V.guid_show;
+%% ---- 선수각 오토파일럿 (4주차) / heading autopilot (Week 4) -------------------
+Kp    = 300;          % [N m per rad]
+Kd    = 100;          % 요각속도에 곱한다 / multiplies the yaw rate  [N m s per rad]
+X_ff  = 60;           % 전진력 / surge force (about 0.77 m/s)  [N]
+N_max = min(2*cfg.y_pont*(cfg.k_pos*cfg.n_max^2 - X_ff/2), ...
+            2*cfg.y_pont*(X_ff/2 + cfg.k_neg*cfg.n_min^2));   % 요 모멘트 한계 / yaw-moment limit  [N m]
 
-%% ---- the heading autopilot, from Week 4 ---------------------------------
-%  Not retuned. All four rows carry an identical copy, so no difference in
-%  the results can come from the inner loop.
-Kp   = V.Kp;
-Kd   = V.Kd;
-X_ff = V.X_ff;             % constant surge force [N]
+%% ---- 선체와 추진기 / hull and thrusters --------------------------------------
+k_pos = cfg.k_pos;   k_neg = cfg.k_neg;   y_pont = cfg.y_pont;
+mp = 25;   rp = [0.05 0 -0.35]';
 
-%% ---- actuator and plant -------------------------------------------------
-k_pos = V.k_pos;  k_neg = V.k_neg;
-n_max = V.n_max;  n_min = V.n_min;  y_pont = V.y_pont;
-mp = V.mp;  rp = V.rp;  x0 = V.x0;
+%% ---- 조류 / the current ------------------------------------------------------
+V_c    = 0;           % 조류 속도. 절 F 는 0.3 / current speed; section F uses 0.3  [m/s]
+beta_c = pi/2;        % 조류가 흘러가는 방향. pi/2 = 동쪽으로 / direction it flows to; pi/2 = east
 
-%% ---- the current --------------------------------------------------------
-%  Off here. Sections G and H switch it on; that is where ILOS and ALOS earn
-%  their keep and plain LOS cannot.
-V_c    = V.V_c;
-beta_c = V.beta_c;
+%% ---- 시뮬레이션 / simulation -------------------------------------------------
+h       = 0.02;       % [s]
+T_final = 400;        % [s]
 
-%% ---- simulation ---------------------------------------------------------
-h       = V.h;
-T_final = V.T_final;
-
-%% ---- live view -----------------------------------------------------------
-animate       = 1;
-animate_every = V.animate_every;
-track_Nmin = V.track_Nmin;   track_Nmax = V.track_Nmax;
-track_Emin = V.track_Emin;   track_Emax = V.track_Emax;
-
-%% ---- report -------------------------------------------------------------
-legs = hypot(diff(WP(:,1)), diff(WP(:,2)));
-fprintf('\n  W05 setup complete\n');
-fprintf('    mission         %d waypoints, %d legs, shortest %.1f m\n', ...
-        size(WP,1), numel(legs), min(legs));
-fprintf('    guidance        Delta = %g m, R_switch = %g m, mode = %d (%s)\n', ...
-        Delta, R_switch, sw_mode, ternary(sw_mode==1,'along-track','circle'));
-fprintf('    feasibility     R_switch < shortest leg?  %s\n', ...
-        ternary(R_switch < min(legs), 'yes', 'NO — a waypoint would be skipped'));
-fprintf('    Delta / L       %.1f x hull length (rule of thumb: 2 to 5)\n', Delta/2.0);
-fprintf('    ILOS            kappa = %g   ->  Ki = %.4f\n', kappa, kappa/Delta);
-fprintf('    ALOS            gamma = %g\n', gamma);
-fprintf('    autopilot       Kp = %g, Kd = %g,  X_ff = %g N\n', Kp, Kd, X_ff);
-fprintf('    current         %.2f m/s at %.0f deg\n', V_c, rad2deg(beta_c));
-fprintf('    simulation      %g s at h = %g s\n\n', T_final, h);
-
-function s = ternary(c, a, b)
-if c, s = a; else, s = b; end
-end
+fprintf(['\n  W05_0_setup\n' ...
+         '    path      %d waypoints, legs of 60 m\n' ...
+         '    guidance  Delta = %g m (P gain %.3f), R_switch = %g m, kappa = %g\n' ...
+         '    start     %g m east of the path;  current %g m/s\n\n'], ...
+        numel(WP_N), Delta, 1/Delta, R_switch, kappa, E0, V_c);

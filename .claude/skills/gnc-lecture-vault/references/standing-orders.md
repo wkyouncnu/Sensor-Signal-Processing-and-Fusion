@@ -1795,3 +1795,14 @@ W03 이 첫 적용이고, 다음 주차(W04~)도 사용자가 요청하면 같�
 사용자 허락: "시뮬링크 캐쉬들 않 사용하는 것들은 지워줘도 되어". 같은 폴더에 `.slx` 가 없는 `.slxc` 만
 지운다 (gitignore 대상, 추적되지 않음). `slprj/` 는 쓰고 있는 모델의 캐시이므로 두고, 다른 파일은 여전히
 지우지 않는다.
+
+### 15-13. W05 재작성 — 유도도 "PID 튜닝" 으로 본다 (2026-09-22)
+
+| 규칙 | 어떻게 |
+|---|---|
+| 유도를 제어기로 읽는다 | LOS 는 y_e 에 대한 P (Kp = 1/Delta, 작은 오차에서 atan 을 선형화), ILOS 는 PI (I = kappa/Delta). 튜닝 순서 Delta -> R -> kappa 는 2주차의 P -> I |
+| 오프셋 예측을 기계로 | 조류 속 LOS 의 남는 오차 = Delta tan(유지한 선수각). `verify_w05_guidance` 가 시뮬레이션으로 대조 |
+| 블록은 전부 MATLAB Function | guidance(persistent k, y_int 이므로 `set_mlfcn(..., 'h')` 로 이산 실행) · heading autopilot · allocation · readouts. 상수는 `mlfcn_params` |
+| 항적은 XY Graph + 그림에는 선체 | 모델에 XY Graph 를 두어 Run 중 항적이 보이게. 결과 그림은 `track_ships` 로 선체·선수를 그리고 선 색과 `COL` 을 맞춘다(범례 색이 어긋났었다) |
+| 튜닝은 그 과제에서 | kappa 는 긴 다리(0.1)와 60 m 임무(0.3)에서 답이 다르다 — 쓰일 과제에서 고른다 |
+| 표시용 변환은 readouts 하나로 | Selector·Fcn·Gain 을 줄줄이 두지 않는다(겹침·기울어진 선의 원인). From 블록 폭 75 px 이상(좁으면 `-T-` 로 보인다) |

@@ -128,6 +128,13 @@
 
 ### W05 · Waypoint Following and LOS Guidance — 완료
 
+> [!important] 2026-09-22 전면 재작성 — 모델 없는 유도 튜닝 (사용자 요청, W03·W04 와 같은 틀)
+> 모델 다섯(`W05_C_atan2` · `W05_D_LOS` · `W05_E_switching` · `W05_F_ILOS` · `W05_G_tuning`), 블록은 모두 주석 달린
+> MATLAB Function (guidance · heading autopilot · allocation · readouts) + Otter, Scope 와 XY Graph(항적).
+> 관점: LOS = 횡방향 오차에 대한 P (Kp = 1/Delta), ILOS = PI (I = kappa/Delta). 순서 Delta -> R -> kappa.
+> 결과: Delta = 5 m, R_switch = 3 m, kappa = 0.3. 조류 0.3 m/s 에서 LOS 오프셋 2.107 m = Delta tan(22.8 도).
+> ALOS 와 Lyapunov 유도는 `W05_simulink/_previous_version/` 에 보관. 실습 문제 3개는 그대로 통과.
+
 - 회전변환 **하나**에서 $(x_e, y_e)$ 둘 다 유도. `crosstrack.m` 의 $\tan\pi_p$ 특이점 경고
 - LOS 유도: 조준점 → 다리 좌표계에서 $[\Delta,\ -y_e]^\top$ → $\psi_d = \pi_p - \arctan(y_e/\Delta)$
 - 전환 두 방식 — MSS 는 **원이 아니라** $d - x_e < R$. 문서와 코드의 불일치까지 실례로

@@ -909,7 +909,7 @@ $$
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | buoyancy and weight acting through different points |
 | $\boldsymbol{\tau}$ | control force | what the thrusters produce |
 
-- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 5 §5-7 pays for it with a permanent path error, and Week 7 adds wind and waves beside it.
+- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 5 §5-5 pays for it with a permanent path error, and Week 7 adds wind and waves beside it.
 
 > [!important] The added mass is not a correction term
 > For the Otter, $-X_{\dot u} = 5.50$ kg against a hull-plus-payload mass of $80.0$ kg, so the water contributes $6.4\%$ of the effective surge inertia. In sway it contributes far more, $-Y_{\dot v} = 82.5$ kg against the same $80.0$ kg. It is part of the model, not a refinement of it.
@@ -1340,7 +1340,7 @@ $$
 \beta = \operatorname{atan2}(v, u), \qquad \chi = \psi + \beta
 $$
 
-where $\chi$ is the course angle. Week 5 §5-7 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error, and measures it as $\Delta\tan\beta$.
+where $\chi$ is the course angle. Week 5 §5-5 shows that a guidance law which regulates $\psi$ while the vessel travels along $\chi$ leaves a permanent path error, and measures it as $\Delta\tan\beta$.
 
 ## 1-13. Ocean current — a velocity, not a force
 
@@ -1890,7 +1890,7 @@ W01_E_current_run
 - **Why that happens** is §1-13 in one line: `otter.m` computes every force from $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$, the velocity through the water, but integrates the position with $\boldsymbol{\nu}$, the velocity over the ground. **Forces feel the water; the track is over the ground.**
 
 > [!note] This is the problem Week 5 exists to solve
-> A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 5 §5-7 measures the resulting path error and §5-8 and §5-9 remove it.
+> A vessel that is steered perfectly and still ends up somewhere else cannot be fixed by steering harder. Week 5 §5-5 measures the resulting path error and removes it with an integral (ILOS).
 
 ## F. Driving the vessel by hand (15 min)
 
