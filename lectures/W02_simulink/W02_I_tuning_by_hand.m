@@ -1,4 +1,4 @@
-%% W02 · 절 I — 튜닝 순서를 따라가 본다 / Section I — the tuning order, step by step
+%% W02 · 실험 2-12 — 튜닝 순서를 따라가 본다 / Experiment 2-12 — the tuning order, step by step
 %  모델 W02_I_tuning 에서 §2-12 의 순서를 그대로 밟는다:
 %    1 P 만, Kp 는 단위로 (스프링 k = 2 N/m 의 다섯 배)   2 P 응답의 오버슛에서 감쇠비를 읽는다
 %    3 오버슛이 더 줄지 않을 때까지 Kd 를 올린다         4 오차가 남으면 1 % 안에 3 초 안에 들 때까지 Ki
@@ -35,7 +35,7 @@ os   = @(R) step_metrics(R.t, R.y, mean(R.y(R.t > 9)), 1);   % 도달한 값 대
 %       The damping ratio is read back from the overshoot
 Kp = 5*2;  S1 = run1('Kp', Kp, 'Ki', 0, 'Kd', 0);  M1 = os(S1);
 L = log(M1/100);
-fprintf('\n  W02 I  the tuning order\n');
+fprintf('\n  W02 Experiment 2-12  the tuning order\n');
 fprintf('    1-2  Kp = %g: overshoot %.1f %% -> damping ratio %.3f (formula %.3f): it rings, so D next\n', ...
         Kp, M1, -L/sqrt(pi^2 + L^2), 2/(2*sqrt(2 + Kp)));
 %% 3) Kd 를 1 씩 올리고, 오버슛이 더 줄지 않으면 멈춘다
@@ -65,7 +65,7 @@ fprintf('    5    peak force %.1f N against 30 N available -> smoothed setpoint:
 S = {S1, S3, S4, S5};
 T = {sprintf('1-2  P only, K_p = %g', Kp), sprintf('3  + D, K_d = %g', Kd), ...
      sprintf('4  + I, K_i = %g', Ki), '5  setpoint smoothed'};
-f = lab_fig('W02 I  tuning', 1150, 640);
+f = lab_fig('W02 Exp 2-12  tuning', 1150, 640);
 for i = 1:4
     subplot(2,4,i); hold on; plot(S{i}.t, S{i}.y_d, 'k--'); plot(S{i}.t, S{i}.y, 'LineWidth', 2);
     ylim([0 1.5]); xlim([0 8]); grid on; title(T{i});  if i == 1, ylabel('position [m]'); end

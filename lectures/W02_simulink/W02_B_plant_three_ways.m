@@ -1,4 +1,4 @@
-%% W02 · 절 B-1 — 플랜트 하나, 세 가지 표현 / Section B-1 — one plant, three ways
+%% W02 · 실험 2-2 — 플랜트 하나, 세 가지 표현 / Experiment 2-2 — one plant, three ways
 %  모델 W02_B_three_ways 를 두 번 돌린다: 1 N 계단 힘, 그리고 힘 없이 0.5 m 에서 놓기.
 %  Runs W02_B_three_ways twice: a 1 N step force, then released from 0.5 m with no force.
 %
@@ -28,7 +28,7 @@ B = W02_read('W02_B_three_ways', 'F_step', 0, 'x0_pos', 0.5);      % 놓기 / re
 
 %% 2) 끝값과 차이를 찍는다 (둘째 줄은 t = 0 의 값) / print end values and differences (row 2 at t = 0)
 
-fprintf('\n  W02 B-1  one plant, three ways\n');
+fprintf('\n  W02 Experiment 2-2  one plant, three ways\n');
 fprintf('    run                     ODE end   TF end   SS end   max|ODE-SS|  max|ODE-TF|\n');
 fprintf('    1 N step force          %7.4f  %7.4f  %7.4f     %8.1e     %8.1e\n', A.x_ode(end), A.x_tf(end), ...
         A.x_ss(end), max(abs(A.x_ode - A.x_ss)), max(abs(A.x_ode - A.x_tf)));
@@ -37,7 +37,7 @@ fprintf('    released from 0.5 m     %7.4f  %7.4f  %7.4f     %8.1e     %8.1e\n',
 fprintf('    (second row: values at t = 0)\n');
 
 %% 3) 그림: 왼쪽 계단 힘, 오른쪽 놓기 / figure: step force on the left, release on the right
-f = lab_fig('W02 B-1  three ways', 1000, 520);
+f = lab_fig('W02 Exp 2-2  three ways', 1000, 520);
 R = {A, B};  T = {'a 1 N step force at t = 1 s', ...
                   'no force, released from x = 0.5 m'};
 for i = 1:2

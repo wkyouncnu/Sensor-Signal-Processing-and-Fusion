@@ -18,7 +18,7 @@ function ok = verify_w02_pid()
 %     2  P 제어: 정상상태값 Kp/(k+Kp), 감쇠비, 오버슛 공식이 전달함수의 계단응답과 같다
 %        P control: steady value, damping ratio and overshoot formula match
 %        the step response of the transfer function
-%     3  오버슛에서 감쇠비를 되찾는 식이 정확한 역함수이다 (절 I 가 쓴다)
+%     3  오버슛에서 감쇠비를 되찾는 식이 정확한 역함수이다 (실험 2-12 가 쓴다)
 %        the formula recovering zeta from the overshoot is an exact inverse
 %     4  Routh 한계 Ki = (b + Kd)(k + Kp)/m 에서 극점 한 쌍이 정확히 +-j sqrt(k + Kp) 에 있다
 %        at the Routh limit a pole pair sits exactly at +-j sqrt(k + Kp)
@@ -28,7 +28,7 @@ function ok = verify_w02_pid()
 %        (Tech Talk part 3), and its gain stops at Nf at high frequency
 %     6  미분 킥: 거른 미분의 단위 계단 응답은 t = 0+ 에서 Kd Nf 이다
 %        the derivative kick: the filtered derivative of a unit step starts at Kd Nf
-%     7  샘플 시간: 불안정해지는 첫 Ts 를 촘촘한 격자로 다시 찾아 절 J 의 이분법과 대조
+%     7  샘플 시간: 불안정해지는 첫 Ts 를 촘촘한 격자로 다시 찾아 실험 2-13 의 이분법과 대조
 %        the first unstable sample time, found again on a fine grid
 %     8  손으로 만든 PID 와 PID 블록이 포화와 잡음 아래에서도 반올림 오차 안에서 같다
 %        the hand-built PID equals the PID block under saturation and noise
@@ -105,7 +105,7 @@ TS = 0.01:0.0005:0.8;
 pm = arrayfun(@(T) max(abs(pole(feedback(c2d(C,T,'tustin')*c2d(G,T,'zoh'), 1)))), TS);
 Tfirst = TS(find(pm >= 1, 1));
 ok = report(ok, '7 first unstable sample time (grid)', abs(Tfirst - 0.511) <= 0.001, ...
-            sprintf('%.4f s (section J bisection: 0.511 s)', Tfirst));
+            sprintf('%.4f s (Experiment 2-13 bisection: 0.511 s)', Tfirst));
 
 %% 8 ----------------------------------------------------------------------
 if ~isfile(fullfile(wk, 'W02_F_block_vs_hand.slx')), W02_1_build_pid('W02_F_block_vs_hand'); end

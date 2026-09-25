@@ -1,4 +1,4 @@
-%% W02 · 절 G — 유사미분(pseudo-derivative) / Section G — the pseudo-derivative
+%% W02 · 실험 2-10b — 유사미분(pseudo-derivative) / Experiment 2-10b — the pseudo-derivative
 %  1) 시험대 W02_G_derivative_bench: 잡음 섞인 sin(0.5 t) 를 순수 미분과 Nf s/(s+Nf) 로 미분해 참값 0.5 와 비교.
 %  2) 루프 W02_G_noise_kick: 5 mm 잡음에서 Nf = 5, 20, 200 과 순수 미분이 내는 힘의 떨림.
 %  3) 같은 루프에서 계단 목표와 부드럽게 한 목표의 가장 큰 힘(미분 킥).
@@ -28,9 +28,9 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 %% 1) 시험대: 루프 없이 미분만 / the bench: differentiation alone, no loop
 %  bench(Nf) (맨 아래 함수) 가 시험대 모델을 돌려 [시간, 순수 미분, 유사미분, 참값] 을 돌려준다.
 %  bench(Nf) (at the bottom) runs the bench model and returns [time, pure, pseudo, true].
-fprintf('\n  W02 G  1) the bench: derivative of sin(0.5 t) + 5 mm noise (true peak 0.5)\n');
+fprintf('\n  W02 Experiment 2-10b  1) the bench: derivative of sin(0.5 t) + 5 mm noise (true peak 0.5)\n');
 fprintf('    Nf     largest |pure|   largest |pseudo|\n');
-g = lab_fig('W02 G  bench', 1000, 420);  hold on;
+g = lab_fig('W02 Exp 2-10b  bench', 1000, 420);  hold on;
 for Nf = [5 20 200]
     B = bench(Nf);
     fprintf('    %-5g  %13.2f   %15.2f\n', Nf, max(abs(B(:,2))), max(abs(B(:,3))));
@@ -52,7 +52,7 @@ exportgraphics(g, fullfile(here, 'img', 'W02_result_bench.png'), 'Resolution', 1
 CASE = {'Nf = 5', {'Nf',5}; 'Nf = 20', {'Nf',20}; 'Nf = 200', {'Nf',200}; 'pure', {'d_filtered',0}};
 fprintf('\n  2) the loop, 5 mm of noise (Kp 10, Ki 8, Kd 4)\n');
 fprintf('    %-10s  force std [N]  y std [mm]  overshoot %% (no noise)\n', 'derivative');
-f = lab_fig('W02 G  noise', 1000, 420);  hold on;
+f = lab_fig('W02 Exp 2-10b  noise', 1000, 420);  hold on;
 for i = [4 3 2 1]
     N = W02_read('W02_G_noise_kick', 'noise_std', 0.005, CASE{i,2}{:});
     Q = W02_read('W02_G_noise_kick', CASE{i,2}{:});
@@ -70,7 +70,7 @@ exportgraphics(f, fullfile(here, 'img', 'W02_result_noise.png'), 'Resolution', 1
 %  ref_filter = 0 is the raw step; 1 takes the corner off with 1/(0.3 s + 1).
 fprintf('\n  3) the kick: step setpoint against a smoothed one (Tf = 0.3 s)\n');
 fprintf('    %-10s  peak force [N]  peak D [N]\n', 'setpoint');
-h = lab_fig('W02 G  kick', 1000, 420);  hold on;
+h = lab_fig('W02 Exp 2-10b  kick', 1000, 420);  hold on;
 L = {'step', 'smoothed'};
 for r = [0 1]
     K = W02_read('W02_G_noise_kick', 'ref_filter', r);

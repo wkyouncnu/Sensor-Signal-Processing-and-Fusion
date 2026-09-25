@@ -1,4 +1,4 @@
-%% W02 · 절 C — P 만 / Section C — P only
+%% W02 · 실험 2-4 와 2-6 — P 만 / Experiments 2-4 and 2-6 — P only
 %  모델 W02_C_P 를 Kp = 2, 10, 50 으로 돌려, 정상상태값과 오버슛을 §2-6 의 공식과 나란히 적는다.
 %  Runs W02_C_P at Kp = 2, 10, 50 and prints the steady value and overshoot next to §2-6's formulas.
 %
@@ -24,9 +24,9 @@ k = 2;  b = 2;                                       % 플랜트의 스프링과
 
 %% 1) Kp 세 개: 첫째 표 (공식과 나란히), 둘째 표를 위한 값 M 을 모은다
 %     Three gains: the first table (next to the formulas), and M for the second
-fprintf('\n  W02 C  P only\n');
+fprintf('\n  W02 Experiment 2-6  P only\n');
 fprintf('    Kp    y_ss (formula)   overshoot %% (formula)   rise [s]  settle [s]  peak tau [N]\n');
-f = lab_fig('W02 C  P only', 1000, 620);
+f = lab_fig('W02 Exp 2-6  P only', 1000, 620);
 M = zeros(3, 8);                                     % 두 번째 표 / the second table
 for Kp = [2 10 50]
     R = W02_read('W02_C_P', 'Kp', Kp);
@@ -60,7 +60,7 @@ k = t >= 0;  e = R.y_d(k) - y(k);  IAE = trapz(t(k), abs(e));
 fprintf('    Kp = 10:  rise %.3f s  peak time %.3f s  overshoot %.1f %%  settle %.2f s  error %.3f m  IAE %.3f m s\n', ...
         tr, tp, Mp, ts, 1 - yss, IAE);
 t1 = t(find(y >= 0.1*yss, 1));  t9 = t(find(y >= 0.9*yss, 1));
-f = lab_fig('W02 C  five numbers', 1000, 560);  hold on; grid on;
+f = lab_fig('W02 Exp 2-4  five numbers', 1000, 560);  hold on; grid on;
 fill([0 9 9 0], yss*[0.98 0.98 1.02 1.02], [0.85 0.85 0.85], 'EdgeColor','none');
 plot(t, y, 'LineWidth', 2.2);  plot(t, R.y_d, 'k--');
 plot([t1 t9], 0.9*yss*[1 1], 'g-', 'LineWidth', 4);

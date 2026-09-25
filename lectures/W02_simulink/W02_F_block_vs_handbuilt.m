@@ -1,4 +1,4 @@
-%% W02 · 절 F — 손으로 만든 PID 와 Simulink PID 블록 / Section F — hand-built PID vs the PID block
+%% W02 · 실험 2-9 — 손으로 만든 PID 와 Simulink PID 블록 / Experiment 2-9 — hand-built PID vs the PID block
 %
 %  이 절이 묻는 것 / the question
 %      Simulink 의 PID Controller 블록은 블록 하나하나로 만든 PID 와 정말 같은가?
@@ -35,13 +35,13 @@ Rc = W02_read('W02_F_block_vs_hand', A{:}, 'Nf_blk', 19);
 
 %% 2) 차이를 찍는다 / print the differences
 %  R.y, R.tau = 손으로 만든 줄 / hand-built row;  R.y_blk, R.tau_blk = PID 블록 줄 / PID block row
-fprintf('\n  W02 F  hand-built law against the PID block (|tau| <= 2.5 N, 5 mm noise)\n');
+fprintf('\n  W02 Experiment 2-9  hand-built law against the PID block (|tau| <= 2.5 N, 5 mm noise)\n');
 fprintf('    %-36s %14s %16s\n', 'comparison', 'max |y diff|', 'max |tau diff|');
 fprintf('    %-36s %14.2e %16.2e\n', 'hand-built vs PID block', max(abs(R.y - R.y_blk)), max(abs(R.tau - R.tau_blk)));
 fprintf('    %-36s %14.2e %16.2e\n', 'control: block with Nf = 19', max(abs(Rc.y - Rc.y_blk)), max(abs(Rc.tau - Rc.tau_blk)));
 
 %% 3) 그림: 위치, 힘, 차이 / figure: position, force, difference
-f = lab_fig('W02 F  block vs hand', 1000, 700);
+f = lab_fig('W02 Exp 2-9  block vs hand', 1000, 700);
 subplot(3,1,1); hold on;
 plot(R.t, R.y_blk, 'Color', [0.75 0.75 0.75], 'LineWidth', 5, 'DisplayName', 'PID block');
 plot(R.t, R.y, 'Color', [0 0.45 0.74], 'LineWidth', 1.4, 'DisplayName', 'hand-built');

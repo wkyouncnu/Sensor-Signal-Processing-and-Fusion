@@ -1,4 +1,4 @@
-%% W02 · 절 H — 안티와인드업, 깊이 / Section H — anti-windup, in depth
+%% W02 · 실험 2-11 — 안티와인드업, 깊이 / Experiment 2-11 — anti-windup, in depth
 %  모델 W02_H_antiwindup. 힘은 |tau| <= 2.5 N 이므로 스프링 k = 2 에 대해 닿을 수 있는 위치는 1.25 m 까지다.
 %  목표를 닿을 수 없는 2 m 로 14 초 동안 두었다가(t = 1~15 s), 닿을 수 있는 0.5 m 로 내린다.
 %  세 방식(없음, clamping, back-calculation)이 0.5 m 로 돌아오는 데 걸리는 시간을 잰다.
@@ -45,7 +45,7 @@ ROW = {'none (block)',             R0.t, R0.y_blk
 %% 2) 15 s 의 위치와 0.5 m 로 돌아오는 시간 / position at 15 s and the time to return to 0.5 m
 %  back(t, y) (맨 아래 함수): 15 s 뒤 0.5 m 의 2 % 띠를 마지막으로 벗어난 시각
 %  back(t, y) (at the bottom): the last exit from the 2 % band of 0.5 m after 15 s
-fprintf('\n  W02 H  unreachable 2 m for 14 s, then a reachable 0.5 m  (|tau| <= 2.5 N)\n');
+fprintf('\n  W02 Experiment 2-11  unreachable 2 m for 14 s, then a reachable 0.5 m  (|tau| <= 2.5 N)\n');
 fprintf('    %-30s  y at 15 s [m]  back within 2 %% of 0.5 m after [s]\n', 'anti-windup');
 for i = 1:size(ROW,1)
     fprintf('    %-30s  %12.3f  %14.2f\n', ROW{i,1}, interp1(ROW{i,2}, ROW{i,3}, 15), back(ROW{i,2}, ROW{i,3}));

@@ -1,4 +1,4 @@
-%% W02 · 절 D — D 를 더한다 / Section D — add D
+%% W02 · 실험 2-7 — D 를 더한다 / Experiment 2-7 — add D
 %
 %  이 절이 묻는 것 / the question
 %      P 제어기에 D (미분항) 를 더하면 무엇이 바뀌고 무엇이 그대로인가?
@@ -38,9 +38,9 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 Kp = 10;  k = 2;  b = 2;
 
 %% 1) 표의 제목줄과 그림 / the table header and the figure
-fprintf('\n  W02 D  P + D  (Kp = %g)\n', Kp);
+fprintf('\n  W02 Experiment 2-7  P + D  (Kp = %g)\n', Kp);
 fprintf('    Kd   zeta   zero    overshoot %%  settle [s]  error left  peak tau [N]\n');
-f = lab_fig('W02 D  P + D', 1000, 620);
+f = lab_fig('W02 Exp 2-7  P + D', 1000, 620);
 
 %% 2) 미분 게인 세 개 / three derivative gains
 for Kd = [0 2 6]

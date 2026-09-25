@@ -1,4 +1,4 @@
-%% W02 · 절 B-2 — 감쇠비와 고유진동수 / Section B-2 — damping ratio and natural frequency
+%% W02 · 실험 2-3 — 감쇠비와 고유진동수 / Experiment 2-3 — damping ratio and natural frequency
 %  모델 W02_B_second_order 에서 zeta 만, 그다음 wn 만 바꿔 가며 네 지표와 대역폭을 잰다.
 %  Runs W02_B_second_order varying zeta alone, then wn alone; measures four metrics and the bandwidth.
 %
@@ -26,8 +26,8 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 %  C 의 한 줄 = {바꾸는 이름, 값들, 고정한 값, 고정한 이름}
 %  One row of C = {name varied, its values, the fixed value, the fixed name}
 
-f = lab_fig('W02 B-2  zeta and wn', 1100, 800);
-fprintf('\n  W02 B-2  the standard second-order system\n');
+f = lab_fig('W02 Exp 2-3  zeta and wn', 1100, 800);
+fprintf('\n  W02 Experiment 2-3  the standard second-order system\n');
 C = {'zeta', [0.2 0.5 0.707 1 2], 2, 'wn';  'wn', [1 2 4], 0.5, 'zeta'};   % 바꾸는 것, 값, 고정값, 고정된 것
 for c = 1:2
     fprintf('    %s varies, %s = %g\n', C{c,1}, C{c,4}, C{c,3});

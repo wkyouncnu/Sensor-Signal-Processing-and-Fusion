@@ -1,4 +1,4 @@
-%% W02 · 절 E — I 를 더한다, 그리고 그 한계 / Section E — add I, and its limit
+%% W02 · 실험 2-8 — I 를 더한다, 그리고 그 한계 / Experiment 2-8 — add I, and its limit
 %
 %  이 절이 묻는 것 / the question
 %      P 와 D 가 남긴 오차를 I (적분항) 가 없앨 수 있는가? Ki 를 얼마까지 올릴 수 있는가?
@@ -38,9 +38,9 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 Kp = 10;  Kd = 4;  Nf = 20;  k = 2;  b = 2;
 
 %% 1) 적분 게인 세 개 / three integral gains
-fprintf('\n  W02 E  P + I + D  (Kp = %g, Kd = %g)\n', Kp, Kd);
+fprintf('\n  W02 Experiment 2-8  P + I + D  (Kp = %g, Kd = %g)\n', Kp, Kd);
 fprintf('    Ki   y at 10 s  overshoot %%  settle [s]  error left   I at 10 s [N]\n');
-f = lab_fig('W02 E  integral', 1100, 700);
+f = lab_fig('W02 Exp 2-8  integral', 1100, 700);
 for Ki = [0 4 12]
     %  돌리고, 자기 최종값 기준으로 오버슛·정착시간을 잰다 (§2-4)
     %  Run, then measure overshoot and settling against the run's own final value (§2-4)

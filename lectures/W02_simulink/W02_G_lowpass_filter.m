@@ -1,4 +1,4 @@
-%% W02 · 절 G-0 — 저역통과 필터 Nf/(s+Nf) / Section G-0 — the low-pass filter Nf/(s+Nf)
+%% W02 · 실험 2-10a — 저역통과 필터 Nf/(s+Nf) / Experiment 2-10a — the low-pass filter Nf/(s+Nf)
 %  보드 선도를 Nf = 5, 20, 200 에 대해 그리고, W02_G_lowpass 에 느린 사인(1 rad/s)과
 %  빠른 사인(100 rad/s)을 따로 넣어 통과한 진폭을 잰다.
 %  Draws the Bode plot for Nf = 5, 20, 200, then runs W02_G_lowpass with the slow
@@ -22,7 +22,7 @@ NF = [5 20 200];
 
 %% 1) 보드 선도 / the Bode plot
 w = logspace(-1, 4, 400);
-f = lab_fig('W02 G  Bode', 1000, 600);
+f = lab_fig('W02 Exp 2-10a  Bode', 1000, 600);
 for Nf = NF
     H = Nf./(1i*w + Nf);
     subplot(2,1,1); semilogx(w, 20*log10(abs(H)), 'LineWidth', 2, 'DisplayName', sprintf('N_f = %g', Nf)); hold on;
@@ -37,7 +37,7 @@ title('and the output lags: -45 deg exactly at \omega = N_f');
 exportgraphics(f, fullfile(here, 'img', 'W02_result_bode.png'), 'Resolution', 150);
 
 %% 2) Simulink 로 잰 통과 진폭 / the amplitude that passes, measured in Simulink
-fprintf('\n  W02 G-0  the low-pass filter Nf/(s+Nf)  (bandwidth = Nf)\n');
+fprintf('\n  W02 Experiment 2-10a  the low-pass filter Nf/(s+Nf)  (bandwidth = Nf)\n');
 fprintf('    Nf     slow 1 rad/s: out/in (formula)    fast 100 rad/s: out/in (formula)\n');
 k = @(R) R.t > R.t(end)/2;                                       % 뒤 절반, 느린 사인 세 주기 이상 / last half, over three slow periods
 g = @(R) (max(R.out(k(R))) - min(R.out(k(R))))/(max(R.in(k(R))) - min(R.in(k(R))));
@@ -48,7 +48,7 @@ for Nf = NF
             g(B), Nf/sqrt(100^2 + Nf^2));
 end
 
-f = lab_fig('W02 G  low-pass', 1000, 560);
+f = lab_fig('W02 Exp 2-10a  low-pass', 1000, 560);
 for i = 1:2
     Nf = NF([1 3]);  Nf = Nf(i);
     R = W02_read('W02_G_lowpass', 'Nf', Nf);

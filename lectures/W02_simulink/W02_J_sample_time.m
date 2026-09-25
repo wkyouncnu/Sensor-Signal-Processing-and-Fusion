@@ -1,4 +1,4 @@
-%% W02 · 절 J — 같은 PID 를 컴퓨터에 올리면 / Section J — the same PID on a computer
+%% W02 · 실험 2-13 — 같은 PID 를 컴퓨터에 올리면 / Experiment 2-13 — the same PID on a computer
 %  모델 없이 MATLAB 으로: 플랜트는 영차 유지(ZOH), 제어기는 Tustin 으로 이산화하고 샘플 시간 Ts 를 늘려 간다.
 %  Ts 와 폐루프 대역폭 wB 의 곱이 작으면 연속시간과 같고, 커지면 오버슛이 늘다가 불안정해진다.
 %  Without a model: plant by zero-order hold, controller by Tustin, for growing Ts.
@@ -28,9 +28,9 @@ wB = bandwidth(feedback(C*G, 1));
 cl = @(Ts) feedback(c2d(C, Ts, 'tustin')*c2d(G, Ts, 'zoh'), 1);
 
 %% 2) 연속시간 기준, 그리고 샘플 시간 여섯 개 / the continuous reference, then six sample times
-fprintf('\n  W02 J  sampled PID, closed-loop bandwidth wB = %.2f rad/s\n', wB);
+fprintf('\n  W02 Experiment 2-13  sampled PID, closed-loop bandwidth wB = %.2f rad/s\n', wB);
 fprintf('    Ts [s]   Ts*wB   overshoot %%   settle [s]\n');
-f = lab_fig('W02 J  sample time', 1000, 460);  hold on;
+f = lab_fig('W02 Exp 2-13  sample time', 1000, 460);  hold on;
 tt = (0:0.001:9)';  yc = step(feedback(C*G, 1), tt);
 plot(tt, yc, 'k', 'LineWidth', 3, 'DisplayName', 'continuous');
 [Mp, ts] = step_metrics(tt, yc, 1, 0);
