@@ -37,7 +37,7 @@ LOG = {};
 root = fileparts(fileparts(mfilename('fullpath')));
 addpath(fullfile(root,'_tools'));  mss_path();
 
-if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','W06','W07','W08','A1'}; end
+if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','W06','W07','W08','W09','A1'}; end
 %  '_check' 는 빼지 않는다. 학생용 채점기(problems/WXX_check.m)는 하위 폴더에 있어
 %  이 목록(최상위 WXX_*.m)에 원래 안 잡히고, 최상위의 W01_F_button_check 같은 것은
 %  **강의 절 스크립트**다 — 2026-09-14 까지 잘못 빼고 있었다.
