@@ -6,16 +6,17 @@
 %      - 정상상태값이 공식 Kp/(k + Kp) 와 같고 1 에 닿지 않는다: P 는 오차가 있어야 힘을 낸다.
 %      - Kp 가 클수록 빠르고 더 울린다 (오버슛 16.3 -> 64.4 %).
 %      - 정착시간은 Kp 를 25 배로 올려도 4.04 -> 3.64 s: 극점이 위로만 가고 왼쪽으로 가지 않는다.
-%      - 첨두시간은 공식 pi/wd 와 정확히 같다. 마지막 줄은 §2-4 그림의 다섯 숫자다.
+%      - 첨두시간은 공식 pi/wd 와 정확히 같다.
 %      - The steady value equals Kp/(k + Kp) and never reaches 1: P produces
 %        force only from error.
 %      - A larger Kp is faster and rings more (overshoot 16.3 -> 64.4 %).
 %      - Settling barely moves (4.04 -> 3.64 s) for 25 times the gain: the poles
 %        move up, not left.
-%      - The peak time equals pi/wd exactly. The last line is the five numbers
-%        of the §2-4 figure.
+%      - The peak time equals pi/wd exactly.
 %
-%  만드는 것 / produces: img/W02_result_P.png, img/W02_result_metrics.png
+%  만드는 것 / produces: img/W02_result_P.png
+%  다섯 지표를 한 응답에서 읽는 것은 실험 2-4, W02_C_five_numbers.m 이다.
+%  The five metrics read off one response are Experiment 2-4, W02_C_five_numbers.m.
 
 %% 0) 경로와 플랜트 값 / paths and plant values
 here = fileparts(mfilename('fullpath'));
@@ -50,29 +51,3 @@ exportgraphics(f, fullfile(here, 'img', 'W02_result_P.png'), 'Resolution', 150);
 
 fprintf('    Kp    zeta     wn   peak time [s] (pi/wd)   settle [s] (4/(zeta wn))   IAE over 9 s [m s]\n');
 fprintf('    %-4g  %5.3f  %5.3f    %6.3f (%6.3f)          %5.2f (%5.2f)             %6.3f\n', M.');
-
-%% 응답 하나에 다섯 숫자를 표시한다 (§2-4) / the five numbers marked on one response (§2-4)
-R = W02_read('W02_C_P', 'Kp', 10);
-t = R.t - 1;  y = R.y;  yss = mean(y(R.t > 9));                 % 계단 뒤의 시간 / time after the step
-[Mp, ts, tr] = step_metrics(R.t, y, yss, 1);
-[yp, i] = max(y);  tp = t(i);
-k = t >= 0;  e = R.y_d(k) - y(k);  IAE = trapz(t(k), abs(e));
-fprintf('    Kp = 10:  rise %.3f s  peak time %.3f s  overshoot %.1f %%  settle %.2f s  error %.3f m  IAE %.3f m s\n', ...
-        tr, tp, Mp, ts, 1 - yss, IAE);
-t1 = t(find(y >= 0.1*yss, 1));  t9 = t(find(y >= 0.9*yss, 1));
-f = lab_fig('W02 Exp 2-4  five numbers', 1000, 560);  hold on; grid on;
-fill([0 9 9 0], yss*[0.98 0.98 1.02 1.02], [0.85 0.85 0.85], 'EdgeColor','none');
-plot(t, y, 'LineWidth', 2.2);  plot(t, R.y_d, 'k--');
-plot([t1 t9], 0.9*yss*[1 1], 'g-', 'LineWidth', 4);
-plot([t1 t9], [0.1 0.9]*yss, 'o', 'Color', [0 0.5 0], 'MarkerFaceColor', [0 0.8 0]);
-yline([0.1 0.9]*yss, ':', 'Color', [0 0.5 0]);
-xline(tp, 'r:', 'LineWidth', 1.5);  plot(tp, yp, 'ro', 'MarkerFaceColor', 'r');
-plot([tp tp], [yss yp], 'r-', 'LineWidth', 3);  xline(ts, 'm:', 'LineWidth', 1.5);
-plot([8.5 8.5], [yss 1], 'b-', 'LineWidth', 3);
-text(t9 + 0.05, 0.9*yss - 0.05, sprintf('rise time t_r = %.2f s  (10 %% to 90 %%)', tr), 'Color', [0 0.5 0]);
-text(tp + 0.08, yp, sprintf('peak time t_p = %.2f s,  overshoot M_p = %.1f %%', tp, Mp), 'Color', 'r');
-text(ts + 0.08, 0.55, sprintf('settling time t_s = %.2f s\n(inside the grey 2 %% band for good)', ts), 'Color', 'm');
-text(6.2, 0.93, sprintf('steady-state error e_{ss} = %.3f m', 1 - yss), 'Color', 'b');
-xlim([0 9]); ylim([0 1.25]); xlabel('time after the step [s]'); ylabel('position y [m]');
-title('K_p = 10, P only: five numbers read off one step response');
-exportgraphics(f, fullfile(here, 'img', 'W02_result_metrics.png'), 'Resolution', 150);

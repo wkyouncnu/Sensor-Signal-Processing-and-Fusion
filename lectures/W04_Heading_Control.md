@@ -147,7 +147,7 @@ $$
 
 **What it measures.** Nothing yet: the canvas is matched to the three new blocks and to the thrust split of the formula above, so that each is recognised when it matters.
 
-**The model.** `W04_H_tuning` — the fullest model of the week. Everything between `e` and `u` is the Week 3 canvas unchanged.
+**The canvas.** `W04_H_tuning` — the fullest model of the week, read here and measured in Experiment 4-5. Everything between `e` and `u` is the Week 3 canvas unchanged.
 
 **Opening and running.**
 
@@ -512,7 +512,7 @@ $$
 
 **What it measures.** Lines 2 and 5: the D term actually demanded at the $10°$ step, and what $-K_d\,r$ would have demanded in the same run.
 
-**The model.** `W04_E_PD`, the run of Experiment 4-3b — no new model. The comparison is made on its log, because both forms see the same vessel.
+**The run.** The log of Experiment 4-3b, on `W04_E_PD` — no new model and no new simulation. Both forms are read from the same run, because both see the same vessel.
 
 **Opening and running.**
 

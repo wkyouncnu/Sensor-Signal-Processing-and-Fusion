@@ -80,6 +80,14 @@
 > 줄인지 매어 두었고, `What to try` 는 전부 실제로 돌려서 받은 수치다(추측 두 건을 실측으로 정정).
 > 참고 틀은 캡스톤디자인 W04 강의자료. 규칙은 `standing-orders.md` §15-14, 골격은 CLAUDE.md §3.
 > `.m` 파일 이름은 그대로 두고, 러너가 찍는 제목과 그림 제목만 실험 번호로 바꿨다.
+>
+> **2026-09-25 (2차) — 실험 하나에 모델 하나 (사용자 지시)**
+> "각 실습은 개별 시뮬링크 파일로", "m 파일은 그림 그려서 plot 하는 정도만".
+> 모델을 둘이 나눠 쓰던 곳을 쪼갰다: `W02_C_metrics`(실험 2-4), `W05_F_LOS`(실험 5-5a).
+> 스크립트도 실험별로 나눴다 — `W02_C_five_numbers`, `W02_G_bench` + `W02_G_noise_and_kick`,
+> `W05_F_LOS_in_a_current` + `W05_F_ILOS_removes_it`. 절 스크립트의 실행 줄은 전부 45 줄 이하.
+> `vault_check.sh` §18 이 두 가지를 기계로 본다. W01 은 사용자가 편집 중이라 제외.
+> 규칙은 `standing-orders.md` §15-15.
 
 - 근거: 캡스톤디자인 6주차 E–G 절(같은 플랜트, 같은 수치를 재현), MATLAB Tech Talk
   "Understanding PID Control" 1~7편, 제어조교(Ctrl튜브) "PID 제어기 짬튜닝". 두 영상은

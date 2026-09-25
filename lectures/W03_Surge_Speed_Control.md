@@ -133,7 +133,7 @@ This section answers: what changes when the controller of Week 2 is placed aroun
 
 **What it measures.** Nothing yet: this experiment matches the canvas to the paragraphs above, so that the three blocks between the controller and the vessel are recognised before any of them matters.
 
-**The model.** `W03_E_PID` — the fullest model of the week. Its left half is the Week 2 canvas unchanged; its right half is the chain of the table above.
+**The canvas.** `W03_E_PID` — the fullest model of the week, read here and measured in Experiment 3-3b. Its left half is the Week 2 canvas unchanged; its right half is the chain of the table above.
 
 **Opening and running.**
 

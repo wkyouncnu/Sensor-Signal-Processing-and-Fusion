@@ -188,6 +188,8 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
                                 "Reading the figure against the derivation" 표 ·
                                 What to try · In class
 # Part 2 · Laboratory run order  실행 순서 색인 한 표 (실험 번호 · 모델 · 스크립트)
+                                실험 하나에 .slx 하나, .m 하나. .m 의 실행 줄은 45 줄 이하 —
+                                모델을 돌리고 표를 찍고 그림을 저장하는 것까지다 (§15-15)
 # Summary
 ## Week Summary                 표: step | what was done | how it was verified
 ## Progress Check               체크박스, 검증 가능한 형태

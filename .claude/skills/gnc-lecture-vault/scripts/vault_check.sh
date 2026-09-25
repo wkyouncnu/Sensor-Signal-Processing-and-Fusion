@@ -388,6 +388,45 @@ check_clear() {
   return 0
 }
 
+check_one_model() {
+  head2 "18. 실험 하나에 모델 하나, 스크립트는 얇게"
+  # standing-orders.md §15-15 (2026-09-25, 사용자 지시):
+  #   "각 실습은 개별 시뮬링크 파일로 실행하도록", "m 파일은 그림 그려서 plot 하는 정도만".
+  #
+  # 둘을 기계로 본다.
+  #   (a) 절 스크립트의 실행 줄(주석·빈 줄 제외)이 45 줄을 넘지 않는가.
+  #       넘으면 그 파일은 실험을 둘 이상 하고 있다 — 실제로 W02_C 와 W02_G 가 그랬다.
+  #   (b) 한 주차 문서 안에서 "**The model.** `X`" 의 X 가 두 실험에 겹치지 않는가.
+  #
+  # 예외 셋.
+  #   - `_build_` 이 든 파일은 모델을 짓는 빌더다. 절 스크립트가 아니다.
+  #   - W01 은 지금 사용자가 편집 중이다 (모델 넷과 setup). 손대지 않기로 했으므로
+  #     두께도 재지 않는다. 사용자가 커밋한 뒤에 다시 본다.
+  #   - W01_openloop 은 실험 1-11·1-12 가 함께 쓴다 — 한 번의 개루프 주행에 두 질문.
+  local n=0 f code dup
+  while IFS= read -r f; do
+    code=$(grep -vE '^\s*%|^\s*$' "$f" | wc -l | tr -d ' ')
+    if [ "$code" -gt 45 ]; then
+      echo "     [스크립트가 두껍다] ${f#./}  실행 줄 $code (45 이하)"
+      n=$((n+1))
+    fi
+  done < <(find lectures -maxdepth 2 -name 'W[0-9][0-9]_[B-Z]_*.m' -type f 2>/dev/null \
+             | grep -vE "$VENDOR" | grep -v '_build_' | grep -v '/W01_simulink/' | sort)
+
+  while IFS= read -r f; do
+    while IFS= read -r dup; do
+      [ -z "$dup" ] && continue
+      [ "$dup" = "W01_openloop" ] && continue          # 위의 예외
+      echo "     [모델을 두 실험이 함께 쓴다] ${f#./}  $dup"
+      n=$((n+1))
+    done < <(grep -oE '^\*\*The model\.\*\* `[A-Za-z0-9_]+`' "$f" 2>/dev/null \
+               | grep -oE '`[A-Za-z0-9_]+`' | tr -d '`' | sort | uniq -d)
+  done < <(find lectures -maxdepth 1 -name 'W[0-9][0-9]_*.md' -type f 2>/dev/null | sort)
+  note "실험당 모델·스크립트 위반" "$n"
+  FAIL=$((FAIL+n))
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
@@ -396,8 +435,9 @@ case "$MODE" in
   --figs)  check_figs ;;
   --code)  check_code ;;
   --clear) check_clear ;;
+  --onemodel) check_one_model ;;
   *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks; check_code
-           check_legend; check_clear ;;
+           check_legend; check_clear; check_one_model ;;
 esac
 
 echo
