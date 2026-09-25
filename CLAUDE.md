@@ -180,8 +180,14 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
 ## Learning Outcomes            번호 5~7개, 각각 검증 가능한 형태
 ## Prerequisites and Setup      표
 ---
-# Part 1 · Theory               ## N-1, N-2, …   그림마다 "reading the figure" 표
-# Part 2 · Laboratory           ## A, B, C …     명령 + 정상 출력 + 측정 표
+# Part 1 · Principle and experiment, section by section
+                                ## N-0 준비, 그 다음 ## N-1, N-2, …
+                                절 하나는 넷으로 — What is observed / The result /
+                                Derivation (번호) / ### Experiment N-x
+                                Experiment 는 모델 · 명령 · 실제 출력 · 그림 ·
+                                "Reading the figure against the derivation" 표 ·
+                                What to try · In class
+# Part 2 · Laboratory run order  실행 순서 색인 한 표 (실험 번호 · 모델 · 스크립트)
 # Summary
 ## Week Summary                 표: step | what was done | how it was verified
 ## Progress Check               체크박스, 검증 가능한 형태

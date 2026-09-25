@@ -70,12 +70,39 @@ Upon completion of this week, the learner is able to:
 
 ---
 
-# Part 1 · Theory
+# Part 1 · Principle and experiment, section by section
 
-## 1-1. Section title
+Every section states what is observed, says what follows from it, and then runs **the experiment that measures it**, on its own model. The numbers quoted in the text are printed by the run a few lines below it.
 
-- Bullet-led. One clause per bullet
-- Every new term is defined at first use
+| Part of a section | What it holds |
+|---|---|
+| **What is observed** | the effect itself, with the numbers it produces |
+| **What follows from it** | numbered lines, one step each |
+| **Experiment N-x** | the model, the commands, the output actually obtained, the figure, and a table that reads every feature of the figure back to **the numbered line that predicts it** |
+
+## N-0. Setting up (10 min)
+
+```matlab
+cd lectures/WNN_simulink
+WNN_0_setup
+WNN_1_build_…
+```
+
+Expected output:
+
+```
+output
+```
+
+## N-1. Section title
+
+This section answers: …
+
+**What is observed.** Experiment N-1 …
+
+- the effect, with its numbers
+
+**The result.**
 
 $$
 \text{display equation}
@@ -85,26 +112,30 @@ $$
 |---|---|---|
 | | | |
 
+**Derivation, one line at a time.**
+
+1. …
+2. …
+
 ![Figure caption](../figures/wNN-name.svg)
 
-**Reading the figure**
-
-| Element | Meaning |
+| In the figure | Meaning |
 |---|---|
 | | |
 
-## 1-2. Section title
+### Experiment N-1 · Title (NN min)
 
----
+**What it measures.** Line n of the derivation: …
 
-# Part 2 · Laboratory
+**The model.** `WNN_X_name` — what it holds, and what changes between runs.
 
-## A. Section title (NN min)
-
-### Step 1 — what is done
+**Opening and running.**
 
 ```matlab
-command
+WNN_0_setup
+open_system('WNN_X_name')     % Run — 무엇이 보이는가 / what appears
+gain = value;                 % Run — 무엇이 달라지는가 / what changes
+WNN_X_script                  % 한 번에 전부 / all of it at once
 ```
 
 Expected output:
@@ -113,19 +144,40 @@ Expected output:
 output
 ```
 
-> [!warning] A mistake that is easy to make
-
-### Step 2 — what is done
-
-![Block diagram of the model](WNN_simulink/img/WNN_model.png)
-
 ![Simulation result](WNN_simulink/img/WNN_result.png)
 
-**Reading the figure**
+**Reading the figure against the derivation.**
 
-| Element | Meaning |
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| | | |
+
+**What the figure says**
+
+- one sentence
+
+| What to try | What to watch |
 |---|---|
-| | |
+| `gain = …;` Run | the measured result of actually running it |
+
+> [!tip] In class
+> - **Purpose** —
+> - **Point to** —
+> - **Ask** — "…" answer
+> - **Take away** —
+
+## N-2. Section title
+
+---
+
+# Part 2 · Laboratory run order
+
+The experiments of Part 1 are worked through in order; this table is the index of what was run, for repeating the week at home.
+
+| Experiment | Model | Script | What it shows |
+|---|---|---|---|
+| N-0 | all of them | `WNN_0_setup`, `WNN_1_build_…` | the parameters, and every model written from code |
+| N-1 | `WNN_X_name` | `WNN_X_script` | |
 
 ---
 
