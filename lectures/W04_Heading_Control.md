@@ -284,7 +284,7 @@ The heading is therefore the third of three different answers from the same cont
 1. **The heading can overshoot, because it is an integral.** The vessel keeps turning while the moment is removed, so the heading passes the command before the rate reaches zero — the store that Week 3's speed axis did not have.
 2. **P alone leaves no error**, by §4-2 lines 2 and 3: the plant already contains an integrator, and holding a heading costs no moment. At the command the error is zero, hence $N = 0$, and zero is exactly what is needed. Compare Week 3, where holding a speed cost a steady $116$ N and P therefore had to keep an error to produce it.
 3. **D damps here.** The derivative of a heading error is a **turn rate**, and resisting a rate is damping, as resisting the mass's velocity was in Week 2. On the speed axis of Week 3 the same derivative was an acceleration, which is why it hurt there. The term has not changed; the axis has, for the third time.
-4. **The autopilot differentiates the measured rate, not the error.** $N = K_p\,\text{ssa}(\psi_d - \psi) - K_d\,r$ uses the vessel's own $r$, so a step command produces no derivative kick (Week 2 §2-10) and the brake still acts on the motion.
+4. **The models of this week differentiate the error**, exactly as Weeks 2 and 3 did: the block `D filter` is $K_d N_f s/(s + N_f)$ fed by $\text{ssa}(\psi_d - \psi)$. That is the textbook form, and it is kept here so that its one weakness can be measured rather than described — see "Why the derivative is better taken from the yaw rate" below.
 5. **I is needed only against a steady disturbance.** A propeller delivering $70\,\%$ of its thrust makes a yaw moment that never goes away; PD can oppose it only from error, and settles $0.80°$ off, holding $4.19$ N·m. The integral finds that moment by itself — $4.15$ N·m at $K_i = 20$ — which is Week 2 §2-8 line 5 once more, with a fouled propeller in place of a spring.
 
 | Term | Week 2, position | Week 3, speed | This week, heading | Measured |
@@ -394,7 +394,7 @@ Expected output:
 | the **peak** of each trace | $12.18 \to 0.39\,\%$ as $K_d$ grows to 100 | line 3: a term against the turn rate is damping on this axis |
 | the traces at $K_d = 150$ and $200$ | no overshoot, but rise $1.44$ and $1.78$ s | Week 2 §2-3: past $\zeta = 1$ more damping only costs speed |
 | the **settling** column | falls to $1.72$ s at $K_d = 100$, then rises | the two lines above pulling in opposite directions; the measurement picks $K_d = 100$ |
-| the start of each trace: **no spike** at the step | unlike Week 2's $129.6$ N | line 4: the derivative acts on $r$, which is zero at the instant of the step — no derivative kick |
+| the moment at the instant of the step | a spike of $325.8$ N·m, against a $70.85$ N·m limit | line 4: the derivative of a step, $K_d N_f$ times the jump — the kick of Week 2 §2-10, and the reason for the subsection below |
 
 **What the figure says**
 
@@ -474,6 +474,77 @@ Expected output:
 > - **Point to** — the steady $N$ column: $4.19$ N·m with PD, the same $4.15$–$4.20$ N·m in the integral once $K_i > 0$.
 > - **Ask** — "Why does the weak propeller make a yaw moment at all?" Both propellers are asked for 30 N; the port one gives 21 N, so the starboard side pushes harder and the vessel turns to port.
 > - **Take away** — the integral finds whatever steady effort the plant demands, whether drag (Week 3) or a fault (here).
+
+### Why the derivative is better taken from the yaw rate
+
+This subsection answers: the autopilot must brake the turn — why measure the **yaw rate** rather than differentiate the heading error?
+
+**The two forms.** Both are called "the D term", and they are not the same expression:
+
+$$
+\text{error form:}\quad N = K_p\,e + K_d\,\dot e ,
+\qquad
+\text{rate form:}\quad N = K_p\,e - K_d\,r ,
+\qquad e = \text{ssa}(\psi_d - \psi)
+$$
+
+**Why they are usually equal.** Differentiating the error gives $\dot e = \dot\psi_d - \dot\psi = \dot\psi_d - r$. **Whenever the command is not moving**, $\dot\psi_d = 0$ and the two forms are identical, term for term. Everything the derivative does while the vessel settles on a fixed heading is the same in both.
+
+**Where they part, one line at a time.**
+
+1. They differ **only** through $\dot\psi_d$: the error form adds $K_d\,\dot\psi_d$, and nothing else.
+2. A step command makes $\dot\psi_d$ an impulse. Filtered as §2-10 filters it, the term does not go to infinity but starts at $K_d N_f$ times the jump: $100 \times 20 \times 0.1745\ \mathrm{rad} = 349$ N·m for the $10°$ step, against a moment limit of $70.85$ N·m. **The rate form cannot do this**, because $r$ is a velocity of a vessel with inertia and cannot jump.
+3. That spike is spent on the actuator, not on the vessel: it is cut off by the limit within a few hundredths of a second, and §4-5 records the windup it causes even in a $10°$ turn.
+4. **The seam makes it worse.** When a command crosses $\pm180°$, the wrapped error jumps by a full $2\pi$ — that is what `ssa` does, and §4-6 shows why it must. Differentiating that jump asks for $K_d N_f\,2\pi = 12\,566$ N·m, some 177 times the limit, for a turn of a few degrees. The rate form is untouched by it.
+5. **The sensor decides it too.** A vessel carries a **gyroscope**, and $r$ is what it reports directly. The error form has no measurement of $\dot\psi$: it must compute one by differentiating the heading, and a derivative multiplies every frequency by $\omega$ (§2-10) — so it amplifies heading noise, and then needs the filter $N_f$, whose phase lag costs some of the damping it was added for.
+6. The price of the rate form is that it does not anticipate a **moving** command; a ramped command is followed with a small lag. A reference model that supplies $\psi_d$ together with $\dot\psi_d$ removes even that, and is the subject of Week 8.
+
+| | error form, $K_d\,\dot e$ | rate form, $-K_d\,r$ |
+|---|---|---|
+| on a fixed command | identical | identical |
+| at a step in $\psi_d$ | $349$ N·m demanded | $-1.1$ N·m: nothing happens |
+| at a $\pm180°$ seam crossing | $12\,566$ N·m | nothing happens |
+| sensor needed | a differentiated heading, and a filter | the gyro, as it is |
+| when the command ramps | anticipates it | lags slightly behind |
+| used in | this week's models, so that the kick can be measured | **Week 5**, where guidance moves $\psi_d$ at every waypoint |
+
+### Experiment 4-3d · The kick, and what the rate form would have asked for (5 min)
+
+**What it measures.** Lines 2 and 5: the D term actually demanded at the $10°$ step, and what $-K_d\,r$ would have demanded in the same run.
+
+**The model.** `W04_E_PD`, the run of Experiment 4-3b — no new model. The comparison is made on its log, because both forms see the same vessel.
+
+**Opening and running.**
+
+```matlab
+W04_0_setup
+R = W04_read('W04_E_PD', 'Kp', 300, 'Kd', 100);
+r = gradient(deg2rad(R.psi), R.t);        % 기록된 선수각에서 회두율 / yaw rate from the log
+[max(abs(R.D))  max(abs(Kd*r))  N_max]    % 오차 미분 / 회두율 되먹임 / 한계
+```
+
+Expected output:
+
+```
+ans =
+
+  325.7948   20.9746   70.8488
+```
+
+**Reading the output.**
+
+| Printed | What it is | Which line it shows |
+|---|---|---|
+| $325.79$ | the largest D term the models actually demand | line 2: the kick, $4.6$ times the moment the propellers can produce |
+| $20.97$ | the largest $\lvert K_d\,r\rvert$ in the same run | line 2: the rate form never asks for more than the vessel is doing — the peak yaw rate is $12.02$ deg/s, and $100 \times 0.2097 = 21.0$ N·m |
+| $70.85$ | the moment limit | the line both are judged against |
+
+- At the instant of the step the two are $325.8$ N·m and $-1.1$ N·m. A second later, with the command no longer moving, they agree — which is line 1.
+
+| What to try | What to watch |
+|---|---|
+| `Nf = 5;` then rerun the two lines | the kick falls to $85.8$ N·m, close to the $K_d N_f \times 0.1745 = 87.3$ the formula gives, and **still above the limit**: filtering reduces the kick but cannot remove it, because it is the command that jumped. The rate form meanwhile rises slightly, to $26.4$ N·m, because the slower filter lets the turn run harder |
+| `psi_step = 90; T_final = 60;` then rerun | the kick grows with the step: $2932$ N·m, against $K_d N_f \times 1.571 = 3142$ from the formula. The rate form reaches $33.3$ N·m — still within what the hull can be asked for |
 
 ## 4-4. Heading is not course — the crab angle
 
@@ -648,6 +719,33 @@ This section answers: why is the heading error passed through `ssa`?
 2. A controller acts on the number it is given: $-340°$ asks for a $340°$ turn to port, and the vessel obeys.
 3. The remedy is to map the error onto the shortest equivalent angle, $\text{ssa}(e) = \operatorname{atan2}(\sin e,\ \cos e)$, which returns a value in $(-180°,\ 180°]$ — here $+20°$. The sine and the cosine are unchanged by adding $360°$, which is exactly why they are used.
 4. This is not an edge case. Week 5's guidance produces commanded headings anywhere in $(-180°,\ 180°]$, and a mission of a few legs crosses the seam routinely.
+
+![Why the heading error is wrapped: the same command, the short way and the long way round](../figures/w04-ssa-circle.svg)
+
+| In the figure | Meaning |
+|---|---|
+| the grey circle | every heading, measured from North clockwise, as the vessel's compass reads it |
+| the dotted red line at S | the seam, where $+180°$ and $-180°$ are the same direction and the number jumps |
+| the black ray | where the vessel is pointing, $\psi = 170°$ |
+| the violet ray | where it is asked to point, $\psi_d = -170°$, which is $190°$ |
+| the violet arc outside the circle | the turn the wrapped error asks for: $+20°$ to starboard |
+| the red arc inside the circle | the turn the raw subtraction asks for: $-340°$ to port, the whole circle but for $20°$ |
+| the box on the right | the two numbers, and the one line that turns the second into the first |
+
+**Reading the figure, one angle at a time.**
+
+| Step | The number | What the controller does with it |
+|---|---|---|
+| the vessel holds | $\psi = 170°$ | nothing yet |
+| the command arrives | $\psi_d = -170°$ | the same direction as $190°$; a compass cannot tell them apart |
+| the raw subtraction | $e = -170 - 170 = -340°$ | a large **negative** error: turn hard to **port**, and keep turning for $340°$ |
+| wrapped | $\text{ssa}(-340°) = +20°$ | a small **positive** error: ease $20°$ to **starboard** |
+| after the turn | $190°$, or $-170°$ | the same heading either way — only the route differed |
+
+- **What `ssa` does, in one sentence.** It leaves every error under $180°$ exactly as it is, and replaces every error over $180°$ by the equivalent turn in the other direction. It never changes the heading that is being asked for — only the route taken to it.
+- **Why $\operatorname{atan2}(\sin e, \cos e)$ and not an `if`.** Adding or subtracting $360°$ changes neither $\sin e$ nor $\cos e$, so the pair $(\sin e, \cos e)$ already **is** the wrapped angle; `atan2` merely reads it back. One expression covers every case, including $e = \pm 540°$ and beyond, with no branch to get wrong.
+- **What it costs.** Nothing in steady running: for $\lvert e\rvert < 180°$ the output equals the input, so every gain tuned in §4-3 is unaffected. It only ever acts when the seam is crossed.
+- **The one thing it must come before.** The wrap belongs in front of **every** gain, and the models put it there: `e` → `ssa` → `Kp`, `D filter`, `Ki`. A $340°$ error reaching the integrator would store a turn the vessel is not going to make.
 
 Measured by Experiment 4-6, below, the vessel at $170°$ commanded to $-170°$ at $t = 20$ s:
 

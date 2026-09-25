@@ -1,0 +1,86 @@
+% figures/w04-ssa-circle.svg — 왜 선수각 오차를 ssa 로 감아야 하는가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w04-ssa-circle.tex figures/w04-ssa-circle.svg
+%
+% 상황: psi = 170 deg 를 유지하는 배에 psi_d = -170 deg 를 명령한다.
+%   뺄셈 그대로       e = -170 - 170 = -340 deg  -> 좌현으로 340 도
+%   감아서            ssa(e) = +20 deg           -> 우현으로 20 도
+%
+% 각 계산 (NED: 북에서 시계방향). 화면각 = 90 - 나침반각.
+%   psi   = 170 -> 화면 -80
+%   psi_d = 190 -> 화면 -100  (= 260)
+% 짧은 호: 화면 -80 -> -100   (시계방향 20 도)
+% 긴 호  : 화면 -80 -> 260    (반시계 340 도)
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\R{28}          % 나침반 원 반지름 / compass radius
+\def\PS{-80}        % psi   = 170 deg
+\def\PD{-100}       % psi_d = 190 deg = -170 deg
+
+% ---- 제목 ------------------------------------------------------------------
+\node[font=\small\bfseries, anchor=north west] at (-46,56)
+     {Why the heading error is wrapped};
+\node[anchor=north west, align=left, text width=104mm, font=\scriptsize, soft] at (-46,50.5) {%
+  The vessel holds $\psi = 170^\circ$ and is commanded to $\psi_d = -170^\circ$.
+  The two headings are $20^\circ$ apart, on either side of the $\pm180^\circ$ seam.};
+
+% ---- 나침반 원과 눈금 ------------------------------------------------------
+\draw[soft, line width=0.4pt] (0,0) circle (\R);
+\foreach \c in {0,30,...,330} {
+  \draw[soft, line width=0.35pt] ({90-\c}:\R) -- ({90-\c}:{\R-1.6});
+}
+\foreach \c/\lab in {0/N, 90/E, 270/W} {
+  \node[font=\scriptsize, soft] at ({90-\c}:{\R+3.4}) {\lab};
+}
+\node[font=\scriptsize, soft, anchor=south] at ({90-45}:{\R+2.2}) {$45^\circ$};
+\node[font=\scriptsize, soft, anchor=north] at ({90-135}:{\R+2.2}) {$135^\circ$};
+\node[font=\scriptsize, soft, anchor=north] at ({90-225}:{\R+2.2}) {$225^\circ$};
+\node[font=\scriptsize, soft, anchor=south] at ({90-315}:{\R+2.2}) {$315^\circ$};
+
+% ---- 이음매 ($\pm 180$), 남쪽 ----------------------------------------------
+\draw[warn, line width=0.45pt, densely dotted] (0,0) -- ({90-180}:{\R+14});
+\node[font=\scriptsize, warn, anchor=north east, align=right] at (-4,{-\R-15})
+     {S --- the seam\\$+180^\circ \equiv -180^\circ$};
+
+% ---- 두 선수각 -------------------------------------------------------------
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\PS:\R);
+\draw[accent, line width=0.6pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\PD:\R);
+\draw[soft, line width=0.3pt] ({\PS}:{\R*0.78}) -- (22,-15);
+\node[font=\scriptsize, ink, anchor=west, align=left] at (22,-15)
+     {$\psi = 170^\circ$\\holding};
+\draw[soft, line width=0.3pt] ({\PD}:{\R*0.78}) -- (-22,-15);
+\node[font=\scriptsize, accent, anchor=east, align=right] at (-22,-15)
+     {$\psi_d = -170^\circ$\\commanded};
+
+% ---- 짧은 호: ssa 를 거친 명령. 원 바깥에 그려 크게 보이게 ------------------
+\draw[accent, line width=0.8pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+      ({\PS}:{\R+7}) arc[start angle=\PS, end angle=\PD, radius={\R+7}];
+\draw[accent, line width=0.35pt] ({-88}:{\R+7}) -- (14,{-\R-14});
+\node[font=\scriptsize, accent, anchor=north west, align=left] at (13,{-\R-14})
+     {with \texttt{ssa}:\\$+20^\circ$ to starboard};
+
+% ---- 긴 호: 뺄셈 그대로, 원 안쪽 ------------------------------------------
+\draw[warn, line width=0.8pt, -{Stealth[length=4.5pt,width=3.4pt]}]
+      ({\PS}:{\R*0.72}) arc[start angle=\PS, end angle=260, radius={\R*0.72}];
+\node[font=\scriptsize, warn, anchor=north, align=center] at (0,{\R*0.72-2})
+     {without \texttt{ssa}:\\$-340^\circ$ to port};
+
+% ---- 계산 상자 -------------------------------------------------------------
+\node[draw=soft, line width=0.4pt, fill=white, anchor=north west, align=left,
+      font=\scriptsize, inner sep=3pt, text width=44mm] at (36,26) {%
+  $e = \psi_d - \psi = -170 - 170 = -340^\circ$\\[3pt]
+  $\mathrm{ssa}(e) = \mathrm{atan2}(\sin e, \cos e)$\\[1pt]
+  \phantom{$\mathrm{ssa}(e)$} $= +20^\circ$\\[4pt]
+  Both angles name the same turn target.\\
+  Only the second one is the short way round.};
+
+\node[anchor=north west, align=left, text width=44mm, font=\scriptsize, soft] at (36,-2) {%
+  Measured in Experiment 4-6: the vessel turns $20.0^\circ$ with the wrap and
+  $340.0^\circ$ without it --- seventeen times further, for the same command.};
+
+\end{tikzpicture}
+\end{document}
