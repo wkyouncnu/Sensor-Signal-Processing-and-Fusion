@@ -46,6 +46,7 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W03 | [Surge Speed Control](lectures/W03_Surge_Speed_Control.md) | `W03_C_open_loop` · `W03_D_P` · `W03_E_PID` · `W03_F_windup` · `W03_G_tuning` (model-free tuning) |
 | W04 | [Heading Control](lectures/W04_Heading_Control.md) | `W04_C_open_loop` · `W04_D_P` · `W04_E_PD` · `W04_F_PID` · `W04_G_wrap` · `W04_H_tuning` (model-free tuning) |
 | W05 | [Waypoint Following and LOS Guidance](lectures/W05_Waypoint_Following_and_LOS_Guidance.md) | `W05_C_atan2` · `W05_D_LOS` · `W05_E_switching` · `W05_F_ILOS` · `W05_G_tuning` (model-free tuning) |
+| W06 | [Control Allocation](lectures/W06_Control_Allocation.md) | `W06_C_square` · `W06_D_pseudo` · `W06_E_curve` · `W06_F_limits` (실험 하나에 모델 하나) |
 | A1 | [Actuation and the Control Effectiveness Matrix](lectures/A1_Actuation_and_the_Control_Effectiveness_Matrix.md) (부록) | `A1_actuation` |
 
 W06 이후는 [PLAN.md](PLAN.md) §2 참조. **W05 는 유도, W06 는 Control Allocation** 이다 —

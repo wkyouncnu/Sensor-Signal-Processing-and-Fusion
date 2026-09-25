@@ -35,7 +35,7 @@
 | **W04** | Heading Control | **완료** |
 | **A1** | Actuation and the Control Effectiveness Matrix (부록) | **완료** |
 | **W05** | Waypoint Following and LOS Guidance | **완료** |
-| W06 | Control Allocation | 미착수 |
+| **W06** | Control Allocation | **완료** (2026-09-25) |
 | W07 | Environmental Loads and Wave Filtering | 미착수 |
 | W08 | Dynamic Positioning and Mission Integration | 미착수 |
 | W09 | 본과정 마무리 / 통합 | 미착수 |
@@ -174,6 +174,22 @@
 - 개념도 6장 + 결과 그림 6장, 절 스크립트 8개
 - 초보자용 보강(2026-09-05): `w05-ilos-alos-idea.svg` — 세 법칙이 **같은 15.7도를 어떻게 다르게 사는가**.
   §5-8-5a·§5-9-6a 가 적분기·추정기가 차오르는 과정을 초 단위 표로 보인다 (러너는 W05_G)
+
+### W06 · Control Allocation — 완료 (2026-09-25)
+
+> [!important] 새 주차. 15-14·15-15 의 틀로 처음부터 만들었다 (사용자 요청 "W06 도 같은 방식으로")
+> 절 여덟(6-0 준비, 6-1 사슬, 6-2 정사각, 6-3 최소자승이 버리는 것, 6-4 추진기가 더 많을 때,
+> 6-5 프로펠러 곡선의 역, 6-6 한계: 자르기 대 비율, 6-7 제약 최소자승).
+> 모델 넷(`W06_C_square` · `W06_D_pseudo` · `W06_E_curve` · `W06_F_limits`) — 블록은 모두 주석 달린
+> MATLAB Function (demand · allocation · readouts) + Otter, Scope 셋(요구·전달·추력).
+> 실험 6-4 와 6-7 은 모델이 없다 — 행렬에 대한 질문이라 명령창 몇 줄이다 (lsqlin, Optimization Toolbox).
+>
+> 재료: 부록 A1 의 열 규칙에서 나온 B = [1 1; 0 0; 0.395 -0.395], 계급 2.
+> 잰 것: 정사각 배분은 한계 안에서 정확(10^-15); 횡력 30 N 요구는 전부 버려지고 X·N 은 그대로;
+> 후진에 k_pos 를 쓰면 -100 N 요구에 -58.17 N (= k_neg/k_pos) 이고 순수 요 요구에 **요구하지 않은
+> 전진력 10.59 N** 이 따라 나온다; (220, 50) 요구에서 자르기 (166.4, 28.8) 대 비율 (151.9, 34.5) —
+> 방향 X/N 이 5.77 대 4.40. 제약 최소자승은 가중치가 답을 정한다 (요 가중 1/10/100 → 13.4/33.5/47.5 N m).
+> `_tools/verify_w06_allocation.m` 검사 5개 통과. 선체 변형(W10~12)이 6-4 의 영공간을 쓴다.
 
 ### A1 · Actuation and the Control Effectiveness Matrix — 완료
 
