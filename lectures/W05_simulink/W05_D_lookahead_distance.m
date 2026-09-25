@@ -1,4 +1,4 @@
-%% W05 · 절 D — 앞보기 거리 Delta 를 튜닝한다 / Section D — tuning the look-ahead distance Delta
+%% W05 · 실험 5-3 — 앞보기 거리 Delta 를 튜닝한다 / Experiment 5-3 — tuning the look-ahead distance Delta
 %
 %  이 절이 묻는 것 / the question
 %      LOS 는 횡방향 오차에 대한 P 제어기다 (Kp = 1/Delta). Delta 를 줄이면 (게인을 올리면)
@@ -33,7 +33,7 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 L = {'WP_N', [0 400]', 'WP_E', [0 0]', 'T_final', 300};   % 곧은 경로 / a straight leg
 
 %% 1) Delta 일곱 가지 / seven look-ahead distances
-fprintf('\n  W05 D  LOS, the look-ahead distance  (start 20 m east of the path)\n');
+fprintf('\n  W05 Experiment 5-3  LOS, the look-ahead distance  (start 20 m east of the path)\n');
 fprintf('    Delta [m]   P gain 1/Delta   within 1 m after [s]   overshoot [m]   zero crossings\n');
 f = lab_fig('W05 D  look-ahead', 1000, 480);  hold on; grid on;
 for D = [0.5 1 2.5 5 10 20 40]

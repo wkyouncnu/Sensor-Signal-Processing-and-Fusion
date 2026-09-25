@@ -1,4 +1,4 @@
-%% W05 · 절 G — 유도 법칙의 튜닝 순서 / Section G — the tuning order for the guidance law
+%% W05 · 실험 5-6 — 유도 법칙의 튜닝 순서 / Experiment 5-6 — the tuning order for the guidance law
 %
 %  이 절이 묻는 것 / the question
 %      모델 없이, 임무 위에서 잰 것만으로 Delta, R_switch, kappa 를 어떤 순서로 고르는가?
@@ -6,8 +6,8 @@
 %      the mission alone?
 %
 %  순서 / the order — 2주차의 P -> I 순서와 같다 / the same P -> I order as Week 2
-%      1 단계  Delta (P 게인): 곧은 경로에서 빠르되 흔들리지 않는 값 — 절 D 의 결과, 5 m.
-%      2 단계  R_switch: 모퉁이에서 가장 덜 벗어나는 값 — 절 E 의 결과, 3 m.
+%      1 단계  Delta (P 게인): 곧은 경로에서 빠르되 흔들리지 않는 값 — 실험 5-3 의 결과, 5 m.
+%      2 단계  R_switch: 모퉁이에서 가장 덜 벗어나는 값 — 실험 5-4 의 결과, 3 m.
 %      3 단계  조류가 있으면 오차가 남는다 -> kappa (I 게인) 를 올리며 다리마다 남는 오차를 본다.
 %      Step 1  Delta (the P gain): fast without swinging on a straight leg — section D, 5 m.
 %      Step 2  R_switch: the smallest excursion at the corners — section E, 3 m.
@@ -27,13 +27,13 @@
 %      - LOS 는 조류를 가로지르는 셋째·넷째 다리에서 2.14 m, 1.38 m 를 남긴다 (둘째 다리는 조류와 나란해 거의 0).
 %      - kappa = 0.1 은 60 m 다리에서는 너무 느리다 (둘째~넷째 합 3.10 m).
 %        합이 가장 작은 것은 0.3 (0.92 m) 이고 0.5 (0.93 m) 가 거의 같으며, 1 은 다시 커진다 (1.07 m).
-%        절 F 에서 kappa 가 클수록 반대쪽으로 더 넘어갔으므로 둘 중 작은 0.3 을 고른다.
+%        실험 5-5 에서 kappa 가 클수록 반대쪽으로 더 넘어갔으므로 둘 중 작은 0.3 을 고른다.
 %      - 첫째 다리 값은 출발점이 20 m 떨어져 있어 크다 — 다리 사이 비교에서는 뺀다.
 %      - LOS leaves 2.14 m and 1.38 m on legs 3 and 4, which cross the current
 %        (almost none on leg 2, which runs with it).
 %      - kappa = 0.1 is too slow for 60 m legs (3.10 m summed over legs 2 to 4).
 %        The smallest sum is 0.3 (0.92 m), with 0.5 almost equal (0.93 m) and
-%        1 larger again (1.07 m). Section F showed a larger kappa overshoots
+%        1 larger again (1.07 m). Experiment 5-5 showed a larger kappa overshoots
 %        more, so the smaller of the two, 0.3, is chosen.
 %      - Leg 1 is large because the start is 20 m off; it is left out of the comparison.
 %
@@ -45,7 +45,7 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 S = {'V_c', 0.3, 'T_final', 450};                  % 임무 + 조류 / the mission and the current
 
 %% 1) kappa 다섯 가지 / five values of kappa
-fprintf('\n  W05 G  the tuning order  (Delta = 5 m, R_switch = 3 m, current 0.3 m/s east)\n');
+fprintf('\n  W05 Experiment 5-6  the tuning order  (Delta = 5 m, R_switch = 3 m, current 0.3 m/s east)\n');
 fprintf('    kappa   mean |y_e| on legs 1, 2, 3, 4 [m]   sum of legs 2-4 [m]   last waypoint at [s]\n');
 for kap = [0 0.1 0.3 0.5 1]
     R = W05_read('W05_G_tuning', S{:}, 'kappa', kap);          % kappa = 0 이면 LOS 와 같다 / 0 is LOS

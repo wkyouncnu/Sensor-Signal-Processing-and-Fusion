@@ -344,15 +344,17 @@ check_legend() {
   # 찾았다. 학생은 키 없는 그림을 여섯 장 보고 있었다. 사람이 놓치는 종류의
   # 누락이므로 검사기로 내린다 → standing-orders.md §0-0
   #
-  # 판정: 그림 줄 뒤 12줄 안에 표 머리말이 있으면 통과. 머리말은 두 가지를
-  # 인정한다 — "**Reading the figure**" 와, 개념도가 쓰는 "| In the figure |".
+  # 판정: 그림 줄 뒤 12줄 안에 표 머리말이 있으면 통과. 머리말은 세 가지를
+  # 인정한다 — "**Reading the figure**", 2026-09-25 부터 쓰는
+  # "**Reading the figure against the derivation.**" 처럼 뒷말이 붙은 것,
+  # 그리고 개념도가 쓰는 "| In the figure |" (→ standing-orders.md §15-14).
   local miss=0 f
   while IFS= read -r f; do
     while IFS= read -r ln; do
       local n img
       n="${ln%%:*}"; img="${ln#*:}"
       if ! sed -n "$((n+1)),$((n+12))p" "$f" \
-           | grep -qE '^\*\*Reading the figure\*\*|^\| *In the figure *\|'; then
+           | grep -qE '^\*\*Reading the figure|^\| *In the figure *\|'; then
         printf '     [범례 표 없음] %s:%s  %s\n' "${f#./}" "$n" \
                "$(printf '%s' "$img" | sed -E 's/.*\]\(([^)]*)\).*/\1/')"
         miss=$((miss+1))

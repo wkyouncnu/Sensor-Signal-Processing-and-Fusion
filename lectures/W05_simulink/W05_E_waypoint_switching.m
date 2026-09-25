@@ -1,4 +1,4 @@
-%% W05 · 절 E — 언제 다음 다리로 넘어가는가 / Section E — when to move to the next leg
+%% W05 · 실험 5-4 — 언제 다음 다리로 넘어가는가 / Experiment 5-4 — when to move to the next leg
 %
 %  이 절이 묻는 것 / the question
 %      모퉁이에서 다음 다리로 너무 늦게 넘어가면 어떻게 되고, 너무 일찍 넘어가면 어떻게 되는가?
@@ -34,7 +34,7 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) 전환 거리 다섯 가지 / five switching distances
-fprintf('\n  W05 E  waypoint switching on the mission  (LOS, Delta = 5 m, no current)\n');
+fprintf('\n  W05 Experiment 5-4  waypoint switching on the mission  (LOS, Delta = 5 m, no current)\n');
 fprintf('    R_switch [m]   largest distance from the new leg at corners 1, 2, 3 [m]   last waypoint at [s]\n');
 f = lab_fig('W05 E  switching', 1000, 560);
 RS = [1 3 5 10 20];  COL = lines(numel(RS));

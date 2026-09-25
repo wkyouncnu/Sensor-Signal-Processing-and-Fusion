@@ -1,4 +1,4 @@
-%% W05 · 절 C — 웨이포인트를 곧장 겨냥하면 / Section C — aiming straight at the waypoint
+%% W05 · 실험 5-2 — 웨이포인트를 곧장 겨냥하면 / Experiment 5-2 — aiming straight at the waypoint
 %
 %  이 절이 묻는 것 / the question
 %      다음 웨이포인트를 곧장 겨냥하면 경로를 따라가는가?
@@ -35,7 +35,7 @@ B = W05_read('W05_D_LOS', L{:});
 
 %% 2) 북쪽으로 50, 100, 150 m 갔을 때의 횡방향 오차 / cross-track error at 50, 100, 150 m north
 %  interp1(북쪽 위치, 오차, 50): 북쪽으로 50 m 에 있을 때의 오차 / the error when 50 m north
-fprintf('\n  W05 C  aiming at the waypoint against line of sight (start 20 m east of the path)\n');
+fprintf('\n  W05 Experiment 5-2  aiming at the waypoint against line of sight (start 20 m east of the path)\n');
 fprintf('    law     y_e at N = 50 m   N = 100 m   N = 150 m\n');
 for R = {A, B; 'atan2', 'LOS'}
     r = R{1};

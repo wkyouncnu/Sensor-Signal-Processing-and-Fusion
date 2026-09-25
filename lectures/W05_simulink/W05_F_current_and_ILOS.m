@@ -1,4 +1,4 @@
-%% W05 · 절 F — 조류, 그리고 적분 (ILOS) / Section F — a current, and the integral (ILOS)
+%% W05 · 실험 5-5 — 조류, 그리고 적분 (ILOS) / Experiment 5-5 — a current, and the integral (ILOS)
 %
 %  이 절이 묻는 것 / the question
 %      옆에서 조류가 계속 밀면 LOS 는 경로에 붙는가? 붙지 못한다면 적분이 해결하는가?
@@ -36,7 +36,7 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 L = {'WP_N', [0 400]', 'WP_E', [0 0]', 'T_final', 400};   % 곧은 경로, 400 s / a straight leg, 400 s
 
 %% 1) LOS 와 조류 / LOS in a current
-fprintf('\n  W05 F  1) LOS in a current flowing east  (Delta = 5 m)\n');
+fprintf('\n  W05 Experiment 5-5  1) LOS in a current flowing east  (Delta = 5 m)\n');
 fprintf('    V_c [m/s]   error left [m]   heading held [deg]   Delta*tan(heading) [m]\n');
 for Vc = [0.1 0.2 0.3 0.4]
     R = W05_read('W05_D_LOS', L{:}, 'V_c', Vc);

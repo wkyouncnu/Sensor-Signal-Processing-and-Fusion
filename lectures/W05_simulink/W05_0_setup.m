@@ -6,9 +6,9 @@
 %      open_system('W05_D_LOS')    그리고 Run / then press Run
 %
 %  강의에서의 위치 / place in the lecture
-%      Part 2 절 A 이다. 학생이 고치는 유일한 파일이다. 블록에는 숫자가 아니라 이
+%      실험 5-0 이다. 학생이 고치는 유일한 파일이다. 블록에는 숫자가 아니라 이
 %      파일의 변수 이름이 들어 있다. Delta 를 명령창에서 바꾸고 Run 을 누르면 바로 보인다.
-%      Section A of Part 2 and the only file a student edits. Changing Delta in
+%      the file of Experiment 5-0, and the only one a student edits. Changing Delta in
 %      the Command Window and pressing Run shows the new track at once.
 %
 %  이번 주에 튜닝하는 것 / what is tuned this week
@@ -52,7 +52,7 @@ k_pos = cfg.k_pos;   k_neg = cfg.k_neg;   y_pont = cfg.y_pont;
 mp = 25;   rp = [0.05 0 -0.35]';
 
 %% ---- 조류 / the current ------------------------------------------------------
-V_c    = 0;           % 조류 속도. 절 F 는 0.3 / current speed; section F uses 0.3  [m/s]
+V_c    = 0;           % 조류 속도. 실험 5-5 는 0.3 / current speed; Experiment 5-5 uses 0.3  [m/s]
 beta_c = pi/2;        % 조류가 흘러가는 방향. pi/2 = 동쪽으로 / direction it flows to; pi/2 = east
 
 %% ---- 시뮬레이션 / simulation -------------------------------------------------
