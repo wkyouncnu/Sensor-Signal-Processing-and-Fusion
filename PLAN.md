@@ -36,7 +36,7 @@
 | **A1** | Actuation and the Control Effectiveness Matrix (부록) | **완료** |
 | **W05** | Waypoint Following and LOS Guidance | **완료** |
 | **W06** | Control Allocation | **완료** (2026-09-25) |
-| W07 | Environmental Loads and Wave Filtering | 미착수 |
+| **W07** | Environmental Loads and Wave Filtering | **완료** (2026-09-25) |
 | W08 | Dynamic Positioning and Mission Integration | 미착수 |
 | W09 | 본과정 마무리 / 통합 | 미착수 |
 | W10 | Variant A — Aft Azimuth Thrusters | 미착수 |
@@ -190,6 +190,24 @@
 > 전진력 10.59 N** 이 따라 나온다; (220, 50) 요구에서 자르기 (166.4, 28.8) 대 비율 (151.9, 34.5) —
 > 방향 X/N 이 5.77 대 4.40. 제약 최소자승은 가중치가 답을 정한다 (요 가중 1/10/100 → 13.4/33.5/47.5 N m).
 > `_tools/verify_w06_allocation.m` 검사 5개 통과. 선체 변형(W10~12)이 6-4 의 영공간을 쓴다.
+
+### W07 · Environmental Loads and Wave Filtering — 완료 (2026-09-25)
+
+> [!important] 새 주차. 15-14·15-15 의 틀 (사용자 요청 "W07 도 같은 방식으로")
+> 절 여덟(7-0 준비, 7-1 세 외란, 7-2 신호로서의 바다, 7-3 파랑을 쫓는 루프, 7-4 노치,
+> 7-5 필터의 값, 7-6 걸러서는 안 되는 느린 부분, 7-7 너비 고르기).
+> 모델 넷(`W07_C_wave` · `W07_D_no_filter` · `W07_E_notch` · `W07_G_slow`).
+>
+> 바다: MSS `wavespec` 의 JONSWAP (Hs 0.3 m, T0 2 s) 에서 성분 20 개를 뽑고 **위상을 고정**해
+> 매번 같은 실현을 쓴다 (`_tools/wave_train.m`) — 난수를 쓰면 강의의 표를 재현할 수 없다.
+> 1차 파랑의 선수각 응답은 유도하지 않고 표준편차 3 도로 **주어진 것**으로 둔다 (§7-1 각주).
+>
+> 잰 것: 파랑의 선수각 std 3.008 도인데 **변화율 std 11.64 도/s** — 이 배가 낼 수 있는 회두율과
+> 맞먹는다. 필터 없이 두면 모멘트 std 18.85 N m, 한계에 1.18 s, 진짜 선수각 std 1.551 도.
+> 노치(zeta_n 0.05, zeta_d 0.3, -15.6 dB)를 걸면 모멘트 13.41, 선수각 **1.042 도로 함께 좋아진다**.
+> 값: 바다를 끈 계단에서 오버슛 0.93 -> 9.07 %, 정착 1.72 -> 7.76 s (1.6 rad/s 에서 위상 -18.5 도).
+> 느린 외란 15 N m 는 노치가 통과시키므로 적분이 3.071 도를 0.084 도로 없앤다.
+> `_tools/verify_w07_waves.m` 검사 5개 통과.
 
 ### A1 · Actuation and the Control Effectiveness Matrix — 완료
 
