@@ -1,4 +1,4 @@
-%% W04 · 절 E — D 를 더한다 / Section E — add D
+%% W04 · 실험 4-3b — D 를 더한다 / Experiment 4-3b — add D
 %
 %  이 절이 묻는 것 / the question
 %      3주차에서 속도 루프를 나쁘게 만든 D 가 선수각에서는 어떻게 작용하는가?
@@ -29,9 +29,9 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) 표의 제목줄과 그림 / the table header and the figure
-fprintf('\n  W04 E  P + D  (Kp = 300, psi_d = 10 deg)\n');
+fprintf('\n  W04 Experiment 4-3b  P + D  (Kp = 300, psi_d = 10 deg)\n');
 fprintf('    Kd     overshoot %%   rise [s]   settle [s]\n');
-f = lab_fig('W04 E  derivative', 1000, 460);  hold on; grid on;
+f = lab_fig('W04 Exp 4-3b  derivative', 1000, 460);  hold on; grid on;
 
 %% 2) 미분 게인 일곱 개 / seven derivative gains
 for Kd = [0 10 25 50 100 150 200]

@@ -1,4 +1,4 @@
-%% W04 · 절 D — P 만 / Section D — P only
+%% W04 · 실험 4-3a — P 만 / Experiment 4-3a — P only
 %
 %  이 절이 묻는 것 / the question
 %      P 만으로 선수각을 제어하면 3주차(속도)처럼 오차가 남는가? 울리는가?
@@ -30,9 +30,9 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) 표의 제목줄과 그림 / the table header and the figure
-fprintf('\n  W04 D  P only  (psi_d = 10 deg at t = 5 s)\n');
+fprintf('\n  W04 Experiment 4-3a  P only  (psi_d = 10 deg at t = 5 s)\n');
 fprintf('    Kp     final psi [deg]   overshoot %%   rise [s]   settle [s]   peak |N| [N m]\n');
-f = lab_fig('W04 D  P only', 1000, 620);
+f = lab_fig('W04 Exp 4-3a  P only', 1000, 620);
 
 %% 2) 게인 네 개로 한 번씩 / one run for each of four gains
 for Kp = [30 100 300 1000]

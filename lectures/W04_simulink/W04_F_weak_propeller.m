@@ -1,4 +1,4 @@
-%% W04 · 절 F — 좌현 프로펠러가 약할 때 / Section F — a weak port propeller
+%% W04 · 실험 4-3c — 좌현 프로펠러가 약할 때 / Experiment 4-3c — a weak port propeller
 %
 %  이 절이 묻는 것 / the question
 %      선수각은 스스로 적분기인데, 그래도 I 가 필요한 경우가 있는가?
@@ -33,7 +33,7 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) PD 만, 프로펠러 효율을 바꾼다 / PD only, propeller efficiency varied
-fprintf('\n  W04 F  1) PD only (Kp = 300, Kd = 100), port propeller at reduced efficiency\n');
+fprintf('\n  W04 Experiment 4-3c  1) PD only (Kp = 300, Kd = 100), port propeller at reduced efficiency\n');
 fprintf('    port_eff   final psi [deg]   error left [deg]   steady N [N m]\n');
 for eff = [1 0.7 0.5]
     R = W04_read('W04_F_PID', 'Ki', 0, 'port_eff', eff);
@@ -44,7 +44,7 @@ end
 %% 2) 효율 0.7, 적분 게인을 바꾼다 / efficiency 0.7, integral gain varied
 fprintf('\n  2) add the integral, port_eff = 0.7\n');
 fprintf('    Ki     final psi [deg]   overshoot %%   settle [s]   I at 40 s [N m]\n');
-f = lab_fig('W04 F  integral', 1000, 620);
+f = lab_fig('W04 Exp 4-3c  integral', 1000, 620);
 for Ki = [0 20 50 100]
     R = W04_read('W04_F_PID', 'Ki', Ki, 'port_eff', 0.7);
     [Mp, ts] = step_metrics(R.t, R.psi, 10, 5);

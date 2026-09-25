@@ -1,4 +1,4 @@
-%% W04 · 절 C — 플랜트를 밖에서 본다 / Section C — the plant seen from outside
+%% W04 · 실험 4-2 — 플랜트를 밖에서 본다 / Experiment 4-2 — the plant seen from outside
 %
 %  이 절이 묻는 것 / the question
 %      제어기 없이 일정한 요 모멘트를 주면 선수각은 어떻게 되는가? 3주차의 속도처럼
@@ -20,7 +20,7 @@
 %
 %  출력에서 볼 것 / what to look for in the output
 %      - 선수각은 멈추지 않고 계속 커진다: 선수각은 선회율의 누적(적분)이다.
-%        그래서 선수각을 붙잡아 두는 데는 모멘트가 필요 없다 — 절 D 에서 P 만으로
+%        그래서 선수각을 붙잡아 두는 데는 모멘트가 필요 없다 — 실험 4-3a 에서 P 만으로
 %        오차가 0 이 되는 이유다.
 %      - N m 당 선회율이 모멘트가 클수록 작다 (0.610 -> 0.407): 요 감쇠가 선회율과
 %        함께 커지는 비선형이다.
@@ -37,9 +37,9 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) 표의 제목줄과 그림 / the table header and the figure
-fprintf('\n  W04 C  the plant seen from outside (no controller, X_ff = 60 N ahead)\n');
+fprintf('\n  W04 Experiment 4-2  the plant seen from outside (no controller, X_ff = 60 N ahead)\n');
 fprintf('    N [N m]   final turn rate [deg/s]   rate per N m   time to 63 %% of the rate [s]   heading at 40 s [deg]\n');
-f = lab_fig('W04 C  open loop', 1000, 620);
+f = lab_fig('W04 Exp 4-2  open loop', 1000, 620);
 
 %% 2) 모멘트 세 가지로 한 번씩 / one run for each of three moments
 for N = [5 10 20]

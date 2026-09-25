@@ -1,4 +1,4 @@
-%% W04 · 절 G — +-180 도의 감김 / Section G — the wrap at +-180 deg
+%% W04 · 실험 4-6 — +-180 도의 감김 / Experiment 4-6 — the wrap at +-180 deg
 %
 %  이 절이 묻는 것 / the question
 %      170 도에서 -170 도로 가라고 하면 배는 20 도를 도는가, 340 도를 도는가?
@@ -30,9 +30,9 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 S = {'psi_step', 170, 'psi_step2', -170, 't_step2', 20, 'T_final', 60};
 
 %% 1) 표의 제목줄과 그림 / the table header and the figure
-fprintf('\n  W04 G  170 deg, then -170 deg at t = 20 s\n');
+fprintf('\n  W04 Experiment 4-6  170 deg, then -170 deg at t = 20 s\n');
 fprintf('    use_ssa   heading at 20 s [deg]   heading at 60 s [deg]   turned after 20 s [deg]\n');
-f = lab_fig('W04 G  wrap', 1000, 460);  hold on; grid on;
+f = lab_fig('W04 Exp 4-6  wrap', 1000, 460);  hold on; grid on;
 
 %% 2) 감을 때와 감지 않을 때 / with and without the wrap
 for us = [1 0]

@@ -1,4 +1,4 @@
-%% W04 · 절 H — 튜닝 순서, 그리고 큰 선회 / Section H — the tuning order, and a big turn
+%% W04 · 실험 4-5 — 튜닝 순서, 그리고 큰 선회 / Experiment 4-5 — the tuning order, and a big turn
 %
 %  이 절이 묻는 것 / the question
 %      모델 없이 측정만으로 Kp, Kd, Ki 를 고르고, 모멘트 한계가 있을 때 되감기 이득 Kb 를
@@ -46,7 +46,7 @@ m = 'W04_H_tuning';
 %  M(R, target): overshoot (negative shown as 0) and settling time (function at the bottom)
 M = @(R, target) metrics(R, target);
 
-fprintf('\n  W04 H  the tuning order on the heading\n');
+fprintf('\n  W04 Experiment 4-5  the tuning order on the heading\n');
 
 %% 1-2) P 만 / P only
 [Mp, ts] = M(W04_read(m, 'Kd', 0, 'Ki', 0, 'Kb', 0), 10);
@@ -69,7 +69,7 @@ fprintf(' Ki = 20 removes it: %.3f deg left, settle %.2f s\n', 10 - R.psi(end), 
 %% 5) 모멘트 한계와 Kb: 세 선회로 비교 / the moment limit and Kb, on three turns
 fprintf('    5    the moment limit: Kb against three turns (settle [s], overshoot %%)\n');
 fprintf('         Kb      10 deg turn        weak propeller     90 deg turn\n');
-f = lab_fig('W04 H  tuning', 1000, 620);
+f = lab_fig('W04 Exp 4-5  tuning', 1000, 620);
 for Kb = [0 0.05 0.1 1]
     [M1, t1] = M(W04_read(m, 'Kb', Kb), 10);                          % 10 도 선회 / 10 deg turn
     [M2, t2] = M(W04_read(m, 'Kb', Kb, 'port_eff', 0.7), 10);         % 약한 프로펠러 / weak propeller
