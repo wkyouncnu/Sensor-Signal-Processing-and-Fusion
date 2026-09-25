@@ -1,4 +1,4 @@
-%% W03 · 절 C — 플랜트를 밖에서 본다 / Section C — the plant seen from outside
+%% W03 · 실험 3-2 — 플랜트를 밖에서 본다 / Experiment 3-2 — the plant seen from outside
 %
 %  이 절이 묻는 것 / the question
 %      제어기를 달기 전에, 이 배는 힘을 받으면 어떻게 움직이는가? 식을 쓰지 않고
@@ -33,9 +33,9 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) 표의 제목줄 / the header of the table
-fprintf('\n  W03 C  the plant seen from outside (no controller)\n');
+fprintf('\n  W03 Experiment 3-2  the plant seen from outside (no controller)\n');
 fprintf('    X [N]   final u [m/s]   u per newton [(m/s)/N]   time to 63 %% [s]\n');
-f = lab_fig('W03 C  open loop', 1000, 480);  hold on; grid on;
+f = lab_fig('W03 Exp 3-2  open loop', 1000, 480);  hold on; grid on;
 
 %% 2) 세 가지 힘으로 한 번씩 돌린다 / one run for each of three forces
 for X = [50 100 200]

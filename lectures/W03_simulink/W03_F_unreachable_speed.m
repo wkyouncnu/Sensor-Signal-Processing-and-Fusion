@@ -1,4 +1,4 @@
-%% W03 · 절 F — 닿을 수 없는 속도 / Section F — an unreachable speed
+%% W03 · 실험 3-4 — 닿을 수 없는 속도 / Experiment 3-4 — an unreachable speed
 %
 %  이 절이 묻는 것 / the question
 %      추진기가 낼 수 있는 것보다 빠른 속도를 명령하면 적분항은 무엇을 하는가?
@@ -38,9 +38,9 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 S = {'u_step', 3.5, 't_step2', 30, 'u_step2', 1.5, 'T_final', 60};
 
 %% 1) 표의 제목줄과 그림 / the table header and the figure
-fprintf('\n  W03 F  3.5 m/s from 5 s (unreachable), 1.5 m/s from 30 s\n');
+fprintf('\n  W03 Experiment 3-4  3.5 m/s from 5 s (unreachable), 1.5 m/s from 30 s\n');
 fprintf('    Kb     u at 30 s   I at 30 s [N]   back within 2 %% of 1.5 m/s after [s]   lowest u [m/s]\n');
-f = lab_fig('W03 F  windup', 1000, 620);
+f = lab_fig('W03 Exp 3-4  windup', 1000, 620);
 
 %% 2) 되감기 이득 네 가지 / four back-calculation gains
 for Kb = [0 0.2 1 5]

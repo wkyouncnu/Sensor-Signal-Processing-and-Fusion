@@ -1,4 +1,4 @@
-%% W03 · 절 E — I 를 더하고, D 를 시험한다 / Section E — add I, then try D
+%% W03 · 실험 3-3b — I 를 더하고, D 를 시험한다 / Experiment 3-3b — add I, then try D
 %
 %  이 절이 묻는 것 / the question
 %      P 가 남긴 속도 오차를 I 가 없앨 수 있는가? 그리고 2주차에서 감쇠기였던 D 는
@@ -35,9 +35,9 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) 적분 게인을 바꾼다 / vary the integral gain
-fprintf('\n  W03 E  1) the integral  (Kp = 200, Kd = 0)\n');
+fprintf('\n  W03 Experiment 3-3b  1) the integral  (Kp = 200, Kd = 0)\n');
 fprintf('    Ki    u at 40 s   overshoot %%   settle [s]   I at 40 s [N]\n');
-f = lab_fig('W03 E  integral', 1000, 620);
+f = lab_fig('W03 Exp 3-3b  integral', 1000, 620);
 for Ki = [0 50 100 200 400]
     %  Ki 만 바꿔 돌린다 (Kp = 200, Kd = 0 은 기본값)
     %  Run with only Ki changed (Kp = 200 and Kd = 0 are the defaults)
@@ -62,7 +62,7 @@ exportgraphics(f, fullfile(here, 'img', 'W03_result_I.png'), 'Resolution', 150);
 %% 2) 미분 게인을 바꾼다 / vary the derivative gain
 fprintf('\n  2) the derivative  (Kp = 200, Ki = 200)\n');
 fprintf('    Kd    overshoot %%   rise [s]   settle [s]\n');
-f = lab_fig('W03 E  derivative', 1000, 420);  hold on; grid on;
+f = lab_fig('W03 Exp 3-3b  derivative', 1000, 420);  hold on; grid on;
 for Kd = [0 20 50 100]
     %  Kd 만 바꿔 돌린다 (Kp = Ki = 200 은 기본값)
     %  Run with only Kd changed (Kp = Ki = 200 are the defaults)

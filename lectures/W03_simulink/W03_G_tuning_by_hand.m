@@ -1,4 +1,4 @@
-%% W03 · 절 G — 2주차의 튜닝 순서를 Otter 에 / Section G — the Week 2 tuning order on the Otter
+%% W03 · 실험 3-5 — 2주차의 튜닝 순서를 Otter 에 / Experiment 3-5 — the Week 2 tuning order on the Otter
 %
 %  이 절이 묻는 것 / the question
 %      배의 모델 없이, Scope 에서 잰 것만으로 세 게인을 어떻게 고르는가?
@@ -12,7 +12,7 @@
 %
 %  이 스크립트가 하는 일 / what this script does — 튜닝 순서 그대로 / the tuning order, step by step
 %      1-2 단계  P 만 (Ki = 0, Kb = 0) 돌리고 오버슛·상승시간·남은 오차를 읽는다.
-%      3 단계    울리지 않으므로 D 는 넣지 않는다 (절 E 에서 D 는 나빠지기만 했다).
+%      3 단계    울리지 않으므로 D 는 넣지 않는다 (실험 3-3b 에서 D 는 나빠지기만 했다).
 %      4 단계    Ki 를 50, 100, 200 으로 올리며 요구를 처음 만족하는 값에서 멈춘다.
 %      5 단계    힘을 본다: 계단 명령과 부드럽게 한 명령의 최대 추력과 한계에 붙은 시간.
 %      Steps 1-2  run P alone (Ki = 0, Kb = 0) and read the overshoot, rise time
@@ -41,7 +41,7 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 %  settling is Inf when 1.5 is never reached.
 M = @(R) deal_metrics(R);
 
-fprintf('\n  W03 G  the tuning order on the Otter\n');
+fprintf('\n  W03 Experiment 3-5  the tuning order on the Otter\n');
 
 %% 1-2) P 만: 되감기도 끈다 — Ki = 0 인데 Kb 가 켜져 있으면 되감기가 적분을 혼자 움직인다
 %       P only, with back-calculation off too: with Ki = 0 and Kb on, back-calculation
@@ -52,7 +52,7 @@ fprintf('    1-2  Kp = 200: overshoot %.1f %%, rise %.2f s, error left %.3f m/s\
 
 %% 3) D 는 울림을 줄이는 항이다. 울림이 없으면 넣지 않는다
 %     D reduces ringing; with no ringing it is left out
-fprintf('    3    no ringing, so nothing for D to damp: Kd = 0 (section E: D only adds overshoot)\n');
+fprintf('    3    no ringing, so nothing for D to damp: Kd = 0 (Exp 3-3b: D only adds overshoot)\n');
 
 %% 4) Ki 를 올리며 요구(3 s 안, 오버슛 5 % 미만)를 처음 만족하는 값에서 멈춘다
 %     Raise Ki and stop at the first value meeting the requirement (3 s, below 5 %)
@@ -74,7 +74,7 @@ fprintf('    5    force: %.1f N, on the thrust limit for %.2f s (anti-windup on)
 fprintf('         final: Kp = 200, Ki = 200, Kd = 0, Kb = 1: overshoot %.2f %%, inside 2 %% after %.2f s\n', MpA, tsA);
 
 %% 6) 그림: 위 속도, 아래 추력 / figure: speed on top, thrust below
-f = lab_fig('W03 G  tuning', 1000, 620);
+f = lab_fig('W03 Exp 3-5  tuning', 1000, 620);
 subplot(2,1,1); hold on; grid on;
 plot(A.t, A.u, 'LineWidth', 2);  plot(B.t, B.u, 'LineWidth', 2);  plot(A.t, A.u_d, 'k--');
 xlim([3 15]); ylabel('u [m/s]'); legend({'step command','smoothed command','command'}, 'Location','southeast');

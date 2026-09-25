@@ -1,4 +1,4 @@
-%% W03 · 절 D — P 만 / Section D — P only
+%% W03 · 실험 3-3a — P 만 / Experiment 3-3a — P only
 %
 %  이 절이 묻는 것 / the question
 %      2주차의 P 제어기를 배의 속도에 그대로 두면 무엇이 같고 무엇이 다른가?
@@ -34,9 +34,9 @@ here = fileparts(mfilename('fullpath'));
 addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 
 %% 1) 표의 제목줄과 그림 / the table header and the figure
-fprintf('\n  W03 D  P only  (u_d = 1.5 m/s at t = 5 s)\n');
+fprintf('\n  W03 Experiment 3-3a  P only  (u_d = 1.5 m/s at t = 5 s)\n');
 fprintf('    Kp    final u   error left   overshoot %%   rise [s]   settle [s]   time at thrust limit [s]\n');
-f = lab_fig('W03 D  P only', 1000, 620);
+f = lab_fig('W03 Exp 3-3a  P only', 1000, 620);
 
 %% 2) 게인 다섯 개로 한 번씩 / one run for each of five gains
 for Kp = [50 100 200 400 800]
