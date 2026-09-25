@@ -37,7 +37,7 @@ LOG = {};
 root = fileparts(fileparts(mfilename('fullpath')));
 addpath(fullfile(root,'_tools'));  mss_path();
 
-if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','W06','W07','A1'}; end
+if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','W06','W07','W08','A1'}; end
 %  '_check' 는 빼지 않는다. 학생용 채점기(problems/WXX_check.m)는 하위 폴더에 있어
 %  이 목록(최상위 WXX_*.m)에 원래 안 잡히고, 최상위의 W01_F_button_check 같은 것은
 %  **강의 절 스크립트**다 — 2026-09-14 까지 잘못 빼고 있었다.
@@ -93,7 +93,7 @@ fprintf('\n  %d개 실행, 실패 %d개\n\n', numel(names), nf);
 %% ---- 검증 도구: 강의에 적힌 상수·유도를 원천과 대조한다 ----------------
 V = {'verify_constants','verify_w01_theory','verify_guidance','verify_alos', ...
      'verify_review_math','verify_w02_pid','verify_w03_speed','verify_w04_heading','verify_w05_guidance', ...
-     'verify_w06_allocation','verify_w07_waves'};
+     'verify_w06_allocation','verify_w07_waves','verify_w08_dp'};
 fprintf('  ================ 검증 도구 ================\n\n');
 for i = 1:numel(V)
     if ~exist(V{i}, 'file'), fprintf('  %-22s 없음\n', V{i}); continue; end

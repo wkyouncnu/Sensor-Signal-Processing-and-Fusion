@@ -726,4 +726,4 @@ The experiments of Part 1 are worked through in order; this table is the index o
 
 ## Next Week
 
-Week 8 stops filtering the measurement and starts estimating the state behind it: an observer that carries a model of the vessel and of the wave, and delivers the low-frequency heading the controller wanted all along.
+Week 8 asks the vessel to stay in one place rather than to go somewhere: dynamic positioning, and the one direction two propellers cannot push. The observer that replaces the notch of §7-7 — a model of the vessel and of the wave, estimating the low-frequency heading — is the reading that §7-7 line 7 points to.

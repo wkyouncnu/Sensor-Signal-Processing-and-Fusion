@@ -37,7 +37,7 @@
 | **W05** | Waypoint Following and LOS Guidance | **완료** |
 | **W06** | Control Allocation | **완료** (2026-09-25) |
 | **W07** | Environmental Loads and Wave Filtering | **완료** (2026-09-25) |
-| W08 | Dynamic Positioning and Mission Integration | 미착수 |
+| **W08** | Dynamic Positioning and Mission Integration | **완료** (2026-09-25) |
 | W09 | 본과정 마무리 / 통합 | 미착수 |
 | W10 | Variant A — Aft Azimuth Thrusters | 미착수 |
 | W11 | Variant B — Bow Tunnel Thruster | 미착수 |
@@ -208,6 +208,25 @@
 > 값: 바다를 끈 계단에서 오버슛 0.93 -> 9.07 %, 정착 1.72 -> 7.76 s (1.6 rad/s 에서 위상 -18.5 도).
 > 느린 외란 15 N m 는 노치가 통과시키므로 적분이 3.071 도를 0.084 도로 없앤다.
 > `_tools/verify_w07_waves.m` 검사 5개 통과.
+
+### W08 · Dynamic Positioning and Mission Integration — 완료 (2026-09-25)
+
+> [!important] 새 주차. 15-14·15-15 의 틀 (사용자 요청 "W08 도 같은 방식으로")
+> 절 여섯(8-0 준비, 8-1 DP 가 요구하는 것, 8-2 지킬 수 없는 방향, 8-3 뱃머리를 힘 쪽으로,
+> 8-4 위치 루프는 얼마나 빨라도 되는가, 8-5 임무와 넘겨받기).
+> 모델 넷(`W08_C_fixed` · `W08_D_weathervane` · `W08_E_cascade` · `W08_F_mission`).
+>
+> 출발점은 6주차 §6-3 이다: B 의 계급이 2 이므로 이 선체는 옆으로 밀 수 없다. 그래서
+> 선수각을 고정하면 조류 속에서 자리를 지킬 수 없다 — 200 s 에 56.6 m 밀리고 **전진력은 0 N**
+> (필요한 힘이 뱃머리와 직각이다). 해법은 위치 PID 를 NED 에서 풀어 그 힘의 **방향으로 뱃머리를**
+> 돌리는 것(웨더베인): 오차 0.193 m, 선수각 -90.6 도(조류를 맞바라봄), 힘 23.0 N = 0.3 m/s 의 항력 23.3 N.
+> 8-4 는 캐스케이드 규칙(2주차 §2-13)을 잰다 — Kp_x 120 이면 위치 루프가 선수각 루프보다 빨라져
+> 배가 2734 도를 돌고 끝내 못 돌아온다. Kp_x = 30.
+> 8-5 는 임무 상태기계(반경 안이면 유지, 시간이 차면 다음)와 **모드 전환의 적분 넘겨받기**:
+> 그대로 두면 유지 첫 힘이 120 N 으로 포화하고 오차가 25.6 m 로 벌어진다 (넘겨받으면 43.3 N, 0.42 m).
+>
+> 계획에 있던 Stateflow 대신 주석 달린 MATLAB Function 상태기계를 썼다 (§15-12 · §15-15 의 틀).
+> `_tools/verify_w08_dp.m` 검사 5개 통과.
 
 ### A1 · Actuation and the Control Effectiveness Matrix — 완료
 
