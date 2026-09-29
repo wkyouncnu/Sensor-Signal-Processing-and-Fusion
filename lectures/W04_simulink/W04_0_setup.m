@@ -56,6 +56,16 @@ Kd = 100;             % 미분 / derivative       [N m s per rad]
 Nf = 20;              % 미분 필터 / derivative filter  [rad/s]
 Kb = 0.1;             % 되감기 이득. 0 이면 안티와인드업 없음 / back-calculation gain; 0 = none  [1/s]
 
+%% ---- D 항을 어디서 얻는가 / where the D term comes from (§4-3 의 소절) ----
+%   1  -Kd r                 회두율 되먹임. 자이로가 직접 내는 값이고, MSS 의
+%                            기본형이며 (SIMclarke83 · SIMremus100 · SIMrig),
+%                            5~9주차가 그대로 가져다 쓴다
+%   2  +Kd Nf s/(s+Nf) e     오차를 미분. W04_E_PD 와 2·3주차가 쓰는 교과서 형태
+%   3  +Kd r                 부호만 뒤집은 것. 제동이 가속이 된다
+%   1 and 2 are the same term while psi_d is not moving; 3 is what happens when
+%   the sign of a damping term is wrong.
+d_form = 1;
+
 %% ---- 시뮬레이션 / simulation -----------------------------------------------
 T_final = 40;         % [s]
 h       = 0.02;       % 고정 스텝 / fixed step (ode4)  [s]

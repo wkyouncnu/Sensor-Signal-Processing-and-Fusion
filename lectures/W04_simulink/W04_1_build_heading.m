@@ -1,9 +1,9 @@
 function W04_1_build_heading(which)
-%W04_1_BUILD_HEADING  4주차 실습 모델 여섯 개를 코드로 만든다 — 절 하나에 모델 하나.
-%                     Generate the six Week 4 models, one model per section.
+%W04_1_BUILD_HEADING  4주차 실습 모델 일곱 개를 코드로 만든다 — 절 하나에 모델 하나.
+%                     Generate the seven Week 4 models, one model per section.
 %
 %   실행 / to run
-%       W04_1_build_heading                 여섯 개 전부 / all six
+%       W04_1_build_heading                 일곱 개 전부 / all seven
 %       W04_1_build_heading('W04_E_PD')     하나만 / one of them
 %
 %   모델 / the models
@@ -14,6 +14,8 @@ function W04_1_build_heading(which)
 %       W04_F_PID         P + I + D, 좌현 프로펠러가 약할 때 / with a weak port propeller
 %       W04_G_wrap        +-180 도를 넘는 명령, ssa 스위치 / a command across +-180 deg, ssa switch
 %       W04_H_tuning      큰 선회, 모멘트 한계, 되감기 / a big turn, the moment limit, back-calculation
+%       W04_I_rate        D 항을 어디서 얻는가 — 회두율 · 오차 · 뒤집힌 부호 (d_form)
+%                         where the D term comes from: the gyro, the error, or the wrong sign
 %
 %   3주차 모델과 같은 모양이다. 바뀐 것은 둘뿐이다.
 %   ① 앞: 목표를 도로 받아 rad 로 바꾸고, 오차를 ssa 로 (-pi, pi] 에 감는다.
@@ -30,17 +32,19 @@ addpath(fullfile(root,'_tools'), here);
 evalin('base', 'W04_0_setup');
 
 M = struct( ...
-  'name',   {'W04_C_open_loop','W04_D_P','W04_E_PD','W04_F_PID','W04_G_wrap','W04_H_tuning'}, ...
-  'open',   {true,  false, false, false, false, false}, ...
-  'D',      {false, false, true,  true,  true,  true }, ...
-  'I',      {false, false, false, true,  false, true }, ...
-  'aw',     {false, false, false, false, false, true }, ...
-  'twostep',{false, false, false, false, true,  false}, ...
-  'wrap',   {false, false, false, false, true,  false}, ...
+  'name',   {'W04_C_open_loop','W04_D_P','W04_E_PD','W04_F_PID','W04_G_wrap','W04_H_tuning','W04_I_rate'}, ...
+  'open',   {true,  false, false, false, false, false, false}, ...
+  'D',      {false, false, true,  true,  true,  true,  true }, ...
+  'I',      {false, false, false, true,  false, true,  false}, ...
+  'aw',     {false, false, false, false, false, true,  false}, ...
+  'twostep',{false, false, false, false, true,  false, false}, ...
+  'wrap',   {false, false, false, false, true,  false, false}, ...
+  'rate',   {false, false, false, false, false, false, true }, ...
   'title',  {'THE PLANT, SEEN FROM OUTSIDE (no controller)', 'P ONLY', 'P + D', ...
              'P + I + D, WITH A WEAK PORT PROPELLER', 'THE WRAP AT +-180 DEG', ...
-             'A BIG TURN, THE MOMENT LIMIT, AND THE TUNING ORDER'}, ...
-  'sec',    {'C','D','E','F','G','H'});
+             'A BIG TURN, THE MOMENT LIMIT, AND THE TUNING ORDER', ...
+             'WHERE THE D TERM COMES FROM: THE GYRO, THE ERROR, OR THE WRONG SIGN'}, ...
+  'sec',    {'C','D','E','F','G','H','I'});
 if nargin == 1, M = M(strcmp({M.name}, which)); end
 for k = 1:numel(M), build_one(M(k), here); end
 end
@@ -59,11 +63,11 @@ if o.open
     blk(m, 'simulink/Sources/Step', 'yaw moment N', 800, YP, [30 30], ...
         {'Time','t_step', 'Before','0', 'After','N_open'});
     goto_at(m, {'yaw moment N', 1}, [850 YP], 'up', 'N');
-    plant(m, {'yaw moment N', 1}, YP, []);
+    plant(m, {'yaw moment N', 1}, YP, [], o);
 else
     yd = setpoint(m, o, Y);
     last = loop(m, o, Y, yd);
-    plant(m, last, YP, Y + 220);
+    plant(m, last, YP, Y + 220, o);
 end
 measure(m, o);
 note(m, o);
@@ -131,7 +135,7 @@ X = @(x) x + DX;
 blk(m, 'simulink/Math Operations/Gain', 'Kp', X(440), YP, [50 36], {'Gain','Kp'});
 route(m, src{1}, src{2}, 'Kp', 1, [X(380) Y; X(380) YP]);
 last = {'Kp', 1};
-if o.D
+if o.D && ~o.rate
     blk(m, 'simulink/Continuous/Transfer Fcn', 'D filter', X(470), Y, [60 36], ...
         {'Numerator','[Kd*Nf 0]', 'Denominator','[1 Nf]'});
     route(m, src{1}, src{2}, 'D filter', 1, zeros(0,2));
@@ -139,6 +143,44 @@ if o.D
     route(m, 'Kp', 1, 'p+d', 1, zeros(0,2));
     route(m, 'D filter', 1, 'p+d', 2, [X(690) Y]);
     goto_at(m, {'D filter', 1}, [X(520) Y], 'down', 'D');
+    last = {'p+d', 1};
+elseif o.rate
+    %  D 항을 어디서 얻는가 — 세 갈래를 한 모델에 나란히 두고 d_form 으로 고른다.
+    %  Where the D term comes from: three branches side by side in one model,
+    %  chosen by d_form. One model run three times, so nothing else can differ.
+    %
+    %    1  -Kd r          회두율 되먹임 / the rate form. MSS 의 기본형이고
+    %                      5~9주차가 쓰는 것 / what MSS uses and Weeks 5 to 9 import
+    %    2  +Kd Nf s/(s+Nf) e   오차를 미분 / the error form, as in W04_E_PD
+    %    3  +Kd r          부호를 뒤집은 것 / the same gain with the sign flipped
+    YR = Y + 120;
+    add_block('simulink/Signal Routing/From', [m '/r in'], 'GotoTag','r', ...
+              'Position', [X(340) YR-10 X(400) YR+10]);
+    blk(m, 'simulink/Math Operations/Gain', 'minus Kd', X(470), YR, [60 36], {'Gain','-Kd'});
+    route(m, 'r in', 1, 'minus Kd', 1, zeros(0,2));
+    blk(m, 'simulink/Continuous/Transfer Fcn', 'D filter', X(470), Y, [60 36], ...
+        {'Numerator','[Kd*Nf 0]', 'Denominator','[1 Nf]'});
+    route(m, src{1}, src{2}, 'D filter', 1, zeros(0,2));
+    blk(m, 'simulink/Math Operations/Gain', 'plus Kd', X(470), YR+90, [60 36], {'Gain','Kd'});
+    route(m, 'r in', 1, 'plus Kd', 1, [X(430) YR; X(430) YR+90]);
+    %  고르는 값은 스위치 **바로 위**에 둔다. D filter 아래에 두면 두 블록의
+    %  이름표가 겹친다 / the selector sits directly above the switch: beside the
+    %  D filter the two name labels collide.
+    blk(m, 'simulink/Sources/Constant', 'd_form', X(600), YR-95, [60 26], {'Value','d_form'});
+    blk(m, 'simulink/Signal Routing/Multiport Switch', 'which D', X(600), YR, [30 90], ...
+        {'Inputs','3', 'DataPortOrder','One-based contiguous'});
+    q = port_xy(m, 'which D', 'Inport', 1);
+    route(m, 'd_form', 1, 'which D', 1, [X(600) YR-82; X(600) q(2)]);
+    SRC = {'minus Kd','D filter','plus Kd'};
+    for i = 1:3
+        q = port_xy(m, 'which D', 'Inport', i+1);
+        p = port_xy(m, SRC{i}, 'Outport', 1);
+        route(m, SRC{i}, 1, 'which D', i+1, [X(545)+8*i p(2); X(545)+8*i q(2)]);
+    end
+    add_sum(m, 'p+d', '++', [X(690) YP]);
+    route(m, 'Kp', 1, 'p+d', 1, zeros(0,2));
+    route(m, 'which D', 1, 'p+d', 2, [X(690) YR]);
+    goto_at(m, {'which D', 1}, [X(645) YR], 'down', 'D');
     last = {'p+d', 1};
 end
 if o.I
@@ -187,7 +229,7 @@ end
 % =========================================================================
 %  배분과 Otter: N -> 두 프로펠러의 추력 -> 축 회전수 -> Otter -> psi, 그리고 되먹임
 %  Allocation and the Otter: N -> two thrusts -> shaft speeds -> Otter -> psi, and the feedback
-function plant(m, src, YP, YF)
+function plant(m, src, YP, YF, o)
 s = port_xy(m, src{1}, 'Outport', src{2});
 X0 = round(s(1)) + 90;
 %  배분: 요 모멘트 N -> 두 축 회전수 n. 주석이 달린 MATLAB Function 하나 (열어서 읽으면 된다).
@@ -256,6 +298,20 @@ route(m, 'heading psi', 1, 'in degrees', 1, zeros(0,2));
 goto_at(m, {'in degrees', 1}, [X0+695 ys], 'up', 'psi');
 if ~isempty(YF)
     route(m, 'heading psi', 1, 'e', 2, [X0+595 ys; X0+595 YF; 340 YF]);
+end
+if o.rate
+    %  회두율 r 은 상태 6 이다. 자이로가 **직접** 내놓는 값이고, 그래서 미분할
+    %  것이 없다 — 이 갈래가 있는 이유의 절반이다 (§4-3 의 소절 줄 5).
+    %  The yaw rate is state 6. A gyro reports it directly, so there is nothing
+    %  to differentiate — half the reason this branch exists.
+    add_block('simulink/Signal Routing/Selector', [m '/yaw rate r'], ...
+              'InputPortWidth','12', 'Indices','6', ...
+              'Position', [X0+530 YP+95 X0+560 YP+125]);
+    p = port_xy(m, 'Otter', 'Outport', 1);
+    q = port_xy(m, 'yaw rate r', 'Inport', 1);
+    route(m, 'Otter', 1, 'yaw rate r', 1, [p(1)+18 p(2); p(1)+18 q(2)]);
+    yr = port_xy(m, 'yaw rate r', 'Outport', 1);
+    goto_at(m, {'yaw rate r', 1}, [X0+600 yr(2)], 'down', 'r');
 end
 end
 
@@ -332,8 +388,22 @@ if o.open
 else
     law = 'N = Kp e';
     if o.I, law = [law ' + Ki * integral(e)']; end
-    if o.D, law = [law ' + Kd (Nf s / (s + Nf)) e']; end
+    if o.D && ~o.rate, law = [law ' + Kd (Nf s / (s + Nf)) e']; end
+    if o.rate, law = [law ' + (the D term chosen by d_form)']; end
     L{end+1} = ['    e = ssa(psi_d - psi) in rad,    ' law];
+    if o.rate
+        L = [L, {'', ...
+        '    d_form = 1    -Kd r                   the RATE form: the D term from the gyro.', ...
+        '                                          This is what MSS uses (SIMclarke83, SIMremus100,', ...
+        '                                          SIMrig) and what Weeks 5 to 9 import unchanged.', ...
+        '    d_form = 2    +Kd Nf s/(s+Nf) e       the ERROR form, as in W04_E_PD and Weeks 2 and 3.', ...
+        '    d_form = 3    +Kd r                   the same gain with the sign flipped. The brake', ...
+        '                                          becomes an accelerator: it SUBTRACTS from the', ...
+        '                                          hull''s own yaw damping N_r instead of adding to it.', ...
+        '', ...
+        '    While psi_d is not moving, 1 and 2 are the same term: e_dot = psi_d_dot - r = -r.', ...
+        '    They part at the step, and at a +-180 deg seam crossing (4-6).'}];
+    end
     L{end+1} = '    N is limited to +-N_max, what the propellers can give while pushing X_ff ahead';
     if o.I && ~o.aw, L{end+1} = '    port_eff = 0.7 makes the port propeller 30 % weak'; end
     if o.aw,     L{end+1} = '    anti-windup: i_dot = Ki e + Kb (N - u),  Kb = 0 switches it off'; end

@@ -109,6 +109,7 @@ Expected output:
   built  W04_F_PID.slx        (overlapping lines: 0)
   built  W04_G_wrap.slx       (overlapping lines: 0)
   built  W04_H_tuning.slx     (overlapping lines: 0)
+  built  W04_I_rate.slx       (overlapping lines: 0)
 ```
 
 - `W04_0_setup.m` is the only file edited by hand. If it stops in `mss_path`, the MSS toolbox is not at `Tools\MSS`.
@@ -284,7 +285,7 @@ The heading is therefore the third of three different answers from the same cont
 1. **The heading can overshoot, because it is an integral.** The vessel keeps turning while the moment is removed, so the heading passes the command before the rate reaches zero — the store that Week 3's speed axis did not have.
 2. **P alone leaves no error**, by §4-2 lines 2 and 3: the plant already contains an integrator, and holding a heading costs no moment. At the command the error is zero, hence $N = 0$, and zero is exactly what is needed. Compare Week 3, where holding a speed cost a steady $116$ N and P therefore had to keep an error to produce it.
 3. **D damps here.** The derivative of a heading error is a **turn rate**, and resisting a rate is damping, as resisting the mass's velocity was in Week 2. On the speed axis of Week 3 the same derivative was an acceleration, which is why it hurt there. The term has not changed; the axis has, for the third time.
-4. **The models of this week differentiate the error**, exactly as Weeks 2 and 3 did: the block `D filter` is $K_d N_f s/(s + N_f)$ fed by $\text{ssa}(\psi_d - \psi)$. That is the textbook form, and it is kept here so that its one weakness can be measured rather than described — see "Why the derivative is better taken from the yaw rate" below.
+4. **Most of the models of this week differentiate the error**, exactly as Weeks 2 and 3 did: the block `D filter` is $K_d N_f s/(s + N_f)$ fed by $\text{ssa}(\psi_d - \psi)$. That is the textbook form, and it is kept in `W04_D_P` … `W04_H_tuning` so that its one weakness can be measured rather than described. **The form the rest of this course actually uses is the other one**, $-K_d r$, and the subsection "Why the derivative is better taken from the yaw rate" derives it, measures it in Experiment 4-3e, and shows what happens when its sign is wrong.
 5. **I is needed only against a steady disturbance.** A propeller delivering $70\,\%$ of its thrust makes a yaw moment that never goes away; PD can oppose it only from error, and settles $0.80°$ off, holding $4.19$ N·m. The integral finds that moment by itself — $4.15$ N·m at $K_i = 20$ — which is Week 2 §2-8 line 5 once more, with a fouled propeller in place of a spring.
 
 | Term | Week 2, position | Week 3, speed | This week, heading | Measured |
@@ -353,9 +354,9 @@ Expected output:
 
 ### Experiment 4-3b · Add D (10 min)
 
-**What it measures.** Lines 3 and 4: the derivative damping the ringing of Experiment 4-3a, and doing it from the measured turn rate rather than from the error.
+**What it measures.** Lines 3 and 4: the derivative damping the ringing of Experiment 4-3a, and the size of what it demands at the instant of the step.
 
-**The model.** `W04_E_PD` — the same loop with the `-Kd r` path switched on. $K_i$ is still zero.
+**The model.** `W04_E_PD` — the same loop with the `D filter` branch switched on, $K_d N_f s/(s+N_f)$ fed by the error. $K_i$ is still zero. Where that derivative should come from is the subject of the subsection below.
 
 **Opening and running.**
 
@@ -499,6 +500,52 @@ $$
 5. **The sensor decides it too.** A vessel carries a **gyroscope**, and $r$ is what it reports directly. The error form has no measurement of $\dot\psi$: it must compute one by differentiating the heading, and a derivative multiplies every frequency by $\omega$ (§2-10) — so it amplifies heading noise, and then needs the filter $N_f$, whose phase lag costs some of the damping it was added for.
 6. The price of the rate form is that it does not anticipate a **moving** command; a ramped command is followed with a small lag. A reference model that supplies $\psi_d$ together with $\dot\psi_d$ removes even that, and is the subject of Week 8.
 
+**Why the sign must be negative.** The rate term is written $-K_d r$ with $K_d > 0$, and the minus is not a convention — it is the whole of the term's purpose. Put the law into the yaw equation of §4-2 line 5:
+
+$$
+M_{66}\,\dot r \;=\; N \;-\; \underbrace{\lvert N_r\rvert\big(1 + 10\lvert r\rvert\big)\,r}_{\text{the hull's own damping}},
+\qquad
+N = K_p\,e - K_d\,r
+$$
+
+and with $e = \psi_d - \psi$ and $r = \dot\psi$ this is
+
+$$
+M_{66}\,\ddot\psi
+\;+\; \Big[\underbrace{\lvert N_r\rvert\big(1 + 10\lvert r\rvert\big)}_{\text{the hull's}} + \underbrace{K_d}_{\text{the controller's}}\Big]\dot\psi
+\;+\; K_p\,\psi \;=\; K_p\,\psi_d
+$$
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $M_{66}$ | yaw inertia, added mass included | $42.65$ kg·m² · `otter.m`, Week 1 §1-9 |
+| $N_r$ | linear yaw damping | $-42.65$ N·m per rad/s · $-M_{66}/T_{\text{yaw}}$, $T_{\text{yaw}} = 1$ s |
+| $K_d$ | the rate gain | $100$ N·m per rad/s |
+
+7. **$K_d$ sits in the same bracket as the hull's own damping, and adds to it.** That is what "damping" means here, and it is why the term is subtracted from the moment: a moment **against** the turn is a moment that removes energy from it.
+8. Flip the sign and the bracket becomes $\lvert N_r\rvert(1 + 10\lvert r\rvert) - K_d$. The controller now **subtracts** from the hull's damping, and with $K_d = 100$ against $\lvert N_r\rvert = 42.65$ the total is **negative** at low turn rates: the loop puts energy in on every swing. A brake wired backwards is an accelerator.
+9. It does not fly apart, and the reason is Week 1's nonlinear factor. The bracket returns to zero when $\lvert N_r\rvert(1 + 10\lvert r\rvert) = K_d$, that is at
+
+$$
+\lvert r\rvert = \frac{1}{10}\left(\frac{K_d}{\lvert N_r\rvert} - 1\right)
+= \frac{1}{10}\left(\frac{100}{42.65} - 1\right) = 0.1345\ \text{rad/s} = 7.70\ \text{deg/s}
+$$
+
+so the vessel grows its oscillation until the turn rate reaches about that value and then holds it — **a limit cycle, not a divergence**. Experiment 4-3e measures $7.23$ deg/s.
+
+**What MSS does.** Not one vessel in the toolbox differentiates the error. Three of them steer by the rate form, and they are the reference this course follows:
+
+| MSS file | The line | What it is |
+|---|---|---|
+| `VESSELS/SIMclarke83.m` | `M(3,3)*( Kp*ssa(psi_ref-eta(3)) - Kd*nu(3) )` | a PD heading autopilot; $\nu(3)$ is $r$ |
+| `VESSELS/SIMremus100.m` | `delta_r = -Kp_psi*ssa( x(12)-psi_d ) - Kd_psi*x(6)` | the same, with the error written the other way round; $x(6)$ is $r$ |
+| `VESSELS/SIMrig.m` | `tau3 = -R'*(Kp*eta3 + Ki*z3) - Kd*nu3` | 3-DOF DP: P and I on the **position error**, D on the measured **velocity** $\boldsymbol\nu$ |
+
+`SIMrig` is the one worth reading twice. The proportional and integral terms act on an error, and the damping term acts on a measured velocity — they are not three derivatives of one signal. That is exactly the structure Week 8 §8-3 builds and Week 9 assembles.
+
+> [!note] Two ways to write the same gain
+> Some texts — including the companion Capstone course — fold the minus into the gain and write $N = K_p e + K_{d,\psi}\,r$ with $K_{d,\psi} < 0$. This course keeps $K_d > 0$ and writes the minus in the law, so that every gain in every week is positive. They are the same controller; $K_{d,\psi} = -K_d$.
+
 | | error form, $K_d\,\dot e$ | rate form, $-K_d\,r$ |
 |---|---|---|
 | on a fixed command | identical | identical |
@@ -545,6 +592,65 @@ ans =
 |---|---|
 | `Nf = 5;` then rerun the two lines | the kick falls to $85.8$ N·m, close to the $K_d N_f \times 0.1745 = 87.3$ the formula gives, and **still above the limit**: filtering reduces the kick but cannot remove it, because it is the command that jumped. The rate form meanwhile rises slightly, to $26.4$ N·m, because the slower filter lets the turn run harder |
 | `psi_step = 90; T_final = 60;` then rerun | the kick grows with the step: $2932$ N·m, against $K_d N_f \times 1.571 = 3142$ from the formula. The rate form reaches $33.3$ N·m — still within what the hull can be asked for |
+
+### Experiment 4-3e · The three D terms, each one actually steering (10 min)
+
+**What it measures.** Lines 1, 7 and 8: that the two forms track alike while the command is fixed, what each one demands, and what the wrong sign does when it is genuinely in the loop.
+
+Experiment 4-3d read both forms out of **one** run. This one closes the loop on each in turn, so the vessel really is steered by the term under test — the difference matters for the third form, which changes the trajectory completely and therefore cannot be read off a run it did not fly.
+
+**The model.** `W04_I_rate` — the loop of Experiment 4-3b with the single `D filter` replaced by three branches into a `Multiport Switch`, selected by `d_form`: $-K_d r$ from the gyro, the filtered $K_d\dot e$, and $+K_d r$. Everything else — vessel, gains, command, solver — is shared, so the three runs differ in that one branch and in nothing else.
+
+**Opening and running.**
+
+```matlab
+W04_0_setup
+open_system('W04_I_rate')     % Run — d_form = 1, 회두율 되먹임 / the rate form
+d_form = 2;                   % Run — 오차를 미분. 궤적은 거의 같다 / the error form; nearly the same track
+d_form = 3;                   % Run — 부호를 뒤집는다. 멈추지 않는다 / the sign flipped; it never stops
+W04_I_rate_feedback           % 세 가지를 한 번에 / all three at once
+```
+
+Expected output:
+
+```
+  W04 Experiment 4-3e  where the D term comes from  (Kp = 300, Kd = 100, psi_d = 10 deg)
+    d_form   D term                          overshoot   rise [s]   settle [s]   max |D| [N m]
+      1      -Kd r   (rate, the gyro)           0.90 %      1.16    1.74          17.03
+      2      +Kd Nf s/(s+Nf) e   (error)        0.39 %      1.12    1.72         325.79
+      3      +Kd r   (sign flipped)            38.59 %      0.50   never          29.46
+    the wrong sign settles into a limit cycle of 7.23 deg/s;  |N_r|(1+10|r|) = Kd predicts 7.70
+```
+
+![Experiment 4-3e: the same loop, three places to take the D term from](W04_simulink/img/W04_result_rate.png)
+
+**Reading the figure against the derivation.**
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| left panel, blue against red | one line, to the width of the stroke | the two forms are the same term while $\dot\psi_d = 0$ |
+| the first two rows of the table | $0.90$ against $0.39\,\%$, $1.74$ against $1.72$ s | the same again, measured: what separates them is not the tracking |
+| top right, the red spike at $t = 5$ s | above the dashed $N_{\max}$, and off the top of the blue trace | line 2: $325.79$ against $17.03$ N·m, a factor of $19$ |
+| top right, the blue trace at the same instant | no spike at all | line 2: $r$ belongs to a vessel with inertia and cannot jump |
+| left panel, the yellow trace | it reaches the command and then never stops crossing it | line 8: the bracket is negative, so every swing gains energy |
+| bottom right, the yellow oscillation | held between the dashed lines at $\pm 7.70$ deg/s | line 9: the hull's own nonlinear damping catches it there |
+| the `settle` column, third row | `never` — it is still swinging at $40$ s | line 8: nothing in the loop is removing energy at low rates |
+
+**What the figure says**
+
+- Two of these three choices steer the vessel the same way and ask the propellers for numbers that differ by a factor of nineteen. The third is the same gain with one sign wrong, and it turns the brake into an accelerator.
+
+| What to try | What to watch |
+|---|---|
+| `psi_step = 90; T_final = 80;` then rerun | the two good forms are indistinguishable — overshoot $0.00\,\%$, settling $5.58$ and $5.60$ s — while the demand parts by a factor of $88$: $33.27$ against $2932.15$ N·m |
+| `d_form = 3; Kd = 30;` Run | $30 < \lvert N_r\rvert = 42.65$, so line 9's formula returns a **negative** rate — there is no crossing, the bracket is positive everywhere, and the vessel settles in $6.42$ s with $18.45\,\%$ of overshoot. The wrong sign is survivable only while it is smaller than the damping it is fighting |
+| `d_form = 3; Kd = 200;` Run | the limit cycle grows with the gain: $79.88\,\%$ of overshoot and a turn rate of $18.84$ deg/s, against the $\frac{1}{10}(200/42.65 - 1) = 0.369$ rad/s $= 21.14$ deg/s line 9 predicts |
+
+> [!tip] In class
+> - **Purpose** — settle where the D term comes from, and why its sign is the whole of its meaning.
+> - **Point to** — the blue and red traces lying on one another, then the log axis beside them.
+> - **Ask** — "If the two track identically, why does the choice matter?" It is not the vessel that notices; it is the actuator, and the seam of §4-6.
+> - **Take away** — differentiate nothing that a sensor already measures, and check the sign of a damping term against the damping the hull already has.
 
 ## 4-4. Heading is not course — the crab angle
 
@@ -834,6 +940,8 @@ Every example has **its own model**, laid out as in Weeks 2 and 3: the controlle
 | 4-3a | `W04_D_P` | `W04_D_proportional_only` | P only |
 | 4-3b | `W04_E_PD` | `W04_E_derivative` | P + D |
 | 4-3c | `W04_F_PID` | `W04_F_weak_propeller` | P + I + D, with a weak port propeller |
+| 4-3d | `W04_E_PD`, reread | — | both D forms read out of one run: the kick, and what the rate form would have asked |
+| 4-3e | `W04_I_rate` | `W04_I_rate_feedback` | the three D terms, each one actually steering: the gyro, the error, and the wrong sign |
 | 4-4 | none — two lines in the Command Window | — | the crab angle from $u$ and $v$ |
 | 4-5 | `W04_H_tuning` | `W04_H_tuning_by_hand` | the tuning order, a big turn, and the back-calculation gain |
 | 4-6 | `W04_G_wrap` | `W04_G_the_wrap` | a command across $\pm 180°$, with an `ssa` switch |
@@ -849,11 +957,12 @@ Every example has **its own model**, laid out as in Weeks 2 and 3: the controlle
 
 | Step | What was done | How it was verified |
 |---|---|---|
-| 1 | placed the Week 2 controller around the heading, with `ssa` and a thrust split | `check_overlaps` 0 in six models |
+| 1 | placed the Week 2 controller around the heading, with `ssa` and a thrust split | `check_overlaps` 0 in seven models |
 | 2 | measured the yaw axis from outside | Experiment 4-2: the heading grows without end; turn rate within 0.36 s to 63 %; rate per N·m falls from 0.610 to 0.407 |
 | 3 | P alone | Experiment 4-3a: no error at any gain; overshoot $5.8 \to 15.9\,\%$ |
 | 4 | D damps | Experiment 4-3b: $12.18 \to 0.39\,\%$, fastest at $K_d = 100$ |
 | 5 | I against a weak propeller | Experiment 4-3c: $0.80°$ removed; integral $4.15$ N·m |
+| 5a | settled where the D term comes from, and why its sign is negative | Experiment 4-3e: the rate and error forms track alike ($0.90$ against $0.39\,\%$) and demand $17.03$ against $325.79$ N·m; the sign flipped never settles, limit-cycling at $7.23$ deg/s against the $7.70$ predicted |
 | 6 | the wrap | Experiment 4-6: $20°$ with `ssa`, $340°$ without |
 | 7 | the tuning order and $K_b$ | Experiment 4-5: $K_p = 300$, $K_d = 100$, $K_i = 20$, $K_b = 0.1$; $90°$ turn in $5.80$ s without overshoot |
 
@@ -952,7 +1061,7 @@ Explain why the available yaw moment depends on the surge force, and how that mo
 
 - Fossen, T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed., Wiley, 2021, §12.2 (PID control of marine craft) and §12.2.6 (anti-windup); the crab angle and course are defined with the kinematics of Ch. 2.
 - Åström, K. J. and Hägglund, T. *Advanced PID Control*, ISA, 2006, Ch. 3.
-- MSS toolbox, `Tools/MSS/VESSELS/otter.m` and `GNC/ssa.m`.
+- MSS toolbox, `Tools/MSS/VESSELS/otter.m` and `GNC/ssa.m`. The rate form of the D term is what the toolbox itself steers by — `VESSELS/SIMclarke83.m`, `VESSELS/SIMremus100.m` and `VESSELS/SIMrig.m`; not one MSS vessel differentiates the heading error.
 
 ### In this course
 

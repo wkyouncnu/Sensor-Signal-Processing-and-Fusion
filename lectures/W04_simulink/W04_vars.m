@@ -15,6 +15,9 @@ V.N_max = min(2*V.y_pont*(V.T_hi - V.X_ff/2), 2*V.y_pont*(V.X_ff/2 - V.T_lo));
 V.port_eff = 1;
 V.N_open = 10;
 V.psi_step = 10;  V.t_step = 5;  V.psi_step2 = 10;  V.t_step2 = 1e6;  V.use_ssa = 1;
+%  D 항을 어디서 얻는가 (§4-3 의 소절) / where the D term comes from
+%    1  -Kd r  회두율 (MSS 의 기본형)  2  +Kd Nf s/(s+Nf) e  오차  3  +Kd r  부호를 뒤집은 것
+V.d_form = 1;
 
 V.Kp = 300;  V.Ki = 20;  V.Kd = 100;  V.Nf = 20;  V.Kb = 0.1;
 
