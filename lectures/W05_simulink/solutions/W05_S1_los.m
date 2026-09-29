@@ -147,7 +147,7 @@ a.Text = strjoin({ ...
 ''
 'PROBLEM 3   In a current LOS settles at Delta tan(beta_c) to one side and'
 '            STAYS there, with the heading error already zero. That offset'
-'            is what sections 5-8 and 5-9 exist to remove.'
+'            is what section 5-5 exists to remove.'
 ''
 'The command is NOT wrapped here. The autopilot wraps the ERROR, which is'
 'the only place a wrap belongs.'}, newline);

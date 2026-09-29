@@ -16,8 +16,8 @@ function pass = W05_check(problem, mdl)
 %
 %     Problem 1   the LOS law itself. pi_p on leg 1 is exactly 0 rad, and the
 %                 vessel joins the line and stays on it              §5-4
-%     Problem 2   atan2 reaches the waypoint and never the LINE      §5-1, §4-C
-%     Problem 3   in a current LOS settles at Delta tan(beta_c)      §5-7
+%     Problem 2   atan2 reaches the waypoint and never the LINE      §5-2
+%     Problem 3   in a current LOS settles at Delta tan(beta_c)      §5-5
 %
 %   WHAT THE MODEL MUST CONTAIN
 %
@@ -124,8 +124,8 @@ he = mean(mod(y.psi_d(k) - y.psi(k) + pi, 2*pi) - pi);
 pass = report(pass, 'heading error while offset persists', rad2deg(he), 0, 0.5, 'deg');
 fprintf('\n     The vessel settles BESIDE the path and stays there, with the\n');
 fprintf('     heading error already at zero. There is nothing left for a\n');
-fprintf('     larger autopilot gain to act on. Sections 5-8 and 5-9 exist to\n');
-fprintf('     remove this offset, and neither of them does it with gain.\n');
+fprintf('     larger autopilot gain to act on. Section 5-5 exists to remove\n');
+fprintf('     this offset, and it does not do it with gain.\n');
 end
 
 % =========================================================================

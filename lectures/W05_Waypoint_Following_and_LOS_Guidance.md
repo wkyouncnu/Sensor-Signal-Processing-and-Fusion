@@ -63,6 +63,8 @@ Upon completion of this week, the learner is able to:
 3. Choose the switching distance from the corner behaviour it produces on a mission.
 4. Predict the offset a cross current leaves under LOS, $\Delta\tan$ of the heading held, and remove it with ILOS.
 5. Tune a guidance law by the order $\Delta \to R \to \kappa$, stating the measurement behind each choice.
+6. Derive the allocation of a surge force and a yaw moment onto two fixed propellers, and state the moment limit it leaves as a function of the surge force.
+7. Run the speed loop of Week 3 and the guidance of Week 5 on one hull, and account for what the combination costs.
 
 ## Prerequisites and Setup
 
@@ -897,11 +899,285 @@ Expected output:
 
 ---
 
+## 5-7. Both loops at once: the speed of Week 3 and the path of Week 5
+
+**What is observed.** Every model up to this point has pushed the hull with a constant surge force, `X_ff = 60` N. Nothing in the week ever asked what speed that produces. The answer is $0.767$ m/s, and it is not a chosen number at all: it is the speed at which the drag of the Otter happens to balance 60 N. Ask for a different speed and there is no way to ask. Put the Week 3 speed loop in front of the same allocator and the vessel holds $1.000$ m/s instead, and reaches the last leg of the mission at $188.7$ s rather than $244.9$ s.
+
+**The result.** The two controllers do not meet, and never exchange a signal. They meet in the **allocator**, because there are two propellers and the surge force and the yaw moment must both come out of the same two. Writing that sharing down gives one $2\times2$ system, its inverse, and a limit on the yaw moment that **depends on the surge force**:
+
+$$
+X = T_L + T_R, \qquad N = y_p\,(T_L - T_R)
+\qquad\Longrightarrow\qquad
+T_L = \frac{X}{2} + \frac{N}{2 y_p}, \qquad
+T_R = \frac{X}{2} - \frac{N}{2 y_p}
+$$
+
+$$
+\lvert N\rvert \;\le\; N_{\lim}(X) \;=\; \min\left\{\, 2 y_p\!\left(k_{pos} n_{\max}^2 - \tfrac{X}{2}\right),\;\; 2 y_p\!\left(\tfrac{X}{2} + k_{neg} n_{\min}^2\right) \right\}
+$$
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $X$ | surge force asked for | $60$ N constant, or the speed loop's output; `W05_0_setup` |
+| $N$ | yaw moment asked for | the autopilot's output, §5-1 |
+| $T_L, T_R$ | thrust of the port and starboard propeller | N |
+| $y_p$ | half the distance between the two pontoons | $0.3950$ m, `otter.m` |
+| $k_{pos}, k_{neg}$ | thrust coefficients ahead and astern | $0.011080$, $0.006445$; `otter.m` |
+| $n_{\max}, n_{\min}$ | shaft-speed limits | $103.931$, $-101.737$ rad/s; `otter.m` |
+| $N_{\lim}(60)$ | the moment left at the old constant force | $70.85$ N·m, Experiment 5-7 |
+| $N_{\lim}(120)$ | the moment left at full surge force | $47.15$ N·m, Experiment 5-7 |
+
+**Derivation.**
+
+1. **Where the two forces come from.** The Otter has two fixed propellers, one on each pontoon, both pointing forward. Each produces a thrust $T_i$ along the body $x$ axis. Nothing steers; the hull turns because one side pushes harder than the other.
+
+2. **The two forces they can make.** Body $y$ is positive to starboard, so the port propeller sits at $y = -y_p$ and the starboard one at $y = +y_p$. A force $T$ along $x$ applied at $y$ makes a yaw moment $-yT$. Summing both:
+
+$$
+\underbrace{\begin{bmatrix} X \\ Y \\ N \end{bmatrix}}_{\tau}
+=
+\underbrace{\begin{bmatrix} 1 & 1 \\ 0 & 0 \\ y_p & -y_p \end{bmatrix}}_{\mathbf{B}}
+\begin{bmatrix} T_L \\ T_R \end{bmatrix}
+$$
+
+   The middle row is zero, and that row is the whole story of the week: **this hull cannot make a sideways force.** It is why guidance must turn the vessel to move it sideways, and why §5-5's current is fought with a heading and not with a thrust. `_tools/otter_B.m` builds this $\mathbf{B}$ from the column rule and returns exactly the matrix above.
+
+   The two non-zero rows can be read straight off a drawing of the vessel seen from above, and the figure below does exactly that. The same matrix, written out at $y_p = 0.395$ m as $\begin{bmatrix} 1 & 1 \\ 0.395 & -0.395\end{bmatrix}$, sits as a Constant block inside the `Allocation` subsystem of the MSS demonstration model `demoOtterUSVPathFollowingHeadingControl`.
+
+![What the matrix [1 1; 0.395 −0.395] means: read off the hull, inverted, and checked against the logged numbers](../figures/w05-allocation.svg)
+
+| In the figure | Meaning |
+|---|---|
+| left, the two upward arrows | both propellers push the same way, which is the row $[\,1\ \ 1\,]$ |
+| left, the two blue arms | the port propeller is $y_p$ to one side and the starboard one $y_p$ to the other, which is the row $[\,y_p\ \ {-y_p}\,]$ and the reason the two signs differ |
+| left, the curved arrow | the port side pushing harder turns the vessel to starboard: $N > 0$ |
+| centre | the two rows assembled, and inverted because $\det \mathbf{B} = -2y_p \neq 0$ |
+| right | Experiment 5-7's own two rows put through that inverse |
+
+3. **Solving for the two thrusts.** Delete the zero row and $\mathbf{B}$ becomes $2\times2$ with determinant $-2y_p \ne 0$, so there is exactly one solution — no pseudo-inverse is needed, and no freedom is left over. Inverting it, or equally adding and subtracting the two remaining equations, gives
+
+$$
+\begin{bmatrix} T_L \\ T_R \end{bmatrix}
+= \mathbf{B}^{-1} \begin{bmatrix} X \\ N \end{bmatrix}
+\qquad\Longrightarrow\qquad
+T_L = \frac{X}{2} + \frac{N}{2 y_p}, \qquad T_R = \frac{X}{2} - \frac{N}{2 y_p}
+$$
+
+   Read in words: **both propellers carry half the surge force, and the moment is made by adding to one and taking the same amount from the other.** The two tasks are superposed, and $y_p$ is the lever that converts moment into thrust difference. A short lever costs more thrust for the same moment: $N = 47$ N·m over $2 y_p = 0.79$ m needs $60$ N of difference.
+
+   The `allocation` block writes it as the solve, not as the two expressions, so that the code and this line say the same thing:
+
+```matlab
+B = [1        1;              % 전진력  X = T_L + T_R        / surge force
+     y_pont  -y_pont];        % 요 모멘트 N = y_pont(T_L-T_R) / yaw moment
+T = B \ [X; N];               % 좌현, 우현 / port, starboard
+```
+
+4. **From thrust to shaft speed.** A propeller's thrust goes as the square of its shaft speed, with a different coefficient going astern because the blade is the wrong way round:
+
+$$
+T = \begin{cases} k_{pos}\, n^2, & n \ge 0\\[2pt] -k_{neg}\, n^2, & n < 0\end{cases}
+\qquad\Longrightarrow\qquad
+n = \begin{cases} +\sqrt{T/k_{pos}}, & T \ge 0\\[2pt] -\sqrt{-T/k_{neg}}, & T < 0\end{cases}
+$$
+
+   This is where the linearity ends. Everything above was a linear sharing of two forces; the square root is not linear, so **equal steps in $N$ are not equal steps in $n$**. Near zero thrust a small change in $T$ moves $n$ a great deal, and near full thrust it barely moves it.
+
+5. **What the propellers can actually give.** Putting the shaft limits through the same curve gives the thrust each propeller can reach:
+
+$$
+T_{\max} = k_{pos}\,n_{\max}^2 = 119.68\ \text{N}, \qquad
+T_{\min} = -k_{neg}\,n_{\min}^2 = -66.71\ \text{N}
+$$
+
+   Astern is weaker than ahead by almost a factor of two — the same blade, run backwards.
+
+6. **The limit on the moment, and why it moves.** Both thrusts must lie in $[T_{\min}, T_{\max}]$. Substituting line 3 and solving each inequality for $\lvert N\rvert$:
+
+$$
+\frac{X}{2} + \frac{\lvert N\rvert}{2y_p} \le T_{\max} \;\Longrightarrow\; \lvert N\rvert \le 2y_p\!\left(T_{\max} - \frac{X}{2}\right), \qquad
+\frac{X}{2} - \frac{\lvert N\rvert}{2y_p} \ge T_{\min} \;\Longrightarrow\; \lvert N\rvert \le 2y_p\!\left(\frac{X}{2} - T_{\min}\right)
+$$
+
+   The smaller of the two is $N_{\lim}(X)$. The first branch falls as $X$ grows — the harder the vessel is pushed, the less headroom the loaded propeller has. The second rises — a faster-turning inside propeller has further to fall before it reaches its astern limit. They cross at
+
+$$
+X^\star = T_{\max} + T_{\min} = 52.97\ \text{N}, \qquad N_{\lim}(X^\star) = 73.62\ \text{N·m}
+$$
+
+   so **the turning authority of this hull is greatest at a moderate surge force, not at full power.** The Week 4 constant `N_max` is nothing more than this expression evaluated once, at $X = X_{ff} = 60$ N.
+
+7. **What breaks when $X$ stops being constant.** The Week 4 autopilot clamps its output with an ordinary Saturation block holding a fixed `N_max` computed from $X_{ff} = 60$ N. Leave that number in place and add a speed loop that can push to $X_{\max} = 120$ N, and line 6 says the true limit there is $47.15$ N·m while the block still holds $70.85$. The allocator then asks for $n_R = 116.2$ rad/s against a limit of $103.9$ — **an impossible command, produced by arithmetic that was correct one week earlier.**
+
+   The fix is not a gain and not a new block. It is to evaluate line 6 **at the largest surge force this model can ask for** rather than at the one it used to ask for. `W05_0_setup` therefore holds two numbers, and every model's Saturation names the one that belongs to it:
+
+$$
+N_{\max} = N_{\lim}(X_{ff}) = 70.85\ \text{N·m}, \qquad
+N_{speed} = N_{\lim}(X_{\max}) = 47.15\ \text{N·m}
+$$
+
+   This is deliberately the conservative choice: while the speed loop is only asking for $77.6$ N the true limit is $63.9$ N·m, and the vessel is being held to $47.15$. Line 3 of the reading table below measures what that costs. The alternative — recomputing $N_{\lim}$ from the live $X$ at every step — buys back that margin at the price of four more blocks in the diagram, and is left as the last **What to try**.
+
+8. **And the plant clamps anyway.** MSS `otter.m` limits $n$ to $[n_{\min}, n_{\max}]$ inside itself (lines 167–170). An allocator that does not clamp therefore logs a shaft speed the vessel never turned, and every later reading of that log is wrong by however much was cut off. The allocator clamps, so the log records **what the plant received**.
+
+> [!note] The speed loop itself is not new
+> It is Week 3 unchanged, gains included: $X = K_{p,u}(u_d - u) + I$, $\lvert X\rvert \le X_{\max}$, with the integral that a drag-only axis needs and no derivative term. What §5-7 adds is not a controller but the accounting between two controllers that were designed separately.
+
+### Experiment 5-7 · Speed control and waypoint following together (15 min)
+
+The same mission and the same ILOS law are run twice, with the heading autopilot of Week 4 untouched. The single change is where the surge force comes from.
+
+| Model | Surge force | The Saturation in its autopilot holds |
+|---|---|---|
+| `W05_G_tuning` | the constant `X_ff` = 60 N, from a Constant block on the canvas | `N_max` = 70.85 N·m |
+| `W05_H_speed_path` | the output of a `speed loop` subsystem, holding `u_d` = 1.0 m/s | `N_speed` = 47.15 N·m |
+
+![The control chain of W05_H_speed_path: guidance, heading autopilot, speed loop, allocation and the Otter](W05_simulink/img/W05_H_chain.png)
+
+| In the diagram | What it is |
+|---|---|
+| the six Constant blocks on the left | the guidance inputs, on the canvas rather than in a mask: `WP_N`, `WP_E`, `Delta`, `R_switch`, `kappa` |
+| `guidance` | the ILOS law of §5-5, giving $\psi_d$ and publishing $y_e$, the integral state and the leg index |
+| `heading autopilot` | the Week 4 law, as a **subsystem of Simulink blocks** |
+| `speed loop` | the Week 3 law, likewise. Its command `u_d` arrives from a Constant on this canvas |
+| `allocation` | line 3 of the derivation, taking `N` and `X` and giving `n` |
+| `Otter` | the hull. It receives exactly the `n` that appears in the log |
+
+Only the left half of the canvas is shown; the measurement, Scope, XY Graph, log and Animate blocks continue to the right.
+
+Neither controller is a block of code. Opening either one shows the equation as a diagram, with the same blocks and the same names Weeks 3 and 4 used — one `Fcn` block for `ssa`, `Gain` blocks whose value is the name of a workspace variable, and an ordinary `Saturation`:
+
+![Inside the heading autopilot of Week 5: the Week 4 equation as a diagram](W05_simulink/img/W05_H_speed_path_heading_autopilot.png)
+
+| In the diagram | Which part of the Week 4 law |
+|---|---|
+| the two `Selector` blocks | $\psi = x(12)$ and $r = x(6)$, the only two states the law uses |
+| the summing junction and `ssa` | $e = \operatorname{ssa}(\psi_d - \psi)$, wrapped by one `Fcn` holding `atan2(sin(u), cos(u))` |
+| `Kp` and `minus Kd` | $K_p e$ and $-K_d r$. **The D term is fed by the yaw-rate Selector, not by a derivative block** — there is no derivative block in the diagram |
+| `moment limit` | the Saturation of line 7, holding `N_speed` here and `N_max` in the other six models |
+
+![Inside the speed loop: the Week 3 law, with its anti-windup inside the integrator](W05_simulink/img/W05_H_speed_path_speed_loop.png)
+
+| In the diagram | Which part of the Week 3 law |
+|---|---|
+| `u_d` on the left | the commanded speed, arriving as an ordinary signal from the canvas outside |
+| the summing junction | $e = u_d - u$, with the command on the left edge and the measurement entering from below |
+| `Kp_u` | the proportional term |
+| `Ki_u` into `I` | the integral. `I` is a **Discrete-Time Integrator**, forward Euler at step `h`, so it is the same difference equation Week 3 published |
+| the ramp drawn inside `I` | its **Limit output**, clamped to $\pm X_{\max}$. That is the anti-windup: the integral cannot grow past a force the propellers could produce, so nothing has to unwind before the loop responds again |
+| `thrust limit` | the same clamp on the total, $\lvert X\rvert \le X_{\max}$ |
+
+> [!note] Where the numbers live
+> Commands are Constant blocks on the canvas — `WP_N`, `WP_E`, `Delta`, `R_switch`, `kappa`, `u_d`. Gains are the values of `Gain` blocks, written as the variable's name. Both read the workspace, so `Kp = 400` in the Command Window followed by Run is the whole edit. The MSS demonstration model is arranged the same way: its waypoint lists, $\Delta$, $R$ and desired surge thrust are Constant blocks, and its autopilot gains are `Gain` blocks inside the `Heading autopilot` subsystem.
+
+**To produce every figure and number in this section**
+
+```matlab
+cd lectures/W05_simulink
+W05_0_setup
+W05_H_speed_and_path
+```
+
+Actual output:
+
+```
+  W05 Experiment 5-7  speed control and path following at once
+    surge force from    u mean [m/s]   last leg at [s]   mean |y_e| legs 2-4 [m]   X mean [N]
+    a constant X_ff        0.767             244.9                    0.353        60.00
+    the speed loop         1.000             189.5                    0.576        78.50
+
+    the allocation, checked by hand   (y_pont = 0.3950 m, k_pos = 0.01108)
+      case              X [N]    N [N m]   T_L [N]   T_R [N]   n_L      n_R     n_L by hand
+      straight leg      77.59      -0.50     38.16     39.43   58.680   59.653     58.683
+      hardest turn     120.00     -47.15      0.32    119.68    5.357  103.931      5.357
+
+    X [N]               0      20      40      60      80     100     120     140
+    N_lim [N m]     52.70   60.60   68.50   70.85   62.95   55.05   47.15   39.25
+    the constants the models hold:  N_max = N_lim(60) = 70.85,  N_speed = N_lim(120) = 47.15 N m
+```
+
+![Experiment 5-7: the same mission with a constant surge force and with the speed loop](W05_simulink/img/W05_result_speed_path.png)
+
+| In the figure | Meaning |
+|---|---|
+| left, blue and orange | the two tracks, almost on top of each other — the guidance is identical |
+| panel 1 | the commanded speed, and the two speeds actually made |
+| panel 2 | the surge force: flat at 60 N, or worked for by the loop |
+| panel 3 | the yaw moment, with each run's own dotted limit |
+| panel 4 | the two shaft speeds of the speed-loop run, against $n_{\max}$ |
+
+**Reading the figure and the table against the derivation.**
+
+| Where to look | What is there | Which line it settles |
+|---|---|---|
+| `u mean` column | $0.767$ against $1.000$ m/s | line 1: a constant force gives the speed that balances drag, and $0.767$ was never chosen by anyone |
+| panel 2, the flat blue line | exactly $60.00$ N for the whole run | the old models have no speed loop to vary it |
+| panel 2, the orange line | $77.59$ N on a straight leg, rising to $120$ N after each corner | holding $1.0$ m/s costs $77.6$ N of drag; a turn costs more, and the loop pays it until it reaches $X_{\max}$ |
+| `straight leg` row | $T_L = 38.16$, $T_R = 39.43$ N from $X = 77.59$, $N = -0.50$ | line 3: $77.59/2 = 38.80$ each, then $\mp 0.50/0.79 = \mp 0.63$ |
+| `n_L by hand` column | $58.683$ against $58.680$ logged | line 4 reproduced from the logged $X$ and $N$ alone, through the same square root |
+| `hardest turn` row | $N = -47.15$ N·m exactly | line 7: the Saturation is holding `N_speed`, and the corner is asking for more than it |
+| the same row | $T_R = 119.68$ N and $n_R = 103.931$ | lines 5 and 7 together: at that moment the starboard propeller is **exactly at** $T_{\max}$, so its shaft is exactly at $n_{\max}$. The constant was chosen to make this the worst case, and it is |
+| panel 4, the orange trace at the corners | touching the red $n_{\max}$ line and never crossing it | the allocator can no longer ask for the impossible |
+| the $N_{\lim}$ row | $70.85$ at $X = 60$, $47.15$ at $X = 120$ | line 6: the first branch, falling as the surge force takes the headroom |
+| the same row at $X = 0$ | $52.70$ N·m, **below** the value at 60 N | line 6: the second branch, rising; the peak is between, at $X^\star = 52.97$ N |
+| panel 3, the two dotted pairs | $\pm 70.85$ for the constant-force run, $\pm 47.15$ for the speed-loop run | the price of the speed, stated as a number before any track is drawn |
+| `mean |y_e|` column | $0.576$ against $0.353$ m | going 30 % faster on two-thirds of the moment costs 63 % more cross-track error |
+| `last leg at` column | $189.5$ against $244.9$ s | 23 % of the mission time, bought with the accuracy in the previous row |
+
+**What the figure says**
+
+- Choosing the speed is possible, and it costs both moment headroom and following accuracy; neither cost is visible until the surge force stops being a constant.
+
+Pressing Run on `W05_H_speed_path` alone produces the same numbers and a figure of the single run, because the model's `StopFcn` calls `W05_plot`:
+
+![What pressing Run on W05_H_speed_path produces, with no script](W05_simulink/img/W05_run_speed_path.png)
+
+| In the figure | Meaning |
+|---|---|
+| left | the track with the hull drawn along it, and the five waypoints |
+| $y_e$ | the cross-track error, with a grey line at each switching instant |
+| $\psi_d, \psi$ | the commanded heading and the one achieved; the jumps to $\pm 180°$ are the wrap of §5-2 |
+| $u_d, u$ | the commanded speed and the actual one — they lie on top of each other, which is the point |
+| $n_L, n_R$ | the two shaft speeds, crossing over at every corner |
+| waypoint $k$ | the leg index, stepping $1 \to 2 \to 3 \to 4$ as §5-4's test becomes true |
+
+> [!warning] The track continues past the last waypoint
+> There is no mission-end logic in Week 5. When the last leg is reached it is simply held, so the vessel sails along its extension until `T_final`. That is why the track in the figure above runs to 210 m east. Stopping a mission is a state-machine question and is built in Week 8.
+
+| What to try | What to watch |
+|---|---|
+| `u_d = 1.6;` Run | the loop sits at $X_{\max} = 120$ N for most of the run, the corners are visibly wider, and the mission is barely faster — the drag has begun to win |
+| `u_d = 0.4;` Run | slower, and `N_speed` is still $47.15$: the vessel is being held to a limit it is nowhere near needing. The cost of a conservative constant, seen directly |
+| `X_max = 70;` Run, after re-running `W05_0_setup` | `N_speed` rises to $66.40$ N·m and the corners tighten, but the loop can no longer reach $1.0$ m/s. The two are the same trade seen from the other end |
+| `animate = 1; pace = 1;` Run | the run takes as long as the mission does, and the live view draws the track, the error, both speeds and both shafts while it happens |
+| Replace the Saturation in `heading autopilot` with a **Saturation Dynamic** fed by $N_{\lim}(X)$, built from line 6 | the margin between $47.15$ and the true limit comes back, and the corners tighten. Measure `mean |y_e|` on legs 2–4 before and after, and decide whether the extra blocks earned their place |
+
+> [!tip] In class
+> - **Purpose** — show that two controllers designed a week apart share one piece of hardware, and that the sharing has arithmetic.
+> - **Point to** — the `hardest turn` row: $T_R = 119.68$ N, and $T_{\max} = 119.68$ N. It is exactly at the limit, by construction, because `N_speed` was chosen to put it there.
+> - **Ask** — "The vessel is pushed harder, so why can it turn *less* hard?" Both jobs come out of the same two propellers; surge takes headroom from yaw, and line 6 says how much.
+> - **Ask** — "Why is the turning authority greatest at 53 N and not at 0 N?" Below $X^\star$ the inside propeller runs out of astern thrust first, and astern is the weaker direction.
+> - **Ask** — "The Saturation holds 47.15 even while the true limit at $X = 77.6$ N is 63.9. Why not compute it live?" Because a constant is one block and a live limit is five, and the margin is thrown away only at the corners. Which of the two to build is an engineering question, not a matter of correctness — the last **What to try** turns it into a measurement.
+> - **Take away** — when a constant becomes a signal, every limit that was computed from it has to be computed again.
+
+---
+
 # Part 2 · Laboratory run order
 
 The experiments of Part 1 are worked through in order; this table is the index of what was run, for repeating the week at home.
 
-Every example has **its own model**, laid out the same way: `guidance` → `heading autopilot` → `allocation` → `Otter`, each a commented MATLAB Function except the vessel. On the right, **one Scope** (top: cross-track error; bottom: commanded and actual heading) and an **XY Graph** that draws the track while the simulation runs.
+Every example has **its own model**, laid out the same way: `guidance` → `heading autopilot` → `allocation` → `Otter`, each a commented MATLAB Function except the vessel. Every input those blocks take is a **Constant block on the canvas** — the waypoint lists, $\Delta$, $R$, $\kappa$ and the surge force are read off the diagram rather than hidden inside a block mask.
+
+On the right of each model sit four things:
+
+| | What it shows | When |
+|---|---|---|
+| **Scope** | the cross-track error; the commanded and actual heading; the waypoint index stepping up | while it runs |
+| **XY Graph** | the track, east against north | while it runs |
+| **Display** | the active leg as a number | while it runs |
+| **Animate** block | the live view: path, waypoints, track and hull on the left; $y_e$, $u$ against $u_d$, $n_L$ and $n_R$, and the leg index on the right | while it runs, when `animate = 1` |
+
+Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so the live view moves at the speed the vessel would; `pace = 0` runs it as fast as it can. The results are identical and only the waiting differs — a 10 s mission takes 12.7 s of wall clock at `pace = 1` and 1.4 s at `pace = 0`. When a run finishes, the model's `StopFcn` calls `W05_plot`, which prints the leg-by-leg table and draws the track with five traces beside it, so **pressing Run alone produces the same figure a section script does.**
 
 | Experiment | Model | Script | What it shows |
 |---|---|---|---|
@@ -913,6 +1189,7 @@ Every example has **its own model**, laid out the same way: `guidance` → `head
 | 5-5a | `W05_F_LOS` | `W05_F_LOS_in_a_current` | the offset a current leaves under LOS |
 | 5-5b | `W05_F_ILOS` | `W05_F_ILOS_removes_it` | the integral that removes it |
 | 5-6 | `W05_G_tuning` | `W05_G_tuning_by_hand` | the tuning order on the mission in a current |
+| 5-7 | `W05_H_speed_path` | `W05_H_speed_and_path` | the speed loop of Week 3 on the same hull, and how $X$ and $N$ split into $n_L$ and $n_R$ |
 
 - The scripts only repeat what Run already shows, for several values at once, and print the numbers quoted in Part 1.
 - Each experiment ends with an **In class** note: purpose, what to point at, a question with its answer, and the sentence to take away.
@@ -925,12 +1202,15 @@ Every example has **its own model**, laid out the same way: `guidance` → `head
 
 | Step | What was done | How it was verified |
 |---|---|---|
-| 1 | put a guidance law in front of the Week 4 autopilot | `check_overlaps` 0 in five models; $y_e$ equals MSS `crosstrackWpt` |
+| 1 | put a guidance law in front of the Week 4 autopilot | `check_overlaps` 0 in all seven models; $y_e$ equals MSS `crosstrackWpt` |
 | 2 | atan2 against LOS | Experiment 5-2: 10.75 m against 0.04 m halfway to the waypoint |
 | 3 | $\Delta$ as the P gain $1/\Delta$ | Experiment 5-3: 118 s at 40 m, swinging at 0.5 m; $\Delta = 5$ m |
 | 4 | the switching distance | Experiment 5-4: worst corner 2.98 m at $R = 3$ m |
 | 5 | a current and ILOS | Experiments 5-5a and 5-5b: LOS offset $= \Delta\tan$(heading) to the millimetre; ILOS removes it |
 | 6 | the tuning order on the mission | Experiment 5-6: $\kappa = 0.3$, legs 2–4 summed 0.92 m against 3.64 m for LOS |
+| 7 | added the Week 3 speed loop to the same allocator | Experiment 5-7: $1.000$ m/s held, last leg 23 % sooner; $n_L$ by hand $58.683$ against $58.680$ logged |
+| 8 | derived the moment limit the surge force leaves | Experiment 5-7: $N_{\lim} = 70.85$ N·m at $X = 60$ N, $47.15$ at $120$ N, peak $73.62$ at $52.97$ N |
+| 9 | drew both controllers as Simulink blocks, not code | `check_overlaps` 0 inside every subsystem; §5-2 to §5-6 reproduce every number of the MATLAB Function version unchanged |
 
 ## Progress Check
 
@@ -942,11 +1222,14 @@ Every example has **its own model**, laid out the same way: `guidance` → `head
 - [ ] Able to explain why LOS is a P controller and which way $\Delta$ moves its gain.
 - [ ] Able to predict the LOS offset in a cross current from the heading held.
 - [ ] Able to explain what the integral of ILOS does and why its denominator limits windup.
+- [ ] Able to write $T_L$ and $T_R$ from a surge force and a yaw moment, and convert them to shaft speeds.
+- [ ] Able to explain why pushing the hull harder leaves less yaw moment, and where the moment limit peaks.
 
 ### Laboratory
 
 - [ ] `W05_1_build_guidance` ran and every model reported `overlapping lines: 0`.
 - [ ] A parameter was changed in the Command Window and the XY Graph showed the new track.
+- [ ] `W05_H_speed_path` was run with `animate = 1` and the live view drew the track, the error, both speeds and both shafts.
 - [ ] `W05_check(1)`, `(2)` and `(3)` pass on a model built from `W05_P1_start`.
 
 ---

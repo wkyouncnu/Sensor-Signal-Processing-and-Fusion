@@ -12,6 +12,10 @@ function R = W05_read(model, varargin)
 %   R.N, R.E 위치 / position                              [m]
 %   R.aux    ILOS 적분 상태 (다른 법칙은 0) / the ILOS integral state (0 for the others)
 %   R.wp     현재 다리 번호 / the active leg
+%   R.u      전진속도 / surge speed                       [m/s]
+%   R.Nmom   오토파일럿이 요구한 요 모멘트 / the yaw moment the autopilot asked for  [N m]
+%   R.X      배분기가 받은 전진력 / the surge force the allocator received           [N]
+%   R.nL, R.nR  좌현·우현 축 회전수 / port and starboard shaft speeds               [rad/s]
 %
 %   E0 를 바꾸면 초기상태 x0 도 함께 바꾼다 / changing E0 also changes the initial state x0.
 
@@ -21,12 +25,20 @@ V.x0(8) = V.E0;
 in = Simulink.SimulationInput(model);
 f = fieldnames(V);
 for i = 1:numel(f), in = in.setVariable(f{i}, V.(f{i})); end
+
+%  StopFcn 의 W05_plot 을 재운다. 절 스크립트는 그림을 스스로 그리고, 이 로그는
+%  `out` 안에 있지 기본 작업공간에 있지 않다 / silence the StopFcn: this run's log
+%  is inside `out`, and the section script draws its own figure.
+evalin('base', 'W05batch = true;');
+c = onCleanup(@() evalin('base', 'clear W05batch'));
 evalc('out = sim(in);');
+clear c
 L = out.W05log;
 y = squeeze(L.signals.values);  if size(y,1) < size(y,2), y = y.'; end
 
 %  열 순서는 모델의 log Mux 와 같다 / column order is the model's log Mux
 R.t = L.time;  R.V = V;
 R.y_e = y(:,1);  R.psi_d = y(:,2);  R.psi = y(:,3);
-R.N = y(:,4);    R.E = y(:,5);      R.aux = y(:,6);  R.wp = y(:,7);
+R.N = y(:,4);    R.E = y(:,5);      R.aux = y(:,6);  R.wp = y(:,7);  R.u = y(:,8);
+R.Nmom = y(:,9); R.X = y(:,10);     R.nL  = y(:,11); R.nR = y(:,12);
 end

@@ -115,7 +115,7 @@ Both still reach the waypoint. That is essential to the argument: `atan2` is **n
 
 **Build.** Nothing. Set $V_c = 0.3$ m/s and $\beta_c = 90°$ and run the LOS law again.
 
-**Predict before running.** Section 5-7 derives
+**Predict before running.** Section 5-5 derives
 
 $$
 y_e^{\,p,ss} = \Delta\tan\beta_c
@@ -141,7 +141,7 @@ Measure $\beta_c$ from the run as $\operatorname{atan2}(v, u)$ and work out what
 | right | the heading error is $0$ the whole time the offset persists |
 | the check | if the offset keeps growing, the guidance is reading a stale position; if it returns to zero, an integrator has crept in |
 
-**The point.** The loop is doing exactly what it was asked. The heading error is **already zero**, so there is nothing left for a larger autopilot gain to act on. **The law is not short of authority; it is short of terms.** Sections 5-8 and 5-9 are two ways of supplying the missing one, and neither of them uses gain.
+**The point.** The loop is doing exactly what it was asked. The heading error is **already zero**, so there is nothing left for a larger autopilot gain to act on. **The law is not short of authority; it is short of terms.** Section 5-5 supplies the missing one, and it does not use gain to do it.
 
 ---
 

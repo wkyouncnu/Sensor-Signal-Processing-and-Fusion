@@ -38,7 +38,7 @@ All three pass and `check_overlaps('W05_S1')` is **0**.
   heading error while offset persists      -0.0036  (expected   0.0000 +- 0.5 deg)  PASS
 ```
 
-Problem 3 is the one worth pausing on. The prediction $\Delta\tan\beta_c = 3.3074$ m and the measurement $3.3011$ m agree to **six millimetres**, and they do so while the heading error is $-0.004°$. Section 5-7's claim is not an approximation.
+Problem 3 is the one worth pausing on. The prediction $\Delta\tan\beta_c = 3.3074$ m and the measurement $3.3011$ m agree to **six millimetres**, and they do so while the heading error is $-0.004°$. Section 5-5's claim is not an approximation.
 
 ---
 
@@ -74,4 +74,4 @@ The general lesson is the one this course applies to its own figures: **a measur
 
 No waypoint switching, no ILOS, no ALOS. Leg 1 only.
 
-Switching is section 5-6 and needs the along-track error the guidance already computes; the two adaptive laws are sections 5-8 and 4-9. Problem 3 exists to make the reader want them: it ends with a vessel that is holding its commanded heading perfectly and is still $3.3$ m from where it was asked to be.
+Switching is section 5-4 and needs the along-track error the guidance already computes; the integral law that removes the offset is section 5-5. Problem 3 exists to make the reader want it: it ends with a vessel that is holding its commanded heading perfectly and is still $3.3$ m from where it was asked to be.

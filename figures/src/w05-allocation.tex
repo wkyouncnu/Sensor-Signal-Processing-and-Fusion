@@ -1,0 +1,137 @@
+% figures/w05-allocation.svg — 배분행렬 B = [1 1; y_p -y_p] 의 기하학적 뜻.
+%
+%   bash _tools/tikz2svg.sh figures/src/w05-allocation.tex figures/w05-allocation.svg
+%
+% 사용자 질문 (2026-09-29): "[1 1; 0.395 -0.395] 이게 어떤 의미인지도... 기하학적으로
+% 그림 가지고 와서 설명도 해줘봐".
+%
+% 왼쪽 패널이 답이다. 배 위에서 내려다본 그림 하나에 B 의 네 성분이 전부 들어 있다:
+%   1 행 [1  1]        두 추력 모두 **같은 방향으로** 배를 민다 -> 계수가 둘 다 +1
+%   2 행 [y_p  -y_p]   좌현은 중심선에서 y_p 만큼 **왼쪽**, 우현은 y_p 만큼 오른쪽에
+%                      있으므로 모멘트 팔의 부호가 서로 반대다
+% 오른쪽 패널은 그 행렬이 하는 일을 수로 보인다 — 실험 5-7 의 '직진' 행이다.
+%
+% MSS 데모 demoOtterUSVPathFollowingHeadingControl 의 Allocation 서브시스템에
+% Constant [1 1; 0.395 -0.395] 가 그대로 들어 있다. 이 그림은 그 상수의 그림이다.
+%
+% 좌표는 전부 여기에 손으로 적혀 있고 산술이 없다 — 선체는 대칭이므로 y_p 만 정하면
+% 나머지가 따라온다 (y_p = 0.395 m 를 화면에서 1.6 cm 로 잡았다, 축척 4.05 cm/m).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+
+\tikzset{
+  hull/.style    = {ink, line width=0.9pt, fill=black!4},
+  pont/.style    = {ink, line width=0.7pt, fill=pathc!12},
+  thrust/.style  = {errc, line width=1.4pt, -{Stealth[length=5.0pt,width=3.6pt]}},
+  sumline/.style = {alng, line width=1.4pt, -{Stealth[length=5.0pt,width=3.6pt]}},
+  armline/.style = {knownc, line width=0.8pt, {Stealth[length=3.6pt,width=2.6pt]}-{Stealth[length=3.6pt,width=2.6pt]}},
+  ctr/.style     = {soft, line width=0.4pt, densely dashed},
+  spin/.style    = {alng, line width=1.1pt, -{Stealth[length=4.4pt,width=3.2pt]}},
+  lbl/.style     = {font=\scriptsize},
+  known/.style   = {draw=knownc, line width=0.6pt, fill=white, inner sep=3.2pt,
+                    rounded corners=1pt, font=\small},
+  want/.style    = {draw=accent, line width=0.9pt, fill=white, inner sep=3.4pt,
+                    rounded corners=1pt, font=\small},
+  capt/.style    = {font=\scriptsize\bfseries, warn},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+% =====================================================================
+% 왼쪽: 배를 위에서 본 그림. B 의 네 성분이 전부 여기 있다.
+% =====================================================================
+\begin{scope}[shift={(0,0)}]
+
+  % 선체 중심선 / the centreline
+  \draw[ctr] (0,-2.7) -- (0,2.9);
+  \node[lbl, soft, anchor=south] at (0,2.9) {centreline};
+
+  % 두 폰툰. y_p = 0.395 m 를 1.6 cm 로 그린다 (좌현 x=-1.6, 우현 x=+1.6)
+  \draw[pont] (-2.05,-2.1) rectangle (-1.15,1.5);
+  \draw[pont] ( 1.15,-2.1) rectangle ( 2.05,1.5);
+  % 갑판 / the deck
+  \draw[hull] (-2.05,0.4) rectangle (2.05,1.5);
+
+  % 선체 좌표축: x 는 앞, y 는 우현 / body axes: x forward, y to starboard
+  \draw[ink, line width=0.7pt, -{Stealth[length=4.2pt,width=3.0pt]}] (0,0) -- (0,2.55);
+  \node[lbl, anchor=west] at (0.08,2.45) {$x_b$ (forward)};
+  \draw[ink, line width=0.7pt, -{Stealth[length=4.2pt,width=3.0pt]}] (0,0) -- (2.75,0);
+  \node[lbl, anchor=south] at (2.6,0.08) {$y_b$ (starboard)};
+  \fill[ink] (0,0) circle (1.3pt);
+  \node[lbl, anchor=north east] at (-0.06,-0.06) {origin};
+
+  % 모멘트 팔 / the moment arms
+  \draw[armline] (-1.6,-1.35) -- (0,-1.35);
+  \draw[armline] ( 0,-1.35)   -- (1.6,-1.35);
+  \node[lbl, knownc, anchor=north] at (-0.8,-1.42) {$y_p$};
+  \node[lbl, knownc, anchor=north] at ( 0.8,-1.42) {$y_p$};
+  \node[lbl, knownc, anchor=north, align=center] at (0,-1.95)
+       {$y_p = 0.395$ m\\[-1pt]half the pontoon spacing};
+
+  % 두 추력. 둘 다 앞으로 / both thrusts point forward
+  \draw[thrust] (-1.6,1.5) -- (-1.6,3.05);
+  \draw[thrust] ( 1.6,1.5) -- ( 1.6,2.55);
+  \node[lbl, errc, anchor=south] at (-1.6,3.08) {$T_L$};
+  \node[lbl, errc, anchor=south] at ( 1.6,2.58) {$T_R$};
+  \node[lbl, errc, anchor=east, align=right] at (-1.72,2.3)
+       {port pushes\\[-2pt]harder};
+
+  % 그 결과의 회전 / the turn it produces
+  %  회전 화살표는 y_b 축 **아래** 사분면에 둔다. 위에 두면 'starboard' 이름표와
+  %  겹쳐 찍힌다 — 렌더해서 보고 옮겼다 (CLAUDE.md §4 규칙 6).
+  \draw[spin] (0.35,-0.94) arc (-70:-18:1.0);
+  \node[lbl, alng, anchor=west] at (1.10,-0.55) {$N>0$};
+
+  \node[capt, anchor=north, align=center] at (0,-2.55)
+       {one picture, four numbers};
+\end{scope}
+
+% =====================================================================
+% 가운데: 그 그림에서 읽은 두 줄, 그리고 행렬
+% =====================================================================
+\begin{scope}[shift={(4.9,0)}]
+  \node[known, anchor=north west, align=left] at (0,2.95)
+    {\textbf{row 1} — both push forward\\[2pt]
+     $X = (+1)\,T_L + (+1)\,T_R$};
+  \node[known, anchor=north west, align=left] at (0,1.55)
+    {\textbf{row 2} — opposite arms\\[2pt]
+     $N = (+y_p)\,T_L + (-y_p)\,T_R$};
+  \node[want, anchor=north west, align=left] at (0,-0.05)
+    {$\begin{bmatrix} X \\ N \end{bmatrix}
+      = \underbrace{\begin{bmatrix} 1 & 1 \\ y_p & -y_p \end{bmatrix}}_{\mathbf{B}}
+        \begin{bmatrix} T_L \\ T_R \end{bmatrix}$};
+  \node[anchor=north west, align=left, font=\scriptsize] at (0,-1.55)
+    {$\det \mathbf{B} = -2 y_p \neq 0$, so\\[2pt]
+     $\begin{bmatrix} T_L \\ T_R \end{bmatrix}
+       = \mathbf{B}^{-1} \begin{bmatrix} X \\ N \end{bmatrix}
+       = \begin{bmatrix} X/2 + N/(2y_p) \\ X/2 - N/(2y_p) \end{bmatrix}$};
+  \node[capt, anchor=north, align=center] at (2.4,-2.55)
+       {read off the picture, then invert};
+\end{scope}
+
+% =====================================================================
+% 오른쪽: 실험 5-7 의 '직진' 행을 그대로 / the 'straight leg' row of Experiment 5-7
+% =====================================================================
+\begin{scope}[shift={(11.0,0)}]
+  \node[anchor=north west, align=left, font=\scriptsize] at (0,2.95)
+    {\textbf{Experiment 5-7, straight leg}\\[3pt]
+     asked for\\[1pt]
+     \quad $X = 77.59$ N,\; $N = -0.50$ N\,m\\[4pt]
+     solve $\mathbf{B}\,\mathbf{T} = [X;\,N]$\\[1pt]
+     \quad $T_L = 38.16$ N,\; $T_R = 39.43$ N\\[4pt]
+     then $T = k\,n\lvert n\rvert$\\[1pt]
+     \quad $n_L = 58.68$,\; $n_R = 59.65$ rad/s};
+  \node[anchor=north west, align=left, font=\scriptsize, soft] at (0,-0.35)
+    {\textbf{hardest turn}\\[3pt]
+     \quad $X = 120.00$ N,\; $N = -47.15$ N\,m\\[3pt]
+     \quad $T_L = 0.32$ N,\; $T_R = 119.68$ N\\[3pt]
+     \quad $n_R = 103.93 = n_{\max}$ exactly};
+  \node[capt, anchor=north, align=center] at (2.3,-2.55)
+       {the numbers the model logs};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

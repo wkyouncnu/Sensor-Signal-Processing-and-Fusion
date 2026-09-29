@@ -72,6 +72,9 @@
 │                            verify_guidance.m · verify_alos.m        (W05 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m
 │                            verify_constants.m · verify_w01_theory.m · live_track.m · base_var.m
+│                            live_dash.m · live_guidance.m            (도는 동안의 실시간 화면.
+│                              live_guidance 는 유도 주차용 — 왼쪽 경로·웨이포인트·궤적·선체,
+│                              오른쪽 y_e · u 와 명령 · n_L 과 n_R · 다리 번호. §15-20)
 │                            verify_w02_pid.m                          (W02 PID 입문의 식 8개)
 │                            vault_shift_weeks.m                       (주차 번호 일괄 이동, 2026-09-21)
 │                            verify_w03_speed.m                        (W03 모델 없는 속도 튜닝의 수치)
@@ -312,6 +315,11 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
 | 자동 그림 | `set_param(m,'StopFcn','WXX_plot;')` — Run 만 눌러도 그림이 뜬다 |
 | **주차 스코프** | `add_measurement` 이 `vessel u v r` 과 **`<tag> this week`** 두 개를 만들어 모델과 함께 연다. 앞의 것은 모든 주차가 같고, 뒤의 것은 **그 주차가 추가한 신호**다 — 명령·요구 힘·적분기 상태 |
 | 살아 있는 궤적 | Animate 블록 + WXX_animate.m. 궤적만 그리지 말고 선체와 heading 을 함께 그린다 |
+| **실시간 화면** | Animate 블록은 **빼서 끄지 않는다.** `animate` Constant 가 0 이면 블록이 아무것도 하지 않는다. `WXX_vars` 는 0(절 스크립트), `WXX_0_setup` 은 1(사람이 Run 을 누른다) |
+| **현실 시간** | `InitFcn` 이 매 Run 마다 `pace` 를 읽어 `EnablePacing` 을 켠다. 모델에 박아 두지 않는다 — 수치는 같고 기다리는 시간만 다르다 → `standing-orders.md` §15-20 |
+| **한계식** | 상수가 신호가 되면 **그 상수로 계산해 둔 모든 포화 한계를 다시 계산한다.** W05 §5-7 이 `N_max`(70.85) 옆에 `N_speed`(47.15) 를 둔 이유 → §15-22 |
+| **제어기** | **서브시스템 안의 시뮬링크 블록.** MATLAB Function 한 덩어리로 두지 않는다. `ssa` 는 `Fcn` 하나(`atan2(sin(u),cos(u))`), 게인은 `Gain` 의 값이 변수 이름, 포화는 평범한 `Saturation`, 안티와인드업은 **적분기 자신의 Limit output**. 근거는 MSS `demoOtterUSVPathFollowingHeadingControl` → `standing-orders.md` §15-23 |
+| **명령 대 계수** | **명령은 캔버스의 Constant**(웨이포인트·Δ·R·κ·u_d), **계수는 Gain 의 값**. 둘 다 작업공간을 읽지만, 학생이 무엇을 지시하는지는 그림에 보여야 한다 |
 
 연구실 MILS 통합모델에서 **제어기·유도법칙·배분기를 복사하지 않는다.**
 각 주차 강의에 실린 수식에서 Simulink 로 직접 만든다. 그것이 이 강의의 요점이다.
