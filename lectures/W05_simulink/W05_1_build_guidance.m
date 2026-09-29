@@ -103,10 +103,12 @@ end
 
 %% 선수각 오토파일럿 / heading autopilot
 %  **서브시스템이고, 안은 시뮬링크 블록이다** (사용자 지시, 2026-09-29). 4주차
-%  모델과 같은 블록·같은 이름이다 — Fcn 'ssa' 하나, Gain 'Kp' 와 'minus Kd',
+%  모델과 같은 블록·같은 이름이다 — Fcn 'ssa' 하나, Gain 'Kp' 와 'Kd',
 %  Saturation 'moment limit'. 두 번 누르면 4주차의 식이 그림으로 보인다.
+%  빼는 것은 게인이 아니라 **합산점**이다 (build_autopilot 의 주석 참고).
 %  A subsystem of Simulink blocks, with the same blocks and the same names as the
-%  Week 4 model: one Fcn 'ssa', the gains Kp and minus Kd, and a Saturation.
+%  Week 4 model: one Fcn 'ssa', the gains Kp and Kd, and a Saturation. The D term
+%  is subtracted at the summing junction rather than carried as a negative gain.
 build_autopilot(m, [680 Y-60 880 Y+60], o);
 p1 = port_xy(m, 'guidance', 'Outport', 1);  a1 = port_xy(m, 'heading autopilot', 'Inport', 1);
 route(m, 'guidance', 1, 'heading autopilot', 1, [600 p1(2); 600 a1(2)]);
@@ -415,12 +417,21 @@ route(s, 'e', 1, 'ssa', 1, zeros(0,2));
 
 %  2) P 는 오차에, D 는 요각속도에 / P on the error, D on the yaw rate
 gain(s, 'Kp',       'Kp',  [480  82 540 118]);
-gain(s, 'minus Kd', '-Kd', [480 262 540 298]);
-route(s, 'ssa',      1, 'Kp',       1, zeros(0,2));
-route(s, 'r = x(6)', 1, 'minus Kd', 1, zeros(0,2));
-add_sum(s, 'N raw', '++', [580 100]);
-route(s, 'Kp',       1, 'N raw', 1, zeros(0,2));
-route(s, 'minus Kd', 1, 'N raw', 2, [580 280]);
+%  게인은 `Kd` 이고 **빼는 것은 합산점**이다 (사용자 지시, 2026-09-29). 게인에 -Kd 를
+%  넣으면 부호가 블록 이름·블록 값·합산점 셋에 흩어져, 그림을 보고 부호를 세어야 한다.
+%  한 군데에만 두면 "Kp e 에서 Kd r 을 뺀다" 가 그림 그대로 읽힌다.
+%  4주차 4-3e 절만 게인 쪽에 부호를 둔다 — 거기서는 **부호 자체가 실험의 주제**라
+%  'minus Kd' 와 'plus Kd' 를 나란히 놓고 고르기 때문이다.
+%  The gain is Kd and the subtraction is at the summing junction. With -Kd in the
+%  gain the sign is spread over the block name, the block value and the junction,
+%  and the reader has to count them. Week 4 section 4-3e is the one place that
+%  keeps the sign in the gain, because there the sign is the experiment.
+gain(s, 'Kd', 'Kd', [480 262 540 298]);
+route(s, 'ssa',      1, 'Kp', 1, zeros(0,2));
+route(s, 'r = x(6)', 1, 'Kd', 1, zeros(0,2));
+add_sum(s, 'N raw', '+-', [580 100]);
+route(s, 'Kp', 1, 'N raw', 1, zeros(0,2));
+route(s, 'Kd', 1, 'N raw', 2, [580 280]);
 
 %  3) 두 프로펠러가 낼 수 있는 만큼으로 자른다 / limit to what the propellers give
 lim = ternary(o.speed, 'N_speed', 'N_max');
@@ -498,13 +509,19 @@ route(s, 'thrust limit', 1, 'X', 1, zeros(0,2));
 
 %  4) 안티와인드업: 잘려 나간 만큼을 적분기로 되돌린다 (3주차 F 절과 같은 배선)
 %     The anti-windup: what the saturation removed, returned to the integrator.
-add_sum(s, 'X - X raw', '+-', [760 420]);
-gain(s, 'Kb', 'Kb', [600 472 650 508]);
+%     뺄셈을 **두 입력 바로 아래**에 둔다 (사용자 수정, 2026-09-29). 처음에는 합산점을
+%     왼쪽에 두고 포화 출력을 가로질러 끌어왔더니 긴 가로선 둘이 도면을 덮었다. 지금은
+%     X raw 와 X 가 각자 **바로 아래로 떨어져** 만나고, 돌아가는 선은 Kb 하나뿐이다.
+%     The subtraction sits directly below the two signals it takes. Placed to the
+%     left it needed two long horizontal runs across the diagram; now each signal
+%     drops straight down and only the Kb line travels back.
+add_sum(s, 'X - X raw', '-+', [740 440]);
+gain(s, 'Kb', 'Kb', [820 522 870 558]);
 set_param([s '/Kb'], 'Orientation','left');
-route(s, 'thrust limit', 1, 'X - X raw', 1, [820 200; 820 380; 700 380; 700 420]);
-route(s, 'X raw',        1, 'X - X raw', 2, [690 200; 690 450; 760 450]);
-route(s, 'X - X raw',    1, 'Kb',        1, [800 420; 800 490]);
-route(s, 'Kb',           1, 'into I',    2, [500 490]);
+route(s, 'X raw',        1, 'X - X raw', 1, [690 200; 690 440]);
+route(s, 'thrust limit', 1, 'X - X raw', 2, [800 200; 800 500; 740 500]);
+route(s, 'X - X raw',    1, 'Kb',        1, [880 440; 880 540]);
+route(s, 'Kb',           1, 'into I',    2, [500 540]);
 for nm = {'e','into I','X raw','X - X raw'}
     set_param([s '/' nm{1}], 'NamePlacement','alternate');
 end

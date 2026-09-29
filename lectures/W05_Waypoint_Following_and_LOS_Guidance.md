@@ -1045,7 +1045,7 @@ The same mission and the same ILOS law are run twice, with the heading autopilot
 
 Only the left half of the canvas is shown; the measurement, Scope, XY Graph, log and Animate blocks continue to the right.
 
-Neither controller is a block of code. Opening either one shows the equation as a diagram, with the same blocks and the same names Weeks 3 and 4 used — one `Fcn` block for `ssa`, `Gain` blocks whose value is the name of a workspace variable, and an ordinary `Saturation`:
+Neither controller is a block of code. Opening either one shows the equation as a diagram, with the same blocks and the same names Weeks 3 and 4 used — one `Fcn` block for `ssa`, `Gain` blocks whose value is the name of a workspace variable, and an ordinary `Saturation`. Every gain is positive: **a term that is subtracted is subtracted at a summing junction**, so a sign appears in exactly one place on the diagram.
 
 ![Inside the heading autopilot of Week 5: the Week 4 equation as a diagram](W05_simulink/img/W05_H_speed_path_heading_autopilot.png)
 
@@ -1053,7 +1053,8 @@ Neither controller is a block of code. Opening either one shows the equation as 
 |---|---|
 | the two `Selector` blocks | $\psi = x(12)$ and $r = x(6)$, the only two states the law uses |
 | the summing junction and `ssa` | $e = \operatorname{ssa}(\psi_d - \psi)$, wrapped by one `Fcn` holding `atan2(sin(u), cos(u))` |
-| `Kp` and `minus Kd` | $K_p e$ and $-K_d r$. **The D term is fed by the yaw-rate Selector, not by a derivative block** — there is no derivative block in the diagram |
+| `Kp` and `Kd` | $K_p e$ and $K_d r$. **The D term is fed by the yaw-rate Selector, not by a derivative block** — there is no derivative block in the diagram |
+| the `−` on `N raw` | where $K_d r$ is **subtracted**. The sign lives at the junction and nowhere else, so the diagram reads as the equation does: $K_p e$ minus $K_d r$ |
 | `moment limit` | the Saturation of line 7, holding `N_speed` here and `N_max` in the other six models |
 
 ![Inside the speed loop: the Week 3 law, with its anti-windup inside the integrator](W05_simulink/img/W05_H_speed_path_speed_loop.png)

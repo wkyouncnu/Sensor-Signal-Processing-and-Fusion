@@ -206,10 +206,18 @@ blk(m, 'simulink/Discontinuities/Saturation', 'moment limit', X(800), YP, [30 30
     {'UpperLimit','N_max', 'LowerLimit','-N_max'});
 route(m, last{1}, last{2}, 'moment limit', 1, zeros(0,2));
 if o.aw
-    add_sum(m, 'N - u', '+-', [X(830) Y+40]);
+    %  되감기 배선 / the back-calculation wiring.  뺄셈은 **두 입력 바로 아래**에 둔다
+    %  (사용자 지적, 2026-09-29: "antiwindup 부분도 너무 가독성이 낮아"). 예전에는
+    %  포화 출력이 오른쪽으로 갔다가 위로, 다시 왼쪽으로 돌아와 네 토막이었다. 지금은
+    %  요구값과 포화값이 각자 **곧장 아래로 떨어져** 만나고, 돌아가는 선은 Kb 하나뿐이다.
+    %  부호도 게인이 아니라 합산점에 있다: 왼쪽이 요구값(-), 아래가 포화값(+).
+    %  The subtraction sits directly below the two signals it takes: each drops
+    %  straight down and only the Kb line travels back. The sign is at the junction,
+    %  the asked-for value entering on the left as minus and the clamped one below.
+    add_sum(m, 'N - u', '-+', [X(830) Y+40]);
     blk(m, 'simulink/Math Operations/Gain', 'Kb', X(815), YB, [50 36], {'Gain','Kb', 'Orientation','left'});
-    route(m, 'moment limit', 1, 'N - u', 1, [X(860) YP; X(860) Y; X(805) Y; X(805) Y+40]);
-    route(m, last{1}, last{2}, 'N - u', 2, [X(770) YP; X(770) Y+70; X(830) Y+70]);
+    route(m, last{1}, last{2}, 'N - u', 1, [X(775) YP; X(775) Y+40]);
+    route(m, 'moment limit', 1, 'N - u', 2, [X(860) YP; X(860) Y+90; X(830) Y+90]);
     qk = port_xy(m, 'Kb', 'Inport', 1);
     route(m, 'N - u', 1, 'Kb', 1, [X(880) Y+40; X(880) qk(2)]);
     qk = port_xy(m, 'Kb', 'Outport', 1);
