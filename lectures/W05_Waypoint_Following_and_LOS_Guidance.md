@@ -129,25 +129,86 @@ Every model this week has the same four blocks. Each is a MATLAB Function with c
 | `allocation` | $N$ → two shaft speeds | Week 4 §4-1, with a constant surge force $X_{ff} = 60$ N (about 0.77 m/s) |
 | `Otter` | shaft speeds → twelve states | Week 1 |
 
-**The error guidance works on.** The path is a straight leg from waypoint $k$ to waypoint $k{+}1$, in the direction $\pi_p$. Rotating the vessel's position into that direction splits it into how far along the leg it is, $x_e$, and how far off it, $y_e$:
+**The error guidance works on.** "Follow the path" has to become a number before a controller can act on it, and **one number is not enough**. The path is a straight leg from waypoint $k$ to waypoint $k{+}1$; what is needed is how far **along** it the vessel has come and how far **off** it the vessel is. Both come out of one construction.
+
+**Step 1 — the leg gives the frame its direction.** The two waypoints fix a direction measured from north:
 
 $$
-\pi_p = \operatorname{atan2}(E_{k+1} - E_k,\ N_{k+1} - N_k), \qquad
+\pi_p = \operatorname{atan2}\big(E_{k+1} - E_k,\ N_{k+1} - N_k\big)
+$$
+
+- $\pi_p$ is **constant along a leg** and is recomputed only when the waypoint index changes.
+- It must be the two-argument `atan2`. A leg can run into any of the four quadrants, and the one-argument $\arctan$ folds two of them onto the other two — the same reason Week 4 §4-6 needs it.
+
+**Step 2 — the leg carries two unit vectors.** Along the leg, and to its right:
+
+$$
+\hat{\mathbf t} = \begin{bmatrix}\cos\pi_p\\ \sin\pi_p\end{bmatrix}
+\qquad
+\hat{\mathbf n} = \begin{bmatrix}-\sin\pi_p\\ \ \ \cos\pi_p\end{bmatrix}
+$$
+
+They are perpendicular and of unit length, so together they are a **frame** — the path frame $\{p\}$ — and $\hat{\mathbf n}$ points to starboard of a vessel running along the leg.
+
+**Step 3 — resolve the position error in that frame.** Take the vector from the waypoint to the vessel and ask for its two components:
+
+$$
+\begin{bmatrix} x_e \\ y_e \end{bmatrix}
+= \mathbf{R}(\pi_p)^{\mathsf T}\begin{bmatrix} N - N_k \\ E - E_k \end{bmatrix},
+\qquad
+\mathbf{R}(\pi_p) = \begin{bmatrix}\cos\pi_p & -\sin\pi_p\\ \sin\pi_p & \ \ \cos\pi_p\end{bmatrix}
+$$
+
+which written out is the pair this week uses everywhere:
+
+$$
 \begin{aligned}
-x_e &= \ \ (N - N_k)\cos\pi_p + (E - E_k)\sin\pi_p\\
-y_e &= -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p
+x_e &= \ \ (N - N_k)\cos\pi_p + (E - E_k)\sin\pi_p \qquad &&\text{along the leg}\\
+y_e &= -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p \qquad &&\text{across it, positive to starboard}
 \end{aligned}
 $$
 
-| Symbol | Quantity | Unit |
+| Symbol | Quantity | Unit · source |
 |---|---|---|
-| $(N_k, E_k)$, $(N_{k+1}, E_{k+1})$ | the two waypoints of the active leg | m |
-| $(N, E)$ | the vessel's position, north and east | m |
-| $\pi_p$ | the direction of the leg | rad |
-| $x_e$ | distance travelled along the leg | m |
-| $y_e$ | **cross-track error**: distance off the leg, positive to its right | m |
+| $(N_k, E_k)$, $(N_{k+1}, E_{k+1})$ | the two waypoints of the active leg | m · `WP_N`, `WP_E` |
+| $(N, E)$ | the vessel's position, north and east | m · states 7 and 8 |
+| $\pi_p$ | the direction of the leg, from north | rad |
+| $x_e$ | **along-track error**: distance travelled along the leg | m · §5-4 switches on it |
+| $y_e$ | **cross-track error**: distance off the leg, positive to its right | m · §5-3 drives it to zero |
+| $d = \lVert \mathbf p_{k+1} - \mathbf p_k\rVert$ | the leg's length | m · $d - x_e$ is what is left to run |
 
-- The goal of path following is $y_e \to 0$. The rotation gives the same $y_e$ as MSS `crosstrackWpt.m` (`verify_w05_guidance` check 5).
+![The two errors come out of one rotation](../figures/w05-track-frame.svg)
+
+**Reading the figure.**
+
+| Where to look | What is there | Why |
+|---|---|---|
+| the dashed pair at waypoint $k$ | $\hat{\mathbf t}$ along the leg, $\hat{\mathbf n}$ to starboard | step 2: the leg carries its own frame |
+| the black arrow | the position error, before it is resolved | the one vector both errors are components of |
+| the brown segment on the leg | $x_e$ — how far along | step 3, first row |
+| the red segment perpendicular to it | $y_e$ — how far off | step 3, second row |
+| the right angle where they meet | $\hat{\mathbf t} \perp \hat{\mathbf n}$ | which is what makes them independent |
+| the grey arc at the waypoint | $\pi_p$, measured from north | step 1 |
+
+**Three properties worth stating before they are used.**
+
+1. **It is a rotation, so it preserves length.** $x_e^2 + y_e^2 = \lVert\mathbf p - \mathbf p_k\rVert^2$ exactly. That identity is the cheapest check on the whole construction, and it is what `verify_w05_guidance` check 5 tests.
+2. **The sign of $y_e$ is a convention with consequences.** Written as above, $y_e > 0$ means the vessel is to **starboard** of the leg, and §5-3's law then subtracts a positive correction — turning to port, back towards the path. Swap the two sine terms and the vessel runs away from the path at the same speed.
+3. **Do not compute $y_e$ from a distance formula.** The perpendicular distance $\lvert(N-N_k)\sin\pi_p - (E-E_k)\cos\pi_p\rvert$ gives the magnitude but throws away the sign and gives no $x_e$ at all — and §5-4 needs $x_e$. One rotation answers both questions and cannot make them disagree.
+
+> [!note] The same two lines, in Fossen's notation
+> This is the form used throughout the field, and the reference implementation is Fossen's TTK4190 lecture code — the source of the version taught in *2. USV 제어기 설계*:
+>
+> ```matlab
+> pi_p = atan2(yk_next-yk, xk_next-xk);        % path-tangential angle w.r.t. North
+> % along-track and cross-track errors (x_e, y_e) expressed in NED
+> x_e =  (x-xk) * cos(pi_p) + (y-yk) * sin(pi_p);
+> y_e = -(x-xk) * sin(pi_p) + (y-yk) * cos(pi_p);
+> ```
+>
+> with $(x, y)$ north and east. The `guidance` block of this week is these lines, and §5-4's switching test is the next two. The rotation gives the same $y_e$ as MSS `crosstrackWpt.m` to machine precision (`verify_w05_guidance` check 5).
+
+- The goal of path following is $y_e \to 0$; $x_e$ is not driven anywhere, it is only **watched**, and §5-4 is what watches it.
 
 ### Experiment 5-1 · The guidance layer on the canvas (10 min)
 
@@ -199,6 +260,21 @@ This section answers: why not simply point at the next waypoint?
 3. `atan2` never uses $y_e$, so nothing in it drives $y_e$ to zero: the error falls only as a side effect of arriving, which is why it vanishes exactly at the waypoint and not before.
 4. A guidance law that follows a path must take $y_e$ as its input and return a heading that reduces it. That is §5-3, and it makes the law a feedback controller like every other one in this course.
 5. On a real mission the waypoints are far apart and the space **between** them is where the vessel is asked to be, so the error of line 1 is the whole mission rather than an approach transient.
+
+![Aiming at the waypoint against aiming Δ ahead on the path](../figures/w05-atan2-vs-los.svg)
+
+**Reading the figure.**
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| (a), the red track | a straight line from the start to the waypoint | line 1: `atan2` closes the distance to a **point**, and the shortest way to a point is a straight line |
+| (a), the label at halfway | $y_e = 10$ m, half the starting offset, purely by geometry | line 3: nothing in the law is acting on $y_e$ |
+| (a), where the track meets the path | only at the waypoint itself | line 3: the error vanishes as a side effect of arriving |
+| (b), the purple track | it bends onto the path and then runs along it | line 4: the law takes $y_e$ as its input |
+| (b), the label at halfway | under $0.01$ m — the law has already finished | §5-3: the correction fades as the error does |
+| both panels | the same start, the same waypoint, the same vessel | the only difference is which quantity the law reads |
+
+- The drawn curves are the guidance law **integrated along the path**, $\mathrm{d}y_e/\mathrm{d}s = -y_e/\sqrt{\Delta^2 + y_e^2}$, not sketches — so the shape is the law's own. Experiment 5-2 puts the same start through the autopilot and the hull, where the vessel lags slightly:
 
 Measured by Experiment 5-2, below:
 
@@ -275,6 +351,33 @@ $$
 
 - $\pi_p$ says "line up with the path"; the arctan says "lean towards it, by an angle that grows with how far off the vessel is". On the path, $y_e = 0$ and the vessel simply heads along the leg; far from it, the lean approaches $90°$ and the vessel heads straight at the path.
 
+**Where the arctan comes from.** It is not a choice of function — it is the angle of a right triangle. Drop a perpendicular from the vessel to the path; its foot is the point on the path abeam the vessel. Now step a distance $\Delta$ **along the path** from that foot: that is the aim point. The triangle with legs $\Delta$ (along the path) and $y_e$ (across it) has
+
+$$
+\tan(\text{the lean}) = \frac{y_e}{\Delta}
+\qquad\Longrightarrow\qquad
+\text{the lean} = \arctan\!\left(\frac{y_e}{\Delta}\right)
+$$
+
+and the command is $\pi_p$ turned by that lean, towards the path — hence the minus sign, with $y_e$ positive to starboard.
+
+![The LOS geometry: the foot of the perpendicular, the aim point Δ ahead, and the angle between them](../figures/w05-los-geometry.svg)
+
+**Reading the figure.**
+
+| Where to look | What is there | Why |
+|---|---|---|
+| the right angle on the path | the foot of the perpendicular, abeam the vessel | it is the origin the look-ahead is measured from |
+| the segment marked $\Delta$ | measured **along the path**, from the foot | not from the vessel: the vessel's own distance to the aim point is $\sqrt{\Delta^2 + y_e^2}$, which is longer |
+| the purple ray | the line of sight, vessel to aim point | the name of the law: the vessel looks at a point and steers at it |
+| the arc marked $\arctan(y_e/\Delta)$ | the lean, between the path direction and the line of sight | the right triangle above |
+| $\pi_p$ at the lower waypoint | the path direction, from north | §5-1 step 1 |
+| the two brown segments | $x_e$ and $y_e$ of §5-1 | the law uses only the second of them |
+| the three arcs at the hull | $\psi$, $\chi$ and $\chi_d$ — heading, course and commanded course | they differ by the crab angle of Week 4 §4-4, which is §5-5's subject |
+
+- **Two terms, and that is all.** $\pi_p$ lines the vessel up *with* the path; $-\arctan(y_e/\Delta)$ leans it *towards* the path. Nothing else appears — which is exactly why §5-5 can say what this law cannot do.
+- **The correction is bounded by $90°$.** As $y_e \to 0$ the lean goes to zero and $\psi_d \to \pi_p$; as $y_e \to \pm\infty$ it approaches $\mp 90°$, heading straight at the path and never away from it. A law built from a raw gain $-K y_e$ has no such bound and would command absurd headings far from the path.
+
 **It is a P controller.** For errors small against $\Delta$, $\arctan(y_e/\Delta) \approx y_e/\Delta$ (within 1.4 % for $\lvert y_e\rvert \le 0.2\Delta$, `verify_w05_guidance` check 2), and
 
 $$
@@ -286,7 +389,22 @@ $$
 | $\Delta$ | look-ahead distance | $5$ m, `W05_0_setup.m` |
 | $1/\Delta$ | the P gain: heading correction per metre of error | $0.2$ rad/m |
 
-So $\Delta$ is tuned like $K_p$ in Weeks 2 to 4, backwards: a **smaller** $\Delta$ is a **larger** gain. Measured by Experiment 5-3, below:
+So $\Delta$ is tuned like $K_p$ in Weeks 2 to 4, backwards: a **smaller** $\Delta$ is a **larger** gain.
+
+![The same cross-track error, three look-ahead distances, three commanded turns](../figures/w05-lookahead.svg)
+
+**Reading the figure.**
+
+| Where to look | What is there | Why |
+|---|---|---|
+| the three aim points on the path | all three lie on the path, at $\Delta$ = small, middling, large from the same foot | only $\Delta$ has changed |
+| the single red segment $y_e$ | one and the same error in all three cases | so the figure isolates $\Delta$ and nothing else |
+| the three angles, $53.1°$, $38.7°$, $20.0°$ | what each aim point asks the vessel to turn through | $\arctan(y_e/\Delta)$ with one numerator and three denominators |
+| the ratio between them | a factor of about three in the command, from a factor of three in $\Delta$ | $\Delta$ is the gain, read backwards |
+
+- The trade is the P sweep of Week 2 §2-6 in new clothing: too small a $\Delta$ saturates the arctan, turns the vessel nearly perpendicular to the path, and arrives with speed across it; too large a $\Delta$ closes gently and slowly.
+
+Measured by Experiment 5-3, below:
 
 | $\Delta$ [m] | $1/\Delta$ | within 1 m after [s] | overshoot [m] | zero crossings |
 |---|---|---|---|---|
@@ -375,10 +493,51 @@ This section answers: at a corner, when does guidance switch to the next leg?
 **What follows from it, one line at a time.**
 
 1. The switch is a test on the **along-track** coordinate: the guidance moves to the next leg when less than $R$ of the active leg remains, $d - x_e < R$, with $d$ the leg's length. This is the test MSS uses, and it is a distance along the path rather than a circle round the waypoint.
-2. **A large $R$ cuts the corner.** At the instant of the switch the vessel is still on the old leg, $R$ before its end, so it is about $R$ away from the new leg — and the new leg is what $y_e$ is now measured against. Hence the largest distance is close to $R$ itself in the last three rows.
-3. **A small $R$ carries the vessel past the corner.** The turn begins only at the corner, and the hull cannot turn instantly: at $0.77$ m/s it sweeps outside, $3.70$ m at the $135°$ corner for $R = 1$ m. The sharper the corner, the further it goes.
-4. Lines 2 and 3 pull in opposite directions, so the best $R$ is the one whose **worst** corner is smallest — $R = 3$ m, at $2.98$ m.
-5. Cutting corners is not wrong in itself; it also finishes sooner. The choice made here is to stay close to the path, and a survey that must cover its lines exactly would choose differently.
+
+**The two tests, and why they are not the same.** Both are one line of code and they disagree:
+
+$$
+\text{along-track:}\quad d - x_e < R
+\qquad\qquad
+\text{acceptance circle:}\quad \lVert \mathbf p - \mathbf p_{k+1}\rVert \le R
+$$
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $d$ | the length of the active leg | m · $\lVert\mathbf p_{k+1} - \mathbf p_k\rVert$ |
+| $x_e$ | how far along it the vessel has come | m · §5-1 |
+| $d - x_e$ | what is **left to run** along the leg | m · negative once the vessel is past the waypoint |
+| $R$ | the switching distance | $3$ m · `R_switch`, chosen in line 4 |
+
+Writing the true distance in path-frame components shows the relation exactly:
+
+$$
+\lVert \mathbf p - \mathbf p_{k+1}\rVert = \sqrt{(d - x_e)^2 + y_e^2} \;\ge\; d - x_e
+$$
+
+2. **On the path the two agree; off it they never do.** With $y_e = 0$ the square root collapses to $d - x_e$ and the tests are identical. With $y_e \neq 0$ the circle test is **always the stricter of the two**, by an amount that grows with how far off the path the vessel is — so a vessel that is running wide can satisfy the along-track test and fail the circle at the same instant.
+
+3. **The circle can be missed altogether.** A vessel whose cross-track error never falls below $R$ never enters the circle, passes the waypoint, and waits for an arrival that has already happened — for ever. The along-track test cannot fail that way: $d - x_e$ goes negative the moment the vessel crosses the line through the waypoint perpendicular to the leg, whatever its cross-track error. This is not a hypothetical; Week 9 §9-5 loses a whole mission to it at $1.3$ m/s of current.
+
+![The same position judged by both tests: one switches, the other does not](../figures/w05-switching.svg)
+
+**Reading the figure.**
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| (a), the shaded band before the waypoint | the region where $d - x_e < R$ | line 1: the test is a distance **along** the leg |
+| (a), the vessel a whole $y_e = 2R$ off the path | still inside the band, and it switches | line 3: being off the path cannot defeat the along-track test |
+| (b), the circle of radius $R$ round the waypoint | the region where $\lVert\mathbf p - \mathbf p_{k+1}\rVert \le R$ | the other test, drawn |
+| (b), the same vessel, outside the circle | $10.97$ m away, and it does **not** switch | line 2: the circle is the stricter test |
+| the two code lines under the panels | `d - x_e < R_switch` against `norm(p - wp_next) < R` | one line of difference, and the whole behaviour |
+| the caption's arithmetic | along-track remainder $4.50$ m passes; true distance $10.97$ m fails | line 2: $\sqrt{(d-x_e)^2 + y_e^2} \ge d - x_e$, here by $6.47$ m |
+
+4. **There is one hard limit on $R$**, and it belongs to the along-track test: $R < \min_k d_k$. If $R$ exceeds a leg's own length, then $d - x_e < R$ is true the instant the leg becomes active, and that leg is "reached" before the vessel has travelled any of it.
+
+5. **A large $R$ cuts the corner.** At the instant of the switch the vessel is still on the old leg, $R$ before its end, so it is about $R$ away from the new leg — and the new leg is what $y_e$ is now measured against. Hence the largest distance is close to $R$ itself in the last three rows.
+6. **A small $R$ carries the vessel past the corner.** The turn begins only at the corner, and the hull cannot turn instantly: at $0.77$ m/s it sweeps outside, $3.70$ m at the $135°$ corner for $R = 1$ m. The sharper the corner, the further it goes.
+7. Lines 5 and 6 pull in opposite directions, so the best $R$ is the one whose **worst** corner is smallest — $R = 3$ m, at $2.98$ m.
+8. Cutting corners is not wrong in itself; it also finishes sooner. The choice made here is to stay close to the path, and a survey that must cover its lines exactly would choose differently.
 
 Measured by Experiment 5-4, below, on the five-waypoint mission with $\Delta = 5$ m:
 
@@ -392,7 +551,7 @@ Measured by Experiment 5-4, below, on the five-waypoint mission with $\Delta = 5
 
 ### Experiment 5-4 · Waypoint switching (10 min)
 
-**What it measures.** Lines 2, 3 and 4: how far from the new leg each switching distance leaves the vessel at the three corners, and how long the mission then takes.
+**What it measures.** Lines 5, 6 and 7: how far from the new leg each switching distance leaves the vessel at the three corners, and how long the mission then takes.
 
 **The model.** `W05_E_switching` — the LOS law on the full five-waypoint mission, with $\Delta$ fixed at the value Experiment 5-3 chose. Only `R_switch` changes between runs, and the XY Graph shows the corners as they are rounded.
 

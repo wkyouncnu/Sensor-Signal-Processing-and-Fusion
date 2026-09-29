@@ -19,7 +19,9 @@
   \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,10);
   \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (10,0);
   \node[font=\small, anchor=east]  at (-0.8,9) {$x^n$};
-  \node[font=\small, anchor=north] at (9,-0.8) {$y^n$};
+  % 화살표 **오른쪽**에 붙인다. 아래에 두면 밑의 설명글과 겹친다 (CLAUDE.md §4 규칙 6)
+  % to the RIGHT of the arrow: below it, the label collides with the note under the axes
+  \node[font=\small, anchor=west] at (10.4,0) {$y^n$};
   \node[note, anchor=north west] at (0,-3) {the frame that never moves};
 \end{scope}
 
@@ -80,7 +82,7 @@
 
   \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,6) {%
     $x_e^{\,p}$ — how far \textbf{along} the leg the vessel has come.
-    The switching test of §5-6 uses it.\\[3pt]
+    The switching test of §5-4 uses it.\\[3pt]
     $y_e^{\,p}$ — how far \textbf{to the side}. The guidance law drives this one to
     zero.\\[6pt]
     Both are projections of the same vector onto the same orthonormal pair, so

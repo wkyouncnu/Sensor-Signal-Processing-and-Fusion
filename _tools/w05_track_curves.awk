@@ -18,19 +18,19 @@
 BEGIN {
     XS = 0.60          # 1 m -> mm (가로)
     YS = 0.60          # 1 m -> mm (세로)
-    Y0 = -18           # 출발 시 cross-track error [m]
+    Y0 = -20           # 출발 시 cross-track error [m] — 강의 §5-2 와 같은 출발
     XEND = 100         # 다리 길이 [m]
     ds = 0.25
 
-    emit("LOStrack",    8,  Y0)
+    emit("LOStrack",    5,  Y0)      # 강의가 고른 Delta / the Delta the week chose
     emit("LOStrackTwo", 20, Y0)
 
     #  atan2 는 웨이포인트를 겨냥하므로 궤적이 직선이다 — 적분할 것이 없다
     printf "\\def\\ATANtrack{(%.2f,%.2f) (%.2f,%.2f)}\n", 0*XS, Y0*YS, XEND*XS, 0
 
     #  그림에 적을 수치 — 눈으로 읽지 않게 계산해서 남긴다
-    printf "%% CHECK  Delta=8  : y_e at x=40 m -> %.3f m\n",  yat(8, Y0, 40)
-    printf "%% CHECK  Delta=20 : y_e at x=40 m -> %.3f m\n",  yat(20, Y0, 40)
+    printf "%% CHECK  Delta=5  : y_e at x=50 m -> %.3f m\n",  yat(5, Y0, 50)
+    printf "%% CHECK  Delta=20 : y_e at x=50 m -> %.3f m\n",  yat(20, Y0, 50)
 }
 
 function emit(name, Delta, y,    x, s, out, n) {
