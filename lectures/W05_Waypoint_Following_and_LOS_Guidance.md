@@ -1061,11 +1061,34 @@ Neither controller is a block of code. Opening either one shows the equation as 
 | In the diagram | Which part of the Week 3 law |
 |---|---|
 | `u_d` on the left | the commanded speed, arriving as an ordinary signal from the canvas outside |
-| the summing junction | $e = u_d - u$, with the command on the left edge and the measurement entering from below |
+| `e` | $e = u_d - u$, with the command on the left edge and the measurement entering from below |
 | `Kp_u` | the proportional term |
-| `Ki_u` into `I` | the integral. `I` is a **Discrete-Time Integrator**, forward Euler at step `h`, so it is the same difference equation Week 3 published |
-| the ramp drawn inside `I` | its **Limit output**, clamped to $\pm X_{\max}$. That is the anti-windup: the integral cannot grow past a force the propellers could produce, so nothing has to unwind before the loop responds again |
-| `thrust limit` | the same clamp on the total, $\lvert X\rvert \le X_{\max}$ |
+| `Ki_u` into `I` | the integral. `I` is an ordinary **continuous Integrator**, $1/s$ — the plant is continuous, and so is every controller in this course |
+| `X raw` and `thrust limit` | $X_{raw} = K_{p,u}e + I$, then $\lvert X\rvert \le X_{\max}$ |
+| `X - X raw` into `Kb`, back into `into I` | the **anti-windup**, and the reason the loop has one |
+
+The anti-windup deserves its own line, because on a diagram it is the only path that runs right to left. It is **back-calculation**, the method of Week 3 §3-F, and the whole of it is one subtraction and one gain:
+
+$$
+\dot{I} = K_{i,u}\, e \;+\; K_b\,\bigl(X - X_{raw}\bigr), \qquad X = \operatorname{sat}(X_{raw})
+$$
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $X_{raw}$ | what the controller asked for, before the limit | N |
+| $X$ | what the propellers were actually given | N, $\lvert X\rvert \le X_{\max} = 120$ |
+| $K_b$ | back-calculation gain | $1$ s⁻¹, the value Week 3 chose; `W05_0_setup` |
+
+While the force is inside its limit, $X - X_{raw} = 0$ and the term is not there at all — the loop is the plain PI of Week 3. The moment the limit bites, the term goes negative and **the integral is pushed back down by exactly the amount that was thrown away**, so it stops climbing towards a force that cannot be produced. Without it the integral keeps growing while the vessel accelerates, and then has to be unwound before the loop can respond at all, which is seen as an overshoot.
+
+Setting `Kb = 0` removes it, and Experiment 5-7 runs both:
+
+| $K_b$ | $X$ at its limit for | speed overshoot |
+|---|---|---|
+| $1$ | $0.66$ s | $0.0216$ m/s |
+| $0$ | $0.92$ s | $0.0380$ m/s |
+
+The difference is real but small, and the reason is worth saying plainly: **this mission barely saturates.** The surge force reaches $120$ N only in the first second, while the vessel is accelerating from rest, and for the remaining 400 s it sits at $77.6$ N. Anti-windup earns its place where a limit is held for a long time — the step of Week 3 §3-F, or a current strong enough to keep the force against its stop. It is carried here because it costs two blocks and because the case it protects against is not visible in advance.
 
 > [!note] Where the numbers live
 > Commands are Constant blocks on the canvas — `WP_N`, `WP_E`, `Delta`, `R_switch`, `kappa`, `u_d`. Gains are the values of `Gain` blocks, written as the variable's name. Both read the workspace, so `Kp = 400` in the Command Window followed by Run is the whole edit. The MSS demonstration model is arranged the same way: its waypoint lists, $\Delta$, $R$ and desired surge thrust are Constant blocks, and its autopilot gains are `Gain` blocks inside the `Heading autopilot` subsystem.
@@ -1084,16 +1107,21 @@ Actual output:
   W05 Experiment 5-7  speed control and path following at once
     surge force from    u mean [m/s]   last leg at [s]   mean |y_e| legs 2-4 [m]   X mean [N]
     a constant X_ff        0.767             244.9                    0.353        60.00
-    the speed loop         1.000             189.5                    0.576        78.50
+    the speed loop         1.000             189.7                    0.577        78.48
 
     the allocation, checked by hand   (y_pont = 0.3950 m, k_pos = 0.01108)
       case              X [N]    N [N m]   T_L [N]   T_R [N]   n_L      n_R     n_L by hand
-      straight leg      77.59      -0.50     38.16     39.43   58.680   59.653     58.683
+      straight leg      77.59      -0.50     38.16     39.43   58.683   59.651     58.686
       hardest turn     120.00     -47.15      0.32    119.68    5.357  103.931      5.357
 
     X [N]               0      20      40      60      80     100     120     140
     N_lim [N m]     52.70   60.60   68.50   70.85   62.95   55.05   47.15   39.25
     the constants the models hold:  N_max = N_lim(60) = 70.85,  N_speed = N_lim(120) = 47.15 N m
+
+    the anti-windup (back-calculation), measured
+      Kb      X at its limit for [s]   speed overshoot [m/s]
+      1                     0.66               0.0216
+      0                     0.92               0.0380
 ```
 
 ![Experiment 5-7: the same mission with a constant surge force and with the speed loop](W05_simulink/img/W05_result_speed_path.png)
@@ -1114,15 +1142,15 @@ Actual output:
 | panel 2, the flat blue line | exactly $60.00$ N for the whole run | the old models have no speed loop to vary it |
 | panel 2, the orange line | $77.59$ N on a straight leg, rising to $120$ N after each corner | holding $1.0$ m/s costs $77.6$ N of drag; a turn costs more, and the loop pays it until it reaches $X_{\max}$ |
 | `straight leg` row | $T_L = 38.16$, $T_R = 39.43$ N from $X = 77.59$, $N = -0.50$ | line 3: $77.59/2 = 38.80$ each, then $\mp 0.50/0.79 = \mp 0.63$ |
-| `n_L by hand` column | $58.683$ against $58.680$ logged | line 4 reproduced from the logged $X$ and $N$ alone, through the same square root |
+| `n_L by hand` column | $58.686$ against $58.683$ logged | line 4 reproduced from the logged $X$ and $N$ alone, through the same square root |
 | `hardest turn` row | $N = -47.15$ N·m exactly | line 7: the Saturation is holding `N_speed`, and the corner is asking for more than it |
 | the same row | $T_R = 119.68$ N and $n_R = 103.931$ | lines 5 and 7 together: at that moment the starboard propeller is **exactly at** $T_{\max}$, so its shaft is exactly at $n_{\max}$. The constant was chosen to make this the worst case, and it is |
 | panel 4, the orange trace at the corners | touching the red $n_{\max}$ line and never crossing it | the allocator can no longer ask for the impossible |
 | the $N_{\lim}$ row | $70.85$ at $X = 60$, $47.15$ at $X = 120$ | line 6: the first branch, falling as the surge force takes the headroom |
 | the same row at $X = 0$ | $52.70$ N·m, **below** the value at 60 N | line 6: the second branch, rising; the peak is between, at $X^\star = 52.97$ N |
 | panel 3, the two dotted pairs | $\pm 70.85$ for the constant-force run, $\pm 47.15$ for the speed-loop run | the price of the speed, stated as a number before any track is drawn |
-| `mean |y_e|` column | $0.576$ against $0.353$ m | going 30 % faster on two-thirds of the moment costs 63 % more cross-track error |
-| `last leg at` column | $189.5$ against $244.9$ s | 23 % of the mission time, bought with the accuracy in the previous row |
+| `mean |y_e|` column | $0.577$ against $0.353$ m | going 30 % faster on two-thirds of the moment costs 63 % more cross-track error |
+| `last leg at` column | $189.7$ against $244.9$ s | 23 % of the mission time, bought with the accuracy in the previous row |
 
 **What the figure says**
 
@@ -1149,6 +1177,7 @@ Pressing Run on `W05_H_speed_path` alone produces the same numbers and a figure 
 | `u_d = 1.6;` Run | the loop sits at $X_{\max} = 120$ N for most of the run, the corners are visibly wider, and the mission is barely faster — the drag has begun to win |
 | `u_d = 0.4;` Run | slower, and `N_speed` is still $47.15$: the vessel is being held to a limit it is nowhere near needing. The cost of a conservative constant, seen directly |
 | `X_max = 70;` Run, after re-running `W05_0_setup` | `N_speed` rises to $66.40$ N·m and the corners tighten, but the loop can no longer reach $1.0$ m/s. The two are the same trade seen from the other end |
+| `Kb = 0;` Run | the anti-windup path is switched off. The speed overshoot grows from $0.0216$ to $0.0380$ m/s — small here, because this mission holds the limit for well under a second |
 | `animate = 1; pace = 1;` Run | the run takes as long as the mission does, and the live view draws the track, the error, both speeds and both shafts while it happens |
 | Replace the Saturation in `heading autopilot` with a **Saturation Dynamic** fed by $N_{\lim}(X)$, built from line 6 | the margin between $47.15$ and the true limit comes back, and the corners tighten. Measure `mean |y_e|` on legs 2–4 before and after, and decide whether the extra blocks earned their place |
 
@@ -1208,7 +1237,7 @@ Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so t
 | 4 | the switching distance | Experiment 5-4: worst corner 2.98 m at $R = 3$ m |
 | 5 | a current and ILOS | Experiments 5-5a and 5-5b: LOS offset $= \Delta\tan$(heading) to the millimetre; ILOS removes it |
 | 6 | the tuning order on the mission | Experiment 5-6: $\kappa = 0.3$, legs 2–4 summed 0.92 m against 3.64 m for LOS |
-| 7 | added the Week 3 speed loop to the same allocator | Experiment 5-7: $1.000$ m/s held, last leg 23 % sooner; $n_L$ by hand $58.683$ against $58.680$ logged |
+| 7 | added the Week 3 speed loop to the same allocator | Experiment 5-7: $1.000$ m/s held, last leg 23 % sooner; $n_L$ by hand $58.686$ against $58.683$ logged |
 | 8 | derived the moment limit the surge force leaves | Experiment 5-7: $N_{\lim} = 70.85$ N·m at $X = 60$ N, $47.15$ at $120$ N, peak $73.62$ at $52.97$ N |
 | 9 | drew both controllers as Simulink blocks, not code | `check_overlaps` 0 inside every subsystem; §5-2 to §5-6 reproduce every number of the MATLAB Function version unchanged |
 

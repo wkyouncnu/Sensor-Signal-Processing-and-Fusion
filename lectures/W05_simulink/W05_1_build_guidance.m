@@ -133,19 +133,19 @@ end
 %  the command u_d arriving from a Constant outside it.
 if o.speed
     build_speed_loop(m, [680 Y+150 880 Y+270]);
-    q = port_xy(m, 'speed loop', 'Inport', 1);
+    q = port_xy(m, 'speed loop', 'Inport', 2);
     add_block('simulink/Signal Routing/From', [m '/From x sp'], 'GotoTag','x', 'ShowName','off', ...
               'Position', [600 q(2)-10 645 q(2)+10]);
-    route(m, 'From x sp', 1, 'speed loop', 1, zeros(0,2));
+    route(m, 'From x sp', 1, 'speed loop', 2, zeros(0,2));
     %  명령 속도는 **밖의 Constant** 다 (사용자 지시, 2026-09-29: "u_d 도 외부로 나오게").
     %  게인은 서브시스템 안의 Gain 블록이 작업공간에서 읽는다 - MSS 데모가 Delta 와
     %  R_switch 를 캔버스에 두고 게인은 Gain 블록에 두는 것과 같다.
     %  The commanded speed is a Constant outside; the gains are read from the
     %  workspace by Gain blocks inside, as in the MSS demonstration model.
-    q = port_xy(m, 'speed loop', 'Inport', 2);
+    q = port_xy(m, 'speed loop', 'Inport', 1);
     add_block('simulink/Sources/Constant', [m '/u_d'], 'Value','u_d', ...
               'Position', [575 q(2)-13 655 q(2)+13]);
-    route(m, 'u_d', 1, 'speed loop', 2, zeros(0,2));
+    route(m, 'u_d', 1, 'speed loop', 1, zeros(0,2));
     goto_at(m, {'speed loop', 1}, port_xy(m, 'speed loop', 'Outport', 1), 'down', 'X');
 end
 
@@ -434,58 +434,80 @@ end
 function build_speed_loop(m, pos)
 %BUILD_SPEED_LOOP  3주차의 속도 루프를 블록으로 / the Week 3 speed loop, in blocks.
 %
-%     X = Kp_u (u_d - u) + I,     |X| <= X_max
+%     e = u_d - u
+%     X_raw = Kp_u e + I,        I' = Ki_u e + Kb (X - X_raw)
+%     X     = sat(X_raw),        |X| <= X_max
 %
-%   3주차와 같은 한 줄이다 (W03_1_build_speed 참조): 오차 합산점, Kp 게인, Ki 게인과
-%   적분기, 더하기, 그리고 Saturation. 다른 것은 **명령 u_d 가 밖에서 들어온다**는 것뿐이다.
-%   The same single row as Week 3 (see W03_1_build_speed): the error junction, a Kp
-%   gain, a Ki gain into an integrator, an addition and a Saturation. The only
-%   change is that the command u_d arrives from outside.
+%   **3주차 모델과 같은 블록, 같은 이름, 같은 게인이다** (W03_1_build_speed 참조).
+%   합산점 `e`, 게인 `Kp_u` 와 `Ki_u`, **연속 적분기** `I`, 합산점 `u`, `Saturation`
+%   `thrust limit`, 그리고 되감기 게인 `Kb`. 다른 것은 명령 u_d 가 밖에서 들어온다는 것뿐.
+%   The same blocks, names and gains as Week 3: the error junction, Kp_u and Ki_u,
+%   a continuous Integrator, the addition, a Saturation, and the back-calculation
+%   gain Kb. The only change is that u_d arrives from outside.
 %
-%   적분기는 **이산**이다 (Forward Euler, 스텝 h) - 3주차와 같은 차분식이라야 같은 수가
-%   나온다. 와인드업은 **적분기 자신이** 막는다: Limit output 을 켜고 한계를 ±X_max 로
-%   두면 적분값이 낼 수 있는 힘을 넘어 자라지 않는다. 바깥에 스위치와 비교기를 두어
-%   게이트를 만들 필요가 없다 (사용자 지시, 2026-09-29).
-%   The integrator is discrete (Forward Euler, step h) so that it is the difference
-%   equation Week 3 published, and the windup is stopped by the integrator itself:
-%   Limit output, clamped to the force that can actually be produced. No switch or
-%   comparator is needed outside it.
-s = add_subsys(m, 'speed loop', pos, {'x','u_d'}, {'X'}, gnc_colour('controller'));
-set_param([s '/x'],   'Position', [ 60  90  90 110]);
+%   적분기는 **연속**이다 (사용자 지시, 2026-09-29). 이산 적분기를 쓰면 제어기가
+%   솔버와 다른 시간축에서 돌아 모델이 두 개의 시간을 갖게 된다 - 이 강의의 모델은
+%   전부 연속시간 플랜트에 연속시간 제어기다.
+%   The integrator is continuous: a discrete one would put the controller on a
+%   different time base from the plant, and every model in this course is a
+%   continuous plant with a continuous controller.
+%
+%   안티와인드업 / the anti-windup
+%       **back-calculation** 이다 (3주차 F 절). 포화가 잘라 낸 양 X - X_raw 를 Kb 배
+%       하여 적분기 입력에 되돌린다. 한계에 걸려 있는 동안 그 항이 음수라 적분이
+%       스스로 물러나고, 오차의 부호가 바뀌기 전에 풀린다.
+%       Kb = 0 이면 안티와인드업이 없는 것이다 - 두 값으로 돌려 비교할 수 있다.
+%       Back-calculation, as in Week 3 section F: the amount the saturation removed,
+%       X - X_raw, is fed back through Kb into the integrator's input. While the
+%       limit is active that term is negative, so the integral backs off by itself
+%       instead of waiting for the error to change sign. Kb = 0 switches it off.
+s = add_subsys(m, 'speed loop', pos, {'u_d','x'}, {'X'}, gnc_colour('controller'));
 set_param([s '/u_d'], 'Position', [ 60 190  90 210]);
-set_param([s '/X'],   'Position', [700 120 730 140]);
+set_param([s '/x'],   'Position', [ 60 290  90 310]);
+set_param([s '/X'],   'Position', [860 190 890 210]);
 
-sel(s, 'u = x(1)', 1, [140 82 240 118]);
+sel(s, 'u = x(1)', 1, [140 282 240 318]);
 route(s, 'x', 1, 'u = x(1)', 1, zeros(0,2));
 
-%  1) 속도 오차. 부호가 '+-' 이고 u 가 아래에서 들어온다 - 합산점은 첫 입력을 왼쪽에,
-%     둘째를 아래에 놓는다 (add_sum 참고). 명령이 왼쪽, 되먹임이 아래 - MSS 데모의 모양이다.
-%     The command enters on the left and the measurement from below, which is how
-%     the MSS demonstration models draw a feedback junction.
+%  1) 속도 오차. 명령이 왼쪽, 측정이 아래에서 - MSS 데모의 되먹임 합산점 모양이다.
+%     The command on the left edge and the measurement from below, the shape a
+%     feedback junction has in the MSS demonstration models.
 add_sum(s, 'e', '+-', [300 200]);
 route(s, 'u_d',       1, 'e', 1, zeros(0,2));
-route(s, 'u = x(1)',  1, 'e', 2, [300 100]);
+route(s, 'u = x(1)',  1, 'e', 2, [300 300]);
 
 %  2) P 와 I / the two terms
-gain(s, 'Kp_u', 'Kp_u', [360 182 420 218]);
-gain(s, 'Ki_u', 'Ki_u', [360 292 420 328]);
+gain(s, 'Kp_u', 'Kp_u', [380 182 440 218]);
+gain(s, 'Ki_u', 'Ki_u', [380 302 440 338]);
 route(s, 'e', 1, 'Kp_u', 1, zeros(0,2));
-route(s, 'e', 1, 'Ki_u', 1, [340 200; 340 310]);
-add_block('simulink/Discrete/Discrete-Time Integrator', [s '/I'], ...
-          'IntegratorMethod','Integration: Forward Euler', 'SampleTime','h', ...
-          'InitialCondition','0', 'LimitOutput','on', ...
-          'UpperSaturationLimit','X_max', 'LowerSaturationLimit','-X_max', ...
-          'Position', [460 282 520 338]);
-route(s, 'Ki_u', 1, 'I', 1, zeros(0,2));
+route(s, 'e', 1, 'Ki_u', 1, [350 200; 350 320]);
+add_sum(s, 'into I', '++', [500 320]);
+add_block('simulink/Continuous/Integrator', [s '/I'], ...
+          'InitialCondition','0', 'Position', [560 302 600 338]);
+route(s, 'Ki_u',   1, 'into I', 1, zeros(0,2));
+route(s, 'into I', 1, 'I', 1, zeros(0,2));
 
 %  3) 더하고 자른다 / add them and clamp
-add_sum(s, 'X raw', '++', [570 200]);
+add_sum(s, 'X raw', '++', [660 200]);
 route(s, 'Kp_u', 1, 'X raw', 1, zeros(0,2));
-route(s, 'I',    1, 'X raw', 2, [570 310]);
+route(s, 'I',    1, 'X raw', 2, [660 320]);
 add_block('simulink/Discontinuities/Saturation', [s '/thrust limit'], ...
-          'UpperLimit','X_max', 'LowerLimit','-X_max', 'Position', [620 182 670 218]);
+          'UpperLimit','X_max', 'LowerLimit','-X_max', 'Position', [710 182 760 218]);
 route(s, 'X raw',        1, 'thrust limit', 1, zeros(0,2));
-route(s, 'thrust limit', 1, 'X', 1, [690 200; 690 130]);
+route(s, 'thrust limit', 1, 'X', 1, zeros(0,2));
+
+%  4) 안티와인드업: 잘려 나간 만큼을 적분기로 되돌린다 (3주차 F 절과 같은 배선)
+%     The anti-windup: what the saturation removed, returned to the integrator.
+add_sum(s, 'X - X raw', '+-', [760 420]);
+gain(s, 'Kb', 'Kb', [600 472 650 508]);
+set_param([s '/Kb'], 'Orientation','left');
+route(s, 'thrust limit', 1, 'X - X raw', 1, [820 200; 820 380; 700 380; 700 420]);
+route(s, 'X raw',        1, 'X - X raw', 2, [690 200; 690 450; 760 450]);
+route(s, 'X - X raw',    1, 'Kb',        1, [800 420; 800 490]);
+route(s, 'Kb',           1, 'into I',    2, [500 490]);
+for nm = {'e','into I','X raw','X - X raw'}
+    set_param([s '/' nm{1}], 'NamePlacement','alternate');
+end
 end
 
 % -------------------------------------------------------------------------

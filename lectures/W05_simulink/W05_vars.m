@@ -47,6 +47,7 @@ V.track_Nmin = -30;  V.track_Nmax = 100;
 V.u_d   = 1.0;         % 목표 전진속도 / commanded surge speed    [m/s]
 V.Kp_u  = 200;         % 3주차의 게인 그대로 / the gains of Week 3, unchanged
 V.Ki_u  = 200;
+V.Kb    = 1;           % 되감기 이득, 3주차와 같다 / back-calculation gain, as in Week 3
 
 %  선체와 추진기 / hull and thrusters
 V.k_pos = cfg.k_pos;  V.k_neg = cfg.k_neg;  V.y_pont = cfg.y_pont;

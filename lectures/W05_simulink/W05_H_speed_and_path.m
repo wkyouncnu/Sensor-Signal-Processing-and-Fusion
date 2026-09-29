@@ -76,5 +76,18 @@ fprintf('\n    N_lim [N m]  '); fprintf('%8.2f', max(0, arrayfun(Nlim, 0:20:140)
 fprintf('\n    the constants the models hold:  N_max = N_lim(%g) = %.2f,  N_speed = N_lim(%g) = %.2f N m\n', ...
         V0.X_ff, V0.N_max, V0.X_max, V0.N_speed);
 
-%% 4) 그림 셋 / the three figures
+%% 4) 안티와인드업이 실제로 하는 일 / what the anti-windup actually does
+%    Kb = 0 이면 되감기가 없다. 이 임무에서 전진력이 한계에 닿는 것은 출발 직후뿐이라
+%    차이가 작지만, **0 이 아니다** — 그것이 안티와인드업을 재는 방법이다 (3주차 F 절).
+%    Kb = 0 removes the back-calculation. On this mission the force only reaches its
+%    limit just after the start, so the difference is small but not zero.
+fprintf('\n    the anti-windup (back-calculation), measured\n');
+fprintf('      Kb      X at its limit for [s]   speed overshoot [m/s]\n');
+for kb = [1 0]
+    Rb = W05_read('W05_H_speed_path', 'Kb', kb);
+    fprintf('      %-5g   %18.2f   %18.4f\n', kb, ...
+            sum(abs(Rb.X) > V0.X_max - 0.01)*Rb.V.h, max(Rb.u) - Rb.V.u_d);
+end
+
+%% 5) 그림 셋 / the three figures
 W05_fig_speed_path(RUN, LBL, cfg, here);

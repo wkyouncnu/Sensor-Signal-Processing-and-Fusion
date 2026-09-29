@@ -404,12 +404,23 @@ antiwindup 부분으로 ... 너무 복잡해"*, *"ssa 부분도 간단하게 함
 > | 옮긴 것 | 어떻게 |
 > |---|---|
 > | `heading autopilot` | 서브시스템. `Fcn` 하나로 `ssa`, `Gain` `Kp`·`minus Kd`, `Saturation` `moment limit` — **4주차 모델과 같은 블록, 같은 이름** |
-> | `speed loop` | 서브시스템. `Gain` 둘 + `Discrete-Time Integrator`(Forward Euler, h) + `Saturation` — **3주차와 같은 한 줄**. 안티와인드업은 적분기의 Limit output |
+> | `speed loop` | 서브시스템. `Gain` 둘 + **연속 `Integrator`** + `Saturation` + **back-calculation `Kb`** — 3주차 배선 그대로 |
 > | 배분 | `T = B \ [X; N]`, `B = [1 1; y_pont -y_pont]` — MSS 와 같은 행렬 형태 |
 > | 명령 | 캔버스의 Constant: 웨이포인트·Delta·R_switch·kappa·**u_d** |
 > | 계수 | `Gain` 블록의 값이 변수 이름. Constant + Product 로 빼지 않는다 (블록만 늘고 선이 꼬인다) |
 > | 한계 | `Saturation` 상수 둘. `N_max` = N_lim(X_ff) = 70.85, **`N_speed` = N_lim(X_max) = 47.15** |
 >
+> [!warning] 이산 적분기와 보이지 않는 안티와인드업 — 둘 다 사용자가 잡았다
+> 처음에는 `Discrete-Time Integrator`(Forward Euler, `h`)에 Limit output 클램핑을 썼다.
+> *"discrete 제어기 말고 연속 시간에서 제어기 사용해줘"* — 플랜트가 연속이므로 제어기도
+> 연속이어야 하고, 섞으면 모델이 시간축 둘을 갖는다. 그리고
+> *"pi controller 속도 제어에서 왜 antiwindup이 없어?"* — **있었지만 블록 안의 램프
+> 아이콘이라 도면에서 읽히지 않았다.** 지금은 3주차와 같은 back-calculation 이고,
+> `sat(X) - X` -> `Kb` -> 적분기 입력이 **도면에서 오른쪽에서 왼쪽으로 가는 유일한 선**이다.
+> `Kb = 0` 으로 껐다 켤 수 있어 값을 실었다: 속도 오버슛 0.0380 -> 0.0216 m/s,
+> 포화 유지 0.92 -> 0.66 s. 작다고 정직하게 적었다 — 이 임무는 한계에 1 초도 머물지 않는다.
+> 연속 적분기로 바꾼 뒤 5-7 수치도 다시 쟀다 (189.7 s, 0.577 m).
+
 > **검증**: 5-2 ~ 5-6 절의 표가 **한 자리도 틀리지 않고** 같다 — 옮기기가 옳았다는 증거다.
 > 5-7 절은 한계를 신호에서 상수로 되돌렸으므로 수치가 바뀌었고, 본문을 다시 썼다:
 > 마지막 다리 189.5 s (전 188.7), 다리 2~4 평균 |y_e| 0.576 m (전 0.439). 대신

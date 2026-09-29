@@ -79,6 +79,8 @@ track_Nmin = -30;  track_Nmax = 100;
 u_d   = 1.0;          % 목표 전진속도 / commanded surge speed         [m/s]
 Kp_u  = 200;          % 3주차가 고른 게인 그대로 / the gains Week 3 chose
 Ki_u  = 200;
+Kb    = 1;            % back-calculation gain, as in Week 3            [1/s]
+                      % 0 이면 안티와인드업이 없다 / 0 switches the anti-windup off
 X_max = 120;          % 전진력 한계 / the surge force limit            [N]
 
 %  속도 루프가 붙으면 전진력이 X_max 까지 올라갈 수 있으므로 한계를 **거기서** 잡는다.

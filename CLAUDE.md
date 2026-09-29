@@ -318,7 +318,9 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
 | **실시간 화면** | Animate 블록은 **빼서 끄지 않는다.** `animate` Constant 가 0 이면 블록이 아무것도 하지 않는다. `WXX_vars` 는 0(절 스크립트), `WXX_0_setup` 은 1(사람이 Run 을 누른다) |
 | **현실 시간** | `InitFcn` 이 매 Run 마다 `pace` 를 읽어 `EnablePacing` 을 켠다. 모델에 박아 두지 않는다 — 수치는 같고 기다리는 시간만 다르다 → `standing-orders.md` §15-20 |
 | **한계식** | 상수가 신호가 되면 **그 상수로 계산해 둔 모든 포화 한계를 다시 계산한다.** W05 §5-7 이 `N_max`(70.85) 옆에 `N_speed`(47.15) 를 둔 이유 → §15-22 |
-| **제어기** | **서브시스템 안의 시뮬링크 블록.** MATLAB Function 한 덩어리로 두지 않는다. `ssa` 는 `Fcn` 하나(`atan2(sin(u),cos(u))`), 게인은 `Gain` 의 값이 변수 이름, 포화는 평범한 `Saturation`, 안티와인드업은 **적분기 자신의 Limit output**. 근거는 MSS `demoOtterUSVPathFollowingHeadingControl` → `standing-orders.md` §15-23 |
+| **제어기** | **서브시스템 안의 시뮬링크 블록.** MATLAB Function 한 덩어리로 두지 않는다. `ssa` 는 `Fcn` 하나(`atan2(sin(u),cos(u))`), 게인은 `Gain` 의 값이 변수 이름, 포화는 평범한 `Saturation`. 근거는 MSS `demoOtterUSVPathFollowingHeadingControl` → `standing-orders.md` §15-23 |
+| **연속시간** | 적분기는 **연속 `Integrator`** 다. 플랜트가 연속이므로 제어기도 연속이다 — 이산 적분기를 섞으면 모델이 시간축 둘을 갖는다 (사용자 지시, 2026-09-29) |
+| **안티와인드업** | **back-calculation 을 그려서 보이게 한다.** `sat(X) − X` 를 `Kb` 배 해 적분기 입력에 더한다 (3주차 배선 그대로). 적분기 안의 Limit output 은 도면에 보이지 않아 "안티와인드업이 없다" 는 말을 듣는다 |
 | **명령 대 계수** | **명령은 캔버스의 Constant**(웨이포인트·Δ·R·κ·u_d), **계수는 Gain 의 값**. 둘 다 작업공간을 읽지만, 학생이 무엇을 지시하는지는 그림에 보여야 한다 |
 
 연구실 MILS 통합모델에서 **제어기·유도법칙·배분기를 복사하지 않는다.**
