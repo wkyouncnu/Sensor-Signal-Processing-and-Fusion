@@ -659,6 +659,23 @@ $$
 7. The integral state therefore does for the current what the integral of Week 3 did for the drag: it holds the crab angle by itself, so that line 2 no longer needs an error to produce one.
 8. The denominator $\Delta^2 + (y_e + \kappa y_{\text{int}})^2$ grows with the error, so the state barely integrates while the vessel is far off the path — **anti-windup built into the law**, in place of the back-calculation bolted on in Weeks 2 to 4 (Børhaug, Pavlov and Pettersen, 2008; Fossen, *Handbook*, 2nd ed., §12.3).
 
+![The same current, the same bow angle: LOS leaves an offset, ILOS invents one so the real error can vanish](../figures/w05-ilos-idea.svg)
+
+**Reading the figure against the derivation.**
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| both panels, the bow arrow | tilted upstream by the **same** $22.8°$ | line 1: the crab angle is set by the current and the speed, not by the law |
+| panel 1, where the hull sits | below the path, and its track is **parallel** to it | line 2: LOS can hold that tilt only while $y_e \neq 0$ |
+| panel 1, the red marker | $y_e = 2.10$ m, which is $\Delta\tan\beta$ | line 3: the offset is the tangent, measured at $2.107$ m |
+| panel 2, where the hull sits | **on** the path, with the same tilt | line 7: the integral now holds the tilt, so the error need not |
+| panel 2, the dashed line below the path | $\kappa y_{\text{int}} = 2.10$ m — a **phantom** error, with no vessel on it | line 6: the law reads $y_e + \kappa y_{\text{int}}$, and that sum is what must vanish |
+| the two together | nothing about the current appears in either law | line 7: ILOS never learns what a current is; it only knows the sum must be zero |
+
+**What the figure says**
+
+- The integral does not fight the current. It **replaces the error the current was producing** with one of its own, so that the arctan keeps leaning the bow by exactly as much as before while the real error goes to zero.
+
 Measured by Experiment 5-5b at 0.3 m/s, with $\Delta = 5$ m:
 
 | $\kappa$ | mean $y_e$, last 100 s [m] | overshoot [m] |
@@ -706,13 +723,38 @@ Expected output:
 
 **The model.** `W05_F_ILOS` — the same guidance block with the integral state of the law above. The black line in the figure is the run of Experiment 5-5a, for comparison.
 
+> [!important] What to open, and what to read inside it
+> The integral of this week is **not** a Simulink `Integrator` block. It lives inside the `guidance` MATLAB Function, because its update depends on the very quantity it is producing — and that is easier to read as two lines than as a loop of blocks.
+>
+> Double-click `guidance` in `W05_F_ILOS` and look for three things:
+>
+> ```matlab
+> persistent k y_int                    % 이 블록이 기억하는 것 둘: 지금 다리, 적분 상태
+> if isempty(k), k = 1; y_int = 0; end  % Run 을 누를 때마다 처음으로 돌아간다
+>
+> psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);          % ① 법칙
+> y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);   % ② 적분
+> ```
+>
+> | Read this | And see |
+> |---|---|
+> | `persistent k y_int` | the block has **memory**: the active leg and the integral state. Nothing else in the guidance block does |
+> | line ① against §5-3's law | one extra term inside the same arctan — that is the whole of ILOS |
+> | line ②'s denominator | $\Delta^2 + (y_e + \kappa y_{\text{int}})^2$, growing with the error: the anti-windup of line 8, with no saturation block and no back-calculation gain |
+> | `kappa = 0` | line ② still runs but contributes nothing to line ①, so the block becomes exactly the LOS of §5-3. Not approximately: run this way it reproduces `W05_F_LOS` to $0.000\times10^{0}$ m, which is how Experiment 5-5a and this one are kept comparable |
+>
+> The block is discrete at $h$ (`set_mlfcn`'s sample-time argument), because a block with memory must be told how often to update it.
+
 **Opening and running.**
 
 ```matlab
 W05_0_setup
 WP_N = [0 400]'; WP_E = [0 0]'; V_c = 0.3;
 open_system('W05_F_ILOS')          % Run — 같은 조류, 오차가 사라진다 / the same current, no offset
+open_system('W05_F_ILOS/guidance') % 적분 두 줄을 직접 본다 / the two lines above
 kappa = 1;                         % Run — 더 빨리 없애지만 더 넘어간다 / faster, and past it
+kappa = 0;                         % Run — 같은 블록이 LOS 가 된다 / the same block becomes LOS
+kappa = 0.3;
 W05_F_ILOS_removes_it              % kappa 네 가지를 한 번에 / all four values at once
 ```
 

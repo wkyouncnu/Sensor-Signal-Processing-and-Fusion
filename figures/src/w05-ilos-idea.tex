@@ -1,0 +1,156 @@
+% figures/w05-ilos-idea.svg — 같은 조류에 LOS 와 ILOS 가 각각 무엇을 하는가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w05-ilos-idea.tex figures/w05-ilos-idea.svg
+%
+% 기하를 눈대중으로 찍지 않는다. 강의 §5-5 의 측정에서 V_c = 0.3 m/s 일 때 배가
+% 붙드는 선수각은 -22.8 deg 이고 Delta = 5 m 이므로 정상상태 오프셋은
+%
+%     y_e^ss = Delta tan(beta) = 5 * tan(22.8 deg) = 2.10 m
+%
+% 이고 강의 표의 측정치는 2.107 m 이다 (§5-5 의 실험 5-5a). 그림의 각과 길이는
+% 그 값 그대로 쓴다 — 0.005 m 의 차이는 인쇄된 선수각을 소수점 한 자리로
+% 반올림한 데서 온다.
+%
+% ── 부호를 맞춰 둔다 ────────────────────────────────────────────────────────
+% 침로가 경로와 나란하면 chi = pi_p 이고 chi = psi + beta 이므로 psi = pi_p - beta:
+% 선수는 경로 방향에서 **반시계로** beta 만큼 돌아간다. NED 에서 양의 각은
+% 시계방향이므로, 화면에서 경로를 오른쪽(동쪽)으로 그리면 선수는 **위로** 든다.
+% 한편 y_e^{\,p} = +Delta tan(beta) 는 경로 방향의 **우현** 쪽, 곧 화면 아래쪽이다.
+% 그래서 LOS 선체는 경로 아래에 있고 선수는 위를 향한다 — 조류를 거슬러.
+% 조류는 우현으로 밀므로 화면에서 아래로 그린다.
+%
+% ALOS 판은 이 주차가 가르치지 않는다 (W05_simulink/_previous_version/ 에 있다).
+% 세 법칙을 함께 그린 옛 그림은 figures/src/w05-ilos-alos-idea.tex 에 남겨 둔다.
+%
+% 출처: Fossen (2021) Handbook §12.3 (LOS),
+%       Borhaug, Pavlov & Pettersen (2008) CDC, pp. 4984-4991 (ILOS).
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\def\BE{22.8}        % 크랩각 [deg] — 강의 §5-5 의 측정
+\def\SC{6}           % 1 m = 6 mm
+\def\OFF{12.6}       % Delta tan(beta) = 2.10 m -> 12.6 mm
+
+\tikzset{
+  pth/.style  = {pathc, line width=0.8pt, densely dashed},
+  cur/.style  = {flow, line width=0.9pt, -{Stealth[length=4.2pt,width=3.0pt]}},
+  bow/.style  = {ink, line width=0.9pt, -{Stealth[length=5pt,width=3.6pt]}},
+  trk/.style  = {pathc, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}},
+}
+% 선체 — 경로 방향에서 반시계로 beta 만큼 돌아간 채로 (x,y) 에 놓는다
+\newcommand{\hull}[2]{%
+  \begin{scope}[shift={(#1,#2)}, rotate=\BE]
+    \fill[ink, opacity=0.88] (7.5,0) -- (-1.5,3.0) -- (-1.5,-3.0) -- cycle;
+  \end{scope}}
+\newcommand{\hd}[2]{\parbox[b]{86mm}{\raggedright
+  {\small\bfseries\color{ink}#1}\\[1.5pt]{\scriptsize\color{soft}#2}}}
+% 높이를 못 박는다 — \parbox[t] 만으로는 tabular 가 아래 깊이를 세지 않는다
+\newcommand{\ft}[1]{\parbox[t][22mm][t]{86mm}{\raggedright\scriptsize\color{ink}#1}}
+
+\begin{document}
+\begin{tabular}{@{}l@{}}
+
+\parbox{180mm}{\raggedright
+  {\small\bfseries\color{ink}
+   Both laws end up pointing the bow upstream by the same angle. They differ in
+   what is left over.}\\[2pt]
+  {\scriptsize\color{soft}
+   Same vessel, same path, same current: $V_c = 0.3$\,m/s on the beam, so the
+   vessel must hold $\beta = 22.8^\circ$ of crab and $\Delta\tan\beta = 2.10$\,m
+   with $\Delta = 5$\,m. Experiment 5-5a measures the offset at $2.107$\,m.
+   \textbf{The bow tilt is the same in both panels — only one of them is on the
+   path.}}}\\[3.5mm]
+
+\begin{tabular}{@{}c@{\hspace{6mm}}c@{}}
+\hd{1\ \ LOS}{the lean is spent on the drift}
+& \hd{2\ \ ILOS}{an error that is not there, so the real one can be zero}
+\\[1.5mm]
+
+% ===================== 1 : LOS =============================================
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-2,-30) rectangle (86,26);
+  \draw[pth] (0,0) -- (84,0);
+  \node[note, pathc, anchor=south west] at (0,0.8) {the path};
+
+  % 조류 — 경로의 우현(화면 아래)으로 민다
+  \foreach \x in {8,26,44,62} {
+    \draw[cur] (\x,20) -- (\x,13);}
+  \node[note, flow, anchor=west] at (2,23) {the current, $V_c = 0.3$\,m/s};
+
+  % 선체 : 경로 아래 y_e^{\,p} = +2.10 m
+  \hull{24}{-\OFF}
+  \draw[bow] (24,-\OFF) -- ++({26*cos(\BE)},{26*sin(\BE)});
+  % 화살촉 **오른쪽**에 붙인다. south east 로 두면 이름표가 화살대 위에 얹힌다
+  % (CLAUDE.md §4 규칙 6) / to the right of the arrowhead: anchored south east the
+  % label lies on top of the arrow shaft
+  \node[note, ink, anchor=west] at ({24+26*cos(\BE)+1},{-\OFF+26*sin(\BE)}) {bow, $\psi$};
+  \draw[trk] (24,-\OFF) -- (58,-\OFF);
+  \node[note, pathc, anchor=north] at (44,{-\OFF-1}) {track, $\chi$};
+  \draw[accent, line width=0.6pt] ({24+17},{-\OFF}) arc (0:\BE:17);
+  \node[anote, anchor=west] at ({24+18.5},{-\OFF+4}) {$\beta$};
+
+  % 남는 오프셋
+  \draw[errc, line width=0.7pt, {Stealth[length=3.6pt]}-{Stealth[length=3.6pt]}]
+        (70,0) -- (70,-\OFF);
+  \node[font=\scriptsize, errc, anchor=west] at (71,{-0.5*\OFF}) {$y_e^{\,p} = 2.10$\,m};
+\end{tikzpicture}
+&
+% ===================== 2 : ILOS ============================================
+\begin{tikzpicture}[x=1mm, y=1mm, baseline={(0,0)}]
+  \path (-2,-30) rectangle (86,26);
+  \draw[pth] (0,0) -- (84,0);
+  \node[note, pathc, anchor=south west] at (0,0.8) {the path};
+
+  \foreach \x in {8,26,44,62} {
+    \draw[cur] (\x,20) -- (\x,13);}
+  \node[note, flow, anchor=west] at (2,23) {the current, $V_c = 0.3$\,m/s};
+
+  % 선체 : 경로 위, y_e^{\,p} = 0
+  \hull{24}{0}
+  \draw[bow] (24,0) -- ++({26*cos(\BE)},{26*sin(\BE)});
+  \node[note, ink, anchor=south west] at ({24+26*cos(\BE)},{26*sin(\BE)}) {bow, $\psi$};
+  \draw[trk] (24,0) -- (58,0);
+  \node[note, pathc, anchor=north] at (44,-1) {track, $\chi$};
+  \draw[accent, line width=0.6pt] (41,0) arc (0:\BE:17);
+  \node[anote, anchor=west] at (42.5,4) {$\beta$};
+
+  % 있지도 않은 오차
+  \draw[accent, line width=0.7pt, densely dashed] (2,-\OFF) -- (70,-\OFF);
+  \draw[accent, line width=0.6pt, {Stealth[length=3.6pt]}-{Stealth[length=3.6pt]}]
+        (70,0) -- (70,-\OFF);
+  \node[anote, anchor=east] at (69,{-0.5*\OFF}) {$\kappa\,y_{int} = 2.10$\,m};
+  \node[anote, anchor=north west, align=left, text width=62mm] at (2,{-\OFF-1.5})
+       {a \textbf{phantom} error the integrator built. There is no vessel here.};
+\end{tikzpicture}
+\\[1mm]
+\ft{The bow is tilted upstream by $22.8^\circ$ — but that tilt \emph{is} the
+    $\arctan(y_e^{\,p}/\Delta)$ term, and it is entirely used up cancelling the
+    drift. Nothing is left to close $y_e^{\,p}$. The vessel runs \textbf{parallel}
+    to the path, $2.107$\,m to the side of it, for ever (Experiment 5-5a).}
+& \ft{The law reads $y_e^{\,p} + \kappa y_{int}$, not $y_e^{\,p}$. The integrator
+      fills until its phantom error equals the old $2.10$\,m offset, and only then
+      can the \textbf{real} error be zero — measured at $0.011$\,m with
+      $\kappa = 0.3$ (Experiment 5-5b). It never learns what a current is; it only
+      knows the error must vanish.}
+\\
+\end{tabular}\\[3.5mm]
+
+\parbox{180mm}{\raggedright\scriptsize
+  \textbf{The one idea to take away.} A current cannot be removed by steering
+  harder. It must be \textbf{answered} by pointing the bow upstream. LOS points
+  upstream but spends the whole lean on the drift, so an offset is left over;
+  ILOS buys that lean from a second term and hands the arctan its original job
+  back.\\[3pt]
+  \textbf{And the anti-windup is in the law, not bolted on.} The integrator's own
+  update is
+  $\dot y_{int} = \Delta y_e^{\,p} / (\Delta^2 + (y_e^{\,p} + \kappa y_{int})^2)$,
+  whose denominator grows with the error — so the state barely fills while the
+  vessel is far off the path, and fills fastest just where it should, close to it.
+  Weeks 2 to 4 had to add back-calculation for the same effect.\\[3pt]
+  \textbf{Sources.} LOS — Fossen (2021), \emph{Handbook of Marine Craft
+  Hydrodynamics and Motion Control}, 2nd ed., §12.3. ILOS — B\o rhaug, Pavlov
+  and Pettersen (2008), \emph{Proc.\ 47th IEEE CDC}, pp.~4984--4991. The numbers
+  in the panels are §5-5's measurements, not illustrations.}
+
+\end{tabular}
+\end{document}
