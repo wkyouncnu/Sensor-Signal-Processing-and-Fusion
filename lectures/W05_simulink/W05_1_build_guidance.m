@@ -55,7 +55,7 @@ evalin('base', 'W05_0_setup');
 %  belongs to Experiment 5-5a, where the offset a current leaves is measured.
 M = struct( ...
   'name',  {'W05_C_atan2','W05_D_LOS','W05_E_switching','W05_F_LOS','W05_F_ILOS','W05_G_tuning','W05_H_speed_path'}, ...
-  'law',   {'atan2','LOS','LOS','LOS','ILOS','ILOS','ILOS'}, ...
+  'n',     {1, 2, 2, 2, 3, 3, 3}, ...          % law: 1 atan2, 2 LOS, 3 ILOS
   'speed', {false, false, false, false, false, false, true}, ...
   'title', {'AIM AT THE NEXT WAYPOINT', 'LINE OF SIGHT, AND THE LOOK-AHEAD DISTANCE', ...
             'WAYPOINT SWITCHING ON A MISSION', 'LOS IN A CURRENT: THE OFFSET IT LEAVES', ...
@@ -86,10 +86,17 @@ Y = 200;
 %  seen. As hidden parameters they had no ports, so the canvas did not show where
 %  the numbers this week chooses go in. The values still come from the workspace:
 %  each Constant's Value is the variable's name.
-GIN = {'WP_N','WP_E','Delta','R_switch','kappa'};
+%  일곱째 입력이 **법칙을 고르는 flag** 다 (사용자 지시, 2026-09-30). 1 atan2,
+%  2 LOS, 3 ILOS. 값은 작업공간의 `law` 에서 오므로 명령창에서 바꾸고 Run 만 누르면
+%  같은 모델이 다른 법칙으로 돈다. 절마다 쓰는 법칙은 W05_read 가 명시해 넘긴다.
+%  The seventh input is the flag that chooses the law: 1 atan2, 2 LOS, 3 ILOS. Its
+%  value comes from the workspace variable `law`, so changing it and pressing Run
+%  makes the same model follow a different law; the section scripts pass it
+%  explicitly so that each experiment states which law it measured.
+GIN = {'WP_N','WP_E','Delta','R_switch','kappa','law'};
 add_block('simulink/User-Defined Functions/MATLAB Function', [m '/guidance'], ...
           'Position', [300 Y-160 520 Y+160]);
-set_mlfcn([m '/guidance'], guidance_code(o.law), 'psi_d', '[1 1]', 'h');
+set_mlfcn([m '/guidance'], guidance_code(), 'psi_d', '[1 1]', 'h');
 mlfcn_params([m '/guidance'], {'h'});     % 고정 스텝만 숨긴다 / only the step stays hidden
 q = port_xy(m, 'guidance', 'Inport', 1);
 from_at(m, 'x', [150 q(2)]);
@@ -590,9 +597,16 @@ end
 
 % =========================================================================
 %  MATLAB Function 코드 / the code of the MATLAB Function blocks
-function C = guidance_code(law)
-head = { ...
-'function [psi_d, y_e, aux, wp] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, h)'
+function C = guidance_code()
+%GUIDANCE_CODE  유도 블록의 코드. **세 법칙이 한 블록 안에 있고 law 가 고른다**
+%               (사용자 지시, 2026-09-30: "flag를 둬서 atan2, los, ilos 등 알고리즘을
+%               선택할 수 있도록"). 예전에는 모델마다 다른 코드를 넣어서, 블록을 열면
+%               그 모델의 법칙 하나만 보였다 — 셋을 나란히 읽을 수가 없었다.
+%               The three laws live in one block and `law` chooses. Previously each
+%               model carried only its own law, so opening the block showed one of
+%               the three and never let the reader compare them.
+C = { ...
+'function [psi_d, y_e, aux, wp] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, law, h)'
 '%#codegen'
 '%GUIDANCE  웨이포인트 목록과 배의 위치에서 명령 선수각 psi_d 를 만든다.'
 '%          Make the commanded heading psi_d from the waypoint list and the position.'
@@ -601,10 +615,19 @@ head = { ...
 '%   The input x is the Otter''s 12 states (position N = x(7), E = x(8));'
 '%   the rest are workspace variables (W05_0_setup).'
 '%'
+'%   law 이 법칙을 고른다 / law selects the law'
+'%     1  atan2   다음 웨이포인트를 곧장 겨냥한다 / aim straight at the next waypoint'
+'%     2  LOS     경로 위 Delta 앞의 점을 겨냥한다 / aim Delta ahead on the path'
+'%     3  ILOS    LOS + 적분 (조류에 맞선다)      / LOS plus an integral, against a current'
+'%   캔버스의 Constant `law` 에서 온다. 명령창에서 law = 2 로 바꾸고 Run 을 누르면'
+'%   같은 모델이 다른 법칙으로 돈다 — 셋을 같은 임무에서 비교할 수 있다.'
+'%   It arrives from the Constant `law` on the canvas: change it in the Command'
+'%   Window, press Run, and the same model follows a different law.'
+'%'
 '%   출력 / outputs'
 '%     psi_d  명령 선수각 [rad] -> 선수각 오토파일럿 / commanded heading -> the autopilot'
 '%     y_e    횡방향 오차 [m], 경로 오른쪽이 + / cross-track error, right of the path +'
-'%     aux    ILOS 의 적분 상태 (다른 법칙은 0) / the ILOS integral (0 for other laws)'
+'%     aux    ILOS 의 적분 상태 (다른 법칙은 0) / the ILOS integral (0 for the others)'
 '%     wp     지금 따라가는 다리 번호 / the leg being followed'
 ''
 '% 0) 기억하는 값: 지금 다리 k, 적분 y_int. 블록이 가지고 있다가 실행마다 처음으로 돌아간다.'
@@ -630,53 +653,55 @@ head = { ...
 'y_e = -dN*sin(pi_p) + dE*cos(pi_p);'
 ''
 '% 3) 다리 끝까지 R_switch 보다 적게 남으면 다음 다리로 (MSS 와 같은 판정).'
-'%    With less than R_switch left to the end of the leg, move to the next leg'
-'%    (the same test as MSS).'
+'%    이 판정은 **세 법칙이 모두 같이 쓴다** — 바뀌는 것은 겨냥하는 방법뿐이다.'
+'%    With less than R_switch left to the end of the leg, move to the next leg (the'
+'%    same test as MSS). All three laws share it; only the aiming differs.'
 'd = sqrt((Nn - Nk)^2 + (En - Ek)^2);'
 'if (d - x_e) < R_switch && k < n-1'
 '    k = k + 1;'
 'end'
 'wp = k;'
-'aux = y_int;'
-''};
-switch law
-    case 'atan2'
-        body = { ...
-'% 4) 법칙: 다음 웨이포인트를 곧장 겨냥한다. 점까지의 방향이지 선까지가 아니다.'
-'%    The law: aim straight at the next waypoint. It points at a POINT, not at the LINE.'
-'psi_d = atan2(En - E, Nn - N);'
-'end'};
-    case 'LOS'
-        body = { ...
-'% 4) 법칙 LOS: 경로 위에서 Delta 만큼 앞의 점을 겨냥한다.'
-'%        psi_d = pi_p - atan(y_e / Delta)'
-'%    pi_p 는 "경로와 나란히", atan 은 "벗어난 만큼 경로 쪽으로 기울여라".'
-'%    y_e 가 작으면 atan(y_e/Delta) ~ y_e/Delta: 횡방향 오차에 대한 P 제어기, Kp = 1/Delta.'
-'%    The law LOS: aim at the point Delta ahead on the path.'
-'%    pi_p says "line up with the path"; the atan says "lean towards it by how'
-'%    far off you are". For small y_e, atan(y_e/Delta) ~ y_e/Delta: a P'
-'%    controller on the cross-track error with Kp = 1/Delta.'
-'psi_d = pi_p - atan(y_e / Delta);'
-'end'};
-    case 'ILOS'
-        body = { ...
-'% 4) 법칙 ILOS: LOS 에 적분을 더한다 — 횡방향 오차에 대한 PI 제어기.'
-'%        psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)'
-'%    조류가 배를 계속 밀면 LOS 는 오차를 남긴다 (P 가 남기는 오차와 같다). 적분이 그만큼을 맡는다.'
-'%    The law ILOS: LOS plus an integral — a PI controller on the cross-track'
-'%    error. A current that keeps pushing leaves an error with LOS alone (the'
-'%    error P leaves); the integral takes it over.'
-'psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);'
 ''
-'% 5) 적분 갱신. 분모가 y_e 와 함께 커지므로 멀리 벗어나 있을 때는 거의 적분하지 않는다:'
-'%    법칙 안에 들어 있는 안티와인드업이다 (Borhaug, Pavlov, Pettersen 2008).'
-'%    Update the integral. The denominator grows with y_e, so it barely'
-'%    integrates while far off the path: anti-windup built into the law.'
-'y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);'
+'% 4) 법칙을 고른다 / choose the law.'
+'%    셋이 나란히 있다. 위에서 아래로 읽으면 유도 법칙이 자라는 순서다:'
+'%    점을 겨냥한다 -> 선을 겨냥한다 -> 선을 겨냥하면서 밀리는 만큼을 기억한다.'
+'%    Read top to bottom and the three are the order in which a guidance law grows:'
+'%    aim at a point, then at a line, then at a line while remembering the push.'
+'if law < 1.5'
+'    % 1) atan2 - 다음 웨이포인트를 곧장 겨냥한다. 점까지의 방향이지 선까지가 아니다.'
+'    %    Aim straight at the next waypoint. It points at a POINT, not at the LINE.'
+'    psi_d = atan2(En - E, Nn - N);'
+'    y_int = 0;'
+'elseif law < 2.5'
+'    % 2) LOS - 경로 위에서 Delta 만큼 앞의 점을 겨냥한다.'
+'    %        psi_d = pi_p - atan(y_e / Delta)'
+'    %    pi_p 는 "경로와 나란히", atan 은 "벗어난 만큼 경로 쪽으로 기울여라".'
+'    %    y_e 가 작으면 atan(y_e/Delta) ~ y_e/Delta: 횡방향 오차에 대한 P 제어기, Kp = 1/Delta.'
+'    %    Aim at the point Delta ahead on the path. pi_p says "line up with the'
+'    %    path"; the atan says "lean towards it by how far off you are". For small'
+'    %    y_e, atan(y_e/Delta) ~ y_e/Delta: a P controller with Kp = 1/Delta.'
+'    psi_d = pi_p - atan(y_e / Delta);'
+'    y_int = 0;'
+'else'
+'    % 3) ILOS - LOS 에 적분을 더한다. 횡방향 오차에 대한 PI 제어기.'
+'    %        psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)'
+'    %    조류가 배를 계속 밀면 LOS 는 오차를 남긴다 (P 가 남기는 오차와 같다).'
+'    %    적분이 그만큼을 맡는다.'
+'    %    LOS plus an integral: a PI controller on the cross-track error. A current'
+'    %    that keeps pushing leaves an error with LOS alone - the error a P'
+'    %    controller leaves - and the integral takes it over.'
+'    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);'
+'    %'
+'    %    적분 갱신. 분모가 y_e 와 함께 커지므로 멀리 벗어나 있을 때는 거의 적분하지'
+'    %    않는다: 법칙 안에 들어 있는 안티와인드업이다 (Borhaug, Pavlov, Pettersen 2008).'
+'    %    The denominator grows with y_e, so it barely integrates while far off the'
+'    %    path: anti-windup built into the law itself.'
+'    y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);'
+'end'
+'aux = y_int;'
 'end'};
 end
-C = [head; body];
-end
+
 % =========================================================================
 function C = allocation_code(o)
 sig = 'function n = allocation(N, X, y_pont, k_pos, k_neg, n_max, n_min)';
@@ -751,12 +776,19 @@ function note(m, o)
 L = {sprintf('WEEK 5, SECTION %s  -  %s', o.sec, o.title), '', ...
      '   guidance -> heading autopilot (Week 4) -> allocation -> Otter', ...
      '   double-click a block to read its code and comments', ''};
-switch o.law
-    case 'atan2', L{end+1} = '   psi_d = atan2(E_next - E, N_next - N)';
-    case 'LOS',   L{end+1} = '   psi_d = pi_p - atan(y_e / Delta)            a P controller on y_e, Kp = 1/Delta';
-    case 'ILOS',  L{end+1} = '   psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)   a PI controller on y_e';
+%  세 법칙을 모두 적는다 — 블록 안에 셋 다 있고 law 가 고르기 때문이다.
+%  이 절이 쓰는 값에 화살표를 붙여 어느 것이 이 실험인지 표시한다.
+%  All three are listed, because the block holds all three and `law` chooses; an
+%  arrow marks the one this section measures.
+LAWS = {'1  atan2   psi_d = atan2(E_next - E, N_next - N)              aims at a POINT', ...
+        '2  LOS     psi_d = pi_p - atan(y_e / Delta)                   a P controller on y_e, Kp = 1/Delta', ...
+        '3  ILOS    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)   a PI controller on y_e'};
+L{end+1} = sprintf('   law chooses the guidance law.  This section uses law = %d', o.n);
+for i = 1:3
+    mark = '     ';  if i == o.n, mark = '  -> '; end
+    L{end+1} = [mark LAWS{i}];
 end
-L = [L, {'', 'Change Delta, R_switch, kappa or V_c in the Command Window and press Run:', ...
+L = [L, {'', 'Change law, Delta, R_switch, kappa or V_c in the Command Window and press Run:', ...
          'the Scope shows the cross-track error and the heading; the XY Graph draws the track.'}];
 a = Simulink.Annotation([m '/note']);
 a.Text = strjoin(L, newline);

@@ -31,6 +31,14 @@ WP_N = [0 60 60  0  60]';     % 북쪽 좌표 / north coordinates   [m]
 WP_E = [0  0 60 60 120]';     % 동쪽 좌표 / east coordinates    [m]
 
 %% ---- 유도 / guidance ---------------------------------------------------------
+%  어떤 법칙으로 따라갈 것인가 / which law to follow
+%    1  atan2   다음 웨이포인트를 곧장 겨냥한다 (5-2 절) / aim at the next waypoint
+%    2  LOS     경로 위 Delta 앞의 점을 겨냥한다 (5-3, 5-4, 5-5a 절)
+%    3  ILOS    LOS + 적분, 조류에 맞선다 (5-5b, 5-6, 5-7 절)
+%  바꾸고 Run 을 누르면 같은 모델이 다른 법칙으로 돈다 — 셋을 같은 임무에서 비교할 수 있다.
+%  Change it and press Run: the same model follows a different law, so the three
+%  can be compared on one mission.
+law = 3;
 Delta    = 5;         % 앞보기 거리. 작을수록 세게 경로로 돌아온다 (P 게인 = 1/Delta)
                       % look-ahead distance; smaller turns back harder (P gain = 1/Delta)  [m]
 R_switch = 3;         % 다음 다리로 넘어가는 거리 / distance at which the next leg starts  [m]

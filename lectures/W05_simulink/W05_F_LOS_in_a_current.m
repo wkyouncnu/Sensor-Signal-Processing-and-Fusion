@@ -31,7 +31,7 @@ L = {'WP_N', [0 400]', 'WP_E', [0 0]', 'T_final', 400};   % 곧은 경로, 400 s
 fprintf('\n  W05 Experiment 5-5a  LOS in a current flowing east  (Delta = 5 m)\n');
 fprintf('    V_c [m/s]   error left [m]   heading held [deg]   Delta*tan(heading) [m]\n');
 for Vc = [0.1 0.2 0.3 0.4]
-    R = W05_read('W05_F_LOS', L{:}, 'V_c', Vc);
+    R = W05_read('W05_F_LOS', L{:}, 'law', 2, 'V_c', Vc);      % 2 = LOS
     %  마지막 값 = 정상상태 / the last sample = the steady state
     fprintf('    %-9g   %14.3f   %18.1f   %22.3f\n', Vc, R.y_e(end), R.psi(end), 5*tand(abs(R.psi(end))));
 end

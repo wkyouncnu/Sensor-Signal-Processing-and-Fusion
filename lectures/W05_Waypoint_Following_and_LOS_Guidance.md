@@ -62,9 +62,10 @@ Upon completion of this week, the learner is able to:
 2. Write the LOS law, recognise it as a P controller on the cross-track error with gain $1/\Delta$, and choose $\Delta$ from a measured sweep.
 3. Choose the switching distance from the corner behaviour it produces on a mission.
 4. Predict the offset a cross current leaves under LOS, $\Delta\tan$ of the heading held, and remove it with ILOS.
-5. Tune a guidance law by the order $\Delta \to R \to \kappa$, stating the measurement behind each choice.
-6. Derive the allocation of a surge force and a yaw moment onto two fixed propellers, and state the moment limit it leaves as a function of the surge force.
-7. Run the speed loop of Week 3 and the guidance of Week 5 on one hull, and account for what the combination costs.
+5. Select a guidance law with one flag, and compare the three on one mission with everything else held fixed.
+6. Tune a guidance law by the order $\Delta \to R \to \kappa$, stating the measurement behind each choice.
+7. Derive the allocation of a surge force and a yaw moment onto two fixed propellers, and state the moment limit it leaves as a function of the surge force.
+8. Run the speed loop of Week 3 and the guidance of Week 5 on one hull, and account for what the combination costs.
 
 ## Prerequisites and Setup
 
@@ -244,6 +245,80 @@ open_system('W05_G_tuning')        % Run — XY 그래프에 항적이 그려진
 > - **Point to** — double-click `guidance` and read the numbered comments: the leg, the rotation to $y_e$, the switching test, the law.
 > - **Ask** — "What does the autopilot know about the path?" Nothing. It follows $\psi_d$; the path lives only in the guidance.
 > - **Take away** — guidance is a controller whose output is another controller's command.
+
+### Experiment 5-1b · One model, three laws (10 min)
+
+The `guidance` block does not hold one law. It holds **three**, and a seventh input chooses between them:
+
+| `law` | Law | What it aims at | Derived in |
+|---|---|---|---|
+| 1 | atan2 | the next waypoint — a **point** | §5-2 |
+| 2 | LOS | a point $\Delta$ ahead on the **line** | §5-3 |
+| 3 | ILOS | the same line, while remembering the push | §5-5 |
+
+The value arrives from the Constant named `law` on the canvas, which reads the workspace variable of that name. Changing it and pressing Run makes the same model follow a different law, with no rebuild:
+
+```matlab
+W05_0_setup
+law = 1;                           % 또는 2, 3 / or 2, or 3
+open_system('W05_G_tuning')        % Run
+```
+
+Because everything else is held fixed — the same waypoints, the same current, the same Week 4 autopilot, the same $\Delta$ and $R$ — the difference between the three runs is the law and nothing else. That is what makes the comparison worth anything.
+
+**To produce every figure and number in this section**
+
+```matlab
+cd lectures/W05_simulink
+W05_0_setup
+W05_B_three_laws
+```
+
+Actual output:
+
+```
+  W05 Experiment 5-1b  one model, three laws  (W05_G_tuning, current 0.3 m/s east)
+    law   mean |y_e| legs 2-4 [m]   worst |y_e| [m]   last waypoint at [s]
+    atan2                3.929            10.877                316.1
+    LOS                  1.521             5.102                330.4
+    ILOS                 0.614             3.847                338.8
+```
+
+![Experiment 5-1b: the same mission run three times, changing only the guidance law](W05_simulink/img/W05_result_three_laws.png)
+
+| In the figure | Meaning |
+|---|---|
+| left, the three tracks | the same waypoints and the same autopilot; only `law` differs |
+| left, the blue loop at the last waypoint | atan2 orbiting the point it is aiming at |
+| right | the cross-track error each law leaves, on the same axes |
+| the arrow | the current, 0.3 m/s towards the east |
+
+**Reading the figure and the table.**
+
+| Where to look | What is there | What it says |
+|---|---|---|
+| the blue track, bulging off every leg | $3.93$ m mean, $10.88$ m worst | aiming at a point does not follow the line between points — §5-2 makes this exact |
+| the blue loop at $(120, 60)$ | it circles the last waypoint | a point gives no direction once reached; a line still does |
+| the orange track, parallel to each leg | $1.52$ m mean, and **steady** | LOS holds the line's direction but sits beside it: the offset a current leaves — §5-5 predicts its size |
+| the yellow track, on the legs | $0.61$ m mean | the integral takes over the push — §5-5b |
+| the right panel after $t = 300$ s | blue swinging, orange flat and offset, yellow on zero | three different failures and one success, on one pair of axes |
+| the last column | $316 \to 330 \to 339$ s | each step costs time. Holding a line means not cutting corners, and not cutting corners is further to travel |
+
+**What the figure says**
+
+- The three laws are not three tunings of one idea; they aim at different things, and the table is the order in which a guidance law grows.
+
+| What to try | What to watch |
+|---|---|
+| `law = 1; V_c = 0;` Run | with the current removed atan2 still misses the legs: $1.69$ m mean and $4.44$ m at the worst. The error is geometric, not a disturbance, and that is the whole of §5-2 |
+| `law = 2; kappa = 3;` Run | the track does not move by one bit — $\kappa$ belongs to ILOS, and law 2 never reads it. The block shows why: `y_int` is set to zero on that branch |
+| `law = 3; Delta = 40;` Run | the integral still removes the offset, but the approach takes 118 s (§5-3). $\Delta$ and $\kappa$ do different jobs |
+
+> [!tip] In class
+> - **Purpose** — show the three laws as one question asked three ways, before deriving any of them.
+> - **Point to** — the blue loop at the last waypoint. Ask what a vessel aiming at a point it has already reached is supposed to do.
+> - **Ask** — "Why is the fastest run also the worst?" Cutting a corner is shorter. Path following is the decision not to.
+> - **Take away** — one block, one switch, everything else held fixed: that is what makes three runs a comparison instead of three anecdotes.
 
 ## 5-2. Aiming at a point is not following a line
 
@@ -1213,6 +1288,7 @@ Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so t
 |---|---|---|---|
 | 5-0 | all of them | `W05_0_setup`, `W05_1_build_guidance` | the parameters, and every model written from code |
 | 5-1 | `W05_G_tuning` | — | where guidance sits, and the rotation that gives $y_e$ |
+| 5-1b | `W05_G_tuning` | `W05_B_three_laws` | the `law` flag: one model run as atan2, LOS and ILOS |
 | 5-2 | `W05_C_atan2` | `W05_C_aim_at_the_waypoint` | aiming at the next waypoint |
 | 5-3 | `W05_D_LOS` | `W05_D_lookahead_distance` | LOS and the look-ahead distance |
 | 5-4 | `W05_E_switching` | `W05_E_waypoint_switching` | the switching distance on a mission |
@@ -1233,6 +1309,7 @@ Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so t
 | Step | What was done | How it was verified |
 |---|---|---|
 | 1 | put a guidance law in front of the Week 4 autopilot | `check_overlaps` 0 in all seven models; $y_e$ equals MSS `crosstrackWpt` |
+| 1b | put all three laws in one block behind a flag | Experiment 5-1b: one mission, $3.93 \to 1.52 \to 0.61$ m mean error for atan2, LOS, ILOS |
 | 2 | atan2 against LOS | Experiment 5-2: 10.75 m against 0.04 m halfway to the waypoint |
 | 3 | $\Delta$ as the P gain $1/\Delta$ | Experiment 5-3: 118 s at 40 m, swinging at 0.5 m; $\Delta = 5$ m |
 | 4 | the switching distance | Experiment 5-4: worst corner 2.98 m at $R = 3$ m |

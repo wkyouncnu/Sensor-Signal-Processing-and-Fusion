@@ -30,8 +30,8 @@ addpath(fullfile(fileparts(fileparts(here)), '_tools'), here);
 L = {'WP_N', [0 100 200 300]', 'WP_E', [0 0 0 0]', 'T_final', 300};
 
 %% 1) 두 법칙으로 돌린다 / run the two laws
-A = W05_read('W05_C_atan2', L{:});
-B = W05_read('W05_D_LOS', L{:});
+A = W05_read('W05_C_atan2', L{:}, 'law', 1);           % 1 = atan2
+B = W05_read('W05_D_LOS',   L{:}, 'law', 2);           % 2 = LOS
 
 %% 2) 북쪽으로 50, 100, 150 m 갔을 때의 횡방향 오차 / cross-track error at 50, 100, 150 m north
 %  interp1(북쪽 위치, 오차, 50): 북쪽으로 50 m 에 있을 때의 오차 / the error when 50 m north

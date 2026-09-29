@@ -37,7 +37,7 @@ fprintf('\n  W05 Experiment 5-3  LOS, the look-ahead distance  (start 20 m east 
 fprintf('    Delta [m]   P gain 1/Delta   within 1 m after [s]   overshoot [m]   zero crossings\n');
 f = lab_fig('W05 D  look-ahead', 1000, 480);  hold on; grid on;
 for D = [0.5 1 2.5 5 10 20 40]
-    R = W05_read('W05_D_LOS', L{:}, 'Delta', D);
+    R = W05_read('W05_D_LOS', L{:}, 'law', 2, 'Delta', D);     % 2 = LOS
 
     %  경로 1 m 안에 처음 든 시각 / the first time within 1 m of the path
     k = find(abs(R.y_e) < 1, 1);

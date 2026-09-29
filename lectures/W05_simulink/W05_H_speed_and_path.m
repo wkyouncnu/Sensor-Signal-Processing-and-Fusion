@@ -41,7 +41,7 @@ SHORT = {'a constant X_ff', 'the speed loop'};     % 표에 쓰는 짧은 이름
 fprintf('\n  W05 Experiment 5-7  speed control and path following at once\n');
 fprintf('    surge force from    u mean [m/s]   last leg at [s]   mean |y_e| legs 2-4 [m]   X mean [N]\n');
 for i = 1:2
-    R = W05_read(MDL{i});
+    R = W05_read(MDL{i}, 'law', 3);                      % 3 = ILOS
     j = R.wp >= 2;                                       % 첫 다리는 20 m 떨어져 출발한다 / leg 1 starts 20 m off
     k = find(R.wp == max(R.wp), 1);
     fprintf('    %-19s %8.3f   %15.1f   %22.3f   %10.2f\n', ...
@@ -84,7 +84,7 @@ fprintf('\n    the constants the models hold:  N_max = N_lim(%g) = %.2f,  N_spee
 fprintf('\n    the anti-windup (back-calculation), measured\n');
 fprintf('      Kb      X at its limit for [s]   speed overshoot [m/s]\n');
 for kb = [1 0]
-    Rb = W05_read('W05_H_speed_path', 'Kb', kb);
+    Rb = W05_read('W05_H_speed_path', 'law', 3, 'Kb', kb);
     fprintf('      %-5g   %18.2f   %18.4f\n', kb, ...
             sum(abs(Rb.X) > V0.X_max - 0.01)*Rb.V.h, max(Rb.u) - Rb.V.u_d);
 end

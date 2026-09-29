@@ -14,6 +14,8 @@ V.WP_N = [0 60 60  0  60]';
 V.WP_E = [0  0 60 60 120]';
 
 %  유도 / guidance
+V.law      = 3;        % 1 atan2, 2 LOS, 3 ILOS — 절 스크립트가 명시해 넘긴다
+                       %                           the section scripts pass it explicitly
 V.Delta    = 5;        % 앞보기 거리 / look-ahead distance         [m]
 V.R_switch = 3;        % 전환 거리 / switching distance            [m]
 V.kappa    = 0.3;      % ILOS 적분 계수 / ILOS integral constant

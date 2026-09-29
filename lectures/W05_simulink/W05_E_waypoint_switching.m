@@ -39,7 +39,7 @@ fprintf('    R_switch [m]   largest distance from the new leg at corners 1, 2, 3
 f = lab_fig('W05 E  switching', 1000, 560);
 RS = [1 3 5 10 20];  COL = lines(numel(RS));
 for i = 1:numel(RS)
-    R = W05_read('W05_E_switching', 'R_switch', RS(i));
+    R = W05_read('W05_E_switching', 'law', 2, 'R_switch', RS(i));   % 2 = LOS
 
     %  다리 번호 wp 가 바뀐 표본 = 모퉁이에서 넘어간 순간 / where the leg number changes = a switch
     sw = find(diff(R.wp) > 0);

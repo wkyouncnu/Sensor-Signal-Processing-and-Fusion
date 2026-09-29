@@ -12,6 +12,8 @@ function ok = verify_w05_guidance()
 %        ILOS removes it: mean over the last 100 s below 0.05 m
 %     5  경로 좌표로의 회전이 MSS crosstrackWpt.m 과 같은 y_e 를 준다
 %        the rotation into path coordinates gives the same y_e as MSS crosstrackWpt.m
+%     5a law 플래그가 갈라진다: 셋이 서로 다르고 LOS 는 kappa 를 읽지 않는다 (5-1b 절)
+%        the law flag branches: the three differ, and LOS never reads kappa
 %     6  배분의 역: B [T_L; T_R] 이 원래의 [X; N] 을 되돌려 준다 (5-7 절)
 %        the allocation inverse returns the (X, N) it came from
 %     7  N_lim(X) 가 추력 한계에 닿되 넘지 않고, X* = T_max + T_min 에서 최대다 (5-7 절)
@@ -44,11 +46,15 @@ L = {'WP_N', [0 400]', 'WP_E', [0 0]', 'T_final', 400, 'V_c', 0.3};
 for n = {'W05_D_LOS','W05_F_ILOS'}
     if ~isfile(fullfile(wk, [n{1} '.slx'])), W05_1_build_guidance(n{1}); end
 end
-R = W05_read('W05_D_LOS', L{:});
+%  법칙을 **명시해 넘긴다**. 넘기지 않으면 W05_vars 의 기본값(ILOS)으로 돌아가
+%  LOS 검사가 ILOS 를 재게 된다 - 실제로 그렇게 FAIL 이 났다 (2026-09-30).
+%  The law is passed explicitly: without it the default from W05_vars (ILOS) is
+%  used and this LOS check measures ILOS instead. That is how it first failed.
+R = W05_read('W05_D_LOS', L{:}, 'law', 2);
 pred = V.Delta*tand(abs(R.psi(end)));
 ok = report(ok, '3 LOS error = Delta tan(heading) in a current', abs(R.y_e(end) - pred) < 0.01, ...
             sprintf('%.3f m vs %.3f m', R.y_e(end), pred));
-R = W05_read('W05_F_ILOS', L{:});
+R = W05_read('W05_F_ILOS', L{:}, 'law', 3);
 m4 = mean(R.y_e(R.t > 300));
 ok = report(ok, '4 ILOS removes it', abs(m4) < 0.05, sprintf('%.3f m', m4));
 
@@ -60,6 +66,21 @@ for i = 1:size(pts,1)
     e5 = max(e5, abs(ye - ye_mss));
 end
 ok = report(ok, '5 y_e = MSS crosstrackWpt', e5 < 1e-12, sprintf('%.1e m', e5));
+
+%  5a  law 플래그가 실제로 갈라지는가. 세 법칙이 같은 임무에서 **서로 다른** 항적을
+%      내야 하고, LOS(2) 는 kappa 를 아예 읽지 않아야 한다 - 그 가지에서 y_int = 0 이다.
+%      Does the law flag actually branch? The three must differ on one mission, and
+%      LOS must not read kappa at all: y_int is zero on that branch.
+La = {'V_c', 0.3, 'T_final', 300};
+RA = W05_read('W05_G_tuning', La{:}, 'law', 1);
+RB = W05_read('W05_G_tuning', La{:}, 'law', 2);
+RC = W05_read('W05_G_tuning', La{:}, 'law', 3);
+RK = W05_read('W05_G_tuning', La{:}, 'law', 2, 'kappa', 10*V.kappa);
+c5a = max(abs(RA.y_e - RB.y_e)) > 1 && max(abs(RB.y_e - RC.y_e)) > 0.5 ...
+      && isequal(RB.y_e, RK.y_e) && all(RB.aux == 0) && any(RC.aux ~= 0);
+ok = report(ok, '5a law = 1, 2, 3 branch; LOS ignores kappa', c5a, ...
+            sprintf('atan2-LOS %.2f m, LOS-ILOS %.2f m, kappa x10 moves LOS by %.1e m', ...
+                    max(abs(RA.y_e-RB.y_e)), max(abs(RB.y_e-RC.y_e)), max(abs(RB.y_e-RK.y_e))));
 
 %  6  §5-7 의 배분 역행렬. otter_B 가 낸 B 의 1·3 행에 [T_L; T_R] 을 곱하면 [X; N] 이
 %     되돌아와야 한다 — 손으로 푼 T = X/2 +- N/(2 y_p) 가 맞는지 보는 것이다.

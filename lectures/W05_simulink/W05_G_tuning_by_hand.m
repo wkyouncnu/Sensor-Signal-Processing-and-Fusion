@@ -48,7 +48,7 @@ S = {'V_c', 0.3, 'T_final', 450};                  % 임무 + 조류 / the missi
 fprintf('\n  W05 Experiment 5-6  the tuning order  (Delta = 5 m, R_switch = 3 m, current 0.3 m/s east)\n');
 fprintf('    kappa   mean |y_e| on legs 1, 2, 3, 4 [m]   sum of legs 2-4 [m]   last waypoint at [s]\n');
 for kap = [0 0.1 0.3 0.5 1]
-    R = W05_read('W05_G_tuning', S{:}, 'kappa', kap);          % kappa = 0 이면 LOS 와 같다 / 0 is LOS
+    R = W05_read('W05_G_tuning', S{:}, 'law', 3, 'kappa', kap);   % 3 = ILOS; kappa = 0 이면 LOS 와 같다 / 0 is LOS
 
     %  다리 경계 = 다리 번호가 바뀐 곳 / leg boundaries = where the leg number changes
     b = [1; find(diff(R.wp) > 0); numel(R.t)];
