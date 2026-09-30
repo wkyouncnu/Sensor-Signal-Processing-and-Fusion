@@ -44,7 +44,7 @@ clear; close all; bdclose('all');
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));            % ...\GradCourse
 addpath(fullfile(root,'_tools'), here);
-mss_path();                                   % locates MSS wherever it lives
+% mss_path()                                  % locates MSS wherever it lives
 
 %% ---- the manoeuvre ------------------------------------------------------
 %  straight  ->  turn to port  ->  straight  ->  turn to starboard  ->  straight

@@ -72,8 +72,8 @@ V = W01_vars('current');
 %        이름                   조류 속도 [m/s]   물이 향하는 방향 beta_c [deg, 북에서 시계방향]
 CASES = { 'still water',        0.0,               0
           'following current',  V.V_c,             0
-          'beam current',       V.V_c,            90
-          'head current',       V.V_c,           180 };
+          'beam current',       V.V_c,            -90
+          'head current',       V.V_c*1.3,           180 };
 
 fprintf('\n  W01 section E — what an ocean current does to an open loop\n');
 fprintf('\n  command: both propellers at n0 = %g rad/s, no steering, %g s\n', V.n0, V.T_final);
