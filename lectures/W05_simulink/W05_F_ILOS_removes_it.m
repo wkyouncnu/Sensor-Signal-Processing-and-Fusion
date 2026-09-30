@@ -40,7 +40,24 @@ for kap = [0.1 0.3 1 3]
     subplot(2,1,2); hold on; plot(R.t, R.aux, 'LineWidth', 1.6, 'DisplayName', sprintf('\\kappa = %g', kap));
 end
 
-%% 2) 그림을 다듬어 저장한다 / label the figure and save it
+%% 2) 유도 8 행: 적분은 **LOS 가 남기던 바로 그 오프셋**으로 수렴하는가?
+%    kappa*y_int -> Delta*tan(beta). 400 s 로는 큰 kappa 가 아직 흔들리므로 긴 다리에서
+%    1100 s 를 준다. 9·11 행의 갱신 속도 한계(1/2)도 여기서 잰다.
+%    Line 8 of the derivation: does the integral converge to the very offset LOS was
+%    leaving? A longer leg and 1100 s, because the large kappa is still ringing at 400 s.
+%    Lines 9 and 11 also measure the cap on the update rate.
+Lg = {'WP_N', [0 900]', 'WP_E', [0 0]', 'T_final', 1100, 'V_c', 0.3};
+RL = W05_read('W05_F_LOS', Lg{:}, 'law', 2);
+fprintf('\n    line 8   the LOS offset is Delta*tan(beta) = %.4f m;  does kappa*y_int reach it?\n', ...
+        R0.V.Delta * tand(abs(RL.psi(end))));
+fprintf('      kappa   kappa*y_int at the end [m]   mean y_e, last 200 s [m]   max |dy_int/dt|\n');
+for kap = [0.1 0.3 1 3]
+    R = W05_read('W05_F_ILOS', Lg{:}, 'law', 3, 'kappa', kap);
+    fprintf('      %-5g %22.4f %24.4f %17.4f\n', kap, kap*R.aux(end), ...
+            mean(R.y_e(R.t > 900)), max(abs(diff(R.aux)))/R.V.h);
+end
+
+%% 3) 그림을 다듬어 저장한다 / label the figure and save it
 subplot(2,1,1); yline(0, 'k--', 'HandleVisibility','off'); grid on; ylim([-7 21]); xlim([0 250]);
 ylabel('y_e [m]'); legend('Location','northeast');
 title('a 0.3 m/s current: LOS stays 2.1 m off; the integral brings ILOS onto the path');

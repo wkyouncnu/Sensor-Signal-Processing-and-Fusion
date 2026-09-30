@@ -719,22 +719,81 @@ Measured by Experiment 5-5a, below, a current flowing east across a path north:
 
 - The last two columns are line 4: prediction and measurement agree to the millimetre in every row. Heading is not course — the vessel points $22.8°$ into a $0.3$ m/s current and travels due north.
 
-**ILOS adds the integral.** As in Weeks 2 to 4, the cure for the error a P controller leaves is an integral:
+**Deriving the cure.** Lines 1 to 5 say the offset exists and how large it is. They do not yet say what to replace the law with. That takes one more equation — the one this week has so far avoided writing, the **motion of the error itself**.
+
+6. **How $y_e$ moves.** Differentiate the definition of §5-1, $y_e = -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p$, along a straight leg where $\pi_p$ is constant. Writing the velocity in NED as $\dot N = U\cos\chi$ and $\dot E = U\sin\chi$, with $U$ the speed over ground and $\chi$ the course,
 
 $$
-\psi_d = \pi_p - \arctan\!\left(\frac{y_e}{\Delta} + \frac{\kappa}{\Delta}\, y_{\text{int}}\right),
-\qquad
+\dot y_e = -U\cos\chi\,\sin\pi_p + U\sin\chi\,\cos\pi_p = U\,\sin(\chi - \pi_p)
+$$
+
+   Read it in words: **the cross-track error changes at the rate at which the vessel is travelling sideways relative to the path.** Nothing else in the vessel enters. And the course is the heading plus the crab angle, $\chi = \psi + \beta$, which is where the current comes in — Week 4 §4-4.
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $U$ | speed over ground | $\approx 0.77$ m/s at $X_{ff} = 60$ N |
+| $\chi$ | course, the direction actually travelled | $\chi = \psi + \beta$ |
+| $\beta$ | crab angle, the sideways push of the current | $22.8°$ at $V_c = 0.3$ m/s, Experiment 5-5a |
+
+7. **LOS, closed.** Substitute $\psi = \psi_d$ from §5-3 into line 6:
+
+$$
+\dot y_e = U\,\sin\!\left(\beta - \arctan\frac{y_e}{\Delta}\right)
+$$
+
+   Set $\dot y_e = 0$ and the bracket must vanish, so $\arctan(y_e/\Delta) = \beta$ and $y_e = \Delta\tan\beta$. This is line 3 again, but arrived at from the **dynamics** rather than from a statement about steady state, and it says something stronger: that offset is **the equilibrium of the closed loop**, and the only one. It is not a transient that has not finished. Waiting does not remove it, and neither does any gain, because $\Delta$ is the only gain in the law and line 4 already priced it.
+
+8. **What would have to be true instead.** For $y_e = 0$ to become an equilibrium, the bracket in line 7 must vanish *at* $y_e = 0$. Since $\beta \ne 0$, the arctan must be fed by something that is **not** $y_e$. Add a second term to it and give that term a state of its own:
+
+$$
+\psi_d = \pi_p - \arctan\!\left(\frac{y_e + \kappa\, y_{\text{int}}}{\Delta}\right)
+\qquad\Longrightarrow\qquad
+\dot y_e = U\,\sin\!\left(\beta - \arctan\frac{y_e + \kappa\, y_{\text{int}}}{\Delta}\right)
+$$
+
+   Now $y_e = 0$ is an equilibrium **if and only if**
+
+$$
+\kappa\, y_{\text{int}}^\star = \Delta\tan\beta
+$$
+
+   and the right-hand side is, by line 3, **exactly the offset LOS was leaving**. That is the whole design, in one line: the integral does not cancel the current, and never learns what a current is. It converges to the number the old law was producing as an error, and produces it as a state instead. The measurement is the same number twice — $2.107$ m of LOS offset, and $\kappa y_{\text{int}} \to 2.10$ m:
+
+| $\kappa$ | $\kappa\,y_{\text{int}}$ at the end [m] | mean $y_e$, last 200 s [m] | peak $\lvert\dot y_{\text{int}}\rvert$ |
+|---|---|---|---|
+| 0.1 | 2.1013 | 0.0002 | 0.3949 |
+| 0.3 | 2.1042 | −0.0000 | 0.3361 |
+| 1 | 2.1456 | 0.0015 | 0.8193 |
+| 3 | 0.1187 | 0.1720 | 1.2337 |
+
+   Measured on one 900 m leg at $V_c = 0.3$ m/s, given 1100 s to settle, against $\Delta\tan\beta = 2.1049$ m for that run. The first three rows land on it to within 2 %; $\kappa = 3$ does not converge at all, which is line 11. The last column is measured here and read in line 9.
+
+9. **How to drive the state there.** Line 8 fixes where $y_{\text{int}}$ must end up but not how it gets there. Any update law will do provided it (a) is zero only when $y_e = 0$, so the equilibrium of line 8 is the one it stops at, and (b) does not run away while the vessel is far off the path, which is the windup of Week 2. Børhaug, Pavlov and Pettersen choose
+
+$$
 \dot y_{\text{int}} = \frac{\Delta\, y_e}{\Delta^2 + (y_e + \kappa\, y_{\text{int}})^2}
 $$
 
-| Symbol | Quantity | Value |
-|---|---|---|
-| $y_{\text{int}}$ | the integral state | m·s scaled; starts at 0 |
-| $\kappa$ | integral constant; the I gain is $\kappa/\Delta$ | $0.3$, `W05_0_setup.m` |
+   Requirement (a) is immediate: the numerator carries the sign of $y_e$ and vanishes only with it. Requirement (b) is the denominator's doing. While the integral is still small the argument is $\approx y_e$, and
 
-6. Near the path $\arctan x \approx x$ again, so the law reads $\psi_d - \pi_p \approx -(1/\Delta)\,y_e - (\kappa/\Delta)\,y_{\text{int}}$: **PI on the cross-track error**, with $K_p = 1/\Delta$ from §5-3 and $K_i = \kappa/\Delta$.
-7. The integral state therefore does for the current what the integral of Week 3 did for the drag: it holds the crab angle by itself, so that line 2 no longer needs an error to produce one.
-8. The denominator $\Delta^2 + (y_e + \kappa y_{\text{int}})^2$ grows with the error, so the state barely integrates while the vessel is far off the path — **anti-windup built into the law**, in place of the back-calculation bolted on in Weeks 2 to 4 (Børhaug, Pavlov and Pettersen, 2008; Fossen, *Handbook*, 2nd ed., §12.3).
+$$
+\max_{y_e}\ \frac{\Delta\, y_e}{\Delta^2 + y_e^2} = \frac{1}{2}
+\quad\text{at}\quad y_e = \Delta
+$$
+
+   so however far off the path the vessel starts, the state cannot grow faster than half a unit per second — **anti-windup written into the law, not bolted onto it** as the back-calculation of Weeks 2 to 4 was. It is also why the update is fastest at $y_e = \Delta$ and slower both nearer and further: near the path there is little to integrate, and far from it the law is busy turning rather than correcting.
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $y_{\text{int}}$ | the integral state | s; starts at 0 |
+| $\kappa$ | integral constant — a **speed**, since $\kappa y_{\text{int}}$ is a length | $0.3$ m/s, `W05_0_setup.m` |
+| $\kappa/\Delta$ | the resulting I gain | $0.06$ s⁻¹ |
+
+10. **Small signals: it is a PI controller.** Near the path $\arctan x \approx x$ once more, so $\psi_d - \pi_p \approx -(1/\Delta)\,y_e - (\kappa/\Delta)\,y_{\text{int}}$ — proportional plus integral on the cross-track error, with $K_p = 1/\Delta$ from §5-3 and $K_i = \kappa/\Delta$. Everything Week 2 established about a PI controller applies here unchanged, including that the integral costs overshoot.
+
+11. **And $\kappa$ has a ceiling.** The bound in line 9 holds while $y_{\text{int}}$ is small; once $\kappa y_{\text{int}}$ is comparable to $y_e$ and opposite in sign the denominator shrinks again and the update is no longer capped. Measured peak $\lvert\dot y_{\text{int}}\rvert$: $0.34$ at $\kappa = 0.3$, but $0.82$ at $\kappa = 1$ and $1.23$ at $\kappa = 3$ — past the bound. The last of those never settles, as the table in line 8 shows. The stability proof in the source paper carries a condition on $\kappa$ for exactly this reason; this course chooses $\kappa$ by measurement instead, in §5-6.
+
+**Sources.** The law and its Lyapunov analysis: Børhaug, Pavlov and Pettersen, "Integral LOS control for path following of underactuated marine surface vessels in the presence of constant ocean currents", *47th IEEE Conference on Decision and Control*, 2008, pp. 4984–4991, DOI [10.1109/CDC.2008.4739352](https://doi.org/10.1109/CDC.2008.4739352). Fossen, *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed., 2021, §12.3 gives the same law with the notation used here; the MSS implementation is `ILOSpsi.m`.
 
 ![The same current, the same bow angle: LOS leaves an offset, ILOS invents one so the real error can vanish](../figures/w05-ilos-idea.svg)
 
@@ -745,9 +804,9 @@ $$
 | both panels, the bow arrow | tilted upstream by the **same** $22.8°$ | line 1: the crab angle is set by the current and the speed, not by the law |
 | panel 1, where the hull sits | below the path, and its track is **parallel** to it | line 2: LOS can hold that tilt only while $y_e \neq 0$ |
 | panel 1, the red marker | $y_e = 2.10$ m, which is $\Delta\tan\beta$ | line 3: the offset is the tangent, measured at $2.107$ m |
-| panel 2, where the hull sits | **on** the path, with the same tilt | line 7: the integral now holds the tilt, so the error need not |
-| panel 2, the dashed line below the path | $\kappa y_{\text{int}} = 2.10$ m — a **phantom** error, with no vessel on it | line 6: the law reads $y_e + \kappa y_{\text{int}}$, and that sum is what must vanish |
-| the two together | nothing about the current appears in either law | line 7: ILOS never learns what a current is; it only knows the sum must be zero |
+| panel 2, where the hull sits | **on** the path, with the same tilt | line 8: the integral now supplies the angle, so the error need not |
+| panel 2, the dashed line below the path | $\kappa y_{\text{int}} = 2.10$ m — a **phantom** error, with no vessel on it | line 8: the law reads $y_e + \kappa y_{\text{int}}$, and that sum is what must vanish |
+| the two together | nothing about the current appears in either law | line 8: ILOS never learns what a current is; it converges to the number the old law left as an error |
 
 **What the figure says**
 
@@ -763,7 +822,7 @@ Measured by Experiment 5-5b at 0.3 m/s, with $\Delta = 5$ m:
 | 1 | −0.011 | 4.10 |
 | 3 | 0.169 | 6.32 |
 
-- Every $\kappa$ removes the offset — line 7 — and a larger one overshoots more, which is the price of every integral since Week 2. On a single long leg $\kappa = 0.1$ is the cleanest; §5-6 chooses on the mission, where the legs are short and the integral has less time.
+- Every $\kappa$ removes the offset — line 8 — and a larger one overshoots more, which is the price of every integral since Week 2. On a single long leg $\kappa = 0.1$ is the cleanest; §5-6 chooses on the mission, where the legs are short and the integral has less time.
 
 ### Experiment 5-5a · The offset a current leaves under LOS (7 min)
 
@@ -796,7 +855,7 @@ Expected output:
 
 ### Experiment 5-5b · The integral that removes it (8 min)
 
-**What it measures.** Line 7: the same current with the integral state switched on, for four values of $\kappa$ — and what each one costs in overshoot.
+**What it measures.** Lines 8 to 11: the same current with the integral switched on, for four values of $\kappa$ — what each one costs in overshoot, whether $\kappa y_{	ext{int}}$ really converges to the offset LOS was leaving, and where the update-rate bound of line 9 stops holding.
 
 **The model.** `W05_F_ILOS` — the same guidance block with the integral state of the law above. The black line in the figure is the run of Experiment 5-5a, for comparison.
 
@@ -817,7 +876,7 @@ Expected output:
 > |---|---|
 > | `persistent k y_int` | the block has **memory**: the active leg and the integral state. Nothing else in the guidance block does |
 > | line ① against §5-3's law | one extra term inside the same arctan — that is the whole of ILOS |
-> | line ②'s denominator | $\Delta^2 + (y_e + \kappa y_{\text{int}})^2$, growing with the error: the anti-windup of line 8, with no saturation block and no back-calculation gain |
+> | line ②'s denominator | $\Delta^2 + (y_e + \kappa y_{\text{int}})^2$, growing with the error: the anti-windup of line 9, with no saturation block and no back-calculation gain |
 > | `kappa = 0` | line ② still runs but contributes nothing to line ①, so the block becomes exactly the LOS of §5-3. Not approximately: run this way it reproduces `W05_F_LOS` to $0.000\times10^{0}$ m, which is how Experiment 5-5a and this one are kept comparable |
 >
 > The block is discrete at $h$ (`set_mlfcn`'s sample-time argument), because a block with memory must be told how often to update it.
@@ -844,6 +903,13 @@ Expected output:
     0.3                        0.011            1.79                     7.03
     1                         -0.011            4.10                     2.35
     3                          0.169            6.32                    -0.50
+
+    line 8   the LOS offset is Delta*tan(beta) = 2.1049 m;  does kappa*y_int reach it?
+      kappa   kappa*y_int at the end [m]   mean y_e, last 200 s [m]   max |dy_int/dt|
+      0.1                   2.1013                   0.0002            0.3949
+      0.3                   2.1042                  -0.0000            0.3361
+      1                     2.1456                   0.0015            0.8193
+      3                     0.1187                   0.1720            1.2337
 ```
 
 ![Experiment 5-5b: LOS and ILOS in a 0.3 m/s cross current](W05_simulink/img/W05_result_current.png)
@@ -859,10 +925,14 @@ Expected output:
 |---|---|---|
 | top panel, the black LOS line | flat at $2.107$ m, for ever | lines 2 and 3: the error is what produces the lean, so it cannot go |
 | the LOS table, last two columns | equal in all four rows | line 4: $y_e = \Delta\tan$(crab angle) |
-| top panel, every coloured trace | reaches zero and stays | line 7: the integral holds the lean instead |
-| bottom panel, the states **levelling off** at $20.95$, $7.03$, $2.35$ | different values, same effect | line 6: what matters is the product $(\kappa/\Delta)\,y_{\text{int}}$, so a smaller $\kappa$ needs a larger state |
+| top panel, every coloured trace | reaches zero and stays | line 8: the integral supplies the lean instead |
+| bottom panel, the states **levelling off** at $20.95$, $7.03$, $2.35$ | different values, same effect | line 8: what is fixed is the product $\kappa\,y_{\text{int}}$, so a smaller $\kappa$ needs a proportionally larger state — and $0.1 \times 20.95 = 0.3 \times 7.03$ to two decimals |
+| the second table, second column | $2.1013$, $2.1042$, $2.1456$ against the LOS offset $2.1049$ | line 8, the point of the whole section: **the integral converges to the number LOS was leaving as an error** |
+| the same table, $\kappa = 3$ | $0.1187$, and $y_e$ still at $0.17$ m after 1100 s | line 11: this $\kappa$ does not converge, so the row is not a measurement of an equilibrium |
 | top panel, the overshoot at $\kappa = 1$ and $3$ | $4.10$ m and $6.32$ m | the price of every integral since Week 2 §2-8: late correction arrives after it was needed |
-| the first seconds of every trace, from 20 m off | no wind-up, no spike | line 8: while $y_e$ is large the denominator is large and the state hardly moves |
+| the first seconds of every trace, from 20 m off | no wind-up, no spike | line 9: while $y_e$ is large the denominator is large and the state hardly moves |
+| the last column at $\kappa = 0.1$ and $0.3$ | $0.3949$ and $0.3361$, both under $\tfrac12$ | line 9: the bound holds while the state is small |
+| the last column at $\kappa = 1$ and $3$ | $0.8193$ and $1.2337$, both past $\tfrac12$ | line 11: once $\kappa y_{\text{int}}$ is large and opposed to $y_e$ the denominator shrinks again and the bound is gone |
 
 **What the figure says**
 
