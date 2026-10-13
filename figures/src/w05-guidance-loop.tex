@@ -1,0 +1,129 @@
+% figures/w05-guidance-loop.svg — 바깥 루프가 안쪽 루프에 붙는 자리.
+%
+%   bash _tools/tikz2svg.sh figures/src/w05-guidance-loop.tex figures/w05-guidance-loop.svg
+%
+% 사용자 지시 (2026-10-13): "W05에서는 그 다이어그램을 이용해서 outer loop로서
+% guidance 명령이 heading 제어기의 desired heading 값이 오고..... 속도 명령도 속도
+% 제어 루프에 온다는 것도 연동해서 그려주면 좋을 것 같아"
+%
+% figures/w03-inner-loop.svg 의 **왼쪽 점선 상자를 연 그림**이다. 그래서 오른쪽
+% 절반(안쪽 루프)은 같은 모양·같은 색·같은 블록 이름으로 그리되 **작게** 둔다 —
+% 이 그림의 주제는 바깥이고, 안쪽은 3·4 주차에서 이미 열어 보았기 때문이다.
+%
+% 요점 하나: **바깥 루프의 출력이 곧 안쪽 루프의 명령이다.** 유도는 힘을 만들지
+% 않는다. psi_d 를 만들고, 그것을 힘으로 바꾸는 것은 4 주차의 오토파일럿이다.
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+\definecolor{ctrlc}{HTML}{B45309}
+
+\tikzset{
+  blk/.style    = {draw=ink, line width=0.9pt, fill=white, rounded corners=2pt,
+                   align=center, inner sep=5pt, font=\small},
+  guid/.style   = {blk, draw=accent, line width=1.2pt, fill=accent!5},
+  ctrl/.style   = {blk, draw=ctrlc, line width=1.0pt, fill=alng!6, font=\scriptsize},
+  alloc/.style  = {blk, draw=knownc, line width=1.0pt, fill=knownc!5, font=\scriptsize},
+  plant/.style  = {blk, draw=pathc, line width=1.0pt, fill=pathc!10, font=\scriptsize},
+  wp/.style     = {blk, draw=soft, line width=0.8pt, fill=black!3, font=\scriptsize},
+  sig/.style    = {ink, line width=0.9pt, -{Stealth[length=5.0pt,width=3.4pt]}},
+  cmd/.style    = {accent, line width=1.3pt, -{Stealth[length=5.4pt,width=3.8pt]}},
+  fb/.style     = {soft, line width=0.8pt, -{Stealth[length=4.6pt,width=3.2pt]}},
+  bus/.style    = {soft, line width=0.8pt},
+  lbl/.style    = {font=\scriptsize},
+  slx/.style    = {font=\scriptsize\ttfamily, soft},
+  capt/.style   = {font=\scriptsize\bfseries, warn},
+  band/.style   = {font=\small\bfseries, ink},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+% =====================================================================
+% 바깥 루프 — 웨이포인트에서 두 명령까지
+% =====================================================================
+\node[wp, text width=1.9cm] (WP) at (-0.2,0.55)
+  {\textbf{WAYPOINTS}\\[2pt] $(N_k, E_k)$\\ $k = 1 \ldots n$};
+
+\node[guid, text width=4.6cm] (GD) at (4.1,0.55)
+  {\textbf{GUIDANCE} \ \ \emph{outer loop}\\[4pt]
+   {\scriptsize 1 \ \ leg direction \ $\pi_p = \mathrm{atan2}(\Delta E, \Delta N)$}\\[2pt]
+   {\scriptsize 2 \ \ rotate into the leg \ $(x_e,\, y_e)$}\\[2pt]
+   {\scriptsize 3 \ \ switch when $d - x_e < R$}\\[2pt]
+   {\scriptsize 4 \ \ the law \ $\psi_d = \pi_p - \arctan\!\dfrac{y_e + \kappa y_{\mathrm{int}}}{\Delta}$}};
+\node[slx, anchor=north, yshift=-1pt] at (GD.south) {guidance};
+\draw[sig] (WP.east) -- (GD.west);
+
+\node[wp, text width=1.9cm] (UD) at (-0.2,-2.6)
+  {\textbf{SPEED ORDER}\\[2pt] $u_d$ \ \ chosen by\\ the mission};
+
+% =====================================================================
+% 두 명령 — 이 그림의 요점
+% =====================================================================
+\draw[cmd] (GD.east) -- (8.5,0.55) -- (8.5,0.05) -- (9.15,0.05);
+\node[lbl, accent, anchor=south] at (7.5,0.62) {$\psi_d$};
+\draw[cmd] (UD.east) -- (8.5,-2.6) -- (8.5,-1.95) -- (9.15,-1.95);
+\node[lbl, accent, anchor=south] at (8.0,-2.52) {$u_d$};
+
+% =====================================================================
+% 안쪽 루프 — 3·4 주차가 이미 연 상자들. 작게 둔다
+% =====================================================================
+\node[ctrl, text width=2.5cm] (HD) at (10.6,0.05)
+  {\textbf{HEADING LOOP}\\[2pt] $N = K_p\,\mathrm{ssa}(\psi_d-\psi) - K_d r$};
+\node[slx, anchor=north, yshift=-1pt] at (HD.south) {heading autopilot};
+
+\node[ctrl, text width=2.5cm] (SP) at (10.6,-1.95)
+  {\textbf{SPEED LOOP}\\[2pt] $X = K_{p,u}(u_d-u) + I$};
+\node[slx, anchor=north, yshift=-1pt] at (SP.south) {speed loop};
+
+\node[alloc, text width=2.4cm] (AL) at (14.3,-0.95)
+  {\textbf{ALLOCATION}\\[3pt]
+   $\begin{bmatrix} F_L \\ F_R \end{bmatrix} = \mathbf{T}^{-1}\begin{bmatrix} X \\ N \end{bmatrix}$\\[3pt]
+   $n = \pm\sqrt{\lvert F\rvert/k}$};
+\node[slx, anchor=north, yshift=-1pt] at (AL.south) {allocation};
+
+\node[plant, text width=1.5cm] (OT) at (17.9,-0.95)
+  {\textbf{OTTER}\\[1pt] equations\\ of motion};
+\node[slx, anchor=north, yshift=-1pt] at (OT.south) {Otter};
+
+\draw[sig] (HD.east) -- (12.9,0.05) -- (12.9,-0.55) -- (AL.west |- 0,-0.55);
+\node[lbl, anchor=south] at (12.35,0.12) {$N$};
+\draw[sig] (SP.east) -- (12.9,-1.95) -- (12.9,-1.35) -- (AL.west |- 0,-1.35);
+\node[lbl, anchor=north] at (12.35,-2.02) {$X$};
+\draw[sig] (AL.east) -- (OT.west);
+\node[lbl, anchor=south] at (16.3,-0.88) {$n_L,n_R$};
+\draw[sig] (OT.east) -- (19.4,-0.95);
+\node[lbl, anchor=west] at (19.45,-0.95) {$\mathbf{x}$};
+
+% =====================================================================
+% 되먹임 둘 — 안쪽은 짧고 빠르게, 바깥은 길고 느리게
+% =====================================================================
+\draw[bus] (19.75,-0.95) -- (20.2,-0.95) -- (20.2,-4.35) -- (9.6,-4.35);
+\fill[soft] (19.25,-0.95) circle (1.4pt);
+\draw[fb] (9.6,-4.35) -- (9.6,-2.52);
+\node[lbl, soft, anchor=west] at (9.67,-3.55) {$u$};
+\draw[fb] (12.0,-4.35) -- (12.0,-0.52);
+\fill[soft] (12.0,-4.35) circle (1.4pt);
+\node[lbl, soft, anchor=west] at (12.07,-3.55) {$\psi,\ r$};
+\node[capt, anchor=west] at (13.4,-4.20) {INNER feedback --- fast};
+
+\draw[bus] (20.2,-4.35) -- (20.2,-5.85) -- (2.0,-5.85);
+\draw[fb] (2.0,-5.85) -- (2.0,1.65) -- (GD.west |- 0,1.65);
+\node[lbl, soft, anchor=south] at (6.0,-5.80) {position $(N, E)$ and heading $\psi$};
+\node[capt, anchor=west] at (13.4,-5.72) {OUTER feedback --- slow};
+
+% =====================================================================
+% 띠 설명
+% =====================================================================
+\node[band, anchor=west] at (-1.4,2.75)
+  {OUTER LOOP \ --- \ guidance makes commands, never forces};
+\draw[bus] (-1.3,2.45) -- (8.3,2.45);
+\node[band, anchor=west, ctrlc] at (9.2,2.75) {INNER LOOP \ --- \ Weeks 3 and 4};
+\draw[bus] (9.3,2.45) -- (18.6,2.45);
+
+%  이 문장이 그림의 요점이다. 띠 사이에 두면 INNER 띠와 겹친다 — 유도 상자 아래로.
+\node[capt, anchor=north, align=center] at (4.1,-1.45)
+  {the output of the outer loop \emph{is} the command of the inner loop};
+
+\end{tikzpicture}
+\end{document}

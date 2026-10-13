@@ -10,6 +10,13 @@ status: done
 
 # Week 4 · Heading Control
 
+> [!note] Recordings of this semester's own classes
+> <span style="font-size:0.88em">Every session of this course is recorded as it is given and posted to the playlist below. The written material here is the reference; the recording is the lecture, at the pace it was actually delivered. Use it to review a derivation, or to catch up on a missed week before the laboratory.</span>
+>
+> | | Where |
+> |---|---|
+> | **[충남대] 2026 센서신호처리** — this course, recorded live, 2026 | [playlist](https://youtube.com/playlist?list=PLCxINRGlWUrk) |
+
 > [!important] Reference material — read this first
 > <span style="font-size:0.88em">The five courses below are **taught by the instructor of this course** and are the assumed background for it. They run from the fundamentals down to the graduate material, so start wherever the gap is. Every frame, symbol and derivation used here is developed in them at length; anyone whose prerequisites are thin should work through them first, then return.</span>
 >
@@ -64,6 +71,8 @@ Upon completion of this week, the learner is able to:
 3. Distinguish heading from course, and compute the crab angle from the body velocities.
 4. Remove the heading error left by a weak propeller with the integral, and choose the back-calculation gain from a measured trade-off.
 5. Explain why a heading error must be wrapped into $(-180°,\ 180°]$, and measure the cost of not wrapping it.
+6. Write the complete heading law in one line — $\mathrm{ssa}$ on the error, the rate term on the measurement, the clamp on the output — and justify each of the three from a measurement made this week.
+7. Follow the commanded moment through the allocator of §3-6 to a pair of shaft speeds, and explain why the moment limit puts one propeller exactly on its own limit.
 
 ## Prerequisites and Setup
 
@@ -926,6 +935,115 @@ Expected output:
 
 ---
 
+## 4-7. The inner loop, assembled: two errors, two forces, two propellers
+
+**What is observed.** Four sections have each fixed one piece of the heading law, and they have been fixed in different places: the wrap in §4-6, the derivative in §4-3d, the limit in §4-0. Written on one line the result is short enough to read aloud, and it is also the complete contents of the `heading autopilot` block:
+
+$$
+\boxed{\ N = K_p\,\mathrm{ssa}(\psi_d - \psi)\ -\ K_d\, r\ },\qquad \lvert N\rvert \le N_{\max}
+$$
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $\psi_d$ | commanded heading | rad; a step this week, a guidance law in Week 5 |
+| $\psi$ | heading, state 12 | rad |
+| $r$ | yaw rate, state 6 — **measured, not differentiated** | rad/s |
+| $K_p$ | proportional gain | $300$ N·m per rad, `W04_0_setup` |
+| $K_d$ | rate gain | $100$ N·m per rad/s, `W04_0_setup` |
+| $N_{\max}$ | moment limit, from what the propellers can give | $70.85$ N·m, §4-0 |
+
+**The result.** Three decisions are visible in that one line, and each was forced by a measurement earlier in the week:
+
+| In the law | The decision | Where it was forced |
+|---|---|---|
+| $\mathrm{ssa}(\cdot)$ around the error | wrap into $(-\pi, \pi]$ **before any gain sees it** | §4-6: without it a $20°$ turn becomes a $340°$ turn |
+| $-K_d\,r$, not $+K_d\,\dot e$ | take the derivative from the **measurement**, not from the error | §4-3d: the filtered error form kicks by $K_d N_f$ on a step |
+| $\lvert N\rvert \le N_{\max}$ | clamp to what two propellers can actually produce | §4-0, and §3-4's windup is what happens when it is ignored |
+
+**Derivation of the sign, in one line.** The D term is often written $+K_d\,\mathrm{d}e_\psi/\mathrm{d}t$. With $e_\psi = \psi_d - \psi$ and a constant command, $\dot e_\psi = -\dot\psi = -r$, so
+
+$$
++K_d\,\frac{\mathrm{d}e_\psi}{\mathrm{d}t} \;=\; -K_d\,r
+$$
+
+   The two forms are **the same term**, and the minus sign is not a convention to memorise: it is what the chain rule returns. What differs is only what happens when the command is *not* constant, and that difference is the whole of §4-3d — the error form passes $\dot\psi_d$ into the moment and the rate form does not.
+
+> [!important] How big the kick actually is
+> On a unit step of $\psi_d$ the filtered-error form asks for $K_d N_f = 100 \times 20 = 2000$ N·m at the instant of the step. The moment limit is $N_{\max} = 70.85$ N·m. The demand is therefore **28.2 times everything the vessel has**, all of it thrown away by the saturation, and none of it steering. That number is why this course writes the rate form.
+
+**Where that moment goes.** The output of this block is a number in newton-metres, and the Otter has no actuator that accepts newton-metres. §3-6 built the two steps that turn it into shaft speeds, and this week supplies the input that section left at zero:
+
+![The two inner loops, their outputs, and the allocator they share](../figures/w03-inner-loop.svg)
+
+| In the diagram | This week's part |
+|---|---|
+| the lower row, `heading autopilot` | the law boxed above: $\mathrm{ssa}$ on the error, $K_d$ on the measured rate |
+| the feedback marked $r$ | goes **straight into the D term**, not through the summing junction — the diagram shows the two paths separately for exactly this reason |
+| $N$ entering `allocation` | the input §3-6 set to zero; it is no longer zero |
+| the upper row | Week 3, unchanged and not retuned |
+
+With $N \neq 0$ the matrix of §3-6 line 2 finally does something:
+
+$$
+F_{L,R} = \frac{X}{2} \pm \frac{N}{2b}
+$$
+
+   The surge force is still shared equally; the moment is **added to the port propeller and taken from the starboard one**, which is what makes the vessel turn to starboard for $N > 0$. Putting this week's numbers through it, at the hardest point of a $30°$ turn:
+
+| Quantity | Value | Where from |
+|---|---|---|
+| $X$ | $60.00$ N | the constant `X_ff` of §4-0 |
+| $N$ | $70.85$ N·m | the clamp, saturated |
+| $F_L = X/2 + N/(2b)$ | $30.00 + 89.68 = 119.68$ N | $= F_{\max}$, exactly |
+| $F_R = X/2 - N/(2b)$ | $30.00 - 89.68 = -59.68$ N | astern, and inside $F_{\min} = -66.7$ N |
+| $n_L = \sqrt{F_L/k_{pos}}$ | $103.93$ rad/s | $= n_{\max}$, exactly |
+| $n_R = -\sqrt{\lvert F_R\rvert/k_{neg}}$ | $-96.23$ rad/s | inside $n_{\min} = -101.7$ |
+
+- $N_{\max}$ was not chosen; it was **computed** so that the loaded propeller lands exactly on its limit and not past it. That is the calculation in `W04_0_setup`, and §4-0's table is where its value came from.
+
+**To check every number in this section**
+
+```matlab
+cd _tools
+verify_w04_heading
+```
+
+Actual output:
+
+```
+  verify_w04_heading
+
+    1 W04_vars = W04_0_setup                     OK    
+    2 N_max = 70.85 N m                          OK    70.8488
+    3 thrust split returns X_ff and N            OK    7.1e-15
+    4 atan2(sin, cos) = MSS ssa                  OK    4.9e-16
+    5 PD leaves no heading error                 OK    0.0009 deg
+
+  ALL CHECKS PASSED
+```
+
+| The check | What it proves |
+|---|---|
+| 2 | the moment limit is the one the propeller limits imply, not a round number someone picked |
+| 3 | feeding $(F_L, F_R)$ back through $\mathbf{T}$ returns the $(X, N)$ they came from, to $7\times10^{-15}$ — the inverse of §3-6 line 2 is exact |
+| 4 | the `ssa` block agrees with the MSS function of the same name to $5\times10^{-16}$ |
+| 5 | a P–D law with no integral still leaves no steady heading error, because yaw has no restoring moment to fight (§4-3) |
+
+| What to try | What to watch |
+|---|---|
+| `Kd = 0;` then Run `W04_F_PID` | the rate term removed: the heading rings, and the overshoot is the measurement §4-3b made |
+| `Kp = 600;` Run | $N$ reaches its clamp sooner and stays there longer; the turn does not get proportionally faster, because $N_{\max}$ has not moved |
+| In `W04_F_PID`, double-click `heading autopilot` | the boxed law, block by block: one `Fcn` for `ssa`, a `Gain` for each term, and a `Saturation` holding `N_max` |
+
+> [!tip] In class
+> - **Purpose** — put the week's four separate decisions into one line and watch that line reach the propellers.
+> - **Point to** — the $r$ arrow in the diagram, entering the controller from below rather than through the summing junction.
+> - **Ask** — "Why is $F_L$ exactly $119.68$ N at the clamp?" Because $N_{\max}$ was solved for that condition: the limit is the largest moment that does not ask a propeller for more than it has.
+> - **Ask** — "The starboard propeller is running astern at $-96$ rad/s while the vessel moves forwards. Is that a mistake?" No — that is how a differential-thrust vessel turns hard, and it is also why a hard turn costs speed.
+> - **Take away** — the controller's output is a force, not a command to an actuator; everything between the two is arithmetic with limits in it.
+
+---
+
 # Part 2 · Laboratory run order
 
 The experiments of Part 1 are worked through in order; this table is the index of what was run, for repeating the week at home.
@@ -945,6 +1063,7 @@ Every example has **its own model**, laid out as in Weeks 2 and 3: the controlle
 | 4-4 | none — two lines in the Command Window | — | the crab angle from $u$ and $v$ |
 | 4-5 | `W04_H_tuning` | `W04_H_tuning_by_hand` | the tuning order, a big turn, and the back-calculation gain |
 | 4-6 | `W04_G_wrap` | `W04_G_the_wrap` | a command across $\pm 180°$, with an `ssa` switch |
+| 4-7 | `W04_F_PID` | `verify_w04_heading` | the assembled law, and the moment followed to the two shafts |
 
 - The scripts only repeat what Run already shows, for several gains at once, and print the numbers quoted in Part 1.
 - Each experiment ends with an **In class** note: purpose, what to point at, a question with its answer, and the sentence to take away.

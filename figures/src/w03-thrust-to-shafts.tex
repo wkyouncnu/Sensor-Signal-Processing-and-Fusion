@@ -1,0 +1,175 @@
+% figures/w03-thrust-to-shafts.svg — 제어기가 낸 (X, N) 이 두 축의 회전수가 되기까지.
+%
+%   matlab -batch "addpath _tools; w03_prop_curve"     <- 먼저 좌표를 계산하고
+%   bash _tools/tikz2svg.sh figures/src/w03-thrust-to-shafts.tex figures/w03-thrust-to-shafts.svg
+%
+% 사용자 수업 노트(2026-10-13)의 1쪽 아래 + 2쪽을 한 그림으로. 사용자 지시:
+% "어떻게 FL, FR에서 nR, nL로 가는지... n 에 대한 F 그래프도 그려주면 좋을 것 같아...
+%  정회전 역회전에 대한 2차 함수 그래프"
+%
+% 두 단계를 **나란히** 보여 주는 것이 요점이다.
+%   1 단계  선형이고 되돌릴 수 있다:  [X; N] = T [F_L; F_R],  T = [1 1; b -b]
+%   2 단계  비선형이고 축마다 따로:   F = k n|n|  ->  n = +-sqrt(|F|/k)
+% 학생이 "배분" 을 행렬 하나로 기억하면 2 단계를 잊는다. 그래서 한 그림에 둘 다 둔다.
+%
+% 좌표는 전부 _tools/w03_prop_curve.m 이 계산한다 — 이 파일에는 산술이 없다.
+% 원점에서 기울기 0 인 것과 역회전이 41.8 % 약한 것이 **그림에서 그대로 보여야** 하고,
+% 손으로 포물선을 찍으면 둘 다 틀린다 (CLAUDE.md 4 절 규칙 6-1).
+%
+% 배치 주의 (렌더해서 고친 것, 2026-10-13):
+%   - 설명 상자는 **빈 사분면**에 둔다. 정회전 곡선이 1 사분면, 역회전이 3 사분면을 쓰므로
+%     글은 2 사분면(왼쪽 위)과 4 사분면(오른쪽 아래)에 들어간다
+%   - 축 위의 수치는 축 **바깥쪽**에. n_min 만 축 위에 둔다 — 아래는 곡선이 지나간다
+%   - 회전 화살표는 선체 **밖**으로. 안에 두면 폰툰과 겹친다
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+\input{w03-thrust-to-shafts-geo}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+
+\tikzset{
+  hull/.style    = {ink, line width=0.9pt, fill=black!4},
+  pont/.style    = {ink, line width=0.7pt, fill=pathc!12},
+  thrust/.style  = {errc, line width=1.4pt, -{Stealth[length=5.0pt,width=3.6pt]}},
+  armline/.style = {knownc, line width=0.8pt,
+                    {Stealth[length=3.4pt,width=2.4pt]}-{Stealth[length=3.4pt,width=2.4pt]}},
+  ctr/.style     = {soft, line width=0.4pt, densely dashed},
+  spin/.style    = {alng, line width=1.1pt, -{Stealth[length=4.4pt,width=3.2pt]}},
+  ax/.style      = {ink, line width=0.7pt, -{Stealth[length=4.6pt,width=3.2pt]}},
+  tick/.style    = {soft, line width=0.3pt, densely dotted},
+  curveA/.style  = {errc, line width=1.6pt},
+  curveB/.style  = {flow, line width=1.6pt},
+  guide/.style   = {accent, line width=0.8pt, densely dashed},
+  lead/.style    = {soft, line width=0.35pt, -{Stealth[length=3.2pt,width=2.2pt]}},
+  lbl/.style     = {font=\scriptsize},
+  known/.style   = {draw=knownc, line width=0.6pt, fill=white, inner sep=3.2pt,
+                    rounded corners=1pt, font=\small},
+  want/.style    = {draw=accent, line width=0.9pt, fill=white, inner sep=3.4pt,
+                    rounded corners=1pt, font=\small},
+  capt/.style    = {font=\scriptsize\bfseries, warn},
+  stage/.style   = {font=\small\bfseries, ink},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+% =====================================================================
+% 윗줄 왼쪽 — 자유물체도. 두 추력이 어디에 붙어 있는가
+% =====================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[stage, anchor=west] at (-1.9,3.55) {STEP 1 \ \ two thrusts into two forces, and back};
+
+  \draw[ctr] (0,-2.0) -- (0,2.6);
+  \draw[pont] (-1.55,-1.5) rectangle (-0.85,1.1);
+  \draw[pont] ( 0.85,-1.5) rectangle ( 1.55,1.1);
+  \draw[hull] (-1.55,0.25) rectangle (1.55,1.1);
+
+  \draw[ax] (0,0) -- (0,2.30);   \node[lbl, anchor=west]  at (0.08,2.22) {$x_b$};
+  \draw[ax] (0,0) -- (2.30,0);   \node[lbl, anchor=south] at (2.20,0.07) {$y_b$};
+  \fill[ink] (0,0) circle (1.2pt);
+
+  \draw[armline] (-1.2,-1.0) -- (0,-1.0);
+  \draw[armline] ( 0,-1.0)   -- (1.2,-1.0);
+  \node[lbl, knownc, anchor=north] at (-0.6,-1.08) {$b$};
+  \node[lbl, knownc, anchor=north] at ( 0.6,-1.08) {$b$};
+  \node[lbl, knownc, anchor=north] at (0,-1.62) {$b = \ypont$ m};
+
+  \draw[thrust] (-1.2,1.1) -- (-1.2,2.60);
+  \draw[thrust] ( 1.2,1.1) -- ( 1.2,2.00);
+  \node[lbl, errc, anchor=south] at (-1.2,2.63) {$F_L$};
+  \node[lbl, errc, anchor=south] at ( 1.2,2.03) {$F_R$};
+
+  %  회전 화살표는 선체 밖으로 / the turn arrow goes outside the hull
+  \draw[spin] (1.00,-1.73) arc (-60:-18:2.0);
+  \node[lbl, alng, anchor=west] at (2.00,-0.78) {$N>0$};
+
+  \node[capt, anchor=north] at (0.2,-2.25) {where the two thrusts act};
+\end{scope}
+
+% =====================================================================
+% 윗줄 오른쪽 — 행렬과 그 역
+% =====================================================================
+\begin{scope}[shift={(4.9,0)}]
+  \node[known, anchor=north west, align=left] at (0,3.10)
+    {both push forward, and the two arms are opposite\\[3pt]
+     $\begin{bmatrix} X \\ N \end{bmatrix}
+      = \underbrace{\begin{bmatrix} 1 & 1 \\ b & -b \end{bmatrix}}_{\mathbf{T}}
+        \begin{bmatrix} F_L \\ F_R \end{bmatrix}$};
+  \node[anchor=north west, align=left, font=\scriptsize] at (0,1.20)
+    {$\det\mathbf{T} = -2b \neq 0$: the matrix is invertible, so the split is \emph{unique}};
+  \node[want, anchor=north west, align=left] at (0,0.70)
+    {$\begin{bmatrix} F_L \\ F_R \end{bmatrix}
+      = \mathbf{T}^{-1}\begin{bmatrix} X \\ N \end{bmatrix}
+      = \begin{bmatrix} \tfrac12 & \tfrac{1}{2b} \\[2pt] \tfrac12 & -\tfrac{1}{2b} \end{bmatrix}
+        \begin{bmatrix} X \\ N \end{bmatrix}$};
+  \node[anchor=north west, align=left, font=\scriptsize] at (0,-1.25)
+    {each propeller carries \emph{half} the surge force, and the moment\\
+     is added to one and taken from the other};
+  \node[capt, anchor=north] at (2.7,-2.25) {linear, and exactly invertible};
+\end{scope}
+
+% =====================================================================
+% 아랫줄 — 추력 곡선 F = k n|n| 과 그 역산
+% =====================================================================
+\begin{scope}[shift={(2.3,-9.4)}]
+  \node[stage, anchor=west] at (\axL,5.95)
+    {STEP 2 \ \ each force onto its own shaft --- nonlinear, one propeller at a time};
+
+  % 축 / the axes
+  %  축 이름은 축 **위**, 눈금 수치는 축 아래 — 같은 쪽에 두면 겹친다 (렌더해서 고침)
+  \draw[ax] (\axL,0) -- (\axR,0);  \node[lbl, anchor=south east] at (\axR,0.14) {$n$ \ [rad/s]};
+  \draw[ax] (0,\axD) -- (0,\axU);  \node[lbl, anchor=south west] at (0.10,\axU) {$F$ \ [N]};
+
+  % 곡선 두 가지 / the two branches
+  \draw[curveB] \curveAstern;
+  \draw[curveA] \curveAhead;
+
+  % 한계 / the limits, labelled outside the axes
+  \draw[tick] (\nmaxx,0) -- (\nmaxx,\Fmaxy) -- (0,\Fmaxy);
+  \draw[tick] (\nminx,0) -- (\nminx,\Fminy) -- (0,\Fminy);
+  \fill[errc] (\nmaxx,\Fmaxy) circle (1.7pt);
+  \fill[flow] (\nminx,\Fminy) circle (1.7pt);
+  \node[lbl, errc, anchor=east]  at (-0.12,\Fmaxy) {$F_{\max}=\Fmax$};
+  \node[lbl, flow, anchor=east]  at (-0.12,\Fminy) {$F_{\min}=\Fmin$};
+  \node[lbl, errc, anchor=north] at (\nmaxx,-0.14) {$n_{\max}=\nmax$};
+  \node[lbl, flow, anchor=south] at (\nminx, 0.14) {$n_{\min}=\nmin$};
+
+  % 2 사분면 (왼쪽 위) 은 비어 있다 — 설명을 여기 둔다
+  \node[known, anchor=north west, align=left] at (\axL,\axU)
+    {\textbf{ahead}\ \ $F = k_{pos}\, n\lvert n\rvert$\\[2pt] $k_{pos} = \kpos$};
+  \node[anchor=north west, align=left, font=\scriptsize, soft] at (\axL,2.55)
+    {\textbf{flat at the origin.}\\
+     $\mathrm{d}F/\mathrm{d}n = 0$ there, so a\\
+     slow shaft makes almost no\\
+     thrust, and a small $F$ needs\\
+     a surprisingly large step in $n$};
+  \draw[lead] (-3.35,1.00) .. controls (-1.6,0.55) .. (-0.18,0.06);
+
+  % 3 사분면 아래 — 역회전 쪽 설명 / the astern branch, below its own curve
+  \node[anchor=north west, align=left, font=\scriptsize, flow] at (\axL,-2.70)
+    {\textbf{astern}\ \ $F = k_{neg}\, n\lvert n\rvert$, \ $k_{neg} = \kneg$\\[2pt]
+     the same blade turned backwards: \textbf{41.8\,\% weaker},\\
+     which is why $\lvert F_{\min}\rvert < F_{\max}$};
+
+  % 4 사분면 (오른쪽 아래) 은 비어 있다 — 역산을 여기 둔다
+  \node[want, anchor=north west, align=left] at (1.25,-0.75)
+    {$n = \begin{cases}
+        +\sqrt{F/k_{pos}}, & F \ge 0\\[3pt]
+        -\sqrt{\lvert F\rvert/k_{neg}}, & F < 0
+      \end{cases}$};
+  \node[anchor=north west, align=left, font=\scriptsize] at (1.25,-2.45)
+    {read the curve \emph{backwards}. Each propeller is read on its own,\\
+     because each has its own $F$ and neither can help the other};
+
+  % 읽어 내는 예 / the worked reading
+  \draw[guide] (0,\Fwy) -- (\nwx,\Fwy) -- (\nwx,0);
+  \fill[accent] (\nwx,\Fwy) circle (1.7pt);
+  \node[lbl, accent, anchor=south west] at (0.15,\Fwy+0.06) {$F_L = \Fw$};
+  \node[lbl, accent, anchor=north] at (\nwx,-0.14) {$n_L = \nw$};
+
+  \node[capt, anchor=north] at (0,-4.10)
+    {nonlinear, but still one-to-one: every reachable $F$ has exactly one $n$};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

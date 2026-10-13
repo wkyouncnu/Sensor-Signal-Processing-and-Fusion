@@ -91,6 +91,7 @@
 │                            svg2png.sh · svgzoom.sh                 (렌더해서 눈으로 보기)
 │                            tikz2svg.sh                             (그림 조판. 지금 쓰는 것)
 │                            w01_euler_R.m · w05_track_curves.awk     (그림 기하 계산)
+│                            w03_prop_curve.m                        (추력 곡선 F = k n|n| 그림의 좌표)
 │                            ── 아래는 TikZ 이전의 그림 도구다. 기록으로 남겨 두고
 │                               **새 그림에는 쓰지 않는다** (figures/*.svg 20장 전부
 │                               figures/src/*.tex 로 옮겼다, 2026-09-05)
@@ -172,6 +173,10 @@ lectures/WXX_simulink/
 >   수정된 부분만 다운로드 하는 방법을 첫장에 정리해서 항상 넣어줄래". 모든 주차·부록에 같은 문구
 > - 그 주차에만 해당하는 핵심 외부 자료(예: W02 의 MATLAB Tech Talk PID 재생목록과 제어조교
 >   영상)는 **그 주차 첫 장에만** 별도 콜아웃으로 둔다. 다른 주차에 복사하지 않는다
+>
+> - 그 **위에** `[!note] Recordings of this semester's own classes` 를 둔다 — 이번 학기
+>   실시간 녹화 재생목록(`[충남대] 2026 센서신호처리`). 결석한 학생이 가장 먼저 찾는 것이라
+>   참고자료 콜아웃보다 앞에 온다 (사용자 지시, 2026-10-13). 모든 주차·부록에 같은 문구
 >
 > `_templates/week.md` 에 원본이 있으니 복사하면 따라온다. 주차마다 문구를 바꾸지 않는다.
 > 자세한 것은 `gnc-lecture-vault/references/standing-orders.md` §1.

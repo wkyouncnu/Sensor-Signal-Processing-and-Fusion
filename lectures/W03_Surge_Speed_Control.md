@@ -10,6 +10,13 @@ status: done
 
 # Week 3 · Surge Speed Control
 
+> [!note] Recordings of this semester's own classes
+> <span style="font-size:0.88em">Every session of this course is recorded as it is given and posted to the playlist below. The written material here is the reference; the recording is the lecture, at the pace it was actually delivered. Use it to review a derivation, or to catch up on a missed week before the laboratory.</span>
+>
+> | | Where |
+> |---|---|
+> | **[충남대] 2026 센서신호처리** — this course, recorded live, 2026 | [playlist](https://youtube.com/playlist?list=PLCxINRGlWUrk) |
+
 > [!important] Reference material — read this first
 > <span style="font-size:0.88em">The five courses below are **taught by the instructor of this course** and are the assumed background for it. They run from the fundamentals down to the graduate material, so start wherever the gap is. Every frame, symbol and derivation used here is developed in them at length; anyone whose prerequisites are thin should work through them first, then return.</span>
 >
@@ -63,6 +70,7 @@ Upon completion of this week, the learner is able to:
 3. Explain why the derivative term makes a speed loop worse, and decide from a measurement to leave it out.
 4. Reproduce integrator windup on the vessel with an unreachable speed command, and remove it with back-calculation.
 5. Tune the speed loop by the Week 2 tuning order, stating the measurement that fixed each gain, and check the thrust against the limit.
+6. Derive the allocation of a surge force and a yaw moment onto two fixed propellers, invert the resulting $2\times2$ matrix, and convert each thrust into a shaft speed through the square-law propeller curve.
 
 ## Prerequisites and Setup
 
@@ -578,6 +586,147 @@ Expected output:
 
 ---
 
+## 3-6. Where the force actually goes: two propellers, two steps
+
+**What is observed.** Every experiment so far has ended at a number called $X$ — a surge force in newtons, produced by the `speed loop` block and drawn on the lower Scope trace. But the Otter has no actuator that accepts newtons. It has **two propellers**, and what each of them accepts is a shaft speed in rad/s. Something between the controller and the vessel turns one into the other, and that something has been running in every model of this week under the name `allocation`.
+
+**The result.** It does two things, in this order, and they are different in kind:
+
+| | Step | What it is |
+|---|---|---|
+| 1 | $(X, N) \to (F_L, F_R)$ | **linear** and exactly invertible — a $2\times2$ matrix |
+| 2 | $F \to n$, each shaft on its own | **nonlinear** — a square-law curve, read backwards |
+
+This week $N = 0$, because nothing has yet asked the vessel to turn. Step 1 therefore reduces to "half each". Week 4 supplies the missing $N$ and the full matrix earns its keep; the structure is written out now so that it does not have to be introduced twice.
+
+![Where the two loops sit, what they output, and how those outputs reach the propellers](../figures/w03-inner-loop.svg)
+
+| In the diagram | What it is | Which week |
+|---|---|---|
+| the upper row, `speed loop` | the PI of §3-3 and the anti-windup of §3-4, producing $X$ | **this week** |
+| the lower row, `heading autopilot` | the PD that produces $N$, with its own error and its own feedback | Week 4 |
+| `allocation` | the two steps of this section | this week, with $N = 0$ |
+| `Otter` | the equations of motion of Week 1 | Week 1 |
+| the dashed box on the left | where $u_d$ and $\psi_d$ come from once a path exists | Week 5 |
+| the feedback bus along the bottom | the state vector; each loop reads only the one or two entries it needs | — |
+
+- The two controllers never speak to each other. They meet **only in the allocator**, and the whole of their interaction is the sharing of two propellers.
+
+**Derivation.**
+
+1. **The two forces two propellers can make.** Body $x$ is forward and body $y$ is to starboard, so the port propeller sits at $y = -b$ and the starboard one at $y = +b$, where $b$ is half the distance between the pontoons. Both thrusts act along $x$. A force $F$ applied at $y$ makes a yaw moment $-yF$, so
+
+$$
+X = F_L + F_R, \qquad N = b\,(F_L - F_R)
+$$
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $F_L, F_R$ | thrust of the port and starboard propeller | N |
+| $b$ | half the pontoon spacing | $0.3950$ m, `otter.m` |
+| $X$ | surge force, the output of `speed loop` | N |
+| $N$ | yaw moment, zero this week | N·m |
+
+2. **Written as a matrix, and inverted.** Stacking the two equations,
+
+$$
+\begin{bmatrix} X \\ N \end{bmatrix}
+= \underbrace{\begin{bmatrix} 1 & 1 \\ b & -b \end{bmatrix}}_{\mathbf{T}}
+  \begin{bmatrix} F_L \\ F_R \end{bmatrix},
+\qquad
+\det \mathbf{T} = -2b \neq 0
+$$
+
+   The determinant is not zero, so $\mathbf{T}$ can be inverted and **the split is unique**: there is exactly one pair of thrusts that produces a demanded $(X, N)$, with nothing left to choose. Two actuators, two things to control. Inverting,
+
+$$
+\begin{bmatrix} F_L \\ F_R \end{bmatrix}
+= \mathbf{T}^{-1}\begin{bmatrix} X \\ N \end{bmatrix}
+= \begin{bmatrix} \tfrac12 & \tfrac{1}{2b} \\[2pt] \tfrac12 & -\tfrac{1}{2b} \end{bmatrix}
+  \begin{bmatrix} X \\ N \end{bmatrix}
+\qquad\Longrightarrow\qquad
+F_{L,R} = \frac{X}{2} \pm \frac{N}{2b}
+$$
+
+   In words: **each propeller carries half the surge force, and the moment is added to one and taken from the other.** With $N = 0$ this week, both get $X/2$ — which is exactly what the `allocation` block does, and why §3-1's table could describe it in one line.
+
+3. **From thrust to shaft speed.** A propeller's thrust goes as the square of its shaft speed, and the coefficient is different going astern because the blade is running the wrong way round:
+
+$$
+F = \begin{cases} k_{pos}\, n\lvert n\rvert, & n \ge 0\\[2pt] k_{neg}\, n\lvert n\rvert, & n < 0\end{cases}
+\qquad\Longrightarrow\qquad
+n = \begin{cases} +\sqrt{F/k_{pos}}, & F \ge 0\\[2pt] -\sqrt{\lvert F\rvert/k_{neg}}, & F < 0\end{cases}
+$$
+
+   The $n\lvert n\rvert$ rather than $n^2$ is what makes the curve pass through the origin with the correct sign on both sides; writing $n^2$ would make a reversing propeller push the vessel forwards.
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $k_{pos}$ | thrust coefficient, ahead | $0.011080$ N per (rad/s)², `otter.m` |
+| $k_{neg}$ | thrust coefficient, astern | $0.006445$ N per (rad/s)², `otter.m` |
+| $n_{\max}, n_{\min}$ | shaft-speed limits | $+103.9$, $-101.7$ rad/s |
+| $F_{\max}, F_{\min}$ | the thrusts those limits reach | $+119.7$, $-66.7$ N |
+
+![The two steps: the matrix that splits the forces, and the curve that turns each thrust into a shaft speed](../figures/w03-thrust-to-shafts.svg)
+
+| In the figure | Meaning |
+|---|---|
+| top left | where the two thrusts act, and the lever $b$ that turns their difference into a moment |
+| top right | the matrix of line 2 and its inverse |
+| bottom, the orange branch | ahead: $F = k_{pos}n\lvert n\rvert$ |
+| bottom, the blue branch | astern: the same blade backwards, and visibly shallower |
+| bottom, the dashed purple lines | the inversion read off the curve: $F_L = 38.16$ N is reached at $n_L = 58.69$ rad/s |
+
+**Reading the figure against the derivation.**
+
+| Where to look | What is there | Which line it settles |
+|---|---|---|
+| the two upward arrows, top left | both thrusts act along $+x$ | line 1: that is why the first row of $\mathbf{T}$ is $[\,1\ \ 1\,]$ |
+| the two arms marked $b$ | equal and on opposite sides of the centreline | line 1: that is why the second row is $[\,b\ \ {-b}\,]$, with opposite signs |
+| $\mathbf{T}^{-1}$, top right | $\tfrac12$ in both rows of the first column | line 2: half the surge force each, whatever the moment is doing |
+| the curve at the origin | **flat** — $\mathrm{d}F/\mathrm{d}n = 0$ there | line 3: near zero a large change in $n$ buys almost no thrust, which is why a propeller is a poor actuator at low speed |
+| the two branches, compared | astern is $41.8\,\%$ weaker for the same shaft speed | line 3: $k_{neg} < k_{pos}$, so $\lvert F_{\min}\rvert = 66.7 < 119.7 = F_{\max}$ |
+| the marked points | $(103.9,\ 119.7)$ and $(-101.7,\ -66.7)$ | the limits: everything outside this range is a force the vessel cannot produce, and §3-4's windup is the consequence |
+| the purple reading | $38.16$ N at $58.69$ rad/s | $\sqrt{38.16/0.011080} = 58.69$, the inverse evaluated |
+
+**What the figure says**
+
+- The allocator is not one operation but two, and only the first is linear; the limits of §3-4 live in the second.
+
+> [!note] Why the inverse exists at all, and when it stops existing
+> Two propellers, two demanded quantities, a square and nonsingular $\mathbf{T}$: the inverse is exact and unique. That is the easy case, and it holds for every vessel in Weeks 3 to 5. Week 6 removes it — with more thrusters than demanded forces the matrix is no longer square, there is no inverse, and the choice of which combination to use becomes the subject of its own week.
+
+**To check every number in this section**
+
+```matlab
+cd _tools
+verify_w03_speed        % check 2 is the thrust range, check 5 the inversion
+```
+
+Actual output of the two lines that matter here:
+
+```
+    2 thrust limits [-133.42, 239.36] N          OK    [-133.42, 239.36]
+    5 allocation inverts T = k n|n|              OK    1.4e-14 N
+```
+
+- Check 5 feeds a thrust through $n(F)$ and back through $F(n)$ and compares: the two agree to $1.4\times10^{-14}$ N, so the inversion is exact to machine precision and not an approximation.
+- The limits in check 2 are the **pair** $2F_{\max}$ and $2F_{\min}$, both propellers together, which is the surge force the vessel can produce and therefore the saturation the integrator of §3-4 runs into.
+
+| What to try | What to watch |
+|---|---|
+| `k_neg = k_pos;` then re-run `W03_F_unreachable_speed` | the astern branch becomes the mirror of the ahead branch, and the vessel can brake as hard as it accelerates. That is not the Otter, but it shows what the asymmetry costs |
+| In `W03_F_windup`, double-click `allocation` | the two steps of this section, in nine lines of commented code — the matrix is not written out because $N = 0$ makes it $X/2$ |
+
+> [!tip] In class
+> - **Purpose** — close the gap between "the controller asks for 100 N" and "the propeller turns at 67 rad/s".
+> - **Point to** — the flat spot at the origin of the curve. Ask what that means for a vessel holding station.
+> - **Ask** — "The controller asks for $-80$ N. What happens?" The astern branch cannot reach it: $F_{\min} = -66.7$ N per propeller, so the demand is clipped and §3-4's anti-windup earns its keep.
+> - **Ask** — "Why invert the matrix rather than just divide by two?" Because Week 4 adds $N$, and then the two propellers stop being equal. Writing the inverse now means nothing changes next week except that $N$ stops being zero.
+> - **Take away** — a controller produces forces; an allocator produces actuator commands; the two are not the same thing and the difference is where the limits live.
+
+---
+
 # Part 2 · Laboratory run order
 
 The experiments of Part 1 are worked through in order; this table is the index of what was run, for repeating the week at home.
@@ -593,6 +742,7 @@ Every example has **its own model**, and every model looks the same as in Week 2
 | 3-3b | `W03_E_PID` | `W03_E_integral_and_derivative` | P + I, then D |
 | 3-4 | `W03_F_windup` | `W03_F_unreachable_speed` | an unreachable speed, then a reachable one |
 | 3-5 | `W03_G_tuning` | `W03_G_tuning_by_hand` | the tuned loop, with a switch for a smoothed command |
+| 3-6 | any of them | `verify_w03_speed` | the allocator: the matrix, its inverse, and the propeller curve |
 
 - The scripts only repeat what Run already shows, for several gains at once, and print the numbers quoted in Part 1.
 - Each experiment ends with an **In class** note: purpose, what to point at, a question with its answer, and the sentence to take away.

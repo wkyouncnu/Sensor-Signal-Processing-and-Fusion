@@ -10,6 +10,13 @@ summary: Holding a station with two propellers — the direction this hull canno
 
 # Week 8 · Dynamic Positioning and Mission Integration
 
+> [!note] Recordings of this semester's own classes
+> <span style="font-size:0.88em">Every session of this course is recorded as it is given and posted to the playlist below. The written material here is the reference; the recording is the lecture, at the pace it was actually delivered. Use it to review a derivation, or to catch up on a missed week before the laboratory.</span>
+>
+> | | Where |
+> |---|---|
+> | **[충남대] 2026 센서신호처리** — this course, recorded live, 2026 | [playlist](https://youtube.com/playlist?list=PLCxINRGlWUrk) |
+
 > [!important] Reference material — read this first
 > <span style="font-size:0.88em">The five courses below are **taught by the instructor of this course** and are the assumed background for it. They run from the fundamentals down to the graduate material, so start wherever the gap is. Every frame, symbol and derivation used here is developed in them at length; anyone whose prerequisites are thin should work through them first, then return.</span>
 >

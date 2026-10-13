@@ -10,6 +10,13 @@ summary: Guidance in front of the Week 4 autopilot, tuned model-free — atan2 a
 
 # Week 5 · Waypoint Following and LOS Guidance
 
+> [!note] Recordings of this semester's own classes
+> <span style="font-size:0.88em">Every session of this course is recorded as it is given and posted to the playlist below. The written material here is the reference; the recording is the lecture, at the pace it was actually delivered. Use it to review a derivation, or to catch up on a missed week before the laboratory.</span>
+>
+> | | Where |
+> |---|---|
+> | **[충남대] 2026 센서신호처리** — this course, recorded live, 2026 | [playlist](https://youtube.com/playlist?list=PLCxINRGlWUrk) |
+
 > [!important] Reference material — read this first
 > <span style="font-size:0.88em">The five courses below are **taught by the instructor of this course** and are the assumed background for it. They run from the fundamentals down to the graduate material, so start wherever the gap is. Every frame, symbol and derivation used here is developed in them at length; anyone whose prerequisites are thin should work through them first, then return.</span>
 >
@@ -212,6 +219,26 @@ $$
 > with $(x, y)$ north and east. The `guidance` block of this week is these lines, and §5-4's switching test is the next two. The rotation gives the same $y_e$ as MSS `crosstrackWpt.m` to machine precision (`verify_w05_guidance` check 5).
 
 - The goal of path following is $y_e \to 0$; $x_e$ is not driven anywhere, it is only **watched**, and §5-4 is what watches it.
+
+**Where it attaches.** Weeks 3 and 4 built two loops that each close on a measurement the vessel already carries: the speed loop reads $u$, the heading loop reads $\psi$ and $r$. Neither of them knows what a path is, and neither needs to. Guidance does not join them — it sits **in front** of them and supplies what they were previously given by hand:
+
+![The outer loop supplying the commands, and the inner loops turning them into forces](../figures/w05-guidance-loop.svg)
+
+| In the diagram | What it is | Which week |
+|---|---|---|
+| `guidance`, the four numbered steps | leg direction, the rotation into $(x_e, y_e)$, the switching test, the law | **this week** |
+| the thick arrow marked $\psi_d$ | the output of the outer loop, and **the command of the heading loop** | this week → Week 4 |
+| the thick arrow marked $u_d$ | the speed order, which goes straight past the guidance into the speed loop | §5-7 |
+| `heading autopilot`, `speed loop` | unchanged from Weeks 4 and 3, and not retuned | Weeks 3, 4 |
+| `allocation` | the two steps of Week 3 §3-6, with both inputs now live | Week 3 |
+| INNER feedback, marked fast | $u$, $\psi$, $r$ — read every solver step, and the loops are tuned for that |  |
+| OUTER feedback, marked slow | position $(N, E)$ and heading, which is what a path is defined against |  |
+
+- The commands are **drawn in a different colour and a heavier line** for one reason: $\psi_d$ is not a force, a moment, or a shaft speed. It is an *instruction to another controller*, and that is the only kind of thing guidance ever produces.
+- The two feedbacks are nested, not parallel. The inner loop settles a heading in a few seconds; the outer loop changes what heading to ask for over tens of metres. That separation of time scales is what makes the cascade work, and §5-3's choice of $\Delta$ is where it is paid for.
+
+> [!note] Nothing in Weeks 3 or 4 changes
+> The `heading autopilot` block in `W05_G_tuning` is the block of Week 4, with the gains of Week 4, unretuned. The only difference is where $\psi_d$ comes in from. If a guidance law cannot be added without retuning the autopilot beneath it, the two were never properly separated.
 
 ### Experiment 5-1 · The guidance layer on the canvas (10 min)
 
