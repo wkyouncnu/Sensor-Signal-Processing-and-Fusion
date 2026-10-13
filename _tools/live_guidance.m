@@ -60,7 +60,7 @@ function live_guidance(N, E, psi_deg, psi_d_deg, y_e, u, u_d, n, wp, t, o)
 %   See also LIVE_TRACK, LIVE_DASH, W05_ANIMATE.
 
 persistent fig ax hTrail hHull hPath hU hUd hPsi hPsid hWp hYe hNL hNR hInfo
-persistent trailN trailE tHist yeH uH udH psiH psidH nLH nRH wpH tLast tag Lship
+persistent trailN trailE tHist yeH uH udH psiH psidH nLH nRH wpH tLast tag Lship lawTag
 
 new = isempty(fig) || ~isvalid(fig) || ~strcmp(tag, o.tag) || t < tLast;
 if new
@@ -85,6 +85,22 @@ if new
     hHull  = patch('Parent',ax(1), 'XData',nan, 'YData',nan, ...
                    'FaceColor',[0.1 0.1 0.1], 'FaceAlpha',0.85, 'EdgeColor','none');
     hInfo  = title(ax(1), '');
+
+    %  어느 법칙이 돌고 있는지 제목 앞에 **파란 글자로** 붙인다 (사용자 지시,
+    %  2026-10-13). 항적만으로는 atan2 와 LOS 가 구별되지 않고, 캔버스의 law
+    %  Constant 는 화면에 남지 않는다. 실행마다 한 번만 읽는다 — 한 실행 안에서
+    %  바뀌지 않는 값이고, 매 스텝 base 작업공간을 들여다볼 이유가 없다.
+    %  Name the law in blue ahead of the running title: the track alone does not
+    %  tell atan2 from LOS. Read once per run — it cannot change inside one.
+    lawTag = '';
+    try
+        LAWS = {'atan2', 'LOS', 'ILOS', 'ILOS (plain integral)'};
+        i = round(evalin('base','law'));
+        if i >= 1 && i <= numel(LAWS)
+            lawTag = ['\color[rgb]{0,0.45,0.74}\bf' LAWS{i} '\rm\color{black}    '];
+        end
+    catch
+    end
 
     LBL = {'u  [m/s]', '\psi  [deg]', 'waypoint k', 'y_e  [m]', 'n_L , n_R  [rad/s]'};
     for i = 1:5
@@ -135,9 +151,14 @@ bx = [ -a   -a    0.25*a   a    0.25*a ];
 by = [  b   -b   -b        0    b      ];
 set(hHull, 'XData', E + bx*sin(psi) + by*cos(psi), ...
            'YData', N + bx*cos(psi) - by*sin(psi));
-set(hInfo, 'String', sprintf(['t = %6.1f s    leg %d    y_e = %+6.2f m    ' ...
-                              'u = %4.2f m/s    \\psi = %+6.1f deg'], ...
-                             t, round(wp), y_e, u, psi_deg));
+%  lawTag 를 **포맷 문자열 안에 넣지 않는다.** sprintf 가 `\bf` 를 백스페이스로,
+%  `\rm` 을 캐리지리턴으로 해석해서 TeX 지시가 사라진다. 밖에서 붙인다.
+%  lawTag must not go inside the format string: sprintf reads `\b` and `\r` as
+%  backspace and carriage return, and the TeX directives vanish.
+set(hInfo, 'String', [lawTag ...
+           sprintf(['t = %6.1f s    leg %d    y_e = %+6.2f m    ' ...
+                    'u = %4.2f m/s    \\psi = %+6.1f deg'], ...
+                   t, round(wp), y_e, u, psi_deg)]);
 set(hU,   'XData', tHist, 'YData', uH);
 if any(isfinite(udH)), set(hUd, 'XData', tHist, 'YData', udH); end
 set(hPsi,  'XData', tHist, 'YData', psiH);

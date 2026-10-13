@@ -1643,6 +1643,7 @@ Pressing Run on `W05_H_speed_path` alone produces the same numbers and a figure 
 
 | In the figure | Meaning |
 |---|---|
+| the blue line under the title | **which law drew this track** — `law` as the guidance block actually received it. A track alone does not tell atan2 from LOS, and §5-1b's flag makes every model able to run any of the four |
 | left | the track with the hull drawn along it, and the five waypoints |
 | $y_e$ | the cross-track error, with a grey line at each switching instant |
 | $\psi_d, \psi$ | the commanded heading and the one achieved; the jumps to $\pm 180°$ are the wrap of §5-2 |
@@ -1656,6 +1657,7 @@ A second window opens **while the model is still running**, redrawn at every ste
 
 | In the live view | What it answers |
 |---|---|
+| the blue word ahead of the running title | which of the four laws is steering, read once when the window opens |
 | left, the hull on the track | where the vessel is **and which way it is pointing** — the difference between the two is the crab angle of §5-6 |
 | row 1, $u_d$ and $u$ | is the inner speed loop doing what it was told |
 | row 2, $\psi_d$ and $\psi$ | is the inner heading loop doing what the guidance told it; the vertical jumps are the $\pm 180°$ wrap of §5-2 |

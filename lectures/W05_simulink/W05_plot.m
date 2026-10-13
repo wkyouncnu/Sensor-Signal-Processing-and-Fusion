@@ -66,7 +66,16 @@ plot(WP_E, WP_N, 'k--');
 plot(WP_E, WP_N, 'kp', 'MarkerSize', 11, 'MarkerFaceColor', 'k');
 plot(E, N, 'Color', [0 0.45 0.74], 'LineWidth', 1.3);
 track_ships({[N E psi]}, [0 0.45 0.74], 'Marks', 12);
-xlabel('east [m]');  ylabel('north [m]');  title('the track, with the hull and its heading');
+xlabel('east [m]');  ylabel('north [m]');
+%  어느 법칙이 이 항적을 만들었는지 제목에 **파란 글자로** 적는다 (사용자 지시, 2026-10-13).
+%  항적만으로는 atan2 와 LOS 를 구별하기 어렵고, 캔버스의 law Constant 는 그림에
+%  남지 않는다. 값은 그 Constant 가 읽는 작업공간 변수에서 가져오므로, 스크립트가
+%  무엇으로 돌렸든 **실제로 돈 것**이 적힌다.
+%  Name the law in the title, in blue: the track alone does not tell atan2 from
+%  LOS, and the canvas Constant does not reach the figure. The value is read from
+%  the workspace variable that Constant reads, so it names what actually ran.
+title({'the track, with the hull and its heading', ...
+       ['\color[rgb]{0,0.45,0.74}\bf' law_name()]});
 
 LBL = {'y_e  [m]', '\psi_d , \psi  [deg]', 'u_d , u  [m/s]', 'n_L , n_R  [rad/s]', 'waypoint k'};
 for i = 1:5
@@ -99,4 +108,27 @@ for i = 1:5
     %  전환 시각. 범례에 들어가지 않게 / the switching instants, kept out of the legend
     for s = sw(:).', xline(s, 'Color', [.6 .6 .6], 'HandleVisibility','off'); end
 end
+end
+
+% ------------------------------------------------------------------------
+function s = law_name()
+%LAW_NAME  지금 작업공간에 들어 있는 law 값의 이름. 유도 블록의 네 가지와 같다.
+%          The name of the law now in the workspace; the same four the block holds.
+%
+%  law 가 없으면 (그 모델에 유도가 없거나 setup 을 안 돌렸으면) 빈 문자열을 주어
+%  제목에 둘째 줄이 생기지 않게 한다. 틀린 이름보다 없는 편이 낫다.
+%  With no law in the workspace the title gets no second line: no name is better
+%  than a wrong one.
+s = '';
+try
+    v = evalin('base', 'law');
+catch
+    return
+end
+NAMES = {'atan2  —  aiming at the next waypoint', ...
+         'LOS  —  aiming \Delta ahead on the path', ...
+         'ILOS  —  LOS with the nonlinear integral', ...
+         'ILOS  —  LOS with a plain integral'};
+i = round(v);
+if i >= 1 && i <= numel(NAMES), s = NAMES{i}; else, s = sprintf('law = %g', v); end
 end
