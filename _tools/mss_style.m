@@ -88,6 +88,15 @@ for i = 1:numel(blocks)
     end
 end
 
+%  MATLAB Function 블록은 **여기서 줄이지 않는다.** 2026-10-13 에 100x50 으로
+%  줄였다가 되돌렸다: 포트가 여섯인 `guidance` 가 줄어들자 들어오던 선 여섯이
+%  한 자리에 몰려 **겹침 29 쌍**이 생겼다. 크기는 빌더가 블록을 만들 때 정해야
+%  한다 - 그래야 port_xy 가 배선할 때 최종 좌표를 읽는다.
+%  MATLAB Function blocks are NOT resized here. Shrinking them to 100x50 once
+%  crowded the six inputs of `guidance` into one place and produced 29
+%  overlapping pairs. Their size belongs in the builder that creates them, so
+%  that port_xy reads the final geometry when it routes.
+
 %  A round summing junction is the MSS signature. Any Sum still drawn as a
 %  rectangle is one a builder created without add_sum; fix it here rather than
 %  leaving one slab in an otherwise consistent diagram.

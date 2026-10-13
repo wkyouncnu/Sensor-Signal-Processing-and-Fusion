@@ -66,11 +66,13 @@ else
 end
 note(m, o);
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 save_system(m, out);
 print(['-s' m], '-dpng', '-r60', fullfile(here, 'img', [m '.png']));
-n = check_overlaps(m);
+n = check_overlaps(m);  nd = check_diagonals(m);
 close_system(m, 0);
-fprintf('  built  %-18s (overlapping lines: %d)\n', [m '.slx'], n);
+fprintf('  built  %-18s (overlapping lines: %d, diagonals: %d)\n', [m '.slx'], n, nd);
 end
 
 % =========================================================================
@@ -128,7 +130,11 @@ for i = 1:3
     from_at(m, tag, [XA-100 q(2)], ['From a ' tag]);
     route(m, ['From a ' tag], 1, 'autopilot', i, zeros(0,2));
 end
-goto_at(m, {'autopilot', 1}, port_xy(m, 'autopilot', 'Outport', 1), 'down', 'N');
+%  분기점을 포트에서 30 px 떼어 놓는다: 포트 바로 위에 두면 느린 외란이 합산점으로
+%  들어오는 가로선과 같은 높이에서 5 px 겹친다 (G 모델에서 실제로 겹쳤다).
+%  The branch point is moved 30 px off the port: sitting on it, the stub shares
+%  5 px of its row with the slow-disturbance line entering the summing junction.
+goto_at(m, {'autopilot', 1}, port_xy(m, 'autopilot', 'Outport', 1) + [30 0], 'down', 'N');
 
 %% 느린 외란 (있는 모델만) / the slow disturbance, where the model has it
 XB = XA + 260;
@@ -140,10 +146,21 @@ if o.integral
     mlfcn_params([m '/slow'], {'N_slow','T_slow'});
     from_at(m, 't_now', [XA-100 port_xy(m, 'slow', 'Inport', 1)*[0;1]], 'From slow t');
     route(m, 'From slow t', 1, 'slow', 1, zeros(0,2));
-    add_sum(m, 'hull moment', '++', [XB-50 YL]);
+    %  합산점을 오토파일럿에서 멀찍이 떼어 놓는다. 바로 옆(XB-50)에 두었더니 느린
+    %  외란이 들어오는 가로선과 N 가지의 토막이 같은 줄에서 겹쳤다 (2026-10-13).
+    %  The junction is kept well clear of the autopilot: next to it, the slow
+    %  disturbance's horizontal and the N branch's stub shared a row.
+    add_sum(m, 'hull moment', '++', [XB YL]);
     route(m, 'autopilot', 1, 'hull moment', 1, zeros(0,2));
+    %  둘째 입력은 둥근 합산점의 **아래쪽**에 달려 있다 (MSS 식). 그러므로 느린 외란은
+    %  본선 아래로 내려갔다가 **세로로 올라와** 들어간다. 본선 높이로 끌고 오면 그
+    %  줄을 15 px 타고 간다.
+    %  The second input is on the underside of the round junction, so the slow
+    %  disturbance passes below the main row and rises into it. Brought along the
+    %  row itself, it rides 15 px of the line already there.
     q = port_xy(m, 'hull moment', 'Inport', 2);
-    route(m, 'slow', 1, 'hull moment', 2, [XA+230 port_xy(m,'slow','Outport',1)*[0;1]; XA+230 q(2)]);
+    route(m, 'slow', 1, 'hull moment', 2, ...
+          [XB-40 port_xy(m,'slow','Outport',1)*[0;1]; XB-40 YL+85; q(1) YL+85]);
     src = {'hull moment', 1};
     XB = XB + 20;
 end

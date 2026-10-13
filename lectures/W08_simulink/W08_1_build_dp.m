@@ -103,11 +103,13 @@ route(m, 'Otter', 1, 'end', 1, zeros(0,2));
 measure(m, XO + 220, Y);
 note(m, o);
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 save_system(m, out);
 print(['-s' m], '-dpng', '-r60', fullfile(here, 'img', [m '.png']));
-n = check_overlaps(m);
+n = check_overlaps(m);  nd = check_diagonals(m);
 close_system(m, 0);
-fprintf('  built  %-20s (overlapping lines: %d)\n', [m '.slx'], n);
+fprintf('  built  %-20s (overlapping lines: %d, diagonals: %d)\n', [m '.slx'], n, nd);
 end
 
 % =========================================================================

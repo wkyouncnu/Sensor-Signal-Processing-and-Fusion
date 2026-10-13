@@ -216,6 +216,8 @@ set_param(m, 'InitFcn', ['if base_var(''pace'', 0) > 0, ' ...
     'set_param(bdroot, ''EnablePacing'', ''on'', ''PacingRate'', ''1''); else, ' ...
     'set_param(bdroot, ''EnablePacing'', ''off''); end']);
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 save_system(m, out);
 %  -r45 로 뽑는다. 5주차 캔버스는 Animate 와 로그 열 때문에 폭이 넓어서 -r60 에서
 %  2346 px 가 되고, vault_check 7 절의 2000 px 한계를 넘는다.
@@ -230,7 +232,7 @@ print(['-s' m], '-dpng', '-r45', fullfile(here, 'img', [m '.png']));
 %  위해서**다 — 제어기가 서브시스템이 된 뒤로 볼 것의 대부분이 그 안에 있다 (CLAUDE.md §5).
 %  check_overlaps already descends into subsystems; this loop is for the pictures,
 %  since most of what there is to look at now lives inside the controllers.
-n = check_overlaps(m);
+n = check_overlaps(m);  nd = check_diagonals(m);
 for sb = {'heading autopilot','speed loop','moment limit'}
     if isempty(find_system(m, 'SearchDepth',1, 'Name',sb{1})), continue; end
     %  `print('-s<path>')` 는 창을 **열지 않고** 뽑는다. open_system 으로 먼저 열면
@@ -241,7 +243,7 @@ for sb = {'heading autopilot','speed loop','moment limit'}
           fullfile(here, 'img', [m '_' strrep(sb{1},' ','_') '.png']));
 end
 close_system(m, 0);
-fprintf('  built  %-20s (overlapping lines: %d)\n', [m '.slx'], n);
+fprintf('  built  %-20s (overlapping lines: %d, diagonals: %d)\n', [m '.slx'], n, nd);
 end
 
 % =========================================================================
@@ -516,19 +518,22 @@ route(s, 'thrust limit', 1, 'X', 1, zeros(0,2));
 
 %  4) 안티와인드업: 잘려 나간 만큼을 적분기로 되돌린다 (3주차 F 절과 같은 배선)
 %     The anti-windup: what the saturation removed, returned to the integrator.
-%     뺄셈을 **두 입력 바로 아래**에 둔다 (사용자 수정, 2026-09-29). 처음에는 합산점을
-%     왼쪽에 두고 포화 출력을 가로질러 끌어왔더니 긴 가로선 둘이 도면을 덮었다. 지금은
-%     X raw 와 X 가 각자 **바로 아래로 떨어져** 만나고, 돌아가는 선은 Kb 하나뿐이다.
-%     The subtraction sits directly below the two signals it takes. Placed to the
-%     left it needed two long horizontal runs across the diagram; now each signal
-%     drops straight down and only the Kb line travels back.
-add_sum(s, 'X - X raw', '-+', [740 440]);
-gain(s, 'Kb', 'Kb', [820 522 870 558]);
+%     되돌아가는 길은 **맨 아래 한 줄의 통로**다 (사용자 수정, 2026-10-13). 뺄셈과
+%     Kb 를 그 통로에 놓고 **둘 다 왼쪽을 보게** 돌린다. 그러면 신호는 각자 바로
+%     아래로 떨어지고, 통로를 따라 곧게 왼쪽으로 가고, 한 번만 올라간다 — 꺾이는
+%     곳이 네 군데뿐이고 비스듬한 선이 없다.
+%     The return path is one lane along the bottom. The subtraction and Kb sit in
+%     that lane and both face left, so each signal drops straight down, runs
+%     straight back along the lane and rises once: four corners in all, and no
+%     stretch at an angle.
+add_sum(s, 'X - X raw', '-+', [640 460]);
+set_param([s '/X - X raw'], 'Orientation','left');
+gain(s, 'Kb', 'Kb', [520 442 570 478]);
 set_param([s '/Kb'], 'Orientation','left');
-route(s, 'X raw',        1, 'X - X raw', 1, [690 200; 690 440]);
-route(s, 'thrust limit', 1, 'X - X raw', 2, [800 200; 800 500; 740 500]);
-route(s, 'X - X raw',    1, 'Kb',        1, [880 440; 880 540]);
-route(s, 'Kb',           1, 'into I',    2, [500 540]);
+route(s, 'X raw',        1, 'X - X raw', 1, [690 200; 690 455]);
+route(s, 'thrust limit', 1, 'X - X raw', 2, [800 200; 800 465]);
+route(s, 'X - X raw',    1, 'Kb',        1, zeros(0,2));
+route(s, 'Kb',           1, 'into I',    2, [480 460; 480 325]);
 for nm = {'e','into I','X raw','X - X raw'}
     set_param([s '/' nm{1}], 'NamePlacement','alternate');
 end

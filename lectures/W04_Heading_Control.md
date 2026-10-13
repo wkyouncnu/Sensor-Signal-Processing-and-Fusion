@@ -655,12 +655,11 @@ Expected output:
 
 | Where to look | What is there | Which line predicts it |
 |---|---|---|
-| left panel, blue against red | one line, to the width of the stroke | the two forms are the same term while $\dot\psi_d = 0$ |
-| the first two rows of the table | $0.90$ against $0.39\,\%$, $1.74$ against $1.72$ s | the same again, measured: what separates them is not the tracking |
-| top right, the red spike at $t = 5$ s | above the dashed $N_{\max}$, and off the top of the blue trace | line 2: $325.79$ against $17.03$ N·m, a factor of $19$ |
-| top right, the blue trace at the same instant | no spike at all | line 2: $r$ belongs to a vessel with inertia and cannot jump |
-| left panel, the yellow trace | it reaches the command and then never stops crossing it | line 8: the bracket is negative, so every swing gains energy |
-| bottom right, the yellow oscillation | held between the dashed lines at $\pm 7.70$ deg/s | line 9: the hull's own nonlinear damping catches it there |
+| blue against red | one line, to the width of the stroke | the two forms are the same term while $\dot\psi_d = 0$ |
+| the first two rows of the printed table | $0.90$ against $0.39\,\%$, $1.74$ against $1.72$ s | the same again, measured: what separates them is not the tracking |
+| the `max \|D\|` column, first two rows | $17.03$ against $325.79$ N·m, a factor of $19$, against a limit of $70.85$ | line 2: the error form differentiates a step, and $r$ belongs to a vessel with inertia and cannot jump |
+| the yellow trace | it reaches the command and then never stops crossing it | line 8: the bracket is negative, so every swing gains energy |
+| the line printed below the table | the swing settles at $7.23$ deg/s, against $7.70$ predicted | line 9: the hull's own nonlinear damping catches it there |
 | the `settle` column, third row | `never` — it is still swinging at $40$ s | line 8: nothing in the loop is removing energy at low rates |
 
 **What the figure says**

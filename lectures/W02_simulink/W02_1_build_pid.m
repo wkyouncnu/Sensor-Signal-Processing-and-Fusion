@@ -244,11 +244,13 @@ end
 
 function save_model(m, out, here)
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 save_system(m, out);
 print(['-s' m], '-dpng', '-r100', fullfile(here, 'img', [m '.png']));
-n = check_overlaps(m);
+n = check_overlaps(m);  nd = check_diagonals(m);
 close_system(m, 0);
-fprintf('  built  %-22s (overlapping lines: %d)\n', [m '.slx'], n);
+fprintf('  built  %-22s (overlapping lines: %d, diagonals: %d)\n', [m '.slx'], n, nd);
 end
 
 % =========================================================================
@@ -306,12 +308,14 @@ a.Text = strjoin({'WEEK 2, SECTION G  -  THE DERIVATIVE BENCH (no loop)', '', ..
   'Change Nf in the Command Window (5, 20, 200) and press Run.'}, newline);
 a.Position = [40 300 620 440];  a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 set_param([m '/Scope'], 'Position',[490 110 550 170]);
 save_system(m, out);
 export_diagram(m, fullfile(here, 'img'));
-n = check_overlaps(m);
+n = check_overlaps(m);  nd = check_diagonals(m);
 close_system(m, 0);
-fprintf('  built  %-22s (overlapping lines: %d)\n', [m '.slx'], n);
+fprintf('  built  %-22s (overlapping lines: %d, diagonals: %d)\n', [m '.slx'], n, nd);
 end
 
 % =========================================================================
@@ -337,11 +341,13 @@ end
 
 set_param(m, 'StopFcn', '');                     % 그림은 캔버스의 Scope 가 보인다
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 save_system(m, out);
 print(['-s' m], '-dpng', '-r100', fullfile(here, 'img', [m '.png']));   % 캔버스가 넓어 100 dpi (2000 px 이하)
-n = check_overlaps(m);
+n = check_overlaps(m);  nd = check_diagonals(m);
 close_system(m, 0);
-fprintf('  built  %-22s (overlapping lines: %d)\n', [m '.slx'], n);
+fprintf('  built  %-22s (overlapping lines: %d, diagonals: %d)\n', [m '.slx'], n, nd);
 end
 
 % =========================================================================

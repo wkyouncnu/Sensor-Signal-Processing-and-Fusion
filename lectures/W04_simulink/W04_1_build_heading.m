@@ -75,11 +75,13 @@ for b = find_system(m, 'SearchDepth',1, 'Regexp','on', 'BlockType','Goto|From')'
     set_param(b{1}, 'ShowName','off');
 end
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 save_system(m, out);
 print(['-s' m], '-dpng', '-r60', fullfile(here, 'img', [m '.png']));
-n = check_overlaps(m);
+n = check_overlaps(m);  nd = check_diagonals(m);
 close_system(m, 0);
-fprintf('  built  %-20s (overlapping lines: %d)\n', [m '.slx'], n);
+fprintf('  built  %-20s (overlapping lines: %d, diagonals: %d)\n', [m '.slx'], n, nd);
 end
 
 % =========================================================================
@@ -319,7 +321,11 @@ if o.rate
     q = port_xy(m, 'yaw rate r', 'Inport', 1);
     route(m, 'Otter', 1, 'yaw rate r', 1, [p(1)+18 p(2); p(1)+18 q(2)]);
     yr = port_xy(m, 'yaw rate r', 'Outport', 1);
-    goto_at(m, {'yaw rate r', 1}, [X0+600 yr(2)], 'down', 'r');
+    %  X0+595 는 선수각 되먹임선이 내려가는 통로다 (위 route). 회두율 가지를 거기
+    %  두면 두 세로선이 같은 x 에 서서 2 px 겹친다 - 통로를 하나 비켜 준다.
+    %  X0+595 is the lane the heading feedback comes down; a branch placed there
+    %  stands two risers on one x and they overlap. Give it its own lane.
+    goto_at(m, {'yaw rate r', 1}, [X0+645 yr(2)], 'down', 'r');
 end
 end
 

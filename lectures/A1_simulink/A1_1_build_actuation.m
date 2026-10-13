@@ -168,15 +168,18 @@ set_param(m, 'ReturnWorkspaceOutputs', 'off');
 %  invented - see _tools/mss_style.m. Applied last so it catches every block
 %  regardless of which helper created it.
 mss_style(m);
+compact_layout(m, 60);                 % 빈 복도를 좁힌다 / narrow the empty corridors
+straighten_lines(m);                   % 대각선 0 / no diagonal stretches (CLAUDE.md 5)
 
 save_system(m, out);
 
 %  The block diagram belongs to the builder: it changes when the model changes
 %  and not when a gain does. Exporting it here keeps it in step with the model.
 export_diagram(m, fullfile(here, 'img'));
+nover = check_overlaps(m);  ndiag = check_diagonals(m);
 close_system(m, 0);
 
-fprintf('  built  %s\n', out);
+fprintf('  built  %s  (overlapping lines: %d, diagonals: %d)\n', out, nover, ndiag);
 end
 
 % -------------------------------------------------------------------------

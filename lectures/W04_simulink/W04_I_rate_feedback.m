@@ -53,20 +53,16 @@ r3  = gradient(R{3}.psi, R{3}.t);
 fprintf('    the wrong sign settles into a limit cycle of %.2f deg/s;  |N_r|(1+10|r|) = Kd predicts %.2f\n', ...
         max(abs(r3(R{3}.t > 20))), r_c);
 
-%% 2) 선수각, 요구한 D 항, 그리고 뒤집힌 부호가 만드는 순환
-f = lab_fig('W04 Exp 4-3e  where the D term comes from', 1050, 560);
-subplot(2,2,[1 3]); hold on; grid on;
+%% 2) 선수각 하나만 / the three headings, and nothing else
+%  오른쪽 두 칸(요구한 D 항, 뒤집힌 부호의 회두율)은 2026-10-13 에 뺐다 — 사용자 지시.
+%  그 둘이 말하는 수(17.03 대 325.79 N m, 7.23 deg/s)는 위의 표에 이미 찍히고
+%  본문이 그것을 읽는다. 그림 하나는 **한 가지**를 말할 때 읽힌다.
+%  The two right-hand panels were removed; their numbers are in the table above
+%  and the text reads them. One figure says one thing.
+f = lab_fig('W04 Exp 4-3e  where the D term comes from', 780, 480);
+hold on; grid on;
 for d = 1:3, plot(R{d}.t, R{d}.psi, 'LineWidth', 1.8); end
 yline(V.psi_step, 'k--', 'HandleVisibility','off');
 xlabel('time [s]');  ylabel('\psi [deg]');  legend(NAME, 'Location','southeast');
 title('forms 1 and 2 lie on one another; form 3 is a brake wired backwards');
-subplot(2,2,2); hold on; grid on;
-for d = 1:3, semilogy(R{d}.t, abs(R{d}.D) + 1e-3, 'LineWidth', 1.4); end
-set(gca,'YScale','log');  yline(V.N_max, 'r--', 'N_{max}');  ylim([1e-2 1e3]);
-xlim([V.t_step-1 V.t_step+5]);  ylabel('|D| [N m]');  title('what each one asks the propellers for');
-subplot(2,2,4); hold on; grid on;
-plot(R{3}.t, r3, 'Color', [0.93 0.69 0.13], 'LineWidth', 1.4);
-yline([-1 1]*r_c, 'k--');
-xlabel('time [s]');  ylabel('r [deg/s]');
-title(sprintf('form 3: a limit cycle at the rate where |N_r|(1+10|r|) = K_d  (%.1f deg/s)', r_c));
 exportgraphics(f, fullfile(here, 'img', 'W04_result_rate.png'), 'Resolution', 150);
