@@ -251,8 +251,10 @@ check_style() {
   #  → standing-orders.md §1 · §1-1
   local miss=0 a b
   while IFS= read -r f; do
-    a=$(grep -n 'Reference material — read this first' "$f" | head -1 | cut -d: -f1)
-    b=$(grep -n 'Getting the course files, and keeping them current (Windows)' "$f" | head -1 | cut -d: -f1)
+    #  한글본(_KO.md)은 같은 콜아웃을 한국어 제목으로 단다 (§15-41). 둘 다 인정한다.
+    #  The Korean edition carries the same two callouts under Korean titles.
+    a=$(grep -nE 'Reference material — read this first|참고자료 — 먼저 읽을 것' "$f" | head -1 | cut -d: -f1)
+    b=$(grep -nE 'Getting the course files, and keeping them current \(Windows\)|수업 파일 받기와 최신으로 유지하기 \(Windows\)' "$f" | head -1 | cut -d: -f1)
     if [ -z "$a" ] || [ -z "$b" ] || [ "$a" -gt "$b" ] \
        || ! grep -q 'git clone https://github.com/wkyouncnu/Sensor-Signal-Processing-and-Fusion.git' "$f" \
        || ! grep -q '`git pull`' "$f"; then
@@ -327,7 +329,8 @@ check_code() {
         echo "     [없는 스크립트] $(basename "$f")  ->  $name"
         miss=$((miss+1))
       fi
-    done < <(grep -oE "\b${tag}_[A-Za-z0-9_]+\b" "$f" \
+    done < <(sed -E 's/[A-Za-z0-9_]+\.md//g' "$f" \
+             | grep -oE "\b${tag}_[A-Za-z0-9_]+\b" \
              | sed 's/\.$//' | sort -u)
   done < <(labdocs)
   note "문서가 부르는데 없는 스크립트" "$miss"
@@ -356,7 +359,7 @@ check_legend() {
       # "In the diagram" 도 인정한다 — 블록도에 붙는 표의 제목으로는 그 쪽이 옳다
       # (2026-09-29, W05 §5-7 이 제어기 서브시스템 셋을 실으면서).
       if ! sed -n "$((n+1)),$((n+12))p" "$f" \
-           | grep -qE '^\*\*Reading the figure|^\| *In the (figure|diagram|live view) *\|'; then
+           | grep -qE '^\*\*Reading the figure|^\| *In the (figure|diagram|live view) *\||^\*\*그림을 .*읽기|^\| *(그림에서|다이어그램에서|화면에서) *\|'; then
         printf '     [범례 표 없음] %s:%s  %s\n' "${f#./}" "$n" \
                "$(printf '%s' "$img" | sed -E 's/.*\]\(([^)]*)\).*/\1/')"
         miss=$((miss+1))

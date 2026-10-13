@@ -1222,13 +1222,29 @@ Measured by Experiment 5-6, below, mean $\lvert y_e\rvert$ on each leg from 25 s
 
 The result, $\Delta = 5$ m, $R = 3$ m, $\kappa = 0.3$, is the default in `W05_0_setup.m`. No model of the vessel was used; only what the Scope and the track showed.
 
-**Is this the performance to expect?** Tuning by measurement answers "which setting is best"; it does not answer "is the result any good". That second question is answered by predicting each number **before** reading it, from the vessel rather than from the guidance, and then comparing. Six predictions, and what the mission of §5-7 actually gives:
+**Is this the performance to expect?** Tuning by measurement answers "which setting is best"; it does not answer "is the result any good". That second question is answered by predicting each number **before** reading it, from the vessel rather than from the guidance, and then comparing. `W05_I_performance` measures the six on the mission of §5-7:
+
+```matlab
+W05_0_setup
+W05_I_performance
+```
+
+```
+  W05 section 5-6  the performance, predicted and measured
+    [1] straight leg, heading       mean |psi_d - psi|   0.26 deg      (expect well under 1)
+    [2] straight leg, path keeping  mean |y_e|  0.411 m, max  0.880 m   (expect inside Delta/10 = 0.5 m)
+    [3] speed loop                  95% at  1.4 s, overshoot 0.0216 m/s, steady error 0.0001 m/s
+    [4] limits                      |N|  47.15 /  47.15,  X 120.00 / 120.00,  n  103.93 /  103.93,  min n  -96.55 > -101.74
+    [5] corner                      peak yaw rate 15.07 deg/s at 1.00 m/s -> R_turn  3.8 m;  excursion  2.86 m
+    [6] time scales                 corner command   62 deg, inner within 10% after 8.44 s;  Delta/U 5.00 s
+```
+
 
 | What should happen, and why | Predicted | Measured | Verdict |
 |---|---|---|---|
-| **Small-signal separation.** On a straight leg the inner loop should track its command so well that the guidance never sees it | heading error well under $1°$ | $0.38°$ mean over the leg | as expected |
+| **Small-signal separation.** On a straight leg the inner loop should track its command so well that the guidance never sees it | heading error well under $1°$ | $0.26°$ mean over the middle of a leg | as expected |
 | **Path keeping on a straight leg**, with the heading loop that accurate and no current | well inside $\Delta/10 = 0.5$ m | $0.411$ m mean, $0.880$ m worst | as expected |
-| **Speed loop**, a PI with anti-windup | fast rise, small overshoot, no steady error | $95\%$ in $1.4$ s, overshoot $0.0216$ m/s $(2.2\%)$, steady error $0.0013$ m/s | as expected |
+| **Speed loop**, a PI with anti-windup | fast rise, small overshoot, no steady error | $95\%$ in $1.4$ s, overshoot $0.0216$ m/s $(2.2\%)$, steady error $0.0001$ m/s | as expected |
 | **The limits are reached but never crossed** — the whole point of §5-7 | $\lvert N\rvert \le 47.15$, $X \le 120$, $n \in [-101.7,\ 103.9]$ | $47.15$, $120.00$, $\max n = 103.93$, $\min n = -96.55$ | exactly on the limit, never past it |
 | **Corner excursion is set by the turn radius, not by the guidance.** With $N$ at its limit the vessel turns at some $r_{\max}$, and $R_{\text{turn}} = U/r_{\max}$ | $r_{\max} = 15.1$ deg/s at $1.0$ m/s $\Rightarrow R_{\text{turn}} = 3.8$ m | excursion $2.86$ m at the first corner | as expected, and **smaller** than $R_{\text{turn}}$ because §5-4 starts the turn $R = 3$ m early |
 | **Large-signal separation does not hold.** A $62°$ corner saturates the moment, so the inner loop is rate-limited | inner response slower than the look-ahead time $\Delta/U = 5.0$ s | $8.4$ s to come within $10\%$ of the new command | **as expected, and it is the binding constraint** |
@@ -1710,6 +1726,7 @@ Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so t
 | 5-5b | `W05_F_ILOS` | `W05_F_ILOS_removes_it` | the integral that removes it |
 | 5-5c | `W05_F_ILOS`, `law = 3` and `4` | `W05_F2_two_integrators` | the plain integral against the nonlinear one, at the same gain and at its own |
 | 5-6 | `W05_G_tuning` | `W05_G_tuning_by_hand` | the tuning order on the mission in a current |
+| 5-6b | `W05_H_speed_path`, reread | `W05_I_performance` | six predictions about the performance, against what the mission gives |
 | 5-7 | `W05_H_speed_path` | `W05_H_speed_and_path` | the speed loop of Week 3 on the same hull, and how $X$ and $N$ split into $n_L$ and $n_R$ |
 
 - The scripts only repeat what Run already shows, for several values at once, and print the numbers quoted in Part 1.

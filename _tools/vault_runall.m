@@ -42,7 +42,14 @@ if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','W06','W07','W
 %  이 목록(최상위 WXX_*.m)에 원래 안 잡히고, 최상위의 W01_F_button_check 같은 것은
 %  **강의 절 스크립트**다 — 2026-09-14 까지 잘못 빼고 있었다.
 %  '_usb_setup' 은 뺀다: 대화창을 띄워 실물 조종기 입력을 기다리므로 무인 실행에서 멈춘다.
-SKIP = {'_start','_plot','_read','_vars','_animate','_cols','_expected','_usb_setup'};
+%  절 스크립트가 아닌 것들 / what is not a section script: helpers the scripts call.
+%  `_fig_` 은 그림만 그리는 함수다 — 절 스크립트가 인자를 주어 부르므로 혼자 돌리면
+%  "입력 인수가 부족합니다" 로 실패한다. 45 줄 규칙(§15-15)으로 그림을 떼어 내면서
+%  생긴 파일들이고, 2026-10-13 검토에서 W05_fig_speed_path 가 실패로 잡혔다.
+%  A `_fig_` file is a function the section script calls with arguments; run alone it
+%  fails for want of them. These appeared when the drawing was split out under the
+%  45-line rule, and the review of 2026-10-13 caught one as a false failure.
+SKIP = {'_start','_plot','_read','_vars','_animate','_cols','_expected','_usb_setup','_fig_'};
 
 names = {};  weeks = {};  stat = {};  msg = {};
 for i = 1:numel(WK)
