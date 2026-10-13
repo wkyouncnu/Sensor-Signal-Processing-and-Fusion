@@ -739,6 +739,49 @@ $$
 | the marked points | $(103.9,\ 119.7)$ and $(-101.7,\ -66.7)$ | the limits: everything outside this range is a force the vessel cannot produce, and §3-4's windup is the consequence |
 | the purple reading | $38.16$ N at $58.69$ rad/s | $\sqrt{38.16/0.011080} = 58.69$, the inverse evaluated |
 
+**The same two steps, inside the model**
+
+The figure is a drawing of one block. Below is the code that block actually holds, copied out of `W03_F_windup.slx` — double-clicking `allocation` in any model of this week shows exactly this text. The comments are the block's own.
+
+```matlab
+function n = allocation(X, k_pos, k_neg)
+%#codegen
+%ALLOCATION  전진력 X [N] 를 두 프로펠러의 축 회전수 n [rad/s] 로 바꾼다.
+%            Turn the surge force X [N] into the shaft speeds n [rad/s] of the two propellers.
+%
+%   k_pos, k_neg 는 작업공간 변수 (W03_0_setup) 에서 온다 — 블록의 포트가 아니다.
+%   k_pos and k_neg come from the workspace (W03_0_setup), not from ports.
+
+% 1) 똑바로 갈 때 두 프로펠러는 같은 일을 한다: 각자 X 의 절반.
+%    Going straight, both propellers do the same work: half of X each.
+T = X/2;
+
+% 2) 프로펠러 곡선 T = k n|n| (1주차) 을 n 에 대해 푼다.
+%    앞으로 밀 때와 뒤로 당길 때 계수가 다르다 (k_pos > k_neg).
+%    Solve the propeller curve T = k n|n| (Week 1) for n; the coefficient
+%    differs ahead and astern (k_pos > k_neg).
+if T >= 0
+    n1 =  sqrt( T / k_pos);      % 앞으로 / ahead
+else
+    n1 = -sqrt(-T / k_neg);      % 뒤로 / astern
+end
+
+% 3) 두 축에 같은 회전수. Otter 는 [좌현; 우현] 순서로 받는다.
+%    The same speed on both shafts; the Otter takes [port; starboard].
+n = [n1; n1];
+end
+```
+
+| In the code | In the figure | Note |
+|---|---|---|
+| `T = X/2;` | the $\tfrac12$ in both rows of $\mathbf{T}^{-1}$, STEP 1 | with $N = 0$ the whole matrix collapses to this one line; Week 4 restores the second column |
+| the `if T >= 0` branch | the orange branch of STEP 2 | $n = +\sqrt{F/k_{pos}}$ |
+| the `else` branch | the blue branch of STEP 2 | $n = -\sqrt{\lvert F\rvert/k_{neg}}$, and the minus sign is what keeps a reversing propeller pulling backwards |
+| `n = [n1; n1];` | the two equal arrows of STEP 1 | the Otter's input is `[port; starboard]`, in that order |
+| `k_pos`, `k_neg` as arguments | $k_{pos} = 0.01108$, $k_{neg} = 0.00645$ in the figure | they are workspace variables, not signals: changing them in `W03_0_setup` changes the curve without touching the diagram |
+
+The block has no clamp on $n$. It does not need one here, because `otter.m` clamps internally (lines 167–170) and this week never logs $n$; Week 5 §5-7 adds the clamp for the week that does.
+
 **What the figure says**
 
 - The allocator is not one operation but two, and only the first is linear; the limits of §3-4 live in the second.

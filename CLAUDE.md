@@ -282,6 +282,11 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
    에서 그것은 **시계방향**이다. TikZ 는 `arc(시작:끝:r)` 의 끝 각이 **작을 때** 시계다.
    끝내기 전에 `figures/src` 의 `arc (` 를 전부 grep 해서 방향을 하나씩 본다
    → `standing-orders.md` §15-28
+6-3. **그림이 블록 하나를 그린 것이면 그 블록의 코드를 그 자리에 싣는다** (사용자 지시, 2026-10-13).
+   빌더 `.m` 에서 베끼지 말고 **저장된 `.slx` 에서** 꺼낸다 — `rt = sfroot();`
+   `rt.find('-isa','Stateflow.EMChart','Path',[mdl '/블록'])` 의 `.Script` 가 학생이
+   더블클릭해서 보는 글자다. 코드 뒤에는 `In the code / In the figure / Note` 표를 붙이고,
+   한 절에 같은 코드를 두 번 싣지 않는다 → `standing-orders.md` §15-30
 7. **궤적을 그리는 그림에는 선체와 heading 을 함께 그린다.** 궤적선만으로는 배가 어디를
    향하고 있었는지 알 수 없고, 그 차이가 크랩각이다. `_tools/track_ships.m` 을 쓴다
 8. 문서의 모든 수치는 러너 출력까지 추적 가능해야 한다. 추정치를 쓰지 않고,

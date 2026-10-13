@@ -1041,6 +1041,60 @@ Putting this week's numbers through both steps, at the hardest point of a $30°$
 
 - $N_{\max}$ was not chosen; it was **computed** so that the loaded propeller lands exactly on its limit and not past it. That is the calculation in `W04_0_setup`, and §4-0's table is where its value came from.
 
+**The same two steps, inside the model**
+
+Both steps live in one block. Below is the code it holds, copied out of `W04_H_tuning.slx`; double-clicking `allocation` in any model of this week shows the same text. The comments are the block's own.
+
+```matlab
+function n = allocation(N, X_ff, y_pont, k_pos, k_neg, port_eff)
+%#codegen
+%ALLOCATION  요 모멘트 N [N m] 를 두 프로펠러의 축 회전수 n [rad/s] 로 바꾼다.
+%            Turn the yaw moment N [N m] into the shaft speeds n [rad/s] of the two propellers.
+%
+%   N 만 입력 포트다. 나머지는 작업공간 변수 (W04_0_setup) 에서 온다.
+%   Only N is an input port; the rest come from the workspace (W04_0_setup).
+%     X_ff      두 프로펠러가 함께 내는 전진력 / surge force from both propellers   [N]
+%     y_pont    중심선에서 각 프로펠러까지의 거리 / each propeller's arm              [m]
+%     k_pos     앞으로 밀 때 추력 계수 / thrust coefficient ahead
+%     k_neg     뒤로 당길 때 추력 계수 / thrust coefficient astern
+%     port_eff  좌현 프로펠러 효율, 보통 1 (절 F 는 0.7) / port efficiency, 1 unless section F
+
+% 1) 두 프로펠러의 추력. 둘 다 X_ff 의 절반씩 밀고, 모멘트는 한쪽을 더 세게,
+%    다른 쪽을 덜 세게 밀어 만든다. 팔 길이가 y_pont 이므로
+%        y_pont (T1 - T2) = N,   T1 + T2 = X_ff
+%    Both push half of X_ff ahead; the moment comes from pushing one side
+%    harder and the other less. With arm y_pont:
+%        y_pont (T1 - T2) = N,   T1 + T2 = X_ff
+T = [X_ff/2 + N/(2*y_pont);      % 좌현 / port
+     X_ff/2 - N/(2*y_pont)];     % 우현 / starboard
+
+% 2) 약한 좌현 프로펠러: 요구한 추력의 port_eff 배만 낸다 (절 F).
+%    A weak port propeller delivers only port_eff of what is asked (section F).
+T(1) = port_eff * T(1);
+
+% 3) 프로펠러 곡선 T = k n|n| (1주차) 을 하나씩 n 에 대해 푼다.
+%    앞으로와 뒤로의 계수가 다르다 (k_pos > k_neg).
+%    Solve the propeller curve T = k n|n| (Week 1) for each n; the coefficient
+%    differs ahead and astern (k_pos > k_neg).
+n = zeros(2,1);
+for i = 1:2
+    if T(i) >= 0
+        n(i) =  sqrt( T(i) / k_pos);   % 앞으로 / ahead
+    else
+        n(i) = -sqrt(-T(i) / k_neg);   % 뒤로 / astern
+    end
+end
+end
+```
+
+| In the code | In the figure | Note |
+|---|---|---|
+| the two rows of `T = [...]` | the row $\bigl[\tfrac12\ \ \tfrac{1}{2b}\bigr]$ and $\bigl[\tfrac12\ \ -\tfrac{1}{2b}\bigr]$ of $\mathbf{T}^{-1}$, STEP 1 | $\mathbf{T}^{-1}$ written out by hand, with $b = $ `y_pont`. §5-7 writes $\mathbf{B}$ down instead and lets MATLAB solve it; the arithmetic is the same |
+| `N` as the only input port | the teal $N$ arrow | the P–D law of §4-3 produces it; `X_ff` is a constant this week, and Week 5 replaces it with the speed loop's output |
+| `T(1) = port_eff * T(1);` | nothing — the figure draws the healthy vessel | §4-F's damaged propeller. With `port_eff = 1` the line does nothing, which is why it can sit in the shared block |
+| the `for i = 1:2` loop | both branches of STEP 2, once per propeller | each propeller is read off the curve **on its own**: neither can help the other, and that is what makes the limit per-propeller rather than per-vessel |
+| `T(i) >= 0` versus `else` | the orange and blue branches | at the hardest point of the turn the loop takes the orange branch for the port propeller and the blue one for the starboard, in the same time step |
+
 **To check every number in this section**
 
 ```matlab

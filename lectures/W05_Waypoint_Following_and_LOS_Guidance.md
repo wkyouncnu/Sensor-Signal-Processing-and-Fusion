@@ -1139,13 +1139,7 @@ $$
 
    Read in words: **both propellers carry half the surge force, and the moment is made by adding to one and taking the same amount from the other.** The two tasks are superposed, and $y_p$ is the lever that converts moment into thrust difference. A short lever costs more thrust for the same moment: $N = 47$ N·m over $2 y_p = 0.79$ m needs $60$ N of difference.
 
-   The `allocation` block writes it as the solve, not as the two expressions, so that the code and this line say the same thing:
-
-```matlab
-B = [1        1;              % 전진력  X = T_L + T_R        / surge force
-     y_pont  -y_pont];        % 요 모멘트 N = y_pont(T_L-T_R) / yaw moment
-T = B \ [X; N];               % 좌현, 우현 / port, starboard
-```
+   The `allocation` block writes this as the solve rather than as the two expressions, so that the code and this line say the same thing; the listing follows line 8.
 
 4. **From thrust to shaft speed.** A propeller's thrust goes as the square of its shaft speed, with a different coefficient going astern because the blade is the wrong way round:
 
@@ -1193,6 +1187,64 @@ $$
    This is deliberately the conservative choice: while the speed loop is only asking for $77.6$ N the true limit is $63.9$ N·m, and the vessel is being held to $47.15$. Line 3 of the reading table below measures what that costs. The alternative — recomputing $N_{\lim}$ from the live $X$ at every step — buys back that margin at the price of four more blocks in the diagram, and is left as the last **What to try**.
 
 8. **And the plant clamps anyway.** MSS `otter.m` limits $n$ to $[n_{\min}, n_{\max}]$ inside itself (lines 167–170). An allocator that does not clamp therefore logs a shaft speed the vessel never turned, and every later reading of that log is wrong by however much was cut off. The allocator clamps, so the log records **what the plant received**.
+
+**The whole derivation, as one block**
+
+Lines 2 to 8 are a single MATLAB Function block. Below is the code it holds, copied out of `W05_H_speed_path.slx`; double-clicking `allocation` shows the same text. The comments are the block's own.
+
+```matlab
+function n = allocation(N, X, y_pont, k_pos, k_neg, n_max, n_min)
+%#codegen
+%ALLOCATION  전진력 X 와 요 모멘트 N 을 두 축의 회전수 n = [n_L; n_R] 로.
+%            The surge force X and the yaw moment N to the two shaft speeds.
+%  X 는 **속도 루프의 출력**이다 (3주차). 상수가 아니라는 것 하나만 다르다.
+%  X is the output of the speed loop of Week 3, not a constant. That is the
+%  only difference; the two equations below are unchanged.
+
+% 1) 두 힘을 두 추력으로. 배치행렬 B 를 세우고 **풀면** 된다 - 손으로 푼
+%    T = X/2 +- N/(2 y_pont) 와 같은 것이고, 이 쪽이 5-7 절의 유도와 같은
+%    모양이다. MSS 데모도 이렇게 한다: demoOtterUSVPathFollowingHeadingControl
+%    의 Allocation 안에 Constant [1 1; 0.395 -0.395] 와 행렬 나눗셈이 있다.
+%    B is square and nonsingular here, so the two forces are shared by solving
+%    rather than by two hand-written expressions. The MSS demonstration model
+%    does the same: its Allocation holds the constant [1 1; 0.395 -0.395] and
+%    a matrix division.
+B = [1        1;              % 전진력  X = T_L + T_R        / surge force
+     y_pont  -y_pont];        % 요 모멘트 N = y_pont(T_L-T_R) / yaw moment
+T = B \ [X; N];               % 좌현, 우현 / port, starboard
+
+% 2) 프로펠러 곡선 T = k n|n| 을 n 에 대해 푼다 (앞 k_pos, 뒤 k_neg).
+%    Solve the propeller curve T = k n|n| for n (k_pos ahead, k_neg astern).
+n = zeros(2,1);
+for i = 1:2
+    if T(i) >= 0
+        n(i) =  sqrt( T(i) / k_pos);
+    else
+        n(i) = -sqrt(-T(i) / k_neg);
+    end
+end
+
+% 3) 프로펠러가 낼 수 있는 범위로 자른다. **otter.m 이 안에서 이미 자르기 때문에**
+%    (MSS otter.m 167-170 행) 여기서 자르지 않으면 로그에 적히는 n 이 플랜트가
+%    실제로 받은 n 과 달라진다 - 기록은 플랜트가 받은 것이어야 한다.
+%    Clamp to what the propellers can do. otter.m clamps internally (lines
+%    167-170), so without this the logged n would not be the n the plant got,
+%    and a log must record what the plant received.
+n(1) = min(max(n(1), n_min), n_max);
+n(2) = min(max(n(2), n_min), n_max);
+end
+```
+
+| In the code | Which line of the derivation | Note |
+|---|---|---|
+| `B = [1 1; y_pont -y_pont];` | line 2, with the zero row already deleted | the matrix is built from `y_pont`, so a different hull needs no new code |
+| `T = B \ [X; N];` | line 3 | the backslash solves rather than inverts; for this $2\times2$ the two are identical, and $\det\mathbf{B} = -2y_p$ is why it may be used at all |
+| `N` and `X` as the two input ports | line 7 | **both are now signals**: `N` from the heading autopilot, `X` from the speed loop. Weeks 3 and 4 each had one of them as a constant |
+| the `for i = 1:2` loop | line 4 | one propeller at a time; neither can lend thrust to the other |
+| `n_max`, `n_min` in the last two lines | line 8 | the clamp that keeps the log equal to what `otter.m` received |
+| nothing in the code | lines 5–7 | $N_{\lim}$ is **not** computed here. It is evaluated once in `W05_0_setup` and sits in the autopilot's Saturation, which is why an out-of-date value there cannot be caught by the allocator |
+
+The last row is the whole point of §5-7: the block below the fault is correct, and the fault is still produced, because the number in the Saturation above it was computed for a surge force the model no longer uses.
 
 > [!note] The speed loop itself is not new
 > It is Week 3 unchanged, gains included: $X = K_{p,u}(u_d - u) + I$, $\lvert X\rvert \le X_{\max}$, with the integral that a drag-only axis needs and no derivative term. What §5-7 adds is not a controller but the accounting between two controllers that were designed separately.
