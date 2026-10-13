@@ -325,6 +325,7 @@ open_system('W05_G_tuning')        % Run — XY 그래프에 항적이 그려진
 | In the figure | Meaning |
 |---|---|
 | `guidance` | the guidance law of §5-3 and §5-5; outputs $\psi_d$, $y_e$, the integral `aux` and the leg number `wp` |
+| the lane below it — `state`, `1 step`, `state back` | what the guidance **remembers**: the active leg, the integral of §5-5, and the steps counted since arrival. It leaves on the right, waits one step in the Unit Delay, and returns on the left |
 | `heading autopilot` | the Week 4 gains, D on the yaw rate (§5-1), not retuned |
 | `allocation`, `Otter` | the thrust split of Week 4 and the vessel |
 | Goto `[x]` after the Otter | the twelve states, sent to the guidance, the autopilot and the readouts |
@@ -1048,26 +1049,35 @@ Expected output:
 **The model.** `W05_F_ILOS` — the same guidance block with the integral state of the law above. The black line in the figure is the run of Experiment 5-5a, for comparison.
 
 > [!important] What to open, and what to read inside it
-> The integral of this week is **not** a Simulink `Integrator` block. It lives inside the `guidance` MATLAB Function, because its update depends on the very quantity it is producing — and that is easier to read as two lines than as a loop of blocks.
+> The integral of this week is **not** a Simulink `Integrator` block, because its update depends on the very quantity it is producing — and that is easier to read as two lines of arithmetic than as a loop of blocks. But the integral **state** is not hidden inside the function either: it leaves through a port, waits one step in a `Unit Delay`, and comes back through another.
 >
-> Double-click `guidance` in `W05_F_ILOS` and look for three things:
+> Open `W05_F_ILOS` and read the canvas first. Below the guidance block runs one lane, right to left:
+>
+> | On the canvas | What it is |
+> |---|---|
+> | `k_n`, `y_int_n`, `n_after_n` leaving the right of `guidance` | the state **after** this step: the active leg, the integral, and the steps counted since arrival |
+> | `state`, a Mux | the three gathered into one line, so the lane is one line and not three |
+> | `1 step`, a Unit Delay, initial condition `[1;0;0]` | the memory itself. Leg 1, a zero integral, nothing counted — the model's starting state, readable as a block parameter instead of buried in an `isempty` test |
+> | `state back`, a Demux | the three taken apart again, each keeping its name |
+> | `k_p`, `y_int_p`, `n_after_p` entering the left of `guidance` | the state **before** this step |
+>
+> Then double-click `guidance` and read the two lines the lane exists for:
 >
 > ```matlab
-> persistent k y_int                    % 이 블록이 기억하는 것 둘: 지금 다리, 적분 상태
-> if isempty(k), k = 1; y_int = 0; end  % Run 을 누를 때마다 처음으로 돌아간다
->
 > psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);          % ① 법칙
 > y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);   % ② 적분
 > ```
 >
 > | Read this | And see |
 > |---|---|
-> | `persistent k y_int` | the block has **memory**: the active leg and the integral state. Nothing else in the guidance block does |
+> | the lane on the canvas | the block has **memory**, and the diagram says so. Nothing else in the guidance has any |
 > | line ① against §5-3's law | one extra term inside the same arctan — that is the whole of ILOS |
 > | line ②'s denominator | $\Delta^2 + (y_e + \kappa y_{\text{int}})^2$, growing with the error: the anti-windup of line 9, with no saturation block and no back-calculation gain |
 > | `kappa = 0` | line ② still runs but contributes nothing to line ①, so the block becomes exactly the LOS of §5-3. Not approximately: run this way it reproduces `W05_F_LOS` to $0.000\times10^{0}$ m, which is how Experiment 5-5a and this one are kept comparable |
 >
-> The block is discrete at $h$ (`set_mlfcn`'s sample-time argument), because a block with memory must be told how often to update it.
+> The block and the Unit Delay both run at $h$. A function that reads a state and returns the next one has to be told how often that happens, and the Euler step of line ② already assumed it.
+>
+> **Why the state sits outside.** Every output of a step is a function of the position and the **previous** state alone: $\pi_p$, $y_e$ and $\psi_d$ are computed from the old leg and the old integral, and only then are the leg and the integral advanced. That is what lets the state be a signal rather than a hidden variable — and the two forms are not merely similar. Moved out of a `persistent` declaration and into the Unit Delay, all seven models reproduce their logs **bit for bit**, over all four laws of §5-1b.
 >
 > **And the block is the equations, checked by machine.** `verify_w05_guidance` check 9 takes the logged positions of a full mission in a current, recomputes $\psi_d$ from §5-2's rotation, §5-4's switching test and the two lines above — transcribed into the checker by hand, not called from the model — and compares. The worst disagreement over the whole run is $0.0\times10^{0}$ degrees. What the lecture writes and what the vessel was steered by are the same expression.
 

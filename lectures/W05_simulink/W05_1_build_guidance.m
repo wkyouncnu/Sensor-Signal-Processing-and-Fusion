@@ -95,7 +95,7 @@ Y = 200;
 %  explicitly so that each experiment states which law it measured.
 GIN = {'WP_N','WP_E','Delta','R_switch','kappa','law','stop_at_end','stop_hold'};
 add_block('simulink/User-Defined Functions/MATLAB Function', [m '/guidance'], ...
-          'Position', [300 Y-200 520 Y+200]);   % 입력 9, 출력 6 / nine in, six out
+          'Position', [300 Y-200 520 Y+200]);   % 입력 12, 출력 9 / twelve in, nine out
 set_mlfcn([m '/guidance'], guidance_code(), 'psi_d', '[1 1]', 'h');
 mlfcn_params([m '/guidance'], {'h'});     % 고정 스텝만 숨긴다 / only the step stays hidden
 q = port_xy(m, 'guidance', 'Inport', 1);
@@ -106,6 +106,57 @@ for i = 1:numel(GIN)
     add_block('simulink/Sources/Constant', [m '/' GIN{i}], 'Value', GIN{i}, ...
               'Position', [150 q(2)-13 230 q(2)+13]);
     route(m, GIN{i}, 1, 'guidance', i+1, zeros(0,2));
+end
+
+%% 유도가 기억하는 것 / what the guidance remembers
+%  **persistent 이 아니라 Unit Delay 다** (사용자 지시, 2026-10-13). 적분 상태는
+%  이 주차의 주제인데, 블록 안의 persistent 로 두면 도면에 전혀 보이지 않는다.
+%  밖으로 꺼내면 세 상태가 **이름 붙은 포트**로 드러나고, 초기값이 블록의
+%  파라미터로 보이며, 되먹임이라는 것이 선으로 읽힌다 — 5주차가 제어기를
+%  서브시스템으로 그리는 것과 같은 이유다 (standing-orders 15-23, 15-42 절).
+%  A Unit Delay, not PERSISTENT: the integral state is what this week is about,
+%  and inside the block it could not be seen. Outside, the three states are named
+%  ports, the initial condition is a parameter one can read, and the feedback is
+%  a line — the same argument that made the controllers subsystems.
+%
+%  상태가 셋이므로 Unit Delay 를 셋 두면 **뒤로 가는 선이 셋**이 된다 (CLAUDE.md 5
+%  절은 두 개 이하). Mux 로 묶어 하나로 보내고 Demux 로 푼다 — 통로는 하나,
+%  이름은 셋이다. 통로는 캔버스 **맨 아래**로 내린다: 그 높이에는 블록이 없다.
+%  Three states would be three backward lines; a Mux and a Demux make it one lane
+%  while keeping the three names. The lane runs below everything else.
+ylane = Y + 300;
+add_block('simulink/Signal Routing/Mux', [m '/state'], 'Inputs','3', ...
+          'Orientation','left', 'ShowName','off', ...
+          'Position', [640 ylane-45 645 ylane+45]);
+add_block('simulink/Discrete/Unit Delay', [m '/1 step'], ...
+          'InitialCondition','[1;0;0]', 'SampleTime','h', 'Orientation','left', ...
+          'Position', [420 ylane-20 480 ylane+20]);
+add_block('simulink/Signal Routing/Demux', [m '/state back'], 'Outputs','3', ...
+          'Orientation','left', 'ShowName','off', ...
+          'Position', [200 ylane-45 205 ylane+45]);
+
+%  세 상태 출력 -> Mux. 포트가 **왼쪽을 보므로** 선은 오른쪽에서 들어온다: 오른쪽으로
+%  나갔다가 내려와 왼쪽으로 꺾어 든다. 통로 x 를 하나씩 다르게 주어 겹치지 않게 한다.
+%  Into a left-facing port the line arrives travelling leftward, so each one goes
+%  right, down, then left; a different corner x keeps the three apart.
+for i = 1:3
+    a = port_xy(m, 'guidance', 'Outport', 6+i);
+    b = port_xy(m, 'state', 'Inport', i);
+    xc = 672 + 8*i;
+    add_line(m, [a; xc a(2); xc b(2); b]);
+end
+route(m, 'state', 1, '1 step', 1, zeros(0,2));
+route(m, '1 step', 1, 'state back', 1, zeros(0,2));
+
+%  Demux 의 출력도 왼쪽을 본다. 왼쪽으로 조금 나갔다가 올라가 유도 블록의 입력으로
+%  오른쪽으로 들어간다. 그 높이(입력 10~12)에는 Constant 가 없어 통로가 비어 있다.
+%  The Demux outputs face left too: out a little, up, then right into the guidance
+%  inputs. Nothing stands at those heights — the constants stop at input 9.
+for i = 1:3
+    a = port_xy(m, 'state back', 'Outport', i);
+    b = port_xy(m, 'guidance', 'Inport', 9+i);
+    xc = 176 - 8*i;
+    add_line(m, [a; xc a(2); xc b(2); b]);
 end
 
 %% 선수각 오토파일럿 / heading autopilot
@@ -510,8 +561,17 @@ function C = guidance_code()
 %               The three laws live in one block and `law` chooses. Previously each
 %               model carried only its own law, so opening the block showed one of
 %               the three and never let the reader compare them.
+%
+%               상태는 **블록 밖에** 있다 (사용자 지시, 2026-10-13: "일곱 모델 다
+%               unit delay로 바꿔줘"). 예전에는 persistent 로 블록이 들고 있었고,
+%               그러면 이 주차의 핵심인 적분 상태가 도면에 보이지 않았다. 지금은
+%               포트로 들어오고 포트로 나가며, Unit Delay 가 한 스텝 들고 있는다.
+%               The state lives outside the block: it enters and leaves through
+%               ports, and a Unit Delay holds it for one step. Under PERSISTENT
+%               the integral state of this week — the subject of 5-5 — could not
+%               be seen on the diagram at all.
 C = { ...
-'function [psi_d, y_e, aux, wp, gate, stop] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, law, stop_at_end, stop_hold, h)'
+'function [psi_d, y_e, aux, wp, gate, stop, k_n, y_int_n, n_after_n] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, law, stop_at_end, stop_hold, h, k_p, y_int_p, n_after_p)'
 '%#codegen'
 '%GUIDANCE  웨이포인트 목록과 배의 위치에서 명령 선수각 psi_d 를 만든다.'
 '%          Make the commanded heading psi_d from the waypoint list and the position.'
@@ -554,13 +614,30 @@ C = { ...
 '%     stop goes to 1 and the run ends. Those seconds are there so the vessel can'
 '%     be seen slowing down. With stop_at_end = 0 neither happens.'
 ''
-'% 0) 기억하는 값: 지금 다리 k, 적분 y_int. 블록이 가지고 있다가 실행마다 처음으로 돌아간다.'
-'%    Remembered values: the leg k and the integral y_int. The block owns them,'
-'%    and they start afresh on every run.'
-'persistent k y_int n_after'
-'if isempty(k), k = 1; y_int = 0; n_after = 0; end'
-'N = x(7);  E = x(8);'
+'% 0) 기억하는 값 셋이 **포트로 들어온다**: 지금 다리 k, 적분 y_int, 도착 뒤 스텝 수.'
+'%    셋 다 **직전 스텝의** 값이다 — 캔버스의 Unit Delay 가 들고 있다가 돌려준다.'
+'%    이 함수는 그것으로 출력을 만들고, 맨 아래에서 **다음** 상태를 내놓는다.'
+'%    The three remembered values arrive through ports, and all three are the'
+'%    values of the PREVIOUS step: the Unit Delay on the canvas held them. The'
+'%    function makes its outputs from them and returns the next state at the end.'
+'%'
+'%    순서가 둘을 같게 만든다 / the order is what makes this exact'
+'%      pi_p, x_e, y_e 와 psi_d 는 **옛** 상태로, wp 와 gate 는 **새** 상태로 구한다.'
+'%      그래서 한 스텝의 모든 출력이 (x, 직전 상태) 만의 함수다 — 그것이 persistent'
+'%      판과 비트 단위로 같아지는 조건이다 (standing-orders 15-42 절).'
+'%      The errors and psi_d come from the OLD state, wp and the gate from the NEW'
+'%      one, so every output of a step is a function of (x, previous state) alone.'
+'k = round(k_p);'
 'n = numel(WP_N);'
+'%    신호로 들어온 지표를 범위 안에 가둔다. 블록이 혼자 들고 있을 때는 필요 없던'
+'%    것이고, 실제로 도달하는 값 위에서는 항등이다.'
+'%    Clamp the index now that it arrives as a signal: unnecessary while the block'
+'%    owned it, and the identity map on every value it can actually take.'
+'if k < 1, k = 1; end'
+'if k > n-1, k = n-1; end'
+'y_int   = y_int_p;'
+'n_after = n_after_p;'
+'N = x(7);  E = x(8);'
 ''
 '% 1) 지금 다리: 웨이포인트 k 에서 k+1 로. 그 방향이 경로 각 pi_p 다.'
 '%    The active leg runs from waypoint k to k+1; its direction is the path angle pi_p.'
@@ -656,6 +733,16 @@ C = { ...
 '    y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);'
 'end'
 'aux = y_int;'
+''
+'% 5) 다음 스텝으로 넘길 상태. 캔버스의 Unit Delay 가 이것을 받아 한 스텝 뒤에'
+'%    돌려준다. 초기값 [1; 0; 0] 이 블록의 파라미터로 보인다 — 첫 다리는 1 번,'
+'%    적분은 0 에서, 도착 뒤 스텝 수는 0 에서 시작한다.'
+'%    The state handed to the Unit Delay, which returns it one step later. Its'
+'%    initial condition [1; 0; 0] is a parameter one can see on the block: leg 1,'
+'%    a zero integral, and nothing counted since arrival.'
+'k_n       = k;'
+'y_int_n   = y_int;'
+'n_after_n = n_after;'
 'end'};
 end
 
