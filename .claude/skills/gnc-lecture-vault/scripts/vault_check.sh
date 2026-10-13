@@ -405,6 +405,10 @@ check_one_model() {
   #   - W01 은 지금 사용자가 편집 중이다 (모델 넷과 setup). 손대지 않기로 했으므로
   #     두께도 재지 않는다. 사용자가 커밋한 뒤에 다시 본다.
   #   - W01_openloop 은 실험 1-11·1-12 가 함께 쓴다 — 한 번의 개루프 주행에 두 질문.
+  #   - W05_F_ILOS 는 실험 5-5b·5-5c 가 함께 쓴다. 두 번째는 **플래그만** 바꾼다
+  #     (law = 3 대 4, §15-24 "한 블록에 다 넣고 플래그가 고른다"). 모델을 하나 더
+  #     만들면 같은 그림이 둘이 되고, 둘이 어긋날 수 있다 — 그것이 이 규칙이 막으려는
+  #     것보다 나쁘다 (2026-10-13).
   local n=0 f code dup
   while IFS= read -r f; do
     code=$(grep -vE '^\s*%|^\s*$' "$f" | wc -l | tr -d ' ')
@@ -419,6 +423,7 @@ check_one_model() {
     while IFS= read -r dup; do
       [ -z "$dup" ] && continue
       [ "$dup" = "W01_openloop" ] && continue          # 위의 예외
+      [ "$dup" = "W05_F_ILOS" ]   && continue          # 플래그만 다른 두 실험 (§15-24)
       echo "     [모델을 두 실험이 함께 쓴다] ${f#./}  $dup"
       n=$((n+1))
     done < <(grep -oE '^\*\*The model\.\*\* `[A-Za-z0-9_]+`' "$f" 2>/dev/null \

@@ -1,0 +1,144 @@
+% figures/w05-course-vs-heading.svg — 같은 유도법칙, 두 가지 자동조타.
+%
+%   bash _tools/tikz2svg.sh figures/src/w05-course-vs-heading.tex figures/w05-course-vs-heading.svg
+%
+% 사용자 지시 (2026-10-13): 2025년 강의자료 "2. USV 제어기 설계" 슬라이드 60-66 의
+% 블록도를 "최대한 비슷하게" 이 강의에 맞춰 다시 그린다. 원본은 Fossen 의 TTK 4190
+% 강의노트 그림이므로 **옮겨 붙이지 않고 같은 구조를 직접 그린다** (CLAUDE.md §2).
+%
+% 이 그림이 말하는 것 하나:
+%   LOS 계열의 유도법칙은 **침로(course) 명령**을 낸다. 그런데 이 강의의 배는
+%   **선수각(heading) 자동조타**를 쓴다. 그래서 chi_d 를 psi_d 로 바꾸는 자리가
+%   필요하고, 그 자리에 들어가는 값이 크랩각 beta_c 다. beta_c 를 모르면 그것은
+%   요(yaw)에 들어오는 **외란**이고, 5-5 절의 적분이 그 외란을 메운다.
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+\definecolor{ctrlc}{HTML}{B45309}
+
+\tikzset{
+  blk/.style   = {draw=ink, line width=0.8pt, fill=white, align=center,
+                  inner sep=4pt, font=\scriptsize, minimum height=9mm},
+  guid/.style  = {blk, draw=accent, line width=1.0pt, fill=accent!5},
+  auto/.style  = {blk, draw=ctrlc, line width=1.0pt, fill=alng!6},
+  craft/.style = {blk, draw=pathc, line width=1.0pt, fill=pathc!10},
+  env/.style   = {draw=soft, line width=0.6pt, dashed, rounded corners=2pt, fill=black!2},
+  sig/.style   = {ink, line width=0.8pt, -{Stealth[length=4.4pt,width=3.0pt]}},
+  cmd/.style   = {accent, line width=1.1pt, -{Stealth[length=4.8pt,width=3.4pt]}},
+  fb/.style    = {soft, line width=0.7pt, -{Stealth[length=4.0pt,width=2.8pt]}},
+  bus/.style   = {soft, line width=0.7pt},
+  dist/.style  = {errc, line width=0.9pt, -{Stealth[length=4.4pt,width=3.0pt]}},
+  lbl/.style   = {font=\scriptsize},
+  small/.style = {font=\scriptsize, soft},
+  capt/.style  = {font=\scriptsize\bfseries, warn},
+  band/.style  = {font=\small\bfseries, ink},
+  jn/.style    = {draw=ink, line width=0.8pt, circle, inner sep=0pt, minimum size=3.6mm, fill=white},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% =====================================================================
+% 왼쪽 패널 — 침로 제어 / course control
+% =====================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[blk,  text width=15mm] (WP) at (0,0)   {waypoint\\database};
+  \node[guid, text width=15mm] (GD) at (26,0)  {LOS\\guidance law};
+  \node[auto, text width=15mm] (AP) at (54,0)  {course\\autopilot};
+  \node[craft,text width=15mm] (MC) at (80,0)  {marine\\craft};
+
+  \draw[sig] (WP) -- (GD);
+  \node[small, anchor=south] at (13,2.4) {$(x_i^n, y_i^n)$};
+  \draw[cmd] (GD) -- (AP);
+  \node[lbl, accent, anchor=south] at (40,2.4) {$\chi_d$};
+  \draw[sig] (AP) -- (MC);
+  \draw[sig] (MC.east) -- (92,0);
+
+  %  환경 외란 / the environment
+  \draw[dist] (80,16) -- (MC.north);
+  \node[small, errc, anchor=south, align=center] at (80,16.6) {waves, wind\\and current};
+
+  %  안쪽 되먹임: 침로는 **대지속도의 방향**이라 GNSS 가 준다
+  \draw[bus] (88,0) -- (88,-12) -- (54,-12);
+  \fill[soft] (88,0) circle (0.7);
+  \draw[fb] (54,-12) -- (AP.south);
+  \node[small, anchor=south] at (62,-11.4) {$\chi$ \ (course over ground)};
+
+  %  바깥 되먹임: 위치
+  \draw[bus] (88,-12) -- (88,-22) -- (26,-22);
+  \draw[fb] (26,-22) -- (GD.south);
+  \node[small, anchor=south] at (50,-21.4) {position $(x^n, y^n)$};
+
+  \node[band, anchor=south] at (40,24) {COURSE CONTROL};
+  \node[capt, anchor=north, align=center] at (40,-26)
+       {the guidance output is used as it stands};
+\end{scope}
+
+% =====================================================================
+% 오른쪽 패널 — 선수각 제어 (이 강의) / heading control (this course)
+% =====================================================================
+\begin{scope}[shift={(136,0)}]
+  \node[blk,  text width=15mm] (WP2) at (0,0)   {waypoint\\database};
+  \node[guid, text width=15mm] (GD2) at (26,0)  {LOS\\guidance law};
+  \node[jn]                    (SU)  at (45,0)  {};
+  \node[auto, text width=15mm] (AP2) at (62,0)  {heading\\autopilot};
+  \node[craft,text width=15mm] (MC2) at (88,0)  {marine\\craft};
+
+  \draw[sig] (WP2) -- (GD2);
+  \node[small, anchor=south] at (13,2.4) {$(x_i^n, y_i^n)$};
+  \draw[cmd] (GD2) -- (SU);
+  \node[lbl, accent, anchor=south] at (38,2.4) {$\chi_d$};
+  \draw[cmd] (SU) -- (AP2);
+  \node[lbl, accent, anchor=north] at (53.5,-2.2) {$\psi_d$};
+  \draw[sig] (AP2) -- (MC2);
+  \draw[sig] (MC2.east) -- (100,0);
+
+  %  빼는 것: 크랩각. **부호는 합산점에 둔다** (CLAUDE.md §5)
+  \draw[dist] (45,14) -- (SU.north);
+  \node[lbl, errc, anchor=west] at (46.8,8.5) {$\beta_c$};
+  \node[small, anchor=east] at (44.0,5.2) {$-$};
+  \node[small, errc, anchor=south, align=center] at (45,14.6) {the crab angle,\\\textbf{unknown}};
+
+  \draw[dist] (88,16) -- (MC2.north);
+  \node[small, errc, anchor=south, align=center] at (88,16.6) {waves, wind\\and current};
+
+  %  안쪽 되먹임: 선수각은 나침반이 준다 - 속도가 0 이어도 잰다
+  \draw[bus] (96,0) -- (96,-12) -- (62,-12);
+  \fill[soft] (96,0) circle (0.7);
+  \draw[fb] (62,-12) -- (AP2.south);
+  \node[small, anchor=south] at (72,-11.4) {$\psi$ \ (compass)};
+
+  \draw[bus] (96,-12) -- (96,-22) -- (26,-22);
+  \draw[fb] (26,-22) -- (GD2.south);
+  \node[small, anchor=south] at (55,-21.4) {position $(x^n, y^n)$};
+
+  \node[band, anchor=south, ctrlc] at (45,24) {HEADING CONTROL \ --- \ this course};
+  \node[capt, anchor=north, align=center] at (45,-26)
+       {the output must be converted, and the converter is $\beta_c$};
+\end{scope}
+
+% =====================================================================
+% 아래 — 세 줄의 식. 그림의 요점이 이 셋에 있다
+% =====================================================================
+\begin{scope}[shift={(0,-44)}]
+  \node[anchor=north west, font=\small] at (0,0)
+       {$\chi = \psi + \beta_c$};
+  \node[small, anchor=north west, text width=56mm] at (0,-7)
+       {course is heading plus crab angle: where the vessel \emph{goes} against where it
+        \emph{points}};
+
+  \node[anchor=north west, font=\small] at (76,0)
+       {$\beta_c = \arctan\dfrac{v}{u} = \arcsin\dfrac{v}{\sqrt{u^2+v^2}}$};
+  \node[small, anchor=north west, text width=58mm] at (76,-12)
+       {computable \textbf{only if $v$ is measured}, and singular as the speed goes to zero};
+
+  \node[anchor=north west, font=\small] at (158,0)
+       {$\psi_d = \pi_p - \arctan\!\left(K_p y_e^{\,p}\right) - \beta_c$};
+  \node[small, anchor=north west, text width=66mm] at (158,-9)
+       {with $\beta_c$ unknown the last term is missing, and what is missing acts as a
+        \textbf{disturbance in yaw} - which is what the integral of §5-5 supplies};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

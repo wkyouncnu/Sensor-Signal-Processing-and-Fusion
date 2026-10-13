@@ -847,6 +847,21 @@ $$
 >
 > The Otter of this course has the Week 4 heading autopilot, so it sits in the right-hand column: the guidance hands over $\psi_d$ and whatever $\beta_c$ is doing arrives as an unmeasured yaw disturbance. Experiment 5-5a measures it directly — the vessel holds $-22.8°$ while making good due north, so $\beta_c = 22.8°$ — and §5-5's whole problem is that the law has no way to be told that number.
 
+![The same guidance law wired two ways: to a course autopilot, and to the heading autopilot of Week 4](../figures/w05-course-vs-heading.svg)
+
+| In the figure | What it is |
+|---|---|
+| both panels, the left half | identical: the same waypoint list and the same LOS law, producing $\chi_d$ |
+| left panel, the feedback into the autopilot | $\chi$, course over ground — a GNSS quantity, undefined at zero speed |
+| right panel, the feedback into the autopilot | $\psi$, from a compass, which reads at any speed including zero |
+| right panel, the circle between guidance and autopilot | where $\chi_d$ becomes $\psi_d$, by subtracting the crab angle |
+| right panel, the red arrow into that circle | $\beta_c$ — and the word **unknown**: nothing in this vessel measures it |
+| both panels, the arrow into the craft | waves, wind and current, the reason $\beta_c$ is not zero |
+| the outer lane in both | position $(x^n, y^n)$, which is what a path is defined against |
+| the three equations below | course against heading, how $\beta_c$ would be computed, and what the law looks like when it is subtracted |
+
+- The vessel of this course is the right-hand panel with the red arrow **missing**. That missing term is the whole of §5-5: an unmeasured, nearly constant disturbance in yaw, which is the classic case for an integrator.
+
 7. **LOS, closed.** Substitute $\psi = \psi_d$ from §5-3 into line 6:
 
 $$
