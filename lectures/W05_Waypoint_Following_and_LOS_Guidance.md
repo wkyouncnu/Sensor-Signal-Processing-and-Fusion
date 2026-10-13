@@ -1351,31 +1351,36 @@ Actual output:
       0                     0.92               0.0380
 ```
 
-![Experiment 5-7: the same mission with a constant surge force and with the speed loop](W05_simulink/img/W05_result_speed_path.png)
+![Experiment 5-7: one mission with the speed loop, the leg index and the cross-track error](W05_simulink/img/W05_result_speed_path.png)
+
+The figure draws the run that uses the speed loop and nothing else; the comparison with a constant surge force is the table above, where the two runs sit on two lines and can be read without a legend.
 
 | In the figure | Meaning |
 |---|---|
-| left, blue and orange | the two tracks, almost on top of each other — the guidance is identical |
-| panel 1 | the commanded speed, and the two speeds actually made |
-| panel 2 | the surge force: flat at 60 N, or worked for by the loop |
-| panel 3 | the yaw moment, with each run's own dotted limit |
-| panel 4 | the two shaft speeds of the speed-loop run, against $n_{\max}$ |
+| left | the mission, with the hull drawn along the track so the heading is visible at every mark |
+| panel 1, $u_d$ and $u$ | the commanded speed and the one made — they lie on each other, which is what the loop was added for |
+| panel 2, $X$ | the surge force the loop asks for: $77.6$ N on a straight leg, up to $X_{\max}$ out of each corner |
+| panel 3, $N$ | the yaw moment, against the $\pm N_{speed}$ the Saturation holds |
+| panel 4, $n_L$ and $n_R$ | the two shaft speeds, against $n_{\max}$ |
+| panel 5, waypoint $k$ | the leg index, stepping up once per switch: $1 \to 2$ at $68.9$ s, then $129.3$ s, then $189.7$ s |
+| panel 6, $y_e$ | the cross-track error against time: $20$ m at the start, then a spike at each corner and a return to zero |
 
 **Reading the figure and the table against the derivation.**
 
 | Where to look | What is there | Which line it settles |
 |---|---|---|
 | `u mean` column | $0.767$ against $1.000$ m/s | line 1: a constant force gives the speed that balances drag, and $0.767$ was never chosen by anyone |
-| panel 2, the flat blue line | exactly $60.00$ N for the whole run | the old models have no speed loop to vary it |
-| panel 2, the orange line | $77.59$ N on a straight leg, rising to $120$ N after each corner | holding $1.0$ m/s costs $77.6$ N of drag; a turn costs more, and the loop pays it until it reaches $X_{\max}$ |
+| `X mean` column | $60.00$ against $78.48$ N | the old models have no speed loop to vary the force; this one works for it |
+| panel 2 | $77.59$ N on a straight leg, rising to $120$ N after each corner | holding $1.0$ m/s costs $77.6$ N of drag; a turn costs more, and the loop pays it until it reaches $X_{\max}$ |
 | `straight leg` row | $T_L = 38.16$, $T_R = 39.43$ N from $X = 77.59$, $N = -0.50$ | line 3: $77.59/2 = 38.80$ each, then $\mp 0.50/0.79 = \mp 0.63$ |
 | `n_L by hand` column | $58.686$ against $58.683$ logged | line 4 reproduced from the logged $X$ and $N$ alone, through the same square root |
 | `hardest turn` row | $N = -47.15$ N·m exactly | line 7: the Saturation is holding `N_speed`, and the corner is asking for more than it |
 | the same row | $T_R = 119.68$ N and $n_R = 103.931$ | lines 5 and 7 together: at that moment the starboard propeller is **exactly at** $T_{\max}$, so its shaft is exactly at $n_{\max}$. The constant was chosen to make this the worst case, and it is |
-| panel 4, the orange trace at the corners | touching the red $n_{\max}$ line and never crossing it | the allocator can no longer ask for the impossible |
+| panel 4, at the corners | touching the red $n_{\max}$ line and never crossing it | the allocator can no longer ask for the impossible |
+| panels 5 and 6 together | every step of the leg index is followed by a spike in $y_e$ | §5-4: switching moves the path the vessel is steering to, so the error it measures jumps before the guidance works it down again |
 | the $N_{\lim}$ row | $70.85$ at $X = 60$, $47.15$ at $X = 120$ | line 6: the first branch, falling as the surge force takes the headroom |
 | the same row at $X = 0$ | $52.70$ N·m, **below** the value at 60 N | line 6: the second branch, rising; the peak is between, at $X^\star = 52.97$ N |
-| panel 3, the two dotted pairs | $\pm 70.85$ for the constant-force run, $\pm 47.15$ for the speed-loop run | the price of the speed, stated as a number before any track is drawn |
+| panel 3, the dotted pair | $\pm 47.15$ N·m, not the $\pm 70.85$ the other six models hold | the price of the speed, stated as a number before any track is drawn |
 | `mean |y_e|` column | $0.577$ against $0.353$ m | going 30 % faster on two-thirds of the moment costs 63 % more cross-track error |
 | `last leg at` column | $189.7$ against $244.9$ s | 23 % of the mission time, bought with the accuracy in the previous row |
 
@@ -1395,6 +1400,22 @@ Pressing Run on `W05_H_speed_path` alone produces the same numbers and a figure 
 | $u_d, u$ | the commanded speed and the actual one — they lie on top of each other, which is the point |
 | $n_L, n_R$ | the two shaft speeds, crossing over at every corner |
 | waypoint $k$ | the leg index, stepping $1 \to 2 \to 3 \to 4$ as §5-4's test becomes true |
+
+A second window opens **while the model is still running**, redrawn at every step by the `Animate` block, and it is the one to watch in class. Its left half is the mission as it happens, with the hull and its heading drawn at the vessel's position; its right half is five rows, each carrying one thing and each putting the command on top of what was achieved:
+
+![The live view of W05_H_speed_path, redrawn while the model runs](W05_simulink/img/W05_live_view.png)
+
+| In the live view | What it answers |
+|---|---|
+| left, the hull on the track | where the vessel is **and which way it is pointing** — the difference between the two is the crab angle of §5-6 |
+| row 1, $u_d$ and $u$ | is the inner speed loop doing what it was told |
+| row 2, $\psi_d$ and $\psi$ | is the inner heading loop doing what the guidance told it; the vertical jumps are the $\pm 180°$ wrap of §5-2 |
+| row 3, waypoint $k$ | which leg is active, and the instant each switch happened |
+| row 4, $y_e$ | the one number that says whether the guidance is working |
+| row 5, $n_L$ and $n_R$ | what the two shafts are doing to produce all of the above |
+
+> [!tip] Switching the live view off
+> `animate = 0` in `W05_0_setup` leaves the block in place and makes it do nothing, which is faster when a script is sweeping gains. `pace = 1` runs the simulation at wall-clock speed so the window can be watched in real time; the numbers are identical either way.
 
 > [!warning] The track continues past the last waypoint
 > There is no mission-end logic in Week 5. When the last leg is reached it is simply held, so the vessel sails along its extension until `T_final`. That is why the track in the figure above runs to 210 m east. Stopping a mission is a state-machine question and is built in Week 8.

@@ -67,6 +67,10 @@
 │                            gnc_chain.m · gnc_colour.m · add_subsys.m · add_measurement.m
 │                            add_sum.m · mss_style.m · export_diagram.m
 │                            port_xy.m · row_feed.m · lane_line.m · check_overlaps.m
+│                            check_diagonals.m · straighten_lines.m · compact_layout.m
+│                              (선은 가로·세로만, 빈 복도는 좁힌다 — §15-31)
+│                            add_heading_loop.m · add_speed_loop.m
+│                              (4·5 주차가 **함께 쓰는** 제어기 서브시스템 — §15-34)
 │                            ensure_base_vars.m · hmi_bind.m · image_button.m  (대화형 모델)
 │                            crosstrack_err.m · wp_switch.m · path_plot.m
 │                            verify_guidance.m · verify_alos.m        (W05 유도)
@@ -330,6 +334,9 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
 | 흐름 | 왼쪽에서 오른쪽으로 **명령 → 플랜트 → 계측** |
 | **블록 크기** | **MSS 를 그대로.** Sum 은 `add_sum` 으로 **20×20 원**, 나머지는 `save_system` 직전에 `mss_style(m)` 한 줄. 치수는 MSS 데모에서 측정한 것이다 → `model-layout.md` |
 | **서브시스템 안쪽** | 최상위와 같이 **손으로 열을 잡아** 왼쪽→오른쪽. `arrangeSystem` 은 순서를 망가뜨리므로 쓰지 않는다. 서브시스템도 PNG 로 뽑아 눈으로 본다 |
+| **비스듬한 선** | **`check_diagonals(mdl)` 도 0** 이어야 끝이다. 빌더의 끝은 `mss_style` → `compact_layout` → `straighten_lines` → `save_system` **이 순서**이고, 끝내고 **디스크의 파일로 다시 센다** — `save_system` 이 가지선의 점을 다시 쓴다 → `standing-orders.md` §15-31 |
+| **되먹임 통로** | 오른쪽에서 왼쪽으로 돌아가는 경로의 블록은 전부 `Orientation`=`left` 로 돌려 **한 줄에 세운다.** 그러면 세로 둘과 가로 하나로 끝난다 → §15-32 |
+| **공유 제어기** | 두 주차가 같은 제어기를 쓰면 `_tools/add_heading_loop` · `add_speed_loop` 처럼 **함수 하나**로 두고 양쪽이 부른다. 복사하면 한쪽만 고쳐진다 → §15-34 |
 | **겹친 선** | **`check_overlaps(mdl)` 이 0** 이어야 그 모델이 끝난 것이다. 소스를 포트 높이에 맞추는 `row_feed`, 통로에 이름을 붙이는 `lane_line`, 포트 높이를 **읽는** `port_xy` 로 만든다. 행 간격 52 px 이상 → `model-layout.md` |
 | 색 | 플랜트 `[0.81 0.93 0.81]` 초록 · 로깅/표시 `[0.93 0.93 0.93]` 회색 |
 | 실행 | `set_param(m,'ReturnWorkspaceOutputs','off')` — 없으면 To Workspace 결과가 `out` 에 갇힌다 |

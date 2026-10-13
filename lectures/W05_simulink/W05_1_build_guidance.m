@@ -116,7 +116,7 @@ end
 %  A subsystem of Simulink blocks, with the same blocks and the same names as the
 %  Week 4 model: one Fcn 'ssa', the gains Kp and Kd, and a Saturation. The D term
 %  is subtracted at the summing junction rather than carried as a negative gain.
-build_autopilot(m, [680 Y-60 880 Y+60], o);
+add_heading_loop(m, [680 Y-60 880 Y+60], ternary(o.speed, 'N_speed', 'N_max'));
 p1 = port_xy(m, 'guidance', 'Outport', 1);  a1 = port_xy(m, 'heading autopilot', 'Inport', 1);
 route(m, 'guidance', 1, 'heading autopilot', 1, [600 p1(2); 600 a1(2)]);
 a2 = port_xy(m, 'heading autopilot', 'Inport', 2);
@@ -141,7 +141,7 @@ end
 %  Like the autopilot: a subsystem holding the same single row as Week 3, with only
 %  the command u_d arriving from a Constant outside it.
 if o.speed
-    build_speed_loop(m, [680 Y+150 880 Y+270]);
+    add_speed_loop(m, [680 Y+150 880 Y+270]);
     q = port_xy(m, 'speed loop', 'Inport', 2);
     add_block('simulink/Signal Routing/From', [m '/From x sp'], 'GotoTag','x', 'ShowName','off', ...
               'Position', [600 q(2)-10 645 q(2)+10]);
@@ -316,9 +316,13 @@ route(m, 'From wp d', 1, 'waypoint k', 1, zeros(0,2));
 %  블록을 빼서 끄지 않는다. animate = 0 이면 이 블록이 아무것도 하지 않는다.
 %  It is not switched off by removing the block: with animate = 0 it does nothing.
 A = S + 630;  yA = 40;
-ANM = {'N','E','psi_deg','y_e','u'};          % 태그에서 오는 것 / these come from tags
+%  psi_d_deg 가 네 번째다 (사용자 지시, 2026-10-13): 화면이 **두 루프 각각**에 대해
+%  명령과 실제를 겹쳐 그리려면 선수각 명령도 들어와야 한다.
+%  psi_d_deg is the fourth input: the view overlays command on response for
+%  both loops, so the commanded heading has to arrive as well.
+ANM = {'N','E','psi_deg','psi_d_deg','y_e','u'};   % 태그에서 오는 것 / from tags
 add_block('simulink/User-Defined Functions/MATLAB Function', [m '/Animate'], ...
-          'Position', [A+120 yA A+270 yA+480]);
+          'Position', [A+120 yA A+270 yA+530]);
 set_mlfcn([m '/Animate'], animate_code(), 'ok', '[1 1]');
 for i = 1:numel(ANM)
     q = port_xy(m, 'Animate', 'Inport', i);
@@ -329,23 +333,23 @@ end
 %  않는다 — 따라가지도 않는 점선을 그리는 것은 거짓말이기 때문이다.
 %  u_d is a number only where there is a speed loop; elsewhere NaN, and the view
 %  does not draw the line. An unfollowed dashed line would be a lie.
-q = port_xy(m, 'Animate', 'Inport', 6);
+q = port_xy(m, 'Animate', 'Inport', 7);
 add_block('simulink/Sources/Constant', [m '/u_d shown'], ...
           'Value', ternary(o.speed, 'u_d', 'NaN'), 'Position', [A q(2)-13 A+80 q(2)+13]);
-route(m, 'u_d shown', 1, 'Animate', 6, zeros(0,2));
-q = port_xy(m, 'Animate', 'Inport', 7);
-from_at(m, 'n', [A q(2)], 'From an n');
-route(m, 'From an n', 1, 'Animate', 7, zeros(0,2));
+route(m, 'u_d shown', 1, 'Animate', 7, zeros(0,2));
 q = port_xy(m, 'Animate', 'Inport', 8);
-from_at(m, 'wp', [A q(2)], 'From an wp');
-route(m, 'From an wp', 1, 'Animate', 8, zeros(0,2));
+from_at(m, 'n', [A q(2)], 'From an n');
+route(m, 'From an n', 1, 'Animate', 8, zeros(0,2));
 q = port_xy(m, 'Animate', 'Inport', 9);
-add_block('simulink/Sources/Clock', [m '/clock'], 'Position', [A+40 q(2)-10 A+60 q(2)+10]);
-route(m, 'clock', 1, 'Animate', 9, zeros(0,2));
+from_at(m, 'wp', [A q(2)], 'From an wp');
+route(m, 'From an wp', 1, 'Animate', 9, zeros(0,2));
 q = port_xy(m, 'Animate', 'Inport', 10);
+add_block('simulink/Sources/Clock', [m '/clock'], 'Position', [A+40 q(2)-10 A+60 q(2)+10]);
+route(m, 'clock', 1, 'Animate', 10, zeros(0,2));
+q = port_xy(m, 'Animate', 'Inport', 11);
 add_block('simulink/Sources/Constant', [m '/live view'], 'Value','animate', ...
           'Position', [A q(2)-13 A+80 q(2)+13]);
-route(m, 'live view', 1, 'Animate', 10, zeros(0,2));
+route(m, 'live view', 1, 'Animate', 11, zeros(0,2));
 p = port_xy(m, 'Animate', 'Outport', 1);
 add_block('simulink/Sinks/Terminator', [m '/anim end'], ...
           'Position', [A+310 p(2)-8 A+326 p(2)+8]);
@@ -373,171 +377,17 @@ if c, r = a; else, r = b; end
 end
 
 % =========================================================================
-%  제어기 셋 — 전부 **시뮬링크 블록**으로 그린 서브시스템이다 (사용자 지시, 2026-09-29:
-%  "제어기는 subsystem 으로 만들고 ... 제어기 내부는 시뮬링크로 ... W05 주차 모두 동일해").
+%  제어기 둘은 **_tools 에 있다** — `add_heading_loop` 과 `add_speed_loop` (2026-10-13).
+%  4주차의 통합 모델(W04_J_both)이 같은 함수를 부르므로, 학생이 4주차에서 본 그림을
+%  5주차에서 **블록 하나까지 그대로** 다시 본다. 여기에 복사해 두면 한쪽만 고쳐진다.
 %  MATLAB Function 은 유도 법칙과 배분에만 남는다 — 그 둘은 강의가 코드를 줄 단위로
 %  인용하는 곳이고, 나머지는 그림으로 읽는 편이 낫다.
 %
-%  The three controllers, each a subsystem drawn in Simulink blocks. The MATLAB
-%  Function blocks that remain are the guidance law and the allocator, which are
-%  the two the lecture quotes line by line.
-% =========================================================================
-
-function build_autopilot(m, pos, o)
-%BUILD_AUTOPILOT  4주차의 선수각 오토파일럿을 블록으로 / the Week 4 autopilot, in blocks.
-%
-%     e = ssa(psi_d - psi),   ssa(u) = atan2(sin(u), cos(u))
-%     N = Kp e - Kd r,        |N| <= 한계 / the limit
-%
-%   **4주차 모델과 같은 블록, 같은 이름이다** (W04_1_build_heading 참조): 오차를 감는
-%   것은 Fcn 블록 하나 'ssa', 게인은 Gain 블록의 값이 변수 이름, 자르는 것은 평범한
-%   Saturation 이다. 학생이 4주차에서 본 그림을 그대로 다시 본다.
-%   The same blocks with the same names as Week 4 (see W04_1_build_heading): one
-%   Fcn block wraps the error, the gains are Gain blocks whose value is a variable
-%   name, and the clamp is an ordinary Saturation.
-%
-%   D 항이 오차의 미분이 아니라 **측정한 요각속도**인 것이 4주차의 결론이다. 그래서
-%   psi_d 가 계단으로 뛰어도 N 이 튀지 않는다 - 미분 블록 자체가 이 그림에 없다.
-%   The D term is the measured yaw rate, not the derivative of the error, which is
-%   why a step in psi_d produces no kick: there is no derivative block here at all.
-%
-%   한계는 그 모델이 요구할 수 있는 **가장 큰** 전진력에서 계산해 둔 상수다 (5-7 절).
-%   전진력이 상수인 모델은 N_max, 속도 루프가 붙은 모델은 더 작은 N_speed.
-%   The limit was worked out at the largest surge force that model can ask for:
-%   N_max where the force is constant, N_speed where a speed loop can push harder.
-s = add_subsys(m, 'heading autopilot', pos, {'psi_d','x'}, {'N'}, gnc_colour('controller'));
-set_param([s '/psi_d'], 'Position', [ 60  90  90 110]);
-set_param([s '/x'],     'Position', [ 60 190  90 210]);
-set_param([s '/N'],     'Position', [700 120 730 140]);
-
-%  x 에서 필요한 둘만 꺼낸다 / take the two states this law uses
-sel(s, 'psi = x(12)', 12, [140 182 240 218]);
-sel(s, 'r = x(6)',     6, [140 262 240 298]);
-route(s, 'x', 1, 'psi = x(12)', 1, zeros(0,2));
-route(s, 'x', 1, 'r = x(6)',    1, [115 200; 115 280]);
-
-%  1) 오차, 그리고 (-pi, pi] 로 감기 / the error, wrapped into (-pi, pi]
-add_sum(s, 'e', '+-', [300 100]);
-route(s, 'psi_d',       1, 'e', 1, zeros(0,2));
-route(s, 'psi = x(12)', 1, 'e', 2, [300 200]);
-add_block('simulink/User-Defined Functions/Fcn', [s '/ssa'], ...
-          'Expr','atan2(sin(u), cos(u))', 'Position', [360 82 440 118]);
-route(s, 'e', 1, 'ssa', 1, zeros(0,2));
-
-%  2) P 는 오차에, D 는 요각속도에 / P on the error, D on the yaw rate
-gain(s, 'Kp',       'Kp',  [480  82 540 118]);
-%  게인은 `Kd` 이고 **빼는 것은 합산점**이다 (사용자 지시, 2026-09-29). 게인에 -Kd 를
-%  넣으면 부호가 블록 이름·블록 값·합산점 셋에 흩어져, 그림을 보고 부호를 세어야 한다.
-%  한 군데에만 두면 "Kp e 에서 Kd r 을 뺀다" 가 그림 그대로 읽힌다.
-%  4주차 4-3e 절만 게인 쪽에 부호를 둔다 — 거기서는 **부호 자체가 실험의 주제**라
-%  'minus Kd' 와 'plus Kd' 를 나란히 놓고 고르기 때문이다.
-%  The gain is Kd and the subtraction is at the summing junction. With -Kd in the
-%  gain the sign is spread over the block name, the block value and the junction,
-%  and the reader has to count them. Week 4 section 4-3e is the one place that
-%  keeps the sign in the gain, because there the sign is the experiment.
-gain(s, 'Kd', 'Kd', [480 262 540 298]);
-route(s, 'ssa',      1, 'Kp', 1, zeros(0,2));
-route(s, 'r = x(6)', 1, 'Kd', 1, zeros(0,2));
-add_sum(s, 'N raw', '+-', [580 100]);
-route(s, 'Kp', 1, 'N raw', 1, zeros(0,2));
-route(s, 'Kd', 1, 'N raw', 2, [580 280]);
-
-%  3) 두 프로펠러가 낼 수 있는 만큼으로 자른다 / limit to what the propellers give
-lim = ternary(o.speed, 'N_speed', 'N_max');
-add_block('simulink/Discontinuities/Saturation', [s '/moment limit'], ...
-          'UpperLimit', lim, 'LowerLimit', ['-' lim], 'Position', [620 82 670 118]);
-route(s, 'N raw',        1, 'moment limit', 1, zeros(0,2));
-route(s, 'moment limit', 1, 'N', 1, [690 100; 690 130]);
-end
-
-% =========================================================================
-function build_speed_loop(m, pos)
-%BUILD_SPEED_LOOP  3주차의 속도 루프를 블록으로 / the Week 3 speed loop, in blocks.
-%
-%     e = u_d - u
-%     X_raw = Kp_u e + I,        I' = Ki_u e + Kb (X - X_raw)
-%     X     = sat(X_raw),        |X| <= X_max
-%
-%   **3주차 모델과 같은 블록, 같은 이름, 같은 게인이다** (W03_1_build_speed 참조).
-%   합산점 `e`, 게인 `Kp_u` 와 `Ki_u`, **연속 적분기** `I`, 합산점 `u`, `Saturation`
-%   `thrust limit`, 그리고 되감기 게인 `Kb`. 다른 것은 명령 u_d 가 밖에서 들어온다는 것뿐.
-%   The same blocks, names and gains as Week 3: the error junction, Kp_u and Ki_u,
-%   a continuous Integrator, the addition, a Saturation, and the back-calculation
-%   gain Kb. The only change is that u_d arrives from outside.
-%
-%   적분기는 **연속**이다 (사용자 지시, 2026-09-29). 이산 적분기를 쓰면 제어기가
-%   솔버와 다른 시간축에서 돌아 모델이 두 개의 시간을 갖게 된다 - 이 강의의 모델은
-%   전부 연속시간 플랜트에 연속시간 제어기다.
-%   The integrator is continuous: a discrete one would put the controller on a
-%   different time base from the plant, and every model in this course is a
-%   continuous plant with a continuous controller.
-%
-%   안티와인드업 / the anti-windup
-%       **back-calculation** 이다 (3주차 F 절). 포화가 잘라 낸 양 X - X_raw 를 Kb 배
-%       하여 적분기 입력에 되돌린다. 한계에 걸려 있는 동안 그 항이 음수라 적분이
-%       스스로 물러나고, 오차의 부호가 바뀌기 전에 풀린다.
-%       Kb = 0 이면 안티와인드업이 없는 것이다 - 두 값으로 돌려 비교할 수 있다.
-%       Back-calculation, as in Week 3 section F: the amount the saturation removed,
-%       X - X_raw, is fed back through Kb into the integrator's input. While the
-%       limit is active that term is negative, so the integral backs off by itself
-%       instead of waiting for the error to change sign. Kb = 0 switches it off.
-s = add_subsys(m, 'speed loop', pos, {'u_d','x'}, {'X'}, gnc_colour('controller'));
-set_param([s '/u_d'], 'Position', [ 60 190  90 210]);
-set_param([s '/x'],   'Position', [ 60 290  90 310]);
-set_param([s '/X'],   'Position', [860 190 890 210]);
-
-sel(s, 'u = x(1)', 1, [140 282 240 318]);
-route(s, 'x', 1, 'u = x(1)', 1, zeros(0,2));
-
-%  1) 속도 오차. 명령이 왼쪽, 측정이 아래에서 - MSS 데모의 되먹임 합산점 모양이다.
-%     The command on the left edge and the measurement from below, the shape a
-%     feedback junction has in the MSS demonstration models.
-add_sum(s, 'e', '+-', [300 200]);
-route(s, 'u_d',       1, 'e', 1, zeros(0,2));
-route(s, 'u = x(1)',  1, 'e', 2, [300 300]);
-
-%  2) P 와 I / the two terms
-gain(s, 'Kp_u', 'Kp_u', [380 182 440 218]);
-gain(s, 'Ki_u', 'Ki_u', [380 302 440 338]);
-route(s, 'e', 1, 'Kp_u', 1, zeros(0,2));
-route(s, 'e', 1, 'Ki_u', 1, [350 200; 350 320]);
-add_sum(s, 'into I', '++', [500 320]);
-add_block('simulink/Continuous/Integrator', [s '/I'], ...
-          'InitialCondition','0', 'Position', [560 302 600 338]);
-route(s, 'Ki_u',   1, 'into I', 1, zeros(0,2));
-route(s, 'into I', 1, 'I', 1, zeros(0,2));
-
-%  3) 더하고 자른다 / add them and clamp
-add_sum(s, 'X raw', '++', [660 200]);
-route(s, 'Kp_u', 1, 'X raw', 1, zeros(0,2));
-route(s, 'I',    1, 'X raw', 2, [660 320]);
-add_block('simulink/Discontinuities/Saturation', [s '/thrust limit'], ...
-          'UpperLimit','X_max', 'LowerLimit','-X_max', 'Position', [710 182 760 218]);
-route(s, 'X raw',        1, 'thrust limit', 1, zeros(0,2));
-route(s, 'thrust limit', 1, 'X', 1, zeros(0,2));
-
-%  4) 안티와인드업: 잘려 나간 만큼을 적분기로 되돌린다 (3주차 F 절과 같은 배선)
-%     The anti-windup: what the saturation removed, returned to the integrator.
-%     되돌아가는 길은 **맨 아래 한 줄의 통로**다 (사용자 수정, 2026-10-13). 뺄셈과
-%     Kb 를 그 통로에 놓고 **둘 다 왼쪽을 보게** 돌린다. 그러면 신호는 각자 바로
-%     아래로 떨어지고, 통로를 따라 곧게 왼쪽으로 가고, 한 번만 올라간다 — 꺾이는
-%     곳이 네 군데뿐이고 비스듬한 선이 없다.
-%     The return path is one lane along the bottom. The subtraction and Kb sit in
-%     that lane and both face left, so each signal drops straight down, runs
-%     straight back along the lane and rises once: four corners in all, and no
-%     stretch at an angle.
-add_sum(s, 'X - X raw', '-+', [640 460]);
-set_param([s '/X - X raw'], 'Orientation','left');
-gain(s, 'Kb', 'Kb', [520 442 570 478]);
-set_param([s '/Kb'], 'Orientation','left');
-route(s, 'X raw',        1, 'X - X raw', 1, [690 200; 690 455]);
-route(s, 'thrust limit', 1, 'X - X raw', 2, [800 200; 800 465]);
-route(s, 'X - X raw',    1, 'Kb',        1, zeros(0,2));
-route(s, 'Kb',           1, 'into I',    2, [480 460; 480 325]);
-for nm = {'e','into I','X raw','X - X raw'}
-    set_param([s '/' nm{1}], 'NamePlacement','alternate');
-end
-end
+%  The two controllers live in _tools: add_heading_loop and add_speed_loop. The
+%  Week 4 combined model calls the same two functions, so the diagram a student
+%  saw in Week 4 is the same one, block for block, here. The MATLAB Function
+%  blocks that remain are the guidance law and the allocator, which are the two
+%  the lecture quotes line by line.
 
 % -------------------------------------------------------------------------
 %  작은 블록 헬퍼들 / small block helpers
@@ -554,7 +404,7 @@ end
 % =========================================================================
 function C = animate_code()
 C = { ...
-'function ok = Animate(N, E, psi_deg, y_e, u, u_d, n, wp, t, en)'
+'function ok = Animate(N, E, psi_deg, psi_d_deg, y_e, u, u_d, n, wp, t, en)'
 '%#codegen'
 '%ANIMATE  도는 동안의 실시간 화면 / the live view, while the model runs.'
 '%'
@@ -568,7 +418,7 @@ C = { ...
 'coder.extrinsic(''W05_animate'');'
 'ok = 1;'
 'if en > 0.5'
-'    W05_animate(N, E, psi_deg, y_e, u, u_d, n, wp, t);'
+'    W05_animate(N, E, psi_deg, psi_d_deg, y_e, u, u_d, n, wp, t);'
 'end'
 'end'};
 end

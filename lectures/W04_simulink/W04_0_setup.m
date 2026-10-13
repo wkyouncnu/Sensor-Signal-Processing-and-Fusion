@@ -66,12 +66,41 @@ Kb = 0.1;             % 되감기 이득. 0 이면 안티와인드업 없음 / b
 %   the sign of a damping term is wrong.
 d_form = 1;
 
+%% ---- 두 루프를 함께 (W04_J_both) / both loops at once ---------------------
+%   4-8 절. 선수각 루프는 위의 Kp·Kd 그대로, 속도 루프는 3주차의 PI 그대로다.
+%   명령은 둘 다 **계단으로 조금씩 바뀐다** — 한 번의 계단 응답이 아니라 명령을
+%   따라가는 모습을 보려는 것이다.
+%   Section 4-8. The heading loop keeps the gains above and the speed loop is the
+%   PI of Week 3. Both commands move in small steps, so what is seen is tracking
+%   rather than one step response.
+u_d_steps   = [0.8 1.2 1.0 1.4];   % 목표 속도의 계단 / the speed command   [m/s]
+psi_d_steps = [0 20 -15 30];       % 목표 선수각의 계단 / the heading command [deg]
+cmd_hold    = 30;                  % 한 계단이 유지되는 시간 / how long each step is held [s]
+
+Kp_u  = 200;          % 속도 루프 비례 / surge proportional   [N per m/s]
+Ki_u  = 200;          % 속도 루프 적분 / surge integral       [N per m]
+Kb_u  = 1;            % 속도 루프 되감기. 위의 Kb 는 선수각 적분기의 것이다
+                      % the speed loop's back-calculation gain; Kb above is the heading one
+X_max = 120;          % 전진력의 한계 / the surge force limit  [N]
+n_max = cfg.n_max;    % 축 회전수의 한계 / the shaft-speed limits  [rad/s]
+n_min = cfg.n_min;    %   배분기가 여기서 자른다 (otter.m 도 안에서 자른다)
+                      %   where the allocator clamps; otter.m clamps internally too
+
+%   전진력이 X_max 까지 갈 수 있으므로 요 모멘트의 한계를 **그 힘에서** 다시 계산한다
+%   (5-7 절의 규칙). X_ff 에서 계산한 N_max 를 그대로 쓰면 낼 수 없는 모멘트를 요구한다.
+%   The surge force can reach X_max, so the moment limit is recomputed there, as
+%   section 5-7 requires: N_max, worked out at X_ff, would ask for the impossible.
+N_speed = min(2*y_pont*(T_hi - X_max/2), 2*y_pont*(X_max/2 - T_lo));
+
 %% ---- 시뮬레이션 / simulation -----------------------------------------------
 T_final = 40;         % [s]
+T_both  = cmd_hold * numel(u_d_steps);   % 4-8 절의 길이 / the length of section 4-8  [s]
 h       = 0.02;       % 고정 스텝 / fixed step (ode4)  [s]
 
 fprintf(['\n  W04_0_setup\n' ...
          '    thrust   X_ff = %g N forward, yaw moment |N| <= %.2f N m\n' ...
          '    gains    Kp = %g   Ki = %g   Kd = %g   Nf = %g   Kb = %g\n' ...
-         '    command  psi_d = 0 -> %g deg at t = %g s\n\n'], ...
-        X_ff, N_max, Kp, Ki, Kd, Nf, Kb, psi_step, t_step);
+         '    command  psi_d = 0 -> %g deg at t = %g s\n' ...
+         '    both     W04_J_both: u_d %s m/s and psi_d %s deg, %g s each, |N| <= %.2f N m\n\n'], ...
+        X_ff, N_max, Kp, Ki, Kd, Nf, Kb, psi_step, t_step, ...
+        mat2str(u_d_steps), mat2str(psi_d_steps), cmd_hold, N_speed);

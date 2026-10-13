@@ -1,4 +1,4 @@
-function W05_animate(N, E, psi_deg, y_e, u, u_d, n, wp, t)
+function W05_animate(N, E, psi_deg, psi_d_deg, y_e, u, u_d, n, wp, t)
 %W05_ANIMATE  모델이 도는 동안 실시간 화면을 그린다.
 %             Draw the live view while the model runs.
 %
@@ -28,11 +28,11 @@ function W05_animate(N, E, psi_deg, y_e, u, u_d, n, wp, t)
 %   workspace, so widening the view is an edit to the setup script, not the model.
 
 o.tag   = 'W05';
-o.name  = 'W05 live view  —  guidance, speed and the two shafts';
+o.name  = 'W05 live view  —  the track, both commands, the leg, the error and the shafts';
 o.lim   = [base_var('track_Emin', -30), base_var('track_Emax', 140), ...
            base_var('track_Nmin', -30), base_var('track_Nmax', 100)];
 o.every = base_var('animate_every', 0.5);
 o.wp    = [base_var('WP_N', []), base_var('WP_E', [])];
 
-live_guidance(N, E, psi_deg, y_e, u, u_d, n, wp, t, o);
+live_guidance(N, E, psi_deg, psi_d_deg, y_e, u, u_d, n, wp, t, o);
 end

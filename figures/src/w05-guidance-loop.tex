@@ -12,7 +12,16 @@
 %
 % 요점 하나: **바깥 루프의 출력이 곧 안쪽 루프의 명령이다.** 유도는 힘을 만들지
 % 않는다. psi_d 를 만들고, 그것을 힘으로 바꾸는 것은 4 주차의 오토파일럿이다.
-\documentclass[border=6pt]{standalone}
+%
+% 2026-10-13 손봄 (사용자 지적 셋):
+%   ① 상자 안의 1·2·3·4 가 **각각 한 줄**에 들어가야 한다 -> GUIDANCE 상자를
+%      7.6 cm 로, 제어기 상자를 3.8 cm 로 넓혔다. 줄이 접히면 번호가 어디서
+%      끝나는지 눈으로 찾아야 한다.
+%   ② 꺾이는 곳을 줄인다 -> 명령을 받는 상자를 **명령을 내는 상자와 같은 높이**에
+%      놓았다. psi_d 와 u_d 가 꺾임 없이 곧게 간다.
+%   ③ 잘린 선이 없게 -> 띠 밑줄과 화살표의 끝을 상자 테두리에 맞추고, 오른쪽
+%      끝 라벨이 그림 경계 안에 들어오도록 x 를 당겼다.
+\documentclass[border=8pt]{standalone}
 \input{gnc-style}
 
 \definecolor{knownc}{HTML}{1D4ED8}
@@ -41,88 +50,94 @@
 
 % =====================================================================
 % 바깥 루프 — 웨이포인트에서 두 명령까지
+%   네 줄은 유도부가 **그 순서로** 하는 일이고, 한 줄에 하나씩 들어간다.
 % =====================================================================
 \node[wp, text width=1.9cm] (WP) at (-0.2,0.55)
   {\textbf{WAYPOINTS}\\[2pt] $(N_k, E_k)$\\ $k = 1 \ldots n$};
 
-\node[guid, text width=4.6cm] (GD) at (4.1,0.55)
+\node[guid, text width=7.6cm] (GD) at (5.4,0.55)
   {\textbf{GUIDANCE} \ \ \emph{outer loop}\\[4pt]
-   {\scriptsize 1 \ \ leg direction \ $\pi_p = \mathrm{atan2}(\Delta E, \Delta N)$}\\[2pt]
-   {\scriptsize 2 \ \ rotate into the leg \ $(x_e,\, y_e)$}\\[2pt]
-   {\scriptsize 3 \ \ switch when $d - x_e < R$}\\[2pt]
-   {\scriptsize 4 \ \ the law \ $\psi_d = \pi_p - \arctan\!\dfrac{y_e + \kappa y_{\mathrm{int}}}{\Delta}$}};
+   {\scriptsize 1 \ \ leg direction \ $\pi_p = \mathrm{atan2}(\Delta E, \Delta N)$}\\[3pt]
+   {\scriptsize 2 \ \ rotate into the leg \ $(x_e,\, y_e)$}\\[3pt]
+   {\scriptsize 3 \ \ switch when $d - x_e < R$}\\[3pt]
+   {\scriptsize 4 \ \ the law \ $\psi_d = \pi_p - \arctan\bigl[(y_e + \kappa\, y_{\mathrm{int}})/\Delta\bigr]$}};
 \node[slx, anchor=north, yshift=-1pt] at (GD.south) {guidance};
 \draw[sig] (WP.east) -- (GD.west);
 
-\node[wp, text width=1.9cm] (UD) at (-0.2,-2.6)
+\node[wp, text width=1.9cm] (UD) at (-0.2,-2.1)
   {\textbf{SPEED ORDER}\\[2pt] $u_d$ \ \ chosen by\\ the mission};
 
 % =====================================================================
-% 두 명령 — 이 그림의 요점
+% 안쪽 루프 — 3·4 주차가 이미 연 상자들. 작게 둔다.
+%   **명령을 내는 상자와 같은 높이**에 놓는다: 그래야 명령선이 곧게 간다.
 % =====================================================================
-\draw[cmd] (GD.east) -- (8.5,0.55) -- (8.5,0.05) -- (9.15,0.05);
-\node[lbl, accent, anchor=south] at (7.5,0.62) {$\psi_d$};
-\draw[cmd] (UD.east) -- (8.5,-2.6) -- (8.5,-1.95) -- (9.15,-1.95);
-\node[lbl, accent, anchor=south] at (8.0,-2.52) {$u_d$};
-
-% =====================================================================
-% 안쪽 루프 — 3·4 주차가 이미 연 상자들. 작게 둔다
-% =====================================================================
-\node[ctrl, text width=2.5cm] (HD) at (10.6,0.05)
-  {\textbf{HEADING LOOP}\\[2pt] $N = K_p\,\mathrm{ssa}(\psi_d-\psi) - K_d r$};
+\node[ctrl, text width=3.8cm] (HD) at (12.2,0.55)
+  {\textbf{HEADING LOOP} \quad $N = K_p\,\mathrm{ssa}(\psi_d-\psi) - K_d\, r$};
 \node[slx, anchor=north, yshift=-1pt] at (HD.south) {heading autopilot};
 
-\node[ctrl, text width=2.5cm] (SP) at (10.6,-1.95)
-  {\textbf{SPEED LOOP}\\[2pt] $X = K_{p,u}(u_d-u) + I$};
+\node[ctrl, text width=3.8cm] (SP) at (12.2,-2.1)
+  {\textbf{SPEED LOOP} \quad $X = K_{p,u}(u_d-u) + I$};
 \node[slx, anchor=north, yshift=-1pt] at (SP.south) {speed loop};
 
-\node[alloc, text width=2.4cm] (AL) at (14.3,-0.95)
+% =====================================================================
+% 두 명령 — 이 그림의 요점. 꺾이는 곳이 없다.
+% =====================================================================
+\draw[cmd] (GD.east) -- (HD.west);
+\node[lbl, accent, anchor=south] at (9.8,0.62) {$\psi_d$};
+\draw[cmd] (UD.east) -- (SP.west);
+\node[lbl, accent, anchor=south] at (9.8,-2.03) {$u_d$};
+
+% =====================================================================
+% 배분과 선체
+% =====================================================================
+\node[alloc, text width=2.4cm] (AL) at (16.9,-0.78)
   {\textbf{ALLOCATION}\\[3pt]
    $\begin{bmatrix} F_L \\ F_R \end{bmatrix} = \mathbf{T}^{-1}\begin{bmatrix} X \\ N \end{bmatrix}$\\[3pt]
    $n = \pm\sqrt{\lvert F\rvert/k}$};
 \node[slx, anchor=north, yshift=-1pt] at (AL.south) {allocation};
 
-\node[plant, text width=1.5cm] (OT) at (17.9,-0.95)
+\node[plant, text width=1.5cm] (OT) at (20.4,-0.78)
   {\textbf{OTTER}\\[1pt] equations\\ of motion};
 \node[slx, anchor=north, yshift=-1pt] at (OT.south) {Otter};
 
-\draw[sig] (HD.east) -- (12.9,0.05) -- (12.9,-0.55) -- (AL.west |- 0,-0.55);
-\node[lbl, anchor=south] at (12.35,0.12) {$N$};
-\draw[sig] (SP.east) -- (12.9,-1.95) -- (12.9,-1.35) -- (AL.west |- 0,-1.35);
-\node[lbl, anchor=north] at (12.35,-2.02) {$X$};
+%  두 힘이 배분기의 두 입력으로 모인다. 여기서만 꺾인다 — 모이는 자리이기 때문이다.
+\draw[sig] (HD.east) -- (15.0,0.55) -- (15.0,-0.38) -- (AL.west |- 0,-0.38);
+\node[lbl, anchor=south] at (14.6,0.62) {$N$};
+\draw[sig] (SP.east) -- (15.0,-2.1) -- (15.0,-1.18) -- (AL.west |- 0,-1.18);
+\node[lbl, anchor=north] at (14.6,-2.17) {$X$};
 \draw[sig] (AL.east) -- (OT.west);
-\node[lbl, anchor=south] at (16.3,-0.88) {$n_L,n_R$};
-\draw[sig] (OT.east) -- (19.4,-0.95);
-\node[lbl, anchor=west] at (19.45,-0.95) {$\mathbf{x}$};
+\node[lbl, anchor=south] at (19.1,-0.71) {$n_L,n_R$};
+\draw[sig] (OT.east) -- (22.7,-0.78);
+\node[lbl, anchor=west] at (22.05,-0.78) {$\mathbf{x}$};
 
 % =====================================================================
 % 되먹임 둘 — 안쪽은 짧고 빠르게, 바깥은 길고 느리게
 % =====================================================================
-\draw[bus] (19.75,-0.95) -- (20.2,-0.95) -- (20.2,-4.35) -- (9.6,-4.35);
-\fill[soft] (19.25,-0.95) circle (1.4pt);
-\draw[fb] (9.6,-4.35) -- (9.6,-2.52);
-\node[lbl, soft, anchor=west] at (9.67,-3.55) {$u$};
-\draw[fb] (12.0,-4.35) -- (12.0,-0.52);
-\fill[soft] (12.0,-4.35) circle (1.4pt);
-\node[lbl, soft, anchor=west] at (12.07,-3.55) {$\psi,\ r$};
-\node[capt, anchor=west] at (13.4,-4.20) {INNER feedback --- fast};
+\draw[bus] (23.25,-0.78) -- (23.7,-0.78) -- (23.7,-4.55) -- (11.0,-4.55);
+\fill[soft] (21.7,-0.78) circle (1.4pt);
+\draw[fb] (11.0,-4.55) -- (11.0,-2.72);
+\node[lbl, soft, anchor=west] at (11.07,-3.70) {$u$};
+\draw[fb] (13.4,-4.55) -- (13.4,-0.08);
+\fill[soft] (13.4,-4.55) circle (1.4pt);
+\node[lbl, soft, anchor=west] at (13.47,-3.70) {$\psi,\ r$};
+\node[capt, anchor=west] at (15.6,-4.40) {INNER feedback --- fast};
 
-\draw[bus] (20.2,-4.35) -- (20.2,-5.85) -- (2.0,-5.85);
-\draw[fb] (2.0,-5.85) -- (2.0,1.65) -- (GD.west |- 0,1.65);
-\node[lbl, soft, anchor=south] at (6.0,-5.80) {position $(N, E)$ and heading $\psi$};
-\node[capt, anchor=west] at (13.4,-5.72) {OUTER feedback --- slow};
+\draw[bus] (23.7,-4.55) -- (23.7,-6.05) -- (2.5,-6.05);
+\draw[fb] (2.5,-6.05) -- (2.5,-0.72);
+\node[lbl, soft, anchor=south] at (7.0,-6.00) {position $(N, E)$ and heading $\psi$};
+\node[capt, anchor=west] at (15.6,-5.90) {OUTER feedback --- slow};
 
 % =====================================================================
-% 띠 설명
+% 띠 설명 — 밑줄은 그 띠가 덮는 상자들의 폭에 맞춘다
 % =====================================================================
-\node[band, anchor=west] at (-1.4,2.75)
+\node[band, anchor=west] at (-1.4,2.85)
   {OUTER LOOP \ --- \ guidance makes commands, never forces};
-\draw[bus] (-1.3,2.45) -- (8.3,2.45);
-\node[band, anchor=west, ctrlc] at (9.2,2.75) {INNER LOOP \ --- \ Weeks 3 and 4};
-\draw[bus] (9.3,2.45) -- (18.6,2.45);
+\draw[bus] (-1.3,2.55) -- (9.3,2.55);
+\node[band, anchor=west, ctrlc] at (10.3,2.85) {INNER LOOP \ --- \ Weeks 3 and 4};
+\draw[bus] (10.3,2.55) -- (21.9,2.55);
 
-%  이 문장이 그림의 요점이다. 띠 사이에 두면 INNER 띠와 겹친다 — 유도 상자 아래로.
-\node[capt, anchor=north, align=center] at (4.1,-1.45)
+%  이 문장이 그림의 요점이다. 되먹임 상승선(x = 2.5)과 겹치지 않도록 오른쪽에 둔다.
+\node[capt, anchor=north, align=center] at (6.8,-1.25)
   {the output of the outer loop \emph{is} the command of the inner loop};
 
 \end{tikzpicture}

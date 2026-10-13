@@ -73,6 +73,7 @@ Upon completion of this week, the learner is able to:
 5. Explain why a heading error must be wrapped into $(-180°,\ 180°]$, and measure the cost of not wrapping it.
 6. Write the complete heading law in one line — $\mathrm{ssa}$ on the error, the rate term on the measurement, the clamp on the output — and justify each of the three from a measurement made this week.
 7. Follow the commanded moment through the allocator of §3-6 to a pair of shaft speeds, and explain why the moment limit puts one propeller exactly on its own limit.
+8. Run the speed loop of Week 3 and the heading loop of Week 4 on one hull, and state where the two controllers interact and where they do not.
 
 ## Prerequisites and Setup
 
@@ -1137,6 +1138,116 @@ Actual output:
 
 ---
 
+## 4-8. Both inner loops at once: the speed loop joins the heading loop
+
+**What is observed.** Every model so far pushed the hull with a constant $X_{ff} = 60$ N. The heading was controlled and the speed was not: $0.77$ m/s was never commanded by anyone, it is simply where thrust and drag balance. Putting the Week 3 speed loop in that place gives the vessel a second controller, and the two then draw on the same two propellers.
+
+**The result.** Both loops hold their commands, and they do so through each other's transients. The price is paid in the limits: the moment clamp must be recomputed, because the surge force is no longer a known constant.
+
+**Derivation.**
+
+1. **Two laws, unchanged.** Neither controller is modified. The heading law is §4-7's, and the speed law is Week 3's, integrator and anti-windup included:
+
+$$
+N = K_p\,\operatorname{ssa}(\psi_d - \psi) - K_d\, r, \qquad
+X = K_{p,u}(u_d - u) + I, \qquad \dot I = K_{i,u}(u_d - u) + K_{b,u}\bigl(X - X_{raw}\bigr)
+$$
+
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $K_p, K_d$ | heading gains | $300$, $100$; `W04_0_setup`, §4-5 |
+| $K_{p,u}, K_{i,u}$ | speed gains | $200$, $200$; the Week 3 values |
+| $K_{b,u}$ | the speed loop's back-calculation gain | $1$ s⁻¹ — **not** the `Kb` of §4-5, which belongs to the heading integrator |
+| $X_{\max}$ | the surge force limit | $120$ N, both propellers together |
+
+2. **One allocator, two live inputs.** §4-7's allocator already takes $X$ and $N$; what changes is that both now arrive as signals rather than one of them being a constant:
+
+$$
+\begin{bmatrix} T_L \\ T_R \end{bmatrix}
+= \mathbf{T}^{-1}\begin{bmatrix} X \\ N \end{bmatrix}, \qquad
+n_i = \pm\sqrt{\lvert T_i \rvert / k}
+$$
+
+3. **The clamp has to move.** $N_{\max} = 70.85$ N·m was computed at $X = X_{ff} = 60$ N. With a speed loop that can ask for $X_{\max} = 120$ N, the moment that remains available is smaller, and the `Saturation` in the heading loop must hold that smaller number instead:
+
+$$
+N_{speed} = \min\Bigl\{2y_p\bigl(T_{\max} - \tfrac{X_{\max}}{2}\bigr),\; 2y_p\bigl(\tfrac{X_{\max}}{2} - T_{\min}\bigr)\Bigr\} = 47.15\ \text{N·m}
+$$
+
+   Leaving $N_{\max}$ in place would let the allocator ask for a shaft speed the propeller does not have. Week 5 §5-7 derives this expression in full and measures what it costs; this section is where the rule first applies.
+
+4. **Why it is here and not in Week 5.** The guidance of Week 5 produces **two commands at once** — a heading and a speed. The pair of loops that receives them is this model. Checking the inner pair before any guidance is attached means that when the outer loop misbehaves next week, the inner one is already known to be innocent.
+
+### Experiment 4-8 · Two commands, two loops, one hull (10 min)
+
+Both commands are staircases from `W04_0_setup`, each value held for $30$ s, so what the figure shows is tracking rather than a single step response:
+
+| Command | Values | Held for |
+|---|---|---|
+| $u_d$ | $0.8 \to 1.2 \to 1.0 \to 1.4$ m/s | $30$ s each |
+| $\psi_d$ | $0 \to 20 \to -15 \to 30$ deg | $30$ s each |
+
+```matlab
+cd lectures/W04_simulink
+W04_0_setup
+W04_J_build_both          % once, to write the model
+W04_J_speed_and_heading
+```
+
+Actual output:
+
+```
+  W04 Experiment 4-8  both inner loops at once  (Kp = 300, Kd = 100, Kp_u = 200, Ki_u = 200)
+    step   psi_d [deg]   psi end [deg]   u_d [m/s]   u end [m/s]   max |N| [N m]   max X [N]
+     1           0.0           -0.00          0.80         0.800            0.00         120.0
+     2          20.0           20.00          1.20         1.200           47.15         120.0
+     3         -15.0          -15.00          1.00         1.000           47.15          82.3
+     4          30.0           30.00          1.40         1.400           47.15         120.0
+
+    the two limits, and how long each was reached
+      |N| at N_speed = 47.15 N m  for  4.54 s
+      X   at X_max   = 120.0 N    for  1.74 s
+```
+
+![Experiment 4-8: both commands moving, both loops following, and what they ask the propellers for](W04_simulink/img/W04_result_both.png)
+
+| In the figure | Meaning |
+|---|---|
+| panel 1 | the commanded heading and the one achieved, in degrees |
+| panel 2 | the commanded speed and the one achieved, at the same instants |
+| panel 3 | $N$ and $X$, each against its own limit |
+
+**Reading the figure against the derivation.**
+
+| Where to look | What is there | Which line it settles |
+|---|---|---|
+| `psi end` column | $20.00$, $-15.00$, $30.00$ deg against commands of the same | line 1: no steady error, with no integrator in the heading law — §4-3's point, now with the speed changing underneath it |
+| `u end` column | $0.800$, $1.200$, $1.000$, $1.400$ m/s | line 1: the speed loop's integrator is what makes these exact; drag would otherwise leave an offset |
+| panel 1 at $t = 60$ s | the heading swings $35°$ while the speed command also changes | the two commands move at the same instant and neither loop is disturbed by the other |
+| panel 2, the dip after each corner | a few hundredths of m/s, recovered within seconds | a hard turn costs speed, and the integrator buys it back |
+| panel 3, $N$ at every corner | flat at $\pm 47.15$ N·m | line 3: the clamp is `N_speed`, not `N_max` |
+| panel 3, $X$ at the same moments | at $120$ N, its own limit, for $1.74$ s in all | both controllers reach their limits in the same seconds; that is what sharing two propellers means |
+| step 3's row | $\max X = 82.3$ N, below the limit | the only step that asks for **less** speed; the force needed is smaller and nothing saturates |
+
+**What the figure says**
+
+- Two controllers on one hull do not interfere while both stay inside their limits — and the limits are where they meet, which is why the moment clamp had to be recomputed before the speed loop was allowed to exist.
+
+| What to try | What to watch |
+|---|---|
+| In `W04_0_setup` set `N_speed = N_max;` then rerun | the allocator asks for more than the starboard propeller has at every corner; `n` is clamped and the heading response stops matching the law |
+| `u_d_steps = [1.4 1.4 1.4 1.4];` | the speed loop holds one value and the corners alone disturb it — the dips of panel 2 without the steps |
+| `Kb_u = 0;` | the back-calculation removed: the speed overshoots after each step that saturates the force |
+| Double-click `speed loop`, then `heading autopilot` | the two subsystems are the diagrams of Weeks 3 and 4 unchanged — both are built by `_tools/add_speed_loop` and `_tools/add_heading_loop`, which Week 5 calls as well |
+
+> [!tip] In class
+> - **Purpose** — show that the two inner loops are independent in operation and coupled only through the actuator limits.
+> - **Point to** — panel 3 at $t = 90$ s: both traces are flat against their limits at the same moment.
+> - **Ask** — "Which loop wins when both want more?" Neither: the allocator splits what is asked, and each loop's own Saturation is what keeps the demand feasible.
+> - **Take away** — the pair of commands that Week 5's guidance will produce already has somewhere to go.
+
+---
+
 # Part 2 · Laboratory run order
 
 The experiments of Part 1 are worked through in order; this table is the index of what was run, for repeating the week at home.
@@ -1157,6 +1268,7 @@ Every example has **its own model**, laid out as in Weeks 2 and 3: the controlle
 | 4-5 | `W04_H_tuning` | `W04_H_tuning_by_hand` | the tuning order, a big turn, and the back-calculation gain |
 | 4-6 | `W04_G_wrap` | `W04_G_the_wrap` | a command across $\pm 180°$, with an `ssa` switch |
 | 4-7 | `W04_F_PID` | `verify_w04_heading` | the assembled law, and the moment followed to the two shafts |
+| 4-8 | `W04_J_both` | `W04_J_build_both`, `W04_J_speed_and_heading` | the speed loop and the heading loop together, each following a staircase command |
 
 - The scripts only repeat what Run already shows, for several gains at once, and print the numbers quoted in Part 1.
 - Each experiment ends with an **In class** note: purpose, what to point at, a question with its answer, and the sentence to take away.
