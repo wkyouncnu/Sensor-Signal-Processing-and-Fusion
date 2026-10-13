@@ -1222,6 +1222,19 @@ Measured by Experiment 5-6, below, mean $\lvert y_e\rvert$ on each leg from 25 s
 
 The result, $\Delta = 5$ m, $R = 3$ m, $\kappa = 0.3$, is the default in `W05_0_setup.m`. No model of the vessel was used; only what the Scope and the track showed.
 
+**Is this the performance to expect?** Tuning by measurement answers "which setting is best"; it does not answer "is the result any good". That second question is answered by predicting each number **before** reading it, from the vessel rather than from the guidance, and then comparing. Six predictions, and what the mission of §5-7 actually gives:
+
+| What should happen, and why | Predicted | Measured | Verdict |
+|---|---|---|---|
+| **Small-signal separation.** On a straight leg the inner loop should track its command so well that the guidance never sees it | heading error well under $1°$ | $0.38°$ mean over the leg | as expected |
+| **Path keeping on a straight leg**, with the heading loop that accurate and no current | well inside $\Delta/10 = 0.5$ m | $0.411$ m mean, $0.880$ m worst | as expected |
+| **Speed loop**, a PI with anti-windup | fast rise, small overshoot, no steady error | $95\%$ in $1.4$ s, overshoot $0.0216$ m/s $(2.2\%)$, steady error $0.0013$ m/s | as expected |
+| **The limits are reached but never crossed** — the whole point of §5-7 | $\lvert N\rvert \le 47.15$, $X \le 120$, $n \in [-101.7,\ 103.9]$ | $47.15$, $120.00$, $\max n = 103.93$, $\min n = -96.55$ | exactly on the limit, never past it |
+| **Corner excursion is set by the turn radius, not by the guidance.** With $N$ at its limit the vessel turns at some $r_{\max}$, and $R_{\text{turn}} = U/r_{\max}$ | $r_{\max} = 15.1$ deg/s at $1.0$ m/s $\Rightarrow R_{\text{turn}} = 3.8$ m | excursion $2.86$ m at the first corner | as expected, and **smaller** than $R_{\text{turn}}$ because §5-4 starts the turn $R = 3$ m early |
+| **Large-signal separation does not hold.** A $62°$ corner saturates the moment, so the inner loop is rate-limited | inner response slower than the look-ahead time $\Delta/U = 5.0$ s | $8.4$ s to come within $10\%$ of the new command | **as expected, and it is the binding constraint** |
+
+- The last two rows are the honest answer to "how well does this follow a path". On the straight parts the cascade behaves exactly as a cascade should, and the error is a fraction of $\Delta$. At the corners it does not: the moment saturates, the inner loop becomes the slow one, and the excursion that results is the vessel's turning circle. **No value of $\Delta$, $R$ or $\kappa$ can improve that** — only more moment, a slower speed, or a path with gentler corners. Week 6 is where more moment comes from; Week 8 is where the mission stops asking for right angles.
+
 > [!note] What is left out this week
 > The previous version of this week derived the laws in full, proved their stability with Lyapunov functions, and added a third law, ALOS, which estimates the crab angle directly. That material is kept in `W05_simulink/_previous_version/` for reference; nothing in this week's tuning depends on it.
 

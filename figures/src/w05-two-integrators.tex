@@ -83,9 +83,13 @@
 %   Delta = 5 m. 가로 0..20 m 를 60 mm, 세로 0..1 m/s 를 34 mm 로.
 % =====================================================================
 \begin{scope}[shift={(18,-34)}]
-  \draw[grid2] (0,0) grid[xstep=15,ystep=8.5] (60,34);
+  %  격자를 축 끝까지 올린다. 1.0 에서 멈추면 그 위의 파란 선이 **잘린 것처럼** 보인다
+  %  (사용자 지적, 2026-10-13). 축이 어디까지인지가 그림에 있어야 한다.
+  %  The grid reaches the top of the axis: stopping it at 1.0 made the blue line above
+  %  it look cut off rather than continuing.
+  \draw[grid2] (0,0) grid[xstep=15,ystep=8.5] (60,42.5);
   \draw[axis2] (0,0) -- (66,0);
-  \draw[axis2] (0,0) -- (0,40);
+  \draw[axis2] (0,0) -- (0,46);
   \node[nte, anchor=west] at (66.5,0) {$y_e^{\,p}$ \ [m]};
   %  축 이름표는 축 **왼쪽**에. 축 위에 두면 보통 적분의 직선과 겹친다
   \node[nte, anchor=south east, align=right] at (-0.5,41.5) {$\dot y_{\mathrm{int}}^{\,p}$ \ [m/s]};
@@ -95,9 +99,11 @@
     \node[nte, anchor=east] at (-1.2,\ly) {\v};
 
   %  보통 적분: 기울기 1. 화면 위로 바로 나간다
-  \draw[curveB] plot[domain=0:1.18, samples=20] ({3*\x}, {34*\x});
-  \draw[curveB, densely dashed] (3.54,40.1) -- (8,46);
-  \node[knownc, font=\scriptsize, anchor=west] at (8.4,46)
+  %  화살촉을 달아 **계속 올라간다**는 뜻으로 읽히게 한다. 그냥 끊으면 잘린 것처럼 보인다
+  %  An arrowhead says the line continues; a bare end reads as a clipped drawing
+  \draw[curveB, -{Stealth[length=5pt,width=3.6pt]}] plot[domain=0:1.42, samples=20] ({3*\x}, {34*\x});
+  \draw[curveB, densely dashed] (4.4,48.6) -- (8,52);
+  \node[knownc, font=\scriptsize, anchor=west] at (8.4,52)
        {$\dot y_{\mathrm{int}}^{\,p} = 20$ m/s at $y_e^{\,p} = 20$ m — forty times the cap};
 
   %  비선형: 5 y / (25 + y^2)
