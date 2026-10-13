@@ -131,6 +131,38 @@ ok = report(ok, '8 the mission ends at the last waypoint', c8, ...
             sprintf('ran %.1f s of %g; stopped %.2f m short; held %.2f s after the command', ...
                     R8.t(end), V8.T_final, d8, t8));
 
+%  9  **구현이 식과 같은가** (2026-10-13, 사용자 질문: "알고리즘이 제대로 적용된 것인지").
+%     앞의 검사들은 성질(정상상태 오차, 한계, 분기)을 본다. 이것은 블록 안의 코드가
+%     강의에 적힌 **그 식 자체**인지를 본다: 로그의 위치 (N, E) 만 가지고 5-2·5-4·5-5 의
+%     식으로 psi_d 를 **처음부터 다시 계산**해 모델이 실제로 낸 psi_d 와 비교한다.
+%     같은 코드를 두 번 부르는 것이 아니라, 강의 본문의 수식을 여기에 손으로 옮겨 적어
+%     돌린다 - 그래야 "문서와 모델이 같다" 는 말이 검사가 된다.
+%     Earlier checks test properties; this one tests the implementation against the
+%     written equations. Taking only the logged positions, psi_d is recomputed from
+%     the expressions of sections 5-2, 5-4 and 5-5 - transcribed here by hand, not
+%     called from the model - and compared with the psi_d the model produced.
+V9 = W05_vars();
+R9 = W05_read('W05_F_ILOS', 'law', 3, 'V_c', 0.3, 'beta_c', pi/2);
+k9 = 1;  yint = 0;  n9 = numel(V9.WP_N);  psid = zeros(size(R9.t));
+for i = 1:numel(R9.t)
+    %  5-2: 다리 방향과 경로 좌표 / the leg angle and the path coordinates
+    kn   = min(k9+1, n9);
+    pi_p = atan2(V9.WP_E(kn) - V9.WP_E(k9), V9.WP_N(kn) - V9.WP_N(k9));
+    dN   = R9.N(i) - V9.WP_N(k9);   dE = R9.E(i) - V9.WP_E(k9);
+    x_e  =  dN*cos(pi_p) + dE*sin(pi_p);
+    y_e  = -dN*sin(pi_p) + dE*cos(pi_p);
+    %  5-4: 전환 / the switching test
+    d9 = hypot(V9.WP_N(kn) - V9.WP_N(k9), V9.WP_E(kn) - V9.WP_E(k9));
+    if (d9 - x_e) < V9.R_switch && k9 < n9-1, k9 = k9 + 1; end
+    %  5-5: ILOS 의 법칙과 적분 / the law and its integral
+    psid(i) = pi_p - atan(y_e/V9.Delta + (V9.kappa/V9.Delta)*yint);
+    yint    = yint + V9.h * V9.Delta*y_e / (V9.Delta^2 + (y_e + V9.kappa*yint)^2);
+end
+%  모델의 psi_d 는 **도** 로 기록된다. 둘 다 (-180, 180] 로 감아서 비교한다.
+e9 = max(abs(atan2d(sind(psid*180/pi - R9.psi_d), cosd(psid*180/pi - R9.psi_d))));
+ok = report(ok, '9 the block computes the equations the lecture writes', e9 < 1e-9, ...
+            sprintf('worst psi_d difference over the whole run: %.1e deg', e9));
+
 fprintf('\n  %s\n\n', ternary(ok, 'ALL CHECKS PASSED', '불일치 있음 — 위 FAIL 을 볼 것'));
 end
 

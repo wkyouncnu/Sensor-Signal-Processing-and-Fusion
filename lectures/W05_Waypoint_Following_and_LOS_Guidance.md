@@ -1016,9 +1016,30 @@ Expected output:
     0.2                  1.344                -15.0                    1.344
     0.3                  2.107                -22.8                    2.107
     0.4                  3.012                -31.1                    3.012
+
+    the direction it points and the direction it goes  (measured over t > 100 s)
+      V_c [m/s]   mean |chi - psi| [deg]   heading psi [deg]   course chi [deg]
+      0                          0.0984                -0.1                0.0
+      0.3                       23.0066               -23.0                0.0
 ```
 
-- The last two columns are line 4, to the millimetre in every row. The vessel points $22.8°$ into a $0.3$ m/s current and travels due north — Week 4 §4-4, now costing a path error.
+- The last two columns of the first table are line 4, to the millimetre in every row. The vessel points $22.8°$ into a $0.3$ m/s current and travels due north — Week 4 §4-4, now costing a path error.
+
+**Course against heading, measured.** The second table is the crab angle of the callout above, taken from this vessel rather than from a definition. The course over ground is computed by differentiating the track, $\chi = \operatorname{atan2}(\dot E,\ \dot N)$, which is what a GNSS receiver reports and what this vessel can supply — it logs no sway velocity $v$, and §5-5 line 10b is partly about that.
+
+![The heading and the course on one straight leg, without a current and with one](W05_simulink/img/W05_result_course_vs_heading.png)
+
+| In the figure | What is there |
+|---|---|
+| left panel, after $t = 100$ s | $\psi$ and $\chi$ on top of each other at $0°$: with no current the bow points where the vessel goes, and the mean difference is $0.098°$ |
+| right panel, after $t = 100$ s | $\psi = -23.0°$ while $\chi = 0.0°$ — the vessel travels due north while pointing west of north, and the gap is $23.0°$ |
+| both panels, the first $60$ s | the approach from $20$ m east of the path, where heading and course both swing to $-75°$ and are not yet anything to measure |
+| the dotted line at $100$ s | where the measurement starts, for that reason |
+
+- **Two independent measurements of the same thing agree.** The crab angle read off the angles is $23.0°$; the offset LOS leaves is $2.107$ m, and $\Delta\tan 23.0° = 2.12$ m. Line 3 said those two must be the same number, and they are to about 1 %.
+
+> [!note] The same experiment in the 2025 notes, on a different vessel
+> *2. USV 제어기 설계* reports $\operatorname{mean}\lvert\chi-\psi\rvert = 1.38°$ with no current and $13.63°$ in a $0.4$ m/s current at $20°$, over a five-waypoint mission. The numbers here are larger because the scenario is harder, not because the vessels differ in kind: this leg runs **across** the current rather than at $20°$ to it, and the Otter makes good only $0.77$ m/s at $X_{ff} = 60$ N, so the same current turns the bow further. What the two measurements share is the shape of the answer — a crab angle that is negligible in still water and tens of degrees in a current — and that is what the integral of §5-5 has to supply.
 
 ### Experiment 5-5b · The integral that removes it (8 min)
 
@@ -1047,6 +1068,8 @@ Expected output:
 > | `kappa = 0` | line ② still runs but contributes nothing to line ①, so the block becomes exactly the LOS of §5-3. Not approximately: run this way it reproduces `W05_F_LOS` to $0.000\times10^{0}$ m, which is how Experiment 5-5a and this one are kept comparable |
 >
 > The block is discrete at $h$ (`set_mlfcn`'s sample-time argument), because a block with memory must be told how often to update it.
+>
+> **And the block is the equations, checked by machine.** `verify_w05_guidance` check 9 takes the logged positions of a full mission in a current, recomputes $\psi_d$ from §5-2's rotation, §5-4's switching test and the two lines above — transcribed into the checker by hand, not called from the model — and compares. The worst disagreement over the whole run is $0.0\times10^{0}$ degrees. What the lecture writes and what the vessel was steered by are the same expression.
 
 **Opening and running.**
 
