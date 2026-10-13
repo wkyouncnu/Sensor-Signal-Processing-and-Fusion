@@ -1006,15 +1006,16 @@ $$
 F_{L,R} = \frac{X}{2} \pm \frac{N}{2b}
 $$
 
-   The surge force is still shared equally; the moment is **added to the port propeller and taken from the starboard one**, which is what makes the vessel turn to starboard for $N > 0$. Where that matrix comes from — the column rule applied to each propeller in turn, and the empty row it produces — is §3-6, and this is the figure to re-read with $N \neq 0$ in mind:
+   The surge force is still shared equally; the moment is **added to the port propeller and taken from the starboard one**, which is what makes the vessel turn to starboard for $N > 0$. Where that matrix comes from is §3-6, and this is the figure to re-read now that $N$ is no longer zero:
 
-![Why T is what it is: the column rule applied to each propeller in turn](../figures/w03-why-T.svg)
+![Three forces read off the hull, the square matrix that remains, and its inverse](../figures/w03-why-T.svg)
 
 | In the figure | What it means now that $N \neq 0$ |
 |---|---|
-| the $+b$ and $-b$ in the third row | the two propellers' moments oppose, which is the only reason a moment can be commanded at all |
-| the empty middle row | still empty: this hull makes no sideways force, so a heading is the **only** way it can go anywhere but straight |
-| the curved arrow | the sign this week relies on — positive $N$ swings the bow to starboard |
+| the teal $N$ arrow on the hull | this week's output, and the first week it is not zero |
+| the third row, $b\,(F_L - F_R)$ | the moment comes from the **difference**, so commanding one means driving the two propellers apart |
+| the empty middle row | still empty: the hull makes no sideways force, so a heading is the **only** way it goes anywhere but straight — which is what Week 5 will build on |
+| line 3, $\tfrac{1}{2b}$ and $-\tfrac{1}{2b}$ | the moment divided by the lever, added to one propeller and taken from the other. A short lever costs thrust: $N = 70.85$ N·m over $2b = 0.79$ m needs $89.68$ N of difference |
 
 The second step, the propeller curve, is where a demanded thrust becomes a shaft speed, and it is the step that decides whether the demand was possible at all:
 

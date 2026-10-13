@@ -1,167 +1,128 @@
-% figures/w03-why-T.svg — 배분행렬 T 가 왜 [1 1; b -b] 인가. 열을 하나씩 세운다.
+% figures/w03-why-T.svg — T 행렬이 왜 나오는가. 수업 노트(2026-10-13) 1쪽 아래 그대로.
 %
 %   bash _tools/tikz2svg.sh figures/src/w03-why-T.tex figures/w03-why-T.svg
 %
-% 사용자 지시 (2026-10-13): "왜 T 행렬이 저렇게 되는지도 선박 그림과 함께
-% (다른 곳 보면 있을 거야..) 다시 찾아서 자세히 그려줘봐"
+% 사용자 지시 (2026-10-13): "이 그림 말한거야.....복잡하게 다른 그림 말고....",
+% "이 그림식으로 그려줘.... 이런 그림 비슷한게 있을거야.. T 행렬이 왜 나오는지도"
 %
-% "다른 곳" 은 부록 A1 이다. `figures/a1-column-rule.svg` 가 **일반 규칙**을 유도한다 —
-% (x,y) 에서 e 방향으로 미는 추진기 하나가 B 의 열 하나를 만든다:
+% 처음에 STEP 0/1/2 짜리 유도 그림을 그렸다가 **너무 복잡하다**고 되돌아왔다.
+% 노트의 구조는 넷뿐이고, 그 넷이 위에서 아래로 읽힌다:
+%     ① 배를 위에서 본 그림  ② [X;Y;N] = [F_L+F_R; 0; b(F_L-F_R)]
+%     ③ [X;N] = T [F_L;F_R]  ④ [F_L;F_R] = T^-1 [X;N]
+% 더 넣지 않는다. 열 규칙의 일반형은 `w01-otter-layout.svg` 와 부록 A1 이 이미 맡고 있다 —
+% 그 그림은 **B 를 선체에서 읽어 내는 데까지** 가고 멈춘다. 이 그림은 그 다음 한 걸음,
+% **쓸 수 있게 뒤집는 것**이다. 둘이 겹치지 않는다.
 %
-%     b_i = [ e_x ; e_y ; x_i e_y - y_i e_x ]^T        (A1 2절)
-%
-% 이 그림은 그 규칙을 **Otter 의 두 추진기에 실제로 적용**해서 T 를 세운다. A1 의 그림이
-% "규칙이 왜 맞는가" 라면, 이 그림은 "그 규칙이 이 배에서 무엇을 내놓는가" 다.
-% 3 주차 학생은 A1 을 아직 읽지 않았으므로 규칙도 함께 적되, 유도는 A1 로 넘긴다.
-%
-% 수치는 MATLAB 으로 확인했다 — otter_B 와 0 차이 (2026-10-13).
-%
-% 배치 주의 (렌더해서 고친 것):
-%   선체 패널은 **글자를 선체 밖으로** 빼야 한다. 폰툰이 y = -1.7 .. 1.25 를 채우므로
-%   위치 벡터의 좌표·지레·회전 설명이 전부 그 위에 겹쳤다. 좌표는 폰툰 아래,
-%   지레는 더 아래, 회전 설명은 선체 오른쪽 바깥에 둔다.
-\documentclass[border=6pt]{standalone}
+% 수치는 MATLAB 으로 확인했다: T^-1 이 손으로 푼 [1/2 1/(2b); 1/2 -1/(2b)] 와 5.6e-17,
+% 열 규칙으로 세운 B 가 otter_B 와 0 차이 (2026-10-13).
+\documentclass[border=10pt]{standalone}
 \input{gnc-style}
 
 \definecolor{knownc}{HTML}{1D4ED8}
 
 \tikzset{
-  hull/.style    = {ink, line width=0.9pt, fill=black!4},
-  pont/.style    = {ink, line width=0.7pt, fill=pathc!12},
-  evec/.style    = {errc, line width=1.5pt, -{Stealth[length=5.2pt,width=3.8pt]}},
-  rvec/.style    = {knownc, line width=1.1pt, -{Stealth[length=4.6pt,width=3.2pt]}},
-  ctr/.style     = {soft, line width=0.4pt, densely dashed},
-  spin/.style    = {alng, line width=1.2pt, -{Stealth[length=4.6pt,width=3.4pt]}},
-  ax/.style      = {ink, line width=0.7pt, -{Stealth[length=4.6pt,width=3.2pt]}},
-  lever/.style   = {knownc, line width=0.8pt,
-                    {Stealth[length=3.2pt,width=2.2pt]}-{Stealth[length=3.2pt,width=2.2pt]}},
-  lbl/.style     = {font=\scriptsize},
-  rule/.style    = {draw=accent, line width=1.0pt, fill=accent!5, inner sep=5pt,
-                    rounded corners=2pt, align=center, font=\small},
-  colL/.style    = {draw=errc, line width=0.9pt, fill=errc!5, inner sep=5pt,
-                    rounded corners=2pt, align=left, font=\scriptsize},
-  colR/.style    = {draw=flow, line width=0.9pt, fill=flow!5, inner sep=5pt,
-                    rounded corners=2pt, align=left, font=\scriptsize},
-  want/.style    = {draw=accent, line width=1.1pt, fill=white, inner sep=5pt,
-                    rounded corners=2pt, align=center, font=\small},
-  capt/.style    = {font=\scriptsize\bfseries, warn},
-  stage/.style   = {font=\small\bfseries, ink},
+  hull/.style   = {ink, line width=1.0pt, fill=black!3},
+  prop/.style   = {ink, line width=0.8pt, fill=black!25},
+  thrust/.style = {errc, line width=1.5pt, -{Stealth[length=5.2pt,width=3.8pt]}},
+  force/.style  = {pathc, line width=1.5pt, -{Stealth[length=5.2pt,width=3.8pt]}},
+  spin/.style   = {pathc, line width=1.3pt, -{Stealth[length=4.8pt,width=3.4pt]}},
+  ax/.style     = {ink, line width=0.8pt, -{Stealth[length=4.8pt,width=3.4pt]}},
+  arm/.style    = {knownc, line width=0.9pt,
+                   {Stealth[length=3.4pt,width=2.4pt]}-{Stealth[length=3.4pt,width=2.4pt]}},
+  ctr/.style    = {soft, line width=0.4pt, densely dashed},
+  lead/.style   = {warn, line width=0.7pt, -{Stealth[length=3.6pt,width=2.6pt]}},
+  lbl/.style    = {font=\scriptsize},
+  note/.style   = {font=\scriptsize, warn},
+  capt/.style   = {font=\scriptsize\bfseries, warn},
 }
 
 \begin{document}
 \begin{tikzpicture}[x=1cm, y=1cm]
 
 % =====================================================================
-% STEP 0 — 규칙 (부록 A1 에서 유도한 것)
+% 배를 위에서 / the hull from above
 % =====================================================================
-\node[stage, anchor=west] at (-2.8,4.55) {STEP 0 \ \ the rule, derived in Appendix A1};
-\node[rule, text width=8.2cm, anchor=north west] at (-2.8,4.15)
-  {one propeller at $(x_i, y_i)$ pushing along the unit vector $\mathbf{e}_i$
-   contributes \textbf{one column} of $\mathbf{B}$\\[5pt]
-   $\mathbf{b}_i = \big[\;e_x \quad e_y \quad x_i e_y - y_i e_x \;\big]^{\!\top}$\\[4pt]
-   {\scriptsize the third entry is the $z$ component of $\mathbf{r}_i \times \mathbf{e}_i$ ---
-    force times perpendicular distance, with the sign already in it}};
+\begin{scope}[shift={(0,0)}]
+  \draw[ctr] (0,-1.30) -- (0,2.95);
 
-% =====================================================================
-% STEP 1 — 그 규칙을 이 배에 적용한다
-% =====================================================================
-\node[stage, anchor=west] at (-2.8,1.25) {STEP 1 \ \ apply it to this hull, one propeller at a time};
+  %  선체 — 노트의 집 모양 그대로 / the hull, the shape the note draws
+  \draw[hull] (-1.10,0) -- (-1.10,1.45) -- (0,2.30) -- (1.10,1.45) -- (1.10,0) -- cycle;
 
-\begin{scope}[shift={(0.4,-3.1)}]
-  \draw[ctr] (0,-2.9) -- (0,3.1);
-  \draw[pont] (-1.75,-1.7) rectangle (-0.95,1.25);
-  \draw[pont] ( 0.95,-1.7) rectangle ( 1.75,1.25);
-  \draw[hull] (-1.75,0.35) rectangle (1.75,1.25);
+  %  두 추진기 / the two propellers, straddling the transom
+  \draw[prop] (-0.82,-0.17) rectangle (-0.54,0.17);
+  \draw[prop] ( 0.54,-0.17) rectangle ( 0.82,0.17);
 
-  %  축 — 이름표는 화살표 끝 바깥에 / axes, named beyond their tips
-  \draw[ax] (0,0) -- (0,2.95);   \node[lbl, anchor=south] at (0,3.02) {$x_b$ \ forward};
-  \draw[ax] (0,0) -- (3.05,0);   \node[lbl, anchor=west]  at (3.12,0) {$y_b$ \ starboard};
-  \fill[ink] (0,0) circle (1.3pt);
-  \node[lbl, anchor=north east] at (-0.08,-0.10) {$o_b$};
+  %  추력 — 둘 다 앞으로 / both thrusts act forward
+  \draw[thrust] (-0.68,0.20) -- (-0.68,1.25);
+  \draw[thrust] ( 0.68,0.20) -- ( 0.68,1.25);
+  \node[lbl, errc, anchor=east] at (-0.95,0.62) {$F_L$};
+  \node[lbl, errc, anchor=west] at ( 0.95,0.62) {$F_R$};
 
-  %  위치 벡터 r / the position vectors
-  \draw[rvec] (0,0) -- (-1.35,0);
-  \draw[rvec] (0,0) -- ( 1.35,0);
-  \node[lbl, knownc, anchor=south] at (-0.70,0.05) {$\mathbf{r}_L$};
-  \node[lbl, knownc, anchor=south] at ( 0.70,0.05) {$\mathbf{r}_R$};
-  %  좌표는 폰툰 **아래** / the coordinates go below the pontoons
-  \node[lbl, knownc, anchor=north] at (-1.35,-1.80) {$(0,\,-b)$};
-  \node[lbl, knownc, anchor=north] at ( 1.35,-1.80) {$(0,\,+b)$};
+  %  축 / the body axes
+  \draw[ax] (0,0) -- (0,2.95);   \node[lbl, anchor=south] at (0,3.02) {$x_b$};
+  \draw[ax] (0,0) -- (2.25,0);   \node[lbl, anchor=west]  at (2.32,0) {$y_b$};
+  \fill[ink] (0,0) circle (1.4pt);
 
-  %  추진 방향 e — 둘 다 앞으로 / both unit vectors point forward
-  \draw[evec] (-1.35,1.25) -- (-1.35,2.45);
-  \draw[evec] ( 1.35,1.25) -- ( 1.35,2.45);
-  \node[lbl, errc, anchor=south east] at (-1.20,2.50) {$\mathbf{e}_L$};
-  \node[lbl, errc, anchor=south west] at ( 1.50,2.50) {$\mathbf{e}_R$};
-  \node[lbl, errc, anchor=east, align=right] at (-1.95,1.95)
-    {both propellers are\\ \textbf{fixed} and face\\ forward: $\mathbf{e} = (1,0)$};
+  %  배가 받는 것 / what the vessel receives
+  \draw[force] (0.18,0.55) -- (0.18,1.95);
+  \node[lbl, pathc, anchor=west] at (0.26,1.70) {$X$};
+  \draw[spin] (0.62,2.12) arc (58:6:0.80);
+  \node[lbl, pathc, anchor=west] at (0.86,2.08) {$N$};
 
-  %  지레 — 폰툰보다 더 아래 / the lever, below the coordinates
-  \draw[lever] (-1.35,-2.45) -- (0,-2.45);
-  \node[lbl, knownc, anchor=north] at (-0.68,-2.52) {$b = 0.3950$ m};
+  %  모멘트 팔 / the lever, below the transom
+  \draw[arm] (-0.68,-0.62) -- (0,-0.62);
+  \draw[arm] ( 0,-0.62)    -- (0.68,-0.62);
+  \node[lbl, knownc, anchor=north] at (-0.34,-0.68) {$b$};
+  \node[lbl, knownc, anchor=north] at ( 0.34,-0.68) {$b$};
+  \node[lbl, knownc, anchor=north] at (0,-1.12) {$b = 0.3950$ m};
 
-  %  회전은 선체 **오른쪽 위**의 빈 곳에. 아래에 두면 가운데 단락과 겹친다 (렌더해서 고침)
-  \draw[spin] (1.95,1.95) arc (62:14:2.3);
-  \node[lbl, alng, anchor=west, align=left] at (2.25,1.55)
-    {push \textbf{port} alone\\
-     $\Rightarrow$ bow swings\\
-     \ \ \ to starboard\\
-     $\Rightarrow$ $N > 0$};
-
-  \node[capt, anchor=north] at (0.4,-3.25) {seen from above};
+  \node[capt, anchor=north] at (0.2,-1.55) {seen from above};
 \end{scope}
 
 % =====================================================================
-% 열 두 개를 세운다
+% 노트의 세 줄 / the three lines of the note
 % =====================================================================
-\node[colL, text width=5.6cm, anchor=north west] at (5.6,1.00)
-  {\textbf{\textcolor{errc}{port propeller}} \ --- \ $(x,y) = (0,\,-b)$\\[4pt]
-   $e_x = 1$ \hfill all of its push goes into $X$\\[2pt]
-   $e_y = 0$ \hfill none of it goes sideways\\[2pt]
-   $x e_y - y e_x = 0\cdot 0 - (-b)\cdot 1 = \mathbf{+b}$\\[4pt]
-   $\Rightarrow\ \mathbf{b}_L = \big[\,1 \quad 0 \quad +b\,\big]^{\!\top}$};
+\node[anchor=north west, align=left, font=\small] at (3.7,2.95)
+  {\textbf{1.\ \ read the three forces off the picture}\\[5pt]
+   $\begin{bmatrix} X \\ Y \\ N \end{bmatrix}
+    = \begin{bmatrix} F_L + F_R \\[2pt] 0 \\[2pt] b\,(F_L - F_R) \end{bmatrix}$};
 
-\node[colR, text width=5.6cm, anchor=north west] at (5.6,-1.75)
-  {\textbf{\textcolor{flow}{starboard propeller}} \ --- \ $(x,y) = (0,\,+b)$\\[4pt]
-   $e_x = 1$ \hfill the same push\\[2pt]
-   $e_y = 0$ \hfill the same nothing sideways\\[2pt]
-   $x e_y - y e_x = 0\cdot 0 - (+b)\cdot 1 = \mathbf{-b}$\\[4pt]
-   $\Rightarrow\ \mathbf{b}_R = \big[\,1 \quad 0 \quad -b\,\big]^{\!\top}$};
+%  설명은 행렬 **오른쪽 바깥**에. 가까이 두면 행렬 위에 찍힌다 (렌더해서 고침)
+\node[note, anchor=north west, align=left] at (7.65,1.95)
+  {both push forward, so they \textbf{add}\\[11pt]
+   neither pushes sideways:\\ \textbf{this row is empty, always}\\[9pt]
+   opposite arms, so they \textbf{subtract}};
 
-\node[anchor=north west, align=left, font=\scriptsize, soft, text width=5.6cm] at (5.6,-4.50)
-  {\textbf{only the sign of $y$ differs}, and it is the one that
-   matters: the two sit on opposite sides, so their moments
-   are opposite and their pushes are not};
-
-% =====================================================================
-% STEP 2 — 열을 나란히 세우면 B, 0 행을 지우면 T
-% =====================================================================
-\node[stage, anchor=west] at (12.0,1.25) {STEP 2 \ \ stack the columns};
-
-\node[want, anchor=north west] at (12.0,1.00)
-  {$\mathbf{B} = \big[\ \mathbf{b}_L \ \ \mathbf{b}_R\ \big]
-    = \begin{bmatrix} 1 & 1 \\ 0 & 0 \\ b & -b \end{bmatrix}
-    \begin{matrix} \scriptstyle\leftarrow X \\ \scriptstyle\leftarrow Y \\ \scriptstyle\leftarrow N \end{matrix}$};
-
-\node[anchor=north west, align=left, font=\scriptsize, warn, text width=5.1cm] at (12.0,-0.90)
-  {\textbf{the middle row is empty.} No combination of
-   $F_L$ and $F_R$ makes $Y$, so this hull \emph{cannot be
-   pushed sideways} --- which is why every later week
-   turns the vessel in order to move it};
-
-\node[want, anchor=north west] at (12.0,-2.60)
-  {delete that row:\\[5pt]
+\node[anchor=north west, align=left, font=\small] at (3.7,-0.55)
+  {\textbf{2.\ \ drop the empty row --- it is square now}\\[5pt]
    $\begin{bmatrix} X \\ N \end{bmatrix}
-    = \underbrace{\begin{bmatrix} 1 & 1 \\ b & -b \end{bmatrix}}_{\mathbf{T}}
+    = \underbrace{\begin{bmatrix} 1 & 1 \\ b & -b \end{bmatrix}}_{\textstyle \mathbf{T}}
       \begin{bmatrix} F_L \\ F_R \end{bmatrix}$};
 
-\node[anchor=north west, align=left, font=\scriptsize, text width=5.1cm] at (12.0,-4.50)
-  {$2\times 2$ with $\det\mathbf{T} = -2b \neq 0$: two actuators,
-   two controllable forces, and exactly one way to
-   split them --- so the inverse of \S3-6 exists};
+\node[note, anchor=north west, align=left] at (7.65,-1.05)
+  {$\mathbf{T}$ is \textbf{geometry}, nothing else:\\
+   it never changes while the\\
+   propellers stay bolted where they are};
 
-\node[capt, anchor=north, align=center] at (14.5,-5.85)
-  {$\mathbf{T}$ is not chosen --- it is read off the hull};
+\node[anchor=north west, align=left, font=\small] at (3.7,-3.05)
+  {\textbf{3.\ \ invert it --- that is the allocator}\\[5pt]
+   $\begin{bmatrix} F_L \\ F_R \end{bmatrix}
+    = \mathbf{T}^{-1}\begin{bmatrix} X \\ N \end{bmatrix}
+    = \begin{bmatrix} \tfrac12 & \tfrac{1}{2b} \\[3pt] \tfrac12 & -\tfrac{1}{2b} \end{bmatrix}
+      \begin{bmatrix} X \\ N \end{bmatrix}$};
+
+\node[note, anchor=north, align=center] at (4.95,-5.15) {known};
+\draw[lead] (4.95,-5.05) -- (4.95,-4.70);
+
+%  "known" 과 같은 모양으로 **식 아래**에. 옆에 두면 마지막 괄호 위에 찍힌다
+\node[note, anchor=north, align=center] at (8.15,-5.15)
+  {what the two\\ controllers asked for};
+\draw[lead] (8.15,-5.05) -- (8.15,-4.70);
+
+\node[capt, anchor=north west, align=left] at (3.7,-6.35)
+  {$\det \mathbf{T} = -2b \neq 0$, so the inverse exists and the split is unique:
+   each propeller takes half of $X$,\\
+   and the moment is added to one and taken from the other};
 
 \end{tikzpicture}
 \end{document}

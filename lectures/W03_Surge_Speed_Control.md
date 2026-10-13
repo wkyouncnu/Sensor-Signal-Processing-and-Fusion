@@ -645,35 +645,39 @@ $$
 | $X$ | surge force, the output of `speed loop` | N |
 | $N$ | yaw moment, zero this week | N·m |
 
-   That pair of equations can be written down by inspection for a hull this simple, and for anything less simple it cannot. The general statement — **one thruster contributes one column** — is derived in Appendix A1 §A1-2, and applying it twice to the Otter produces exactly the two equations above:
+   Written with the sideways force included, so that all three appear together:
 
 $$
-\mathbf{b}_i = \big[\;e_x \quad e_y \quad x_i e_y - y_i e_x \;\big]^{\!\top}
+\begin{bmatrix} X \\ Y \\ N \end{bmatrix}
+= \begin{bmatrix} F_L + F_R \\ 0 \\ b\,(F_L - F_R) \end{bmatrix}
 $$
 
-![Why T is what it is: the column rule applied to each propeller in turn](../figures/w03-why-T.svg)
+![Three forces read off the hull, the square matrix that remains, and its inverse](../figures/w03-why-T.svg)
 
 | In the figure | Meaning |
 |---|---|
-| STEP 0 | the rule itself; its derivation and its proof are Appendix A1 |
-| STEP 1, the hull | both propellers fixed and facing forward, $\mathbf{e} = (1,0)$, at $(0, \mp b)$ |
-| STEP 1, the two coloured boxes | the rule evaluated once per propeller — the arithmetic, not the result |
-| STEP 2, $\mathbf{B}$ | the two columns stacked, including the row that turns out to be empty |
-| STEP 2, $\mathbf{T}$ | what is left after that empty row is deleted |
+| the hull, seen from above | both propellers bolted facing forward, one at each side, $b$ from the centreline |
+| the red arrows $F_L$, $F_R$ | what the two propellers produce |
+| the teal arrows $X$, $N$ | what the **vessel** receives — the sum, and the turning moment the difference makes |
+| line 1 | those three, read off the drawing |
+| line 2 | the empty row deleted, leaving the square $\mathbf{T}$ |
+| line 3 | $\mathbf{T}$ inverted, which is what the `allocation` block evaluates |
 
 **Reading the figure against the derivation.**
 
 | Where to look | What is there | What it says |
 |---|---|---|
-| $e_x = 1$ in both boxes | both propellers push along $+x$ | the first row of $\mathbf{B}$ is $[\,1\ \ 1\,]$: surge adds |
-| $e_y = 0$ in both boxes | neither pushes sideways | the middle row is $[\,0\ \ 0\,]$ |
-| $x e_y - y e_x$ | $-(-b)\cdot 1 = +b$ against $-(+b)\cdot 1 = -b$ | **only the sign of $y$ differs**, and that is the entire reason the moments oppose |
-| the middle row of $\mathbf{B}$ | identically zero | this hull **cannot be pushed sideways** — no combination of the two thrusts makes $Y$. Weeks 4 and 5 turn the vessel to move it because of this row |
-| the curved arrow on the hull | port alone swings the bow to starboard | the sign of $+b$ in the first column, checked against the drawing rather than argued |
+| both red arrows point the same way | the propellers are **fixed** facing forward | the first row is $F_L + F_R$: surge simply adds |
+| the middle entry of line 1 | exactly $0$ | this hull **cannot be pushed sideways**, for any pair of thrusts. Weeks 4 and 5 turn the vessel in order to move it, and this row is why |
+| the two arms marked $b$ | equal, on opposite sides | the third row subtracts: equal thrusts make no moment, and a difference makes one |
+| line 2, under the brace | $\mathbf{T}$ contains only $1$ and $b$ | the matrix is **geometry**. Nothing in it depends on speed, gains, or what the controller is doing |
+| line 3, "known" | $\mathbf{T}^{-1}$ is fixed once the propellers are bolted down | the allocator never has to solve anything at run time; it multiplies by a constant matrix |
+| line 3, "what the two controllers asked for" | $(X, N)$ arrives from outside | the allocator has no opinion about whether the demand is sensible — §3-4's limits are where that is decided |
 
-- `_tools/otter_B.m` applies that rule and returns $[\,1\ 1;\ 0\ 0;\ b\ {-b}\,]$ — the same matrix, to zero difference. Nothing in this course transcribes a $\mathbf{B}$ by hand.
+> [!note] Where this comes from, and where it is proved
+> That the forces read off the drawing in that particular arrangement is not a coincidence of this hull. One thruster at $(x_i, y_i)$ pushing along a unit vector $\mathbf{e}_i$ contributes exactly one column, $\mathbf{b}_i = [\,e_x\ \ e_y\ \ x_i e_y - y_i e_x\,]^\top$ — the **column rule**, derived and checked against a drawing in Appendix A1 §A1-2 and applied to this hull in Week 1's `w01-otter-layout` figure. `_tools/otter_B.m` evaluates it and returns $[\,1\ 1;\ 0\ 0;\ b\ {-b}\,]$, the same matrix to zero difference. Nothing in this course transcribes a $\mathbf{B}$ by hand.
 
-2. **Written as a matrix, and inverted.** Deleting the empty row leaves a square system. Stacking the two remaining equations,
+2. **Deleting the empty row leaves a square system.** Stacking the two that remain,
 
 $$
 \begin{bmatrix} X \\ N \end{bmatrix}
