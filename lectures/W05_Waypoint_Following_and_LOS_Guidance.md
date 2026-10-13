@@ -924,7 +924,20 @@ $$
 \psi_d = \pi_p - \arctan\!\left(K_p\, y_e + K_i\!\int_0^t\! y_e(\tau)\,\mathrm d\tau\right), \qquad K_p = \frac{1}{\Delta},\quad K_i = \frac{\kappa}{\Delta}
 $$
 
-   This is the **conventional ILOS** of the literature, and it satisfies requirement (a) — it stops only where $y_e = 0$. It fails requirement (b): far from the path it integrates at full rate. This mission starts $20$ m off, so by the time the vessel reaches the path the state has been accumulating for half a minute, and it then has to unwind through the other side. Experiment 5-5c measures what that costs: at the same $\kappa$ the plain integral does not follow the path at all, and tuned down until it does, it still swings $13.5$ m where the nonlinear law swings $3.9$ m. The denominator is the whole difference, and it is written into the law rather than bolted on.
+   This is the **conventional ILOS** of the literature, and it satisfies requirement (a) — it stops only where $y_e = 0$. It fails requirement (b): far from the path it integrates at full rate.
+
+![The two integrators: one aiming law above, two update laws below, and the rate each one asks for](../figures/w05-two-integrators.svg)
+
+| In the figure | What it means |
+|---|---|
+| the purple box at the top | the aiming expression, **identical in both laws**, with $K_p = 1/\Delta$ and $K_i = \kappa K_p$ |
+| the two boxes below it | the one line that differs: the nonlinear update on the left, the plain integral on the right |
+| the orange curve | $\dot y_{\text{int}}$ against $y_e$ for the nonlinear law at $y_{\text{int}} = 0$: it rises, peaks at $\tfrac12$ where $y_e = \Delta$, and **falls away** |
+| the blue line | the same quantity for the plain integral: $\dot y_{\text{int}} = y_e$, straight off the top of the axes — $20$ m/s at $20$ m off the path |
+| both curves at the origin | both pass through zero and only through zero | 
+| the red block at the right | what that costs on this vessel, measured in Experiment 5-5c |
+
+- The orange curve is the whole argument in one line: an integrator that **slows down when it is far from the path** cannot wind up during an approach, and an integrator that speeds up must. This mission starts $20$ m off, so by the time the vessel reaches the path the state has been accumulating for half a minute, and it then has to unwind through the other side. Experiment 5-5c measures what that costs: at the same $\kappa$ the plain integral does not follow the path at all, and tuned down until it does, it still swings $13.5$ m where the nonlinear law swings $3.9$ m. The denominator is the whole difference, and it is written into the law rather than bolted on.
 
 10b. **Why not measure the crab angle instead?** If $u$ and $v$ are measured, $\beta_c$ can be computed directly and subtracted, as the table above the derivation shows:
 

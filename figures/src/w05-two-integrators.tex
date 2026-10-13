@@ -1,0 +1,133 @@
+% figures/w05-two-integrators.svg — 같은 조준식, 두 가지 적분기.
+%
+%   bash _tools/tikz2svg.sh figures/src/w05-two-integrators.tex figures/w05-two-integrators.svg
+%
+% 사용자 지시 (2026-10-13): 2025년 강의자료 "2. USV 제어기 설계" 슬라이드 66-69 의
+% 비교를 이 강의에 맞춰 다시 그린다. 원본은 Fossen 의 TTK 4190 강의노트 그림이므로
+% **옮겨 붙이지 않고 같은 구조를 직접 그린다** (CLAUDE.md §2).
+%
+% 이 그림이 말하는 것 하나:
+%   두 법칙은 **조준식이 같다**. 다른 것은 적분 상태를 갱신하는 한 줄뿐이고,
+%   그 한 줄의 차이는 아래 그래프에 전부 들어 있다 — 비선형 쪽은 y_e = Delta 에서
+%   1/2 로 머리를 치고 내려오고, 보통 적분은 경로에서 멀수록 끝없이 커진다.
+%
+% 배치 (mm): 공유 상자 (95,96) / 왼쪽 열 x=48, 오른쪽 열 x=146 / 그래프 (18,-34)
+% 겹침을 피하려고 열 간격을 98 mm 로 벌렸다. 좁히면 수식 상자가 서로 물린다.
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+
+\tikzset{
+  shared/.style = {draw=accent, line width=1.1pt, fill=accent!5, rounded corners=2pt,
+                   align=center, inner sep=6pt, font=\small},
+  lawA/.style   = {draw=errc, line width=1.0pt, fill=errc!5, rounded corners=2pt,
+                   align=center, inner sep=6pt, font=\small},
+  lawB/.style   = {draw=knownc, line width=1.0pt, fill=knownc!5, rounded corners=2pt,
+                   align=center, inner sep=6pt, font=\small},
+  nte/.style    = {font=\scriptsize, soft},
+  hdA/.style    = {font=\small\bfseries, errc},
+  hdB/.style    = {font=\small\bfseries, knownc},
+  capt/.style   = {font=\scriptsize\bfseries, warn},
+  arr/.style    = {ink, line width=0.8pt, -{Stealth[length=4.4pt,width=3.0pt]}},
+  axis2/.style  = {soft, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}},
+  curveA/.style = {errc, line width=1.4pt},
+  curveB/.style = {knownc, line width=1.4pt},
+  grid2/.style  = {soft!50, line width=0.3pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% =====================================================================
+% 위 — 두 법칙이 **함께 쓰는** 조준식
+% =====================================================================
+\node[shared, text width=104mm] (SH) at (95,96)
+  {\textbf{both laws aim the same way}\\[5pt]
+   $\psi_d = \pi_p - \arctan\!\bigl(K_p\, y_e^{\,p} + K_i\, y_{\mathrm{int}}^{\,p}\bigr)$,
+   \qquad $K_p = \dfrac{1}{\Delta}$, \quad $K_i = \kappa K_p$, \quad $\kappa > 0$};
+\node[nte, anchor=north] at (95,82)
+  {what differs is one line underneath: how the state $y_{\mathrm{int}}^{\,p}$ is updated};
+
+\draw[arr] (48,78) -- (48,71);
+\draw[arr] (146,78) -- (146,71);
+
+% =====================================================================
+% 왼쪽 — 비선형 적분 (Borhaug et al. 2008)
+% =====================================================================
+\node[hdA, anchor=north] at (48,71) {NONLINEAR ILOS \ (Børhaug et al.\ 2008)};
+\node[lawA, text width=76mm, anchor=north] at (48,64)
+  {$\dot y_{\mathrm{int}}^{\,p}
+     = \dfrac{\Delta\, y_e^{\,p}}{\Delta^2 + \bigl(y_e^{\,p} + \kappa\, y_{\mathrm{int}}^{\,p}\bigr)^2}$};
+\node[nte, anchor=north, text width=80mm, align=left] at (52,42)
+  {The denominator grows with the error, so the state can never climb faster than
+   $\tfrac12$ per second: \textbf{anti-windup written into the law} rather than bolted
+   onto it. Børhaug et al.\ prove UGAS/ULES for it in cascade with a 3-DOF ship model.};
+
+% =====================================================================
+% 오른쪽 — 보통 적분 (교과서형)
+% =====================================================================
+\node[hdB, anchor=north] at (146,71) {CONVENTIONAL ILOS};
+\node[lawB, text width=76mm, anchor=north] at (146,64)
+  {$y_{\mathrm{int}}^{\,p} = \displaystyle\int_0^t y_e^{\,p}(\tau)\,\mathrm d\tau$
+   \\[6pt] that is, \quad $\dot y_{\mathrm{int}}^{\,p} = y_e^{\,p}$};
+\node[nte, anchor=north, text width=86mm, align=left] at (146,42)
+  {The error enters as it stands, at the same rate twenty metres off the path as one
+   metre off it. A long approach winds the state up, and the unwinding then carries
+   the vessel through to the other side.};
+
+% =====================================================================
+% 아래 왼쪽 — 그 한 줄의 차이를 그래프 하나로 (y_int = 0 에서의 갱신 속도)
+%   비선형:  D y / (D^2 + y^2)  ->  y = D 에서 최대 1/2
+%   보통   :  y                  ->  끝없이 커진다
+%   Delta = 5 m. 가로 0..20 m 를 60 mm, 세로 0..1 m/s 를 34 mm 로.
+% =====================================================================
+\begin{scope}[shift={(18,-34)}]
+  \draw[grid2] (0,0) grid[xstep=15,ystep=8.5] (60,34);
+  \draw[axis2] (0,0) -- (66,0);
+  \draw[axis2] (0,0) -- (0,40);
+  \node[nte, anchor=west] at (66.5,0) {$y_e^{\,p}$ \ [m]};
+  %  축 이름표는 축 **왼쪽**에. 축 위에 두면 보통 적분의 직선과 겹친다
+  \node[nte, anchor=south east, align=right] at (-0.5,41.5) {$\dot y_{\mathrm{int}}^{\,p}$ \ [m/s]};
+  \foreach \v/\lx in {0/0, 5/15, 10/30, 15/45, 20/60}
+    \node[nte, anchor=north] at (\lx,-1.2) {\v};
+  \foreach \v/\ly in {0.5/17, 1.0/34}
+    \node[nte, anchor=east] at (-1.2,\ly) {\v};
+
+  %  보통 적분: 기울기 1. 화면 위로 바로 나간다
+  \draw[curveB] plot[domain=0:1.18, samples=20] ({3*\x}, {34*\x});
+  \draw[curveB, densely dashed] (3.54,40.1) -- (8,46);
+  \node[knownc, font=\scriptsize, anchor=west] at (8.4,46)
+       {$\dot y_{\mathrm{int}}^{\,p} = 20$ m/s at $y_e^{\,p} = 20$ m — forty times the cap};
+
+  %  비선형: 5 y / (25 + y^2)
+  \draw[curveA] plot[domain=0:20, samples=81]
+        ({3*\x}, {34*(5*\x)/(25 + \x*\x)});
+  \draw[errc, line width=0.5pt, densely dashed] (15,17) -- (0,17);
+  \draw[errc, line width=0.5pt, densely dashed] (15,17) -- (15,0);
+  \fill[errc] (15,17) circle (1.0);
+  \node[errc, font=\scriptsize, anchor=west] at (17,20)
+       {peak $\tfrac12$ at $y_e^{\,p} = \Delta$, then falling};
+
+  \node[nte, anchor=north west, text width=66mm] at (0,-6)
+       {The update rate of each law while the state is still small, at $\Delta = 5$ m.
+        Both vanish only with $y_e^{\,p}$, which is what makes $y_e^{\,p} = 0$ the
+        equilibrium in either case; only one of them is bounded on the way there.};
+\end{scope}
+
+% =====================================================================
+% 아래 오른쪽 — 이 배에서 실제로 잰 것
+% =====================================================================
+\node[capt, anchor=north west, align=left, text width=76mm] at (108,4)
+  {Measured on the Otter, Experiment 5-5c\\[4pt]
+   \normalfont\scriptsize
+   At the same $\kappa = 0.3$ the plain integral never settles: it circles the path,
+   $11.5$ m of mean error over the last 100 s. Tuned down to $\kappa = 0.05$ it does
+   follow, and still swings $13.5$ m on the way in, where the nonlinear law swings
+   $3.9$ m and settles at $0.07$ m.\\[6pt]
+   \normalfont\scriptsize
+   The denominator is what lets $\kappa$ be chosen for the current instead of for the
+   approach.};
+
+\end{tikzpicture}
+\end{document}
