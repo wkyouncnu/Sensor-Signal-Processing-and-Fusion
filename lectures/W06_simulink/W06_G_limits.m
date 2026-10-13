@@ -43,21 +43,32 @@ for t = [10 20 30 40]
             at(Rs,'Xa',t), at(Rs,'Na',t), rat(at(Rs,'Xa',t), at(Rs,'Na',t)));
 end
 
-%% 2) 두 실행을 겹쳐 그린다 / the two runs on one axis
-f = lab_fig('W06 Exp 6-6  clipping against scaling', 1000, 620);
-subplot(2,1,1); hold on; grid on;
-plot(Rc.t, Rc.Xd, 'k--', 'LineWidth', 1.6, 'DisplayName', 'X demanded');
-plot(Rc.t, Rc.Xa, 'LineWidth', 2, 'DisplayName', 'X, clipped');
-plot(Rs.t, Rs.Xa, 'LineWidth', 2, 'DisplayName', 'X, scaled');
-ylabel('surge force X [N]'); legend('Location','southwest');
-title('neither can deliver what was asked; they give up different things');
-subplot(2,1,2); hold on; grid on;
-plot(Rc.t, Rc.Nd, 'k--', 'LineWidth', 1.6, 'DisplayName', 'N demanded');
-plot(Rc.t, Rc.Na, 'LineWidth', 2, 'DisplayName', 'N, clipped');
-plot(Rs.t, Rs.Na, 'LineWidth', 2, 'DisplayName', 'N, scaled');
-ylabel('yaw moment N [N m]'); xlabel('time [s]'); legend('Location','southwest');
-title('clipping keeps more surge and loses yaw; scaling keeps the ratio 4.40');
-exportgraphics(f, fullfile(here, 'img', 'W06_result_limits.png'), 'Resolution', 150);
+%% 1b) 두 규칙이 **무엇을 얼마나** 잃는가 — 크기와 방향으로 (성능 판정용, 2026-10-13)
+%     요구한 힘을 벡터 [X; N] 로 보면, 전달된 것은 길이가 짧아지거나 방향이 돌아간다.
+%     비율 줄이기는 방향을 정확히 지키고 길이를 더 잃는다. 자르기는 그 반대다.
+%     Seen as a vector, the delivered force is either shorter or turned. Scaling keeps
+%     the direction exactly and loses more length; clipping does the opposite.
+cfg = otter_config('base');
+B2  = [1 1; cfg.y_pont -cfg.y_pont];
+d   = [Rc.V.X_big; Rc.V.N_big];                       % 한계를 넘는 요구 / the demand that does not fit
+Td  = B2 \ d;
+Tc  = min(max(Td, Rc.V.T_min), Rc.V.T_max);             % 자르기 / clipping
+sc  = 1;
+for i = 1:2
+    if Td(i) > Rc.V.T_max, sc = min(sc, Rc.V.T_max/Td(i)); end
+    if Td(i) < Rc.V.T_min, sc = min(sc, Rc.V.T_min/Td(i)); end
+end
+Ts  = sc*Td;                                    % 비율 줄이기 / scaling
+ang = @(v) atan2d(v(2), v(1));
+fprintf('\n    what each rule gives up, for the demand (%.0f N, %.0f N m)\n', d);
+fprintf('      rule     magnitude delivered [%% of demand]   direction off by [deg]\n');
+for C = {{'clip', B2*Tc}, {'scale', B2*Ts}}
+    fprintf('      %-7s %28.1f %24.1f\n', C{1}{1}, ...
+            100*norm(C{1}{2})/norm(d), abs(ang(C{1}{2}) - ang(d)));
+end
+
+%% 2) 그림 / the figure — 그리는 것은 W06_fig_limits 가 한다 (45 줄 규칙, §15-15)
+W06_fig_limits(Rc, Rs, here);
 
 % -------------------------------------------------------------------------
 function s = rat(x, n)

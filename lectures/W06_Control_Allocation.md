@@ -72,6 +72,7 @@ Upon completion of this week, the learner is able to:
 4. Choose between exact solutions when there are many, using a weighting that states which thruster is expensive.
 5. Invert the propeller curve with the coefficient that belongs to the direction of thrust, and quantify what the wrong coefficient costs.
 6. Compare clipping and scaling when a demand exceeds the thrusters, in terms of the **direction** of the delivered force, and state the same choice as a constrained least-squares problem.
+7. Judge the allocator against what the hull makes possible: say which part of the error is the method's and which part is the reachable set's.
 
 ## Prerequisites and Setup
 
@@ -520,6 +521,11 @@ Expected output:
        20       220.0   50.0   4.40       166.4   28.8   5.77       151.9   34.5   4.40
        30       100.0   50.0   2.00       100.0   50.0   2.00       100.0   50.0   2.00
        40      -220.0    0.0     --      -133.4    0.0     --      -133.4    0.0     --
+
+    what each rule gives up, for the demand (220 N, 50 N m)
+      rule     magnitude delivered [% of demand]   direction off by [deg]
+      clip                            74.8                      3.0
+      scale                           69.1                      0.0
 ```
 
 ![Experiment 6-6: the two rules, on the same demand](W06_simulink/img/W06_result_limits.png)
@@ -599,6 +605,10 @@ Expected output:
     lsqlin, yaw weight 10      119.68    34.98    154.66    33.46    4.62
     lsqlin, yaw weight 100     119.68    -0.44    119.24    47.45    2.51
     demanded                                      220.00    50.00    4.40
+
+    what one allocation costs on this machine
+      fixed rule (solve and scale)       0.75 us    0.004 % of a 0.02 s step
+      lsqlin, two thrusters               332 us     1.66 % of a step   (441 times)
 ```
 
 ![Experiment 6-7: what each strategy delivers, and what it gives up](W06_simulink/img/W06_result_qp.png)
@@ -629,6 +639,26 @@ Expected output:
 > - **Ask** — "Why does this course still use scaling on the Otter?" Two propellers, no spare freedom, and a rule that runs in a fixed number of operations.
 > - **Take away** — a constrained allocator is a stated preference; a fixed rule is an assumed one.
 
+## 6-8. Is this the performance to expect?
+
+The six sections above each measure one thing. This one asks the question they do not: **is the allocator of this course any good**, and what decides the answer. Each row predicts a number from the hull — the propellers and the matrix they produce, never the allocator — and then reads what the week measured.
+
+| What should happen, and why | Predicted | Measured | Verdict |
+|---|---|---|---|
+| **Inside the reachable set the answer is exact.** $\mathbf{B}$ is square and $\det = -2y_p \ne 0$, so the square rule is an inverse, not an approximation | zero error, to machine precision | $3.6\times10^{-15}$ N (`verify_w06_allocation` check 3) | as expected |
+| **The set is the propellers, not the rule.** Two propellers give $X \in [2T_{\min},\ 2T_{\max}]$, and a demand outside it cannot be delivered by any method | $X \ge -133.42$ N, so $-220$ N is impossible | both rules deliver exactly $-133.4$ N (§6-6, leg 4) | as expected |
+| **Sway is unreachable, and nothing else is lost.** The middle row of $\mathbf{B}$ is zero, so least squares must drop the sway demand entirely and leave $X$ and $N$ untouched | $Y = 0$ exactly; residual $=$ the demanded $Y$ | $\lvert Y\rvert \le 0.0\times10^{0}$ N, residual equal to $1.4\times10^{-14}$ (check 4) | as expected |
+| **A wrong astern coefficient gives a predictable error, not a random one.** Inverting with $k_{pos}$ astern delivers $(k_{neg}/k_{pos})\,T$, and a pure yaw demand then leaks surge | factor $0.582$; demanding $N = 20$ N·m leaks $X = 10.59$ N and leaves $N = 15.82$ | $0.582$, $10.59$ N, $15.82$ N·m (§6-5) | as expected, to the digit |
+| **Outside the set the two rules trade magnitude against direction** — they cannot do otherwise, because $X$ and $N$ come from the same two numbers | scaling: direction exact, less force. Clipping: more force, direction turned | scaling $69.1\,\%$ of the demand at $0.0°$; clipping $74.8\,\%$ at $3.0°$ (§6-6) | as expected |
+| **A fixed rule costs a fixed number of operations; a quadratic program iterates** | orders of magnitude apart | $pprox 0.8\ \mu$s against $pprox 330\ \mu$s — about $440$ times, or $0.004\,\%$ of a $20$ ms step against $1.7\,\%$ (§6-7) | as expected, and it is why the Otter uses a rule |
+
+- Five rows are exactness: inside the reachable set this allocator has **no error worth measuring**, and the one careless implementation it tolerates produces an error that can be predicted in advance rather than discovered in a sea trial.
+- **What limits the performance is the hull, not the allocator.** Two parallel propellers make a reachable set with an empty sway row and a surge ceiling of $239.4$ N; inside it every method here gives the same exact answer, and outside it no method can give the demanded one. The only remaining question is what to give up, which is §6-7's weights.
+- That is also the honest reason the optimiser earns nothing on this vessel: with two thrusters and two demands there is **no freedom left to spend**. Weeks 10 to 12, with four thrusters and a null space, are where the same solver starts to pay for its third of a millisecond.
+
+> [!note] The timing is this machine's
+> The microseconds above come from `W06_H_quadratic_program` on the machine that built these notes; they differ elsewhere and between runs, by a few per cent here. the ratio and the fraction of a step are the numbers to carry. Both are printed by the script, so the comparison can be repeated rather than believed.
+
 ---
 
 # Part 2 · Laboratory run order
@@ -646,7 +676,8 @@ Every experiment with a model has **its own model**, and they are all the same c
 | 6-4 | none — the Command Window | `W06_E_more_thrusters` | three exact solutions, and what chooses between them |
 | 6-5 | `W06_E_curve` | `W06_F_curve_inverse` | the propeller curve inverted, rightly and wrongly |
 | 6-6 | `W06_F_limits` | `W06_G_limits` | clipping against scaling at the limits |
-| 6-7 | none — the Command Window | `W06_H_quadratic_program` | the same demand under five strategies |
+| 6-7 | none — the Command Window | `W06_H_quadratic_program` | the same demand under five strategies, and what one allocation costs |
+| 6-8 | none — the table of §6-8 | `verify_w06_allocation`, `W06_G_limits`, `W06_H_quadratic_program` | six predictions about the performance, against what was measured |
 
 - The scripts only repeat what Run already shows, for several settings at once, and print the numbers quoted in Part 1.
 - Each experiment ends with an **In class** note: purpose, what to point at, a question with its answer, and the sentence to take away.

@@ -52,11 +52,32 @@ for i = 1:numel(S)
 end
 fprintf('    %-24s %8s %8s %9.2f %8.2f %7.2f\n', 'demanded', '', '', tau, tau(1)/tau(2));
 
-%% 2) 전달된 힘을 막대로 / the delivered force as bars
-f = lab_fig('W06 Exp 6-7  constrained allocation', 1000, 460);
-D = cell2mat(arrayfun(@(s) B2*s.T, S, 'UniformOutput', false));
-bar(categorical({S.name}, {S.name}), D', 'grouped'); grid on;
-yline(tau(1), 'k--', 'X demanded'); yline(tau(2), 'k:', 'N demanded');
-legend({'X delivered [N]','N delivered [N m]'}, 'Location','northeast');
-title('what each strategy gives up: the weights are where the engineering decision is stated');
-exportgraphics(f, fullfile(here, 'img', 'W06_result_qp.png'), 'Resolution', 150);
+%% 1b) 한 번 푸는 데 드는 시간 / what one allocation costs (성능 판정용, 2026-10-13)
+%     고정 규칙은 2x2 풀기와 자르기뿐이라 연산 수가 정해져 있다. QP 는 반복한다.
+%     이 수가 "작은 배는 왜 아직 고정 규칙을 쓰는가" 의 답이다. **기계마다 다르므로**
+%     절대값이 아니라 **배수**와 한 스텝(h)에서 차지하는 비율로 읽는다.
+%     The fixed rule is a 2x2 solve and a clamp: a fixed number of operations. The QP
+%     iterates. The ratio - not the absolute microseconds, which belong to this
+%     machine - is why small craft still use a rule.
+nrep = 5000;
+t1 = tic;
+for i = 1:nrep
+    Tq = B2 \ tau;
+    Tq = min(max(Tq, lo), hi);
+end
+t_rule = toc(t1)/nrep;
+W1 = diag([1 10]);  A1 = sqrt(W1)*B2;  b1 = sqrt(W1)*tau;
+t2 = tic;
+for i = 1:200
+    Tl = lsqlin(A1, b1, [], [], [], [], lo, hi, [], opt);
+end
+t_qp = toc(t2)/200;
+h_step = 0.02;
+fprintf('\n    what one allocation costs on this machine\n');
+fprintf('      fixed rule (solve and scale)   %8.2f us   %6.3f %% of a %g s step\n', ...
+        t_rule*1e6, 100*t_rule/h_step, h_step);
+fprintf('      lsqlin, two thrusters          %8.0f us   %6.2f %% of a step   (%.0f times)\n', ...
+        t_qp*1e6, 100*t_qp/h_step, t_qp/t_rule);
+
+%% 2) 그림 / the figure — 그리는 것은 W06_fig_qp 가 한다 (45 줄 규칙, §15-15)
+W06_fig_qp(S, B2, tau, here);
