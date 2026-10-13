@@ -79,9 +79,16 @@
   \node[lbl, errc, anchor=south] at (-1.2,2.63) {$F_L$};
   \node[lbl, errc, anchor=south] at ( 1.2,2.03) {$F_R$};
 
-  %  회전 화살표는 선체 밖으로 / the turn arrow goes outside the hull
-  \draw[spin] (1.00,-1.73) arc (-60:-18:2.0);
-  \node[lbl, alng, anchor=west] at (2.00,-0.78) {$N>0$};
+  %  회전 화살표는 선체 밖으로 / the turn arrow goes outside the hull.
+  %  **시계방향이어야 한다**: z_b 가 아래를 향하므로 (NED) N > 0 은 오른손 법칙으로
+  %  +x -> +y, 곧 선수가 우현으로 돈다. 위에서 내려다본 그림에서 x 는 위, y 는
+  %  오른쪽이므로 그것은 시계방향이다. 한 번 반시계로 그렸다가 사용자가 잡았다
+  %  (2026-10-13) — CLAUDE.md 4 절 규칙 6-2 가 경고한 바로 그것이다.
+  %  Clockwise: z_b points down, so N > 0 swings the bow to starboard, and seen
+  %  from above with x up and y right that is clockwise. TikZ draws clockwise when
+  %  the end angle is **smaller** than the start angle.
+  \draw[spin] (1.902,-0.618) arc (-18:-60:2.0);
+  \node[lbl, alng, anchor=west] at (2.00,-1.30) {$N>0$};
 
   \node[capt, anchor=north] at (0.2,-2.25) {where the two thrusts act};
 \end{scope}

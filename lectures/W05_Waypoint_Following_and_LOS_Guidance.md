@@ -1114,17 +1114,19 @@ $$
 
    The middle row is zero, and that row is the whole story of the week: **this hull cannot make a sideways force.** It is why guidance must turn the vessel to move it sideways, and why §5-5's current is fought with a heading and not with a thrust. `_tools/otter_B.m` builds this $\mathbf{B}$ from the column rule and returns exactly the matrix above.
 
-   The two non-zero rows can be read straight off a drawing of the vessel seen from above, and the figure below does exactly that. The same matrix, written out at $y_p = 0.395$ m as $\begin{bmatrix} 1 & 1 \\ 0.395 & -0.395\end{bmatrix}$, sits as a Constant block inside the `Allocation` subsystem of the MSS demonstration model `demoOtterUSVPathFollowingHeadingControl`.
+   This is the same matrix Week 3 §3-6 read off the hull and Week 4 §4-7 used with a live moment, written here with $y_p$ in place of $b$. The figure is the one those weeks used, and it is worth re-reading now that **both** of its inputs are outputs of controllers:
 
-![What the matrix [1 1; 0.395 −0.395] means: read off the hull, inverted, and checked against the logged numbers](../figures/w05-allocation.svg)
+![Three forces read off the hull, the square matrix that remains, and its inverse](../figures/w03-why-T.svg)
 
-| In the figure | Meaning |
+| In the figure | What it means in this section |
 |---|---|
-| left, the two upward arrows | both propellers push the same way, which is the row $[\,1\ \ 1\,]$ |
-| left, the two blue arms | the port propeller is $y_p$ to one side and the starboard one $y_p$ to the other, which is the row $[\,y_p\ \ {-y_p}\,]$ and the reason the two signs differ |
-| left, the curved arrow | the port side pushing harder turns the vessel to starboard: $N > 0$ |
-| centre | the two rows assembled, and inverted because $\det \mathbf{B} = -2y_p \neq 0$ |
-| right | Experiment 5-7's own two rows put through that inverse |
+| the two red arrows | both propellers push forward, which is the row $[\,1\ \ 1\,]$ |
+| the two arms marked $b$ | here called $y_p$: equal, opposite, and the reason the third row subtracts |
+| the teal $N$ arrow | **clockwise seen from above**, because $z_b$ points down and $N > 0$ swings the bow to starboard |
+| the empty middle row | why §5-5's current is fought with a heading and never with a sideways thrust |
+| line 3, $\mathbf{T}^{-1}$ | the allocator. Until this week one of its two inputs was a constant; from §5-7 both come from controllers |
+
+- Written out at $y_p = 0.395$ m as $\begin{bmatrix} 1 & 1 \\ 0.395 & -0.395\end{bmatrix}$, this matrix sits as a Constant block inside the `Allocation` subsystem of the MSS demonstration model `demoOtterUSVPathFollowingHeadingControl`. The course and the toolbox agree on it entry for entry.
 
 3. **Solving for the two thrusts.** Delete the zero row and $\mathbf{B}$ becomes $2\times2$ with determinant $-2y_p \ne 0$, so there is exactly one solution — no pseudo-inverse is needed, and no freedom is left over. Inverting it, or equally adding and subtracting the two remaining equations, gives
 

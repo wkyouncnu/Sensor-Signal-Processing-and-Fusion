@@ -82,8 +82,11 @@
   % 그 결과의 회전 / the turn it produces
   %  회전 화살표는 y_b 축 **아래** 사분면에 둔다. 위에 두면 'starboard' 이름표와
   %  겹쳐 찍힌다 — 렌더해서 보고 옮겼다 (CLAUDE.md §4 규칙 6).
-  \draw[spin] (0.35,-0.94) arc (-70:-18:1.0);
-  \node[lbl, alng, anchor=west] at (1.10,-0.55) {$N>0$};
+  %  그리고 **시계방향**이어야 한다: z_b 가 아래이므로 N > 0 은 선수를 우현으로 돌리고,
+  %  위에서 본 그림(x 위, y 오른쪽)에서 그것은 시계방향이다. 반시계로 그렸다가
+  %  사용자가 잡았다 (2026-10-13). TikZ 는 끝 각이 **작을 때** 시계방향으로 그린다.
+  \draw[spin] (0.951,-0.309) arc (-18:-70:1.0);
+  \node[lbl, alng, anchor=west] at (1.08,-0.80) {$N>0$};
 
   \node[capt, anchor=north, align=center] at (0,-2.55)
        {one picture, four numbers};
