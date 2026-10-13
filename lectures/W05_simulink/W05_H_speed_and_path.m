@@ -42,10 +42,17 @@ fprintf('\n  W05 Experiment 5-7  speed control and path following at once\n');
 fprintf('    surge force from    u mean [m/s]   last leg at [s]   mean |y_e| legs 2-4 [m]   X mean [N]\n');
 for i = 1:2
     R = W05_read(MDL{i}, 'law', 3);                      % 3 = ILOS
-    j = R.wp >= 2;                                       % 첫 다리는 20 m 떨어져 출발한다 / leg 1 starts 20 m off
+    %  **도는 동안**만 잰다 (2026-10-13). H 모델은 마지막 웨이포인트에서 명령을 0 으로
+    %  내리고 서는데, 그 감속 구간까지 평균에 넣으면 "1.000 m/s 를 지켰다" 가 거짓이
+    %  된다. u_d > 0 인 구간이 임무가 진행 중이던 구간이다.
+    %  Measured while under way: the H model takes its command to zero at the last
+    %  waypoint, and averaging the deceleration in with the rest would make "held
+    %  1.000 m/s" untrue. u_d > 0 is the part of the run that was still a mission.
+    under_way = isnan(R.u_d) | R.u_d > 0;
+    j = R.wp >= 2 & under_way;                           % 첫 다리는 20 m 떨어져 출발한다 / leg 1 starts 20 m off
     k = find(R.wp == max(R.wp), 1);
     fprintf('    %-19s %8.3f   %15.1f   %22.3f   %10.2f\n', ...
-            SHORT{i}, mean(R.u(j)), R.t(k), mean(abs(R.y_e(j))), mean(R.X));
+            SHORT{i}, mean(R.u(j)), R.t(k), mean(abs(R.y_e(j))), mean(R.X(under_way)));
     RUN{i} = R;
 end
 

@@ -91,6 +91,15 @@ Kb    = 1;            % back-calculation gain, as in Week 3            [1/s]
                       % 0 이면 안티와인드업이 없다 / 0 switches the anti-windup off
 X_max = 120;          % 전진력 한계 / the surge force limit            [N]
 
+%   임무의 끝 (사용자 지시, 2026-10-13) / the end of the mission
+%   마지막 웨이포인트에 R_switch 안으로 들어오면 유도가 속도 명령을 0 으로 내리고,
+%   stop_hold 초 뒤에 실행을 끝낸다. **W05_H_speed_path 만** 이 둘을 쓴다 — 다른
+%   여섯 모델은 마지막 다리를 연장해서 계속 간다 (5-4 절이 그렇게 설명한다).
+%   On reaching the last waypoint the guidance takes the speed command to zero and
+%   the run ends stop_hold seconds later. Only W05_H_speed_path acts on it.
+stop_at_end = 1;      % 1 이면 멈춘다 / 1 stops at the end of the mission
+stop_hold   = 15;     % 선 뒤에 더 도는 시간 / how long the run continues after that  [s]
+
 %  속도 루프가 붙으면 전진력이 X_max 까지 올라갈 수 있으므로 한계를 **거기서** 잡는다.
 %  그러지 않으면 배분기가 낼 수 없는 회전수를 요구한다 - 실제로 n = 116.2 rad/s 를
 %  요구했고 프로펠러의 한계는 103.9 였다 (5-7 절).

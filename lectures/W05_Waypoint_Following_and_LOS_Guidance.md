@@ -193,12 +193,76 @@ $$
 
 | Where to look | What is there | Why |
 |---|---|---|
+| the two black dots on the leg | $\mathbf p_i^{\,n} = [\,x_i^n,\ y_i^n\,]^{\mathsf T}$ and $\mathbf p_{i+1}^{\,n} = [\,x_{i+1}^n,\ y_{i+1}^n\,]^{\mathsf T}$ | the leg **is** those two numbers; everything else in the figure is computed from them and the vessel's position |
+| the label under the hull | $(x^n,\ y^n)$ | the third known: what the navigation reports. The figure of §5-3 uses the same three |
+| the dot where the brown and red segments meet | the foot of the perpendicular | the point the vessel is abeam of: $x_e$ ends there and $y_e$ starts |
 | the dashed pair at waypoint $k$ | $\hat{\mathbf t}$ along the leg, $\hat{\mathbf n}$ to starboard | step 2: the leg carries its own frame |
 | the black arrow | the position error, before it is resolved | the one vector both errors are components of |
 | the brown segment on the leg | $x_e$ — how far along | step 3, first row |
 | the red segment perpendicular to it | $y_e$ — how far off | step 3, second row |
 | the right angle where they meet | $\hat{\mathbf t} \perp \hat{\mathbf n}$ | which is what makes them independent |
 | the grey arc at the waypoint | $\pi_p$, measured from north | step 1 |
+
+**The plainest way to see it: two shadows.** The rotation above can be read without any matrix at all, and this is the reading to carry away. Write the vector from the active waypoint to the vessel as
+
+$$
+\mathbf d = \begin{bmatrix} N - N_k \\ E - E_k \end{bmatrix}
+$$
+
+The leg carries two unit vectors — $\hat{\mathbf t}$ along it and $\hat{\mathbf n}$ across it — and the dot product of a vector with a unit vector is **the length of its shadow on that direction**. So:
+
+$$
+x_e = \mathbf d \cdot \hat{\mathbf t}
+      = \mathbf d \cdot \begin{bmatrix} \cos\pi_p \\ \sin\pi_p\end{bmatrix},
+\qquad
+y_e = \mathbf d \cdot \hat{\mathbf n}
+      = \mathbf d \cdot \begin{bmatrix} -\sin\pi_p \\ \cos\pi_p\end{bmatrix}
+$$
+
+Two dot products, and they are the two lines of code. There is nothing else in the construction: $x_e$ is the shadow on the leg, $y_e$ is the shadow on the perpendicular to it.
+
+**A number to hold it down.** Take a leg from $(0, 0)$ to $(60, 60)$ — northeast, so $\pi_p = 45°$ — with the vessel at $(40, 0)$, forty metres due north of the first waypoint:
+
+$$
+x_e = 40\cos 45° = 28.28\ \text{m}, \qquad
+y_e = -40\sin 45° = -28.28\ \text{m}
+$$
+
+It is $28.3$ m along the leg and $28.3$ m to the **port** side of it, which is where a sketch puts it: the leg runs away to the northeast while the vessel sits due north of its start. The negative sign is the convention of property 2 below, not an error.
+
+**The same two lines, as one matrix.** Stack the two dot products and the rows of the matrix are $\hat{\mathbf t}^{\mathsf T}$ and $\hat{\mathbf n}^{\mathsf T}$:
+
+$$
+\begin{bmatrix} x_e \\ y_e \end{bmatrix}_p = \mathbf R^p_n \begin{bmatrix} N - N_k \\ E - E_k \end{bmatrix}_n,
+\qquad
+\mathbf R^p_n = \begin{bmatrix}\ \ \cos\pi_p & \sin\pi_p\\ -\sin\pi_p & \cos\pi_p\end{bmatrix}
+$$
+
+The matrix is not a new idea; it is the two shadows written together. It is worth having in this form because it is the notation of the literature and of the 2025 course notes, where the frames are named $\{n\}$ for north-east and $\{p\}$ for the path, the waypoint is $(x^n_i,\ y^n_i)$, the leg angle is read as a tangent,
+
+$$
+\tan\pi_p = \frac{y^n_{i+1} - y^n_i}{x^n_{i+1} - x^n_i}
+$$
+
+and the second row is the result to remember:
+
+$$
+\boxed{\ y_e = -\bigl(x - x^n_i\bigr)\sin\pi_p + \bigl(y - y^n_i\bigr)\cos\pi_p\ }
+$$
+
+with $x$ north and $y$ east. That is the expression above, one symbol at a time.
+
+**Where the vessel is abeam of.** The foot of the perpendicular — the point **on** the leg that the vessel is level with — follows from the same two vectors with no new work: travel $x_e$ along the leg from the waypoint.
+
+$$
+\begin{bmatrix} x_p \\ y_p \end{bmatrix}_n
+= \begin{bmatrix} N_k \\ E_k \end{bmatrix} + x_e\,\hat{\mathbf t}
+\qquad\text{or, as a rotation back,}\qquad
+\mathbf R^n_p \begin{bmatrix} x_e \\ 0 \end{bmatrix}_p
+= \bigl(\mathbf R^p_n\bigr)^{\mathsf T}\begin{bmatrix} x_e \\ 0 \end{bmatrix}_p
+$$
+
+measured from the waypoint. Setting the second component to zero is what "drop a perpendicular" means in algebra: keep the along-track shadow and throw the cross-track one away. The identity $\mathbf R^n_p = (\mathbf R^p_n)^{\mathsf T}$ is the single fact about rotations this week needs — a rotation is undone by its own transpose — and it is why no inverse is ever computed here.
 
 **Three properties worth stating before they are used.**
 
@@ -275,19 +339,22 @@ open_system('W05_G_tuning')        % Run — XY 그래프에 항적이 그려진
 
 ### Experiment 5-1b · One model, three laws (10 min)
 
-The `guidance` block does not hold one law. It holds **three**, and a seventh input chooses between them:
+The `guidance` block does not hold one law. It holds **four**, and one input chooses between them:
 
 | `law` | Law | What it aims at | Derived in |
 |---|---|---|---|
 | 1 | atan2 | the next waypoint — a **point** | §5-2 |
 | 2 | LOS | a point $\Delta$ ahead on the **line** | §5-3 |
 | 3 | ILOS | the same line, while remembering the push | §5-5 |
+| 4 | ILOS, plain integral | the same line and the same aiming expression, with the textbook integrator | §5-5 line 9b |
+
+Laws 3 and 4 differ in exactly one line of code — how the integral state is updated — so §5-5c can attribute every difference between them to that line.
 
 The value arrives from the Constant named `law` on the canvas, which reads the workspace variable of that name. Changing it and pressing Run makes the same model follow a different law, with no rebuild:
 
 ```matlab
 W05_0_setup
-law = 1;                           % 또는 2, 3 / or 2, or 3
+law = 1;                           % 또는 2, 3, 4 / or 2, 3, 4
 open_system('W05_G_tuning')        % Run
 ```
 
@@ -762,6 +829,24 @@ $$
 | $\chi$ | course, the direction actually travelled | $\chi = \psi + \beta$ |
 | $\beta$ | crab angle, the sideways push of the current | $22.8°$ at $V_c = 0.3$ m/s, Experiment 5-5a |
 
+> [!important] Course and heading are two different angles, and the autopilot only knows one of them
+> The **course** $\chi$ is the direction the vessel is actually moving; the **heading** $\psi$ is the direction its bow points. Their difference is the crab angle, and with a sway velocity $v$ it is
+>
+> $$
+> \chi = \psi + \beta_c, \qquad \beta_c = \arctan\frac{v}{u} = \arcsin\frac{v}{\sqrt{u^2+v^2}}
+> $$
+>
+> A guidance law of the LOS family is naturally a **course** command: $\dot y_e = U\sin(\chi - \pi_p)$ contains $\chi$ and nothing else. What it is wired to decides what has to be done with that fact:
+>
+> | | Course control | Heading control — **this course** |
+> |---|---|---|
+> | the autopilot closes on | $\chi$, measured as course over ground (GNSS) | $\psi$, measured by a compass or gyro (Week 4) |
+> | the guidance output is | used directly: $\chi_d$ | converted: $\psi_d = \chi_d - \beta_c$ |
+> | works at zero speed | no — $\chi$ is undefined when $U = 0$ | yes, which is why marine craft carry a compass |
+> | the crab angle is | inside the loop, measured | **a disturbance in yaw**, outside it |
+>
+> The Otter of this course has the Week 4 heading autopilot, so it sits in the right-hand column: the guidance hands over $\psi_d$ and whatever $\beta_c$ is doing arrives as an unmeasured yaw disturbance. Experiment 5-5a measures it directly — the vessel holds $-22.8°$ while making good due north, so $\beta_c = 22.8°$ — and §5-5's whole problem is that the law has no way to be told that number.
+
 7. **LOS, closed.** Substitute $\psi = \psi_d$ from §5-3 into line 6:
 
 $$
@@ -818,9 +903,36 @@ $$
 
 10. **Small signals: it is a PI controller.** Near the path $\arctan x \approx x$ once more, so $\psi_d - \pi_p \approx -(1/\Delta)\,y_e - (\kappa/\Delta)\,y_{\text{int}}$ — proportional plus integral on the cross-track error, with $K_p = 1/\Delta$ from §5-3 and $K_i = \kappa/\Delta$. Everything Week 2 established about a PI controller applies here unchanged, including that the integral costs overshoot.
 
+9b. **Why not the plain integral?** The obvious update is the one Week 2 used: integrate the error itself, $\dot y_{\text{int}} = y_e$, giving
+
+$$
+\psi_d = \pi_p - \arctan\!\left(K_p\, y_e + K_i\!\int_0^t\! y_e(\tau)\,\mathrm d\tau\right), \qquad K_p = \frac{1}{\Delta},\quad K_i = \frac{\kappa}{\Delta}
+$$
+
+   This is the **conventional ILOS** of the literature, and it satisfies requirement (a) — it stops only where $y_e = 0$. It fails requirement (b): far from the path it integrates at full rate. This mission starts $20$ m off, so by the time the vessel reaches the path the state has been accumulating for half a minute, and it then has to unwind through the other side. Experiment 5-5c measures what that costs: at the same $\kappa$ the plain integral does not follow the path at all, and tuned down until it does, it still swings $13.5$ m where the nonlinear law swings $3.9$ m. The denominator is the whole difference, and it is written into the law rather than bolted on.
+
+10b. **Why not measure the crab angle instead?** If $u$ and $v$ are measured, $\beta_c$ can be computed directly and subtracted, as the table above the derivation shows:
+
+$$
+\psi_d = \pi_p - \arctan\frac{y_e}{\Delta} - \beta_c, \qquad \beta_c = \arcsin\frac{v}{\sqrt{u^2+v^2}}
+$$
+
+   It works, and it is the cleanest thing to do **when the measurement exists**. Three reasons the integral is used instead, and the third is the one that decides it here:
+
+| | Why it is a problem |
+|---|---|
+| the formula is singular at zero speed | $\beta_c$ is undefined as $U \to 0$ and ill-conditioned just above it, exactly where a vessel manoeuvres near a berth |
+| the measurement must exist | it needs $v$ — a Doppler log, or course over ground differenced against the compass. The Otter of this course logs no $v$ to the guidance block |
+| it is never complete | roll and pitch coupling leaves a small offset even after $\beta_c$ is subtracted, so an integral is usually added anyway |
+
+   And the two are not really rivals: line 8 showed that the integral converges to $\kappa y_{\text{int}}^\star = \Delta\tan\beta$. **The integral reconstructs the number the measurement would have supplied**, from the path error alone, without a sensor and without a singularity at zero speed.
+
 11. **And $\kappa$ has a ceiling.** The bound in line 9 holds while $y_{\text{int}}$ is small; once $\kappa y_{\text{int}}$ is comparable to $y_e$ and opposite in sign the denominator shrinks again and the update is no longer capped. Measured peak $\lvert\dot y_{\text{int}}\rvert$: $0.34$ at $\kappa = 0.3$, but $0.82$ at $\kappa = 1$ and $1.23$ at $\kappa = 3$ — past the bound. The last of those never settles, as the table in line 8 shows. The stability proof in the source paper carries a condition on $\kappa$ for exactly this reason; this course chooses $\kappa$ by measurement instead, in §5-6.
 
-**Sources.** The law and its Lyapunov analysis: Børhaug, Pavlov and Pettersen, "Integral LOS control for path following of underactuated marine surface vessels in the presence of constant ocean currents", *47th IEEE Conference on Decision and Control*, 2008, pp. 4984–4991, DOI [10.1109/CDC.2008.4739352](https://doi.org/10.1109/CDC.2008.4739352). Fossen, *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed., 2021, §12.3 gives the same law with the notation used here; the MSS implementation is `ILOSpsi.m`.
+**Sources.** The law and its Lyapunov analysis: Børhaug, Pavlov and Pettersen, "Integral LOS control for path following of underactuated marine surface vessels in the presence of constant ocean currents", *47th IEEE Conference on Decision and Control*, 2008, pp. 4984–4991, DOI [10.1109/CDC.2008.4739352](https://doi.org/10.1109/CDC.2008.4739352) — they prove UGAS/ULES for a 3-DOF ship model in cascade with the guidance law. Fossen, *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed., 2021, §12.3 gives the same law with the notation used here and the proof on p. 362; Lekkas and Fossen (2014) is where the form with guaranteed stability properties is set out. The MSS implementations are `ILOSpsi.m` and `ILOSchi.m`.
+
+> [!note] The MSS integrator is the same idea with a different scaling
+> `ILOSchi.m` updates the state as $\dot y_{\text{int}} = U\,y_e\,/\sqrt{\Delta^2 + (y_e + \kappa y_{\text{int}})^2}$ — the speed over ground in the numerator and a square root in the denominator, where the form used here and in Fossen's lecture notes has $\Delta$ and no root. Both vanish only with $y_e$ and both shrink as the error grows, which is all lines 8 and 9 require; the difference is the units of $\kappa$ and how the rate scales with speed. This course keeps the book's form so that $\kappa$ can be read as a speed and compared with the current directly.
 
 ![The same current, the same bow angle: LOS leaves an offset, ILOS invents one so the real error can vanish](../figures/w05-ilos-idea.svg)
 
@@ -882,7 +994,7 @@ Expected output:
 
 ### Experiment 5-5b · The integral that removes it (8 min)
 
-**What it measures.** Lines 8 to 11: the same current with the integral switched on, for four values of $\kappa$ — what each one costs in overshoot, whether $\kappa y_{	ext{int}}$ really converges to the offset LOS was leaving, and where the update-rate bound of line 9 stops holding.
+**What it measures.** Lines 8 to 11: the same current with the integral switched on, for four values of $\kappa$ — what each one costs in overshoot, whether $\kappa y_{\text{int}}$ really converges to the offset LOS was leaving, and where the update-rate bound of line 9 stops holding.
 
 **The model.** `W05_F_ILOS` — the same guidance block with the integral state of the law above. The black line in the figure is the run of Experiment 5-5a, for comparison.
 
@@ -975,6 +1087,62 @@ Expected output:
 > - **Point to** — the black line holding 2.1 m; the integral states levelling off at different values that all produce the same steady lean into the current.
 > - **Ask** — "Why does LOS not reach the path, when its heading is exactly what it commanded?" To hold the line across the current, the vessel must point into it, and LOS only commands that while $y_e \ne 0$.
 > - **Take away** — a steady push leaves an error under P; the integral removes it.
+
+### Experiment 5-5c · The plain integral against the nonlinear one (8 min)
+
+**What it measures.** Line 9b: the same aiming law, the same current, the same mission, with the integral state updated two different ways. The aiming expression is identical in the two runs — $\psi_d = \pi_p - \arctan\bigl[(y_e + \kappa y_{\text{int}})/\Delta\bigr]$ — so every difference between them belongs to the integrator.
+
+**The model.** `W05_F_ILOS` with `law = 4` for the plain integral and `law = 3` for the nonlinear one. Both laws live in the same `guidance` block, one above the other, and the flag chooses (§5-1b).
+
+```matlab
+W05_0_setup
+W05_F2_two_integrators
+```
+
+Actual output:
+
+```
+  W05 Experiment 5-5c  the two integrators  (current 0.3 m/s towards east, Delta = 5 m)
+    run                        worst swing after the first crossing [m]   |y_e| mean over the last 100 s [m]
+    A  nonlinear   kappa = 0.3                             3.85                                0.071
+    B  plain       kappa = 0.3                            23.73                               11.529
+    C  plain       kappa = 0.05                           13.48                                0.203
+```
+
+![Experiment 5-5c: one aiming law, one current, three integrators](W05_simulink/img/W05_result_two_integrators.png)
+
+| In the figure | Meaning |
+|---|---|
+| left, the orange line (A) | the nonlinear update at $\kappa = 0.3$: across the path once, then within a metre of it |
+| left, the blue line (B) | the plain integral **at the same $\kappa$**: it never follows the path, it circles it |
+| left, the green dashed line (C) | the plain integral tuned down to $\kappa = 0.05$, which is the best this law does here |
+| right | the same three as tracks: B weaves across the first leg, C overshoots into it, A joins it |
+
+**Reading the figure against the derivation.**
+
+| Where to look | What is there | Which line it settles |
+|---|---|---|
+| run B, the first 60 s | the error falls from $20$ m to zero as fast as A does | line 9b: while $y_e$ is large the two integrators are not what is steering — the arctan is |
+| run B, after the first crossing | a swing of $23.7$ m to the other side, then another, and another | line 9b: the state wound up during the approach and the unwinding carries the vessel through |
+| run B, the last 100 s | mean $\lvert y_e\rvert = 11.5$ m — it never settles | at this $\kappa$ the plain law is not a path follower at all |
+| run C against run B | the same law, $\kappa$ six times smaller, and it settles at $0.20$ m | the plain integral can be made to work, by giving up gain |
+| run C against run A | $13.5$ m of swing against $3.9$ m, with A's steady error **three times smaller** | line 9: the denominator is what lets $\kappa$ be large enough to reject the current quickly without winding up on the way in |
+| all three, the last 100 s | $0.071$, $11.529$, $0.203$ m | line 8 holds for every integrator that stops only at $y_e = 0$; what differs is whether it gets there |
+
+**What the figure says**
+
+- Both laws are "LOS plus an integral", and they differ in one line. That line decides whether $\kappa$ may be chosen for the current or must be chosen for the approach.
+
+| What to try | What to watch |
+|---|---|
+| `E0 = 2;` then rerun | the start is now 2 m off instead of 20, the plain integral has nothing to wind up on, and B and A become nearly indistinguishable — which is the clearest statement of what the denominator is for |
+| `kappa = 0.05` with `law = 3` | the nonlinear law with C's gain: it loses the current more slowly and keeps the clean transient |
+
+> [!tip] In class
+> - **Purpose** — show that an anti-windup written into a law is not a detail of implementation.
+> - **Point to** — the blue trace crossing zero at full speed every time.
+> - **Ask** — "Both integrators stop only at $y_e = 0$. Why do they not end up in the same place?" Because the equilibrium of line 8 says nothing about the path taken to it, and the plain one arrives with a state that has to be unwound.
+> - **Take away** — the same equilibrium, two transients; the one that is safe to tune is the one with the denominator.
 
 ## 5-6. The tuning order, applied to guidance
 
@@ -1073,7 +1241,7 @@ Expected output:
 
 ## 5-7. Both loops at once: the speed of Week 3 and the path of Week 5
 
-**What is observed.** Every model up to this point has pushed the hull with a constant surge force, `X_ff = 60` N. Nothing in the week ever asked what speed that produces. The answer is $0.767$ m/s, and it is not a chosen number at all: it is the speed at which the drag of the Otter happens to balance 60 N. Ask for a different speed and there is no way to ask. Put the Week 3 speed loop in front of the same allocator and the vessel holds $1.000$ m/s instead, and reaches the last leg of the mission at $188.7$ s rather than $244.9$ s.
+**What is observed.** Every model up to this point has pushed the hull with a constant surge force, `X_ff = 60` N. Nothing in the week ever asked what speed that produces. The answer is $0.767$ m/s, and it is not a chosen number at all: it is the speed at which the drag of the Otter happens to balance 60 N. Ask for a different speed and there is no way to ask. Put the Week 3 speed loop in front of the same allocator and the vessel holds $1.000$ m/s instead, and reaches the last leg of the mission at $189.7$ s rather than $244.9$ s.
 
 **The result.** The two controllers do not meet, and never exchange a signal. They meet in the **allocator**, because there are two propellers and the surge force and the yaw moment must both come out of the same two. Writing that sharing down gives one $2\times2$ system, its inverse, and a limit on the yaw moment that **depends on the surge force**:
 
@@ -1334,7 +1502,7 @@ Actual output:
   W05 Experiment 5-7  speed control and path following at once
     surge force from    u mean [m/s]   last leg at [s]   mean |y_e| legs 2-4 [m]   X mean [N]
     a constant X_ff        0.767             244.9                    0.353        60.00
-    the speed loop         1.000             189.7                    0.577        78.48
+    the speed loop         1.000             189.7                    0.896        78.88
 
     the allocation, checked by hand   (y_pont = 0.3950 m, k_pos = 0.01108)
       case              X [N]    N [N m]   T_L [N]   T_R [N]   n_L      n_R     n_L by hand
@@ -1347,8 +1515,8 @@ Actual output:
 
     the anti-windup (back-calculation), measured
       Kb      X at its limit for [s]   speed overshoot [m/s]
-      1                     0.66               0.0216
-      0                     0.92               0.0380
+      1                     0.68               0.0216
+      0                     0.94               0.0380
 ```
 
 ![Experiment 5-7: one mission with the speed loop, the leg index and the cross-track error](W05_simulink/img/W05_result_speed_path.png)
@@ -1358,19 +1526,20 @@ The figure draws the run that uses the speed loop and nothing else; the comparis
 | In the figure | Meaning |
 |---|---|
 | left | the mission, with the hull drawn along the track so the heading is visible at every mark |
-| panel 1, $u_d$ and $u$ | the commanded speed and the one made — they lie on each other, which is what the loop was added for |
+| panel 1, $u_d$ and $u$ | the commanded speed and the one made — they lie on each other, which is what the loop was added for, and both fall to zero at $280$ s when the mission ends |
 | panel 2, $X$ | the surge force the loop asks for: $77.6$ N on a straight leg, up to $X_{\max}$ out of each corner |
 | panel 3, $N$ | the yaw moment, against the $\pm N_{speed}$ the Saturation holds |
 | panel 4, $n_L$ and $n_R$ | the two shaft speeds, against $n_{\max}$ |
 | panel 5, waypoint $k$ | the leg index, stepping up once per switch: $1 \to 2$ at $68.9$ s, then $129.3$ s, then $189.7$ s |
 | panel 6, $y_e$ | the cross-track error against time: $20$ m at the start, then a spike at each corner and a return to zero |
+| every panel, after $280$ s | flat: the vessel has arrived at the last waypoint and the run is being held for `stop_hold` seconds before it ends |
 
 **Reading the figure and the table against the derivation.**
 
 | Where to look | What is there | Which line it settles |
 |---|---|---|
 | `u mean` column | $0.767$ against $1.000$ m/s | line 1: a constant force gives the speed that balances drag, and $0.767$ was never chosen by anyone |
-| `X mean` column | $60.00$ against $78.48$ N | the old models have no speed loop to vary the force; this one works for it |
+| `X mean` column | $60.00$ against $78.88$ N | the old models have no speed loop to vary the force; this one works for it |
 | panel 2 | $77.59$ N on a straight leg, rising to $120$ N after each corner | holding $1.0$ m/s costs $77.6$ N of drag; a turn costs more, and the loop pays it until it reaches $X_{\max}$ |
 | `straight leg` row | $T_L = 38.16$, $T_R = 39.43$ N from $X = 77.59$, $N = -0.50$ | line 3: $77.59/2 = 38.80$ each, then $\mp 0.50/0.79 = \mp 0.63$ |
 | `n_L by hand` column | $58.686$ against $58.683$ logged | line 4 reproduced from the logged $X$ and $N$ alone, through the same square root |
@@ -1381,7 +1550,7 @@ The figure draws the run that uses the speed loop and nothing else; the comparis
 | the $N_{\lim}$ row | $70.85$ at $X = 60$, $47.15$ at $X = 120$ | line 6: the first branch, falling as the surge force takes the headroom |
 | the same row at $X = 0$ | $52.70$ N·m, **below** the value at 60 N | line 6: the second branch, rising; the peak is between, at $X^\star = 52.97$ N |
 | panel 3, the dotted pair | $\pm 47.15$ N·m, not the $\pm 70.85$ the other six models hold | the price of the speed, stated as a number before any track is drawn |
-| `mean |y_e|` column | $0.577$ against $0.353$ m | going 30 % faster on two-thirds of the moment costs 63 % more cross-track error |
+| `mean |y_e|` column | $0.896$ against $0.353$ m | going 30 % faster on two-thirds of the moment costs more than twice the cross-track error. Both are measured **while under way**: the speed-loop run stops at the last waypoint, and averaging its deceleration in would flatter it |
 | `last leg at` column | $189.7$ against $244.9$ s | 23 % of the mission time, bought with the accuracy in the previous row |
 
 **What the figure says**
@@ -1417,8 +1586,17 @@ A second window opens **while the model is still running**, redrawn at every ste
 > [!tip] Switching the live view off
 > `animate = 0` in `W05_0_setup` leaves the block in place and makes it do nothing, which is faster when a script is sweeping gains. `pace = 1` runs the simulation at wall-clock speed so the window can be watched in real time; the numbers are identical either way.
 
-> [!warning] The track continues past the last waypoint
-> There is no mission-end logic in Week 5. When the last leg is reached it is simply held, so the vessel sails along its extension until `T_final`. That is why the track in the figure above runs to 210 m east. Stopping a mission is a state-machine question and is built in Week 8.
+> [!important] The mission ends at the last waypoint
+> `W05_H_speed_path` stops when it arrives. The guidance applies **the same test it uses to switch legs** — less than `R_switch` left to the end of the leg — and, finding no leg to switch to, takes the speed command to zero through the `u_d x gate` product on the canvas. `stop_hold` seconds later a `Stop Simulation` block ends the run, which is why the figure above ends at $295.1$ s rather than at `T_final` $= 400$ s. The vessel comes to rest at $(58.2,\ 118.1)$ m, $2.5$ m from the last waypoint: `R_switch` is $3$ m, and what remains is the distance covered while slowing down.
+>
+> | What ends it | Where it is |
+> |---|---|
+> | the test | inside `guidance`, step 3b: `arrived = near_end && k == n-1` |
+> | the speed going to zero | the `u_d x gate` Product **on the canvas**, so the end of the mission is visible in the diagram |
+> | the run ending | one `Stop Simulation` block, fed by the `stop` output |
+> | switching it off | `stop_at_end = 0` in `W05_0_setup`, which restores the old behaviour |
+>
+> The other six models keep `stop_at_end` unused: they hold the last leg and sail along its extension, which is what §5-4's reading table describes. A mission with waiting, re-planning and a state machine is Week 8; this is the smallest thing that deserves the name *end of mission*.
 
 | What to try | What to watch |
 |---|---|
@@ -1466,6 +1644,7 @@ Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so t
 | 5-4 | `W05_E_switching` | `W05_E_waypoint_switching` | the switching distance on a mission |
 | 5-5a | `W05_F_LOS` | `W05_F_LOS_in_a_current` | the offset a current leaves under LOS |
 | 5-5b | `W05_F_ILOS` | `W05_F_ILOS_removes_it` | the integral that removes it |
+| 5-5c | `W05_F_ILOS`, `law = 3` and `4` | `W05_F2_two_integrators` | the plain integral against the nonlinear one, at the same gain and at its own |
 | 5-6 | `W05_G_tuning` | `W05_G_tuning_by_hand` | the tuning order on the mission in a current |
 | 5-7 | `W05_H_speed_path` | `W05_H_speed_and_path` | the speed loop of Week 3 on the same hull, and how $X$ and $N$ split into $n_L$ and $n_R$ |
 

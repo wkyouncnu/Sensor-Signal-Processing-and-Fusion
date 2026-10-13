@@ -93,9 +93,9 @@ Y = 200;
 %  value comes from the workspace variable `law`, so changing it and pressing Run
 %  makes the same model follow a different law; the section scripts pass it
 %  explicitly so that each experiment states which law it measured.
-GIN = {'WP_N','WP_E','Delta','R_switch','kappa','law'};
+GIN = {'WP_N','WP_E','Delta','R_switch','kappa','law','stop_at_end','stop_hold'};
 add_block('simulink/User-Defined Functions/MATLAB Function', [m '/guidance'], ...
-          'Position', [300 Y-160 520 Y+160]);
+          'Position', [300 Y-200 520 Y+200]);   % 입력 9, 출력 6 / nine in, six out
 set_mlfcn([m '/guidance'], guidance_code(), 'psi_d', '[1 1]', 'h');
 mlfcn_params([m '/guidance'], {'h'});     % 고정 스텝만 숨긴다 / only the step stays hidden
 q = port_xy(m, 'guidance', 'Inport', 1);
@@ -124,9 +124,15 @@ add_block('simulink/Signal Routing/From', [m '/From x '], 'GotoTag','x', 'ShowNa
           'Position', [615 a2(2)-10 655 a2(2)+10]);
 route(m, 'From x ', 1, 'heading autopilot', 2, zeros(0,2));
 goto_at(m, {'guidance', 1}, [550 p1(2)], 'up', 'psi_d');
-for i = 2:4                                   % y_e, aux, wp -> Goto 태그 / to Goto tags
+%  y_e, aux, wp, gate, stop 는 전부 Goto 태그로 나간다. gate 와 stop 은 H 모델만
+%  쓰지만, 출력 포트는 어느 모델에서나 연결되어 있어야 한다 (연결 안 된 출력은
+%  컴파일 오류다) - 쓰지 않는 모델에서는 From 이 없는 Goto 로 남는다.
+%  All five go out as Goto tags. gate and stop are read only by the H model, but
+%  an output port has to be connected in every model, so elsewhere the Goto simply
+%  has no From.
+for i = 2:6
     p = port_xy(m, 'guidance', 'Outport', i);
-    tag = {'','y_e','aux','wp'};  tag = tag{i};
+    tag = {'','y_e','aux','wp','gate','stop'};  tag = tag{i};
     add_block('simulink/Signal Routing/Goto', [m '/Goto ' tag], 'GotoTag',tag, ...
               'TagVisibility','local', 'ShowName','off', 'Position', [540 p(2)-9 585 p(2)+9]);
     route(m, 'guidance', i, ['Goto ' tag], 1, zeros(0,2));
@@ -151,11 +157,37 @@ if o.speed
     %  R_switch 를 캔버스에 두고 게인은 Gain 블록에 두는 것과 같다.
     %  The commanded speed is a Constant outside; the gains are read from the
     %  workspace by Gain blocks inside, as in the MSS demonstration model.
+    %  명령 속도는 **gate 를 지나** 들어간다 (사용자 지시, 2026-10-13): 마지막
+    %  웨이포인트에 닿으면 유도가 gate 를 0 으로 내리고, 곱이 명령을 0 으로 만들어
+    %  배가 선다. 곱셈을 캔버스에 두는 이유는 그것이 **임무의 끝**이라는 사실이
+    %  그림에 보여야 하기 때문이다 - 유도 블록 안에 숨기지 않는다.
+    %  The commanded speed passes through the gate: on reaching the last waypoint
+    %  the guidance takes gate to 0 and the product takes the command with it. The
+    %  multiplication is on the canvas because the end of the mission is something
+    %  the diagram should show rather than hide inside the guidance block.
     q = port_xy(m, 'speed loop', 'Inport', 1);
+    add_block('simulink/Math Operations/Product', [m '/u_d x gate'], 'Inputs','2', ...
+              'Position', [600 q(2)-18 630 q(2)+18]);
     add_block('simulink/Sources/Constant', [m '/u_d'], 'Value','u_d', ...
-              'Position', [575 q(2)-13 655 q(2)+13]);
-    route(m, 'u_d', 1, 'speed loop', 1, zeros(0,2));
+              'Position', [460 q(2)-33 540 q(2)-7]);
+    route(m, 'u_d', 1, 'u_d x gate', 1, zeros(0,2));
+    q2 = port_xy(m, 'u_d x gate', 'Inport', 2);
+    from_at(m, 'gate', [470 q2(2)], 'From gate');
+    route(m, 'From gate', 1, 'u_d x gate', 2, zeros(0,2));
+    route(m, 'u_d x gate', 1, 'speed loop', 1, zeros(0,2));
+    goto_at(m, {'u_d x gate', 1}, port_xy(m, 'u_d x gate', 'Outport', 1), 'up', 'u_d_eff');
     goto_at(m, {'speed loop', 1}, port_xy(m, 'speed loop', 'Outport', 1), 'down', 'X');
+
+    %  임무가 끝나고 stop_hold 초 뒤에 실행을 끝낸다. 5주차에는 임무 상태기계가
+    %  없으므로(그것은 8주차다) 블록 하나로 끝낸다 - 조건은 유도가 만든다.
+    %  The run ends stop_hold seconds after the mission does. Week 5 has no mission
+    %  state machine - that is Week 8 - so one block ends it, on a condition the
+    %  guidance produced.
+    add_block('simulink/Sinks/Stop Simulation', [m '/mission over'], ...
+              'Position', [600 Y+330 630 Y+360]);
+    q = port_xy(m, 'mission over', 'Inport', 1);
+    from_at(m, 'stop', [480 q(2)], 'From stop');
+    route(m, 'From stop', 1, 'mission over', 1, zeros(0,2));
 end
 
 %% 배분 / allocation
@@ -334,9 +366,18 @@ end
 %  u_d is a number only where there is a speed loop; elsewhere NaN, and the view
 %  does not draw the line. An unfollowed dashed line would be a lie.
 q = port_xy(m, 'Animate', 'Inport', 7);
-add_block('simulink/Sources/Constant', [m '/u_d shown'], ...
-          'Value', ternary(o.speed, 'u_d', 'NaN'), 'Position', [A q(2)-13 A+80 q(2)+13]);
-route(m, 'u_d shown', 1, 'Animate', 7, zeros(0,2));
+if o.speed
+    %  **gate 를 지난 뒤의 명령**을 보여 준다. 상수 u_d 를 그리면 임무가 끝난 뒤에도
+    %  1.0 m/s 를 명령하고 있는 것처럼 보인다 - 화면이 거짓말을 한다.
+    %  The command AFTER the gate: drawing the constant would show 1.0 m/s still
+    %  being asked for after the mission is over.
+    from_at(m, 'u_d_eff', [A q(2)], 'From an u_d');
+    route(m, 'From an u_d', 1, 'Animate', 7, zeros(0,2));
+else
+    add_block('simulink/Sources/Constant', [m '/u_d shown'], ...
+              'Value', 'NaN', 'Position', [A q(2)-13 A+80 q(2)+13]);
+    route(m, 'u_d shown', 1, 'Animate', 7, zeros(0,2));
+end
 q = port_xy(m, 'Animate', 'Inport', 8);
 from_at(m, 'n', [A q(2)], 'From an n');
 route(m, 'From an n', 1, 'Animate', 8, zeros(0,2));
@@ -359,9 +400,18 @@ route(m, 'Animate', 1, 'anim end', 1, zeros(0,2));
 %  9 요 모멘트, 10 전진력, 11 축 회전수 둘 - 5-7 절의 배분 수식을 수치로 확인한다
 %  9 the yaw moment, 10 the surge force, 11 the two shaft speeds: what 5-7 checks
 %  the allocation equations against. Column 11 is a 2-vector, so the log has 12.
+%  12 명령 속도 (gate 를 지난 뒤) - **속도 루프가 있는 모델만**. 임무가 끝나 명령이
+%  0 으로 내려간 순간이 로그에 남아야, 절 스크립트가 "도는 동안" 만 재어 평균을
+%  낼 수 있다 (2026-10-13).
+%  Column 12 is the commanded speed after the gate, and only where there is a
+%  speed loop: the instant the command goes to zero has to be in the log, so that
+%  the section script can average over the part of the run that was under way.
 tags = {'y_e','psi_d_deg','psi_deg','N','E','aux','wp','u','Nmom','X','n'};
-add_block('simulink/Signal Routing/Mux', [m '/log'], 'Inputs','11', 'Position', [S+400 40 S+405 480]);
-for i = 1:11
+if o.speed, tags{end+1} = 'u_d_eff'; end
+nlog = numel(tags);
+add_block('simulink/Signal Routing/Mux', [m '/log'], 'Inputs', num2str(nlog), ...
+          'Position', [S+400 40 S+405 480]);
+for i = 1:nlog
     q = port_xy(m, 'log', 'Inport', i);
     from_at(m, tags{i}, [S+300 q(2)], ['From log ' tags{i}]);
     route(m, ['From log ' tags{i}], 1, 'log', i, zeros(0,2));
@@ -461,7 +511,7 @@ function C = guidance_code()
 %               model carried only its own law, so opening the block showed one of
 %               the three and never let the reader compare them.
 C = { ...
-'function [psi_d, y_e, aux, wp] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, law, h)'
+'function [psi_d, y_e, aux, wp, gate, stop] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, law, stop_at_end, stop_hold, h)'
 '%#codegen'
 '%GUIDANCE  웨이포인트 목록과 배의 위치에서 명령 선수각 psi_d 를 만든다.'
 '%          Make the commanded heading psi_d from the waypoint list and the position.'
@@ -473,7 +523,12 @@ C = { ...
 '%   law 이 법칙을 고른다 / law selects the law'
 '%     1  atan2   다음 웨이포인트를 곧장 겨냥한다 / aim straight at the next waypoint'
 '%     2  LOS     경로 위 Delta 앞의 점을 겨냥한다 / aim Delta ahead on the path'
-'%     3  ILOS    LOS + 적분 (조류에 맞선다)      / LOS plus an integral, against a current'
+'%     3  ILOS    LOS + **비선형** 적분 (Borhaug 2008) / LOS plus the nonlinear integral'
+'%     4  ILOS-C  LOS + **보통** 적분 (교과서형)       / LOS plus a plain integral'
+'%   3 과 4 는 **적분기의 갱신식만** 다르다. 겨냥하는 식은 글자까지 같다 - 그래서'
+'%   둘을 같은 임무에 돌리면 차이가 전부 적분기에서 온 것이다 (5-5b 절).'
+'%   Laws 3 and 4 differ only in how the integral state is updated; the aiming'
+'%   expression is identical, so a difference between them is the integrator''s.'
 '%   캔버스의 Constant `law` 에서 온다. 명령창에서 law = 2 로 바꾸고 Run 을 누르면'
 '%   같은 모델이 다른 법칙으로 돈다 — 셋을 같은 임무에서 비교할 수 있다.'
 '%   It arrives from the Constant `law` on the canvas: change it in the Command'
@@ -484,12 +539,26 @@ C = { ...
 '%     y_e    횡방향 오차 [m], 경로 오른쪽이 + / cross-track error, right of the path +'
 '%     aux    ILOS 의 적분 상태 (다른 법칙은 0) / the ILOS integral (0 for the others)'
 '%     wp     지금 따라가는 다리 번호 / the leg being followed'
+'%     gate   속도 명령에 곱하는 0/1. 임무가 끝나면 0 이 되어 배가 선다'
+'%            0/1 multiplying the speed command: 0 once the mission is over'
+'%     stop   시뮬레이션을 끝내라는 0/1 (Stop Simulation 블록으로)'
+'%            0/1 asking the run to end, wired to a Stop Simulation block'
+'%'
+'%   임무의 끝 / the end of the mission  (사용자 지시, 2026-10-13)'
+'%     마지막 다리의 끝에 R_switch 안으로 들어오면 **임무가 끝난 것**이다. 그때'
+'%     gate 가 0 이 되어 속도 명령이 0 으로 떨어지고, stop_hold 초 뒤에 stop 이 1 이'
+'%     되어 실행이 끝난다. 그 몇 초는 배가 서는 모습을 보기 위한 것이다.'
+'%     stop_at_end = 0 이면 둘 다 하지 않는다 - 5-2 ~ 5-6 절의 모델들이 그렇다.'
+'%     Reaching within R_switch of the end of the LAST leg ends the mission: gate'
+'%     drops to 0 so the speed command goes to zero, and stop_hold seconds later'
+'%     stop goes to 1 and the run ends. Those seconds are there so the vessel can'
+'%     be seen slowing down. With stop_at_end = 0 neither happens.'
 ''
 '% 0) 기억하는 값: 지금 다리 k, 적분 y_int. 블록이 가지고 있다가 실행마다 처음으로 돌아간다.'
 '%    Remembered values: the leg k and the integral y_int. The block owns them,'
 '%    and they start afresh on every run.'
-'persistent k y_int'
-'if isempty(k), k = 1; y_int = 0; end'
+'persistent k y_int n_after'
+'if isempty(k), k = 1; y_int = 0; n_after = 0; end'
 'N = x(7);  E = x(8);'
 'n = numel(WP_N);'
 ''
@@ -512,10 +581,32 @@ C = { ...
 '%    With less than R_switch left to the end of the leg, move to the next leg (the'
 '%    same test as MSS). All three laws share it; only the aiming differs.'
 'd = sqrt((Nn - Nk)^2 + (En - Ek)^2);'
-'if (d - x_e) < R_switch && k < n-1'
+'near_end = (d - x_e) < R_switch;'
+'if near_end && k < n-1'
 '    k = k + 1;'
+'    near_end = false;          % 새 다리는 방금 시작했다 / the new leg has just begun'
 'end'
 'wp = k;'
+''
+'% 3b) 임무의 끝. **마지막 다리**에서 같은 판정이 참이 되면 더 갈 곳이 없다.'
+'%     다음 다리로 넘어가는 대신 속도 명령을 0 으로 내리고, 잠시 뒤 실행을 끝낸다.'
+'%     The end of the mission: when the same test becomes true on the LAST leg'
+'%     there is nowhere to switch to, so the speed command is taken to zero and'
+'%     the run is ended a few seconds later.'
+'arrived = near_end && k == n-1;'
+'if arrived'
+'    n_after = n_after + 1;'
+'end'
+'gate = 1;'
+'stop = 0;'
+'if stop_at_end > 0.5'
+'    if n_after > 0'
+'        gate = 0;'
+'    end'
+'    if n_after * h > stop_hold'
+'        stop = 1;'
+'    end'
+'end'
 ''
 '% 4) 법칙을 고른다 / choose the law.'
 '%    셋이 나란히 있다. 위에서 아래로 읽으면 유도 법칙이 자라는 순서다:'
@@ -537,6 +628,17 @@ C = { ...
 '    %    y_e, atan(y_e/Delta) ~ y_e/Delta: a P controller with Kp = 1/Delta.'
 '    psi_d = pi_p - atan(y_e / Delta);'
 '    y_int = 0;'
+'elseif law > 3.5'
+'    % 4) 보통 적분을 쓴 ILOS (교과서형 / conventional ILOS).'
+'    %        psi_d = pi_p - atan(Kp y_e + Ki y_int),   y_int'' = y_e'
+'    %    적분기가 오차를 **그대로** 쌓는다. 경로에서 멀리 떨어져 있을 때도 같은'
+'    %    속도로 쌓이므로, 첫 접근처럼 y_e 가 큰 구간에서 적분이 크게 자란다 -'
+'    %    그 뒤 풀리면서 **반대쪽으로 넘어간다**. 그것이 5-5b 절이 재는 것이다.'
+'    %    The integral accumulates the error as it stands, at the same rate far'
+'    %    from the path as near it, so a long first approach winds it up and the'
+'    %    unwinding carries the vessel past the path.'
+'    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);'
+'    y_int = y_int + h * y_e;'
 'else'
 '    % 3) ILOS - LOS 에 적분을 더한다. 횡방향 오차에 대한 PI 제어기.'
 '    %        psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)'

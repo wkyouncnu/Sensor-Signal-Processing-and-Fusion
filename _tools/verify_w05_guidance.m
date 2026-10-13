@@ -12,7 +12,7 @@ function ok = verify_w05_guidance()
 %        ILOS removes it: mean over the last 100 s below 0.05 m
 %     5  경로 좌표로의 회전이 MSS crosstrackWpt.m 과 같은 y_e 를 준다
 %        the rotation into path coordinates gives the same y_e as MSS crosstrackWpt.m
-%     5a law 플래그가 갈라진다: 셋이 서로 다르고 LOS 는 kappa 를 읽지 않는다 (5-1b 절)
+%     5a law 플래그가 갈라진다: 넷이 서로 다르고 LOS 는 kappa 를 읽지 않는다 (5-1b 절)
 %        the law flag branches: the three differ, and LOS never reads kappa
 %     6  배분의 역: B [T_L; T_R] 이 원래의 [X; N] 을 되돌려 준다 (5-7 절)
 %        the allocation inverse returns the (X, N) it came from
@@ -76,9 +76,15 @@ RA = W05_read('W05_G_tuning', La{:}, 'law', 1);
 RB = W05_read('W05_G_tuning', La{:}, 'law', 2);
 RC = W05_read('W05_G_tuning', La{:}, 'law', 3);
 RK = W05_read('W05_G_tuning', La{:}, 'law', 2, 'kappa', 10*V.kappa);
+%  law = 4 는 보통 적분을 쓴 ILOS 다 (5-5c 절). 겨냥하는 식이 3 과 같으므로 **적분
+%  상태만** 달라야 한다: 같은 임무에서 aux(= y_int) 가 다르고, 멀리서 더 빨리 자란다.
+%  Law 4 is the plain integral: the aiming expression is law 3's, so the states
+%  must differ, and the plain one must grow faster while the error is large.
+RD = W05_read('W05_G_tuning', La{:}, 'law', 4);
 c5a = max(abs(RA.y_e - RB.y_e)) > 1 && max(abs(RB.y_e - RC.y_e)) > 0.5 ...
-      && isequal(RB.y_e, RK.y_e) && all(RB.aux == 0) && any(RC.aux ~= 0);
-ok = report(ok, '5a law = 1, 2, 3 branch; LOS ignores kappa', c5a, ...
+      && isequal(RB.y_e, RK.y_e) && all(RB.aux == 0) && any(RC.aux ~= 0) ...
+      && max(abs(RD.aux)) > max(abs(RC.aux));
+ok = report(ok, '5a law = 1, 2, 3, 4 branch; LOS ignores kappa', c5a, ...
             sprintf('atan2-LOS %.2f m, LOS-ILOS %.2f m, kappa x10 moves LOS by %.1e m', ...
                     max(abs(RA.y_e-RB.y_e)), max(abs(RB.y_e-RC.y_e)), max(abs(RB.y_e-RK.y_e))));
 
@@ -107,6 +113,23 @@ c7 = e7 < 1e-10 && abs(Nlim(60) - 70.85) < 0.01 && abs(Xs(ipk) - (Tmax + Tmin)) 
 ok = report(ok, '7 N_lim(X) touches the thrust limits, peaks at T_max+T_min', c7, ...
             sprintf('over by %.1e N; N_lim(60) = %.2f; peak at X = %g vs %.2f', ...
                     e7, Nlim(60), Xs(ipk), Tmax + Tmin));
+
+%  8  임무의 끝 (2026-10-13). W05_H_speed_path 는 마지막 웨이포인트에 닿으면 속도
+%     명령을 0 으로 내리고 stop_hold 초 뒤에 실행을 끝낸다. 재는 것은 셋이다:
+%     ① 실행이 T_final 보다 **일찍** 끝났다  ② 마지막 위치가 마지막 웨이포인트에서
+%     R_switch 안에 있다  ③ 명령이 0 이 된 뒤 실행이 stop_hold 만큼 더 돌았다.
+%     The end of the mission: the run must end before T_final, the vessel must come
+%     to rest within R_switch of the last waypoint, and the run must continue for
+%     stop_hold seconds after the command went to zero.
+V8 = W05_vars();
+R8 = W05_read('W05_H_speed_path', 'law', 3);
+d8 = hypot(R8.N(end) - V8.WP_N(end), R8.E(end) - V8.WP_E(end));
+i8 = find(R8.u_d <= 0, 1);                                % 명령이 0 이 된 순간 / command to zero
+t8 = R8.t(end) - R8.t(i8);
+c8 = R8.t(end) < V8.T_final - 1 && d8 < V8.R_switch && abs(t8 - V8.stop_hold) < 2*V8.h;
+ok = report(ok, '8 the mission ends at the last waypoint', c8, ...
+            sprintf('ran %.1f s of %g; stopped %.2f m short; held %.2f s after the command', ...
+                    R8.t(end), V8.T_final, d8, t8));
 
 fprintf('\n  %s\n\n', ternary(ok, 'ALL CHECKS PASSED', '불일치 있음 — 위 FAIL 을 볼 것'));
 end

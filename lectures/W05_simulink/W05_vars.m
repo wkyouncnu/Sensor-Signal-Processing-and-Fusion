@@ -51,6 +51,11 @@ V.Kp_u  = 200;         % 3주차의 게인 그대로 / the gains of Week 3, unch
 V.Ki_u  = 200;
 V.Kb    = 1;           % 되감기 이득, 3주차와 같다 / back-calculation gain, as in Week 3
 
+%  임무의 끝 — 마지막 웨이포인트에 닿으면 속도 명령을 0 으로 내리고 실행을 끝낸다
+%  the end of the mission: the speed command goes to zero and the run ends
+V.stop_at_end = 1;
+V.stop_hold   = 15;    % 선 뒤에 더 도는 시간 / the run continues this long after  [s]
+
 %  선체와 추진기 / hull and thrusters
 V.k_pos = cfg.k_pos;  V.k_neg = cfg.k_neg;  V.y_pont = cfg.y_pont;
 V.n_max = cfg.n_max;  V.n_min = cfg.n_min;   % 축 회전수 한계 / shaft-speed limits [rad/s]

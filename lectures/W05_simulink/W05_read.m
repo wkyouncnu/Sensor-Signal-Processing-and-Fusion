@@ -41,4 +41,13 @@ R.t = L.time;  R.V = V;
 R.y_e = y(:,1);  R.psi_d = y(:,2);  R.psi = y(:,3);
 R.N = y(:,4);    R.E = y(:,5);      R.aux = y(:,6);  R.wp = y(:,7);  R.u = y(:,8);
 R.Nmom = y(:,9); R.X = y(:,10);     R.nL  = y(:,11); R.nR = y(:,12);
+
+%  13 열은 **속도 루프가 있는 모델만** 있다: gate 를 지난 명령 속도. 임무가 끝나면
+%  0 으로 떨어지므로, 절 스크립트는 R.u_d > 0 인 구간만 재어 "도는 동안" 의 평균을
+%  낸다. 없는 모델에서는 NaN 으로 채워 **묻는 쪽이 알아채게** 한다.
+%  Column 13 exists only where there is a speed loop: the commanded speed after
+%  the gate, which drops to zero when the mission ends. Section scripts average
+%  over R.u_d > 0. Where there is no speed loop the field is NaN rather than
+%  silently absent.
+if size(y,2) >= 13, R.u_d = y(:,13); else, R.u_d = nan(size(R.t)); end
 end
