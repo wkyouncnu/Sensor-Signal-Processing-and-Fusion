@@ -468,14 +468,16 @@ if o.limit
     %  The subtraction sits directly below the two signals it takes: each drops
     %  straight down and only the Kb line travels back. The sign is at the junction,
     %  the asked-for value entering on the left as minus and the clamped one below.
-    add_sum(m, 'tau - u', '-+', [830 Y+40]);
-    blk(m, 'simulink/Math Operations/Gain', 'Kb', 815, YB, [50 36], {'Gain','Kb', 'Orientation','left'});
-    route(m, last{1}, last{2}, 'tau - u', 1, [775 YP; 775 Y+40]);
-    route(m, 'limit', 1, 'tau - u', 2, [860 YP; 860 Y+90; 830 Y+90]);
-    qk = port_xy(m, 'Kb', 'Inport', 1);
-    route(m, 'tau - u', 1, 'Kb', 1, [880 Y+40; 880 qk(2)]);
-    qk = port_xy(m, 'Kb', 'Outport', 1);
-    route(m, 'Kb', 1, 'into I', 2, [510 qk(2)]);
+    %  2026-10-13, 사용자 수정: 되돌아가는 길을 **맨 아래 한 줄의 통로**로 (§15-32).
+    %  The return path is one lane along the bottom, both blocks facing left.
+    add_sum(m, 'tau - u', '-+', [790 YB]);
+    set_param([m '/tau - u'], 'Orientation','left');
+    blk(m, 'simulink/Math Operations/Gain', 'Kb', 690, YB, [50 36], {'Gain','Kb', 'Orientation','left'});
+    route(m, last{1}, last{2}, 'tau - u', 1, [775 YP; 775 YB-5]);
+    route(m, 'limit', 1, 'tau - u', 2, [860 YP; 860 YB+5]);
+    route(m, 'tau - u', 1, 'Kb', 1, zeros(0,2));
+    qk = port_xy(m, 'into I', 'Inport', 2);
+    route(m, 'Kb', 1, 'into I', 2, [640 YB; 640 qk(2)]);
     last = {'limit', 1};
     for nm = {'tau - u'}, set_param([m '/' nm{1}], 'NamePlacement','alternate'); end
 end

@@ -163,14 +163,20 @@ if o.aw
     %  The subtraction sits directly below the two signals it takes: each drops
     %  straight down and only the Kb line travels back. The sign is at the junction,
     %  the asked-for value entering on the left as minus and the clamped one below.
-    add_sum(m, 'X - u', '-+', [830 Y+40]);
-    blk(m, 'simulink/Math Operations/Gain', 'Kb', 815, YB, [50 36], {'Gain','Kb', 'Orientation','left'});
-    route(m, last{1}, last{2}, 'X - u', 1, [775 YP; 775 Y+40]);
-    route(m, 'thrust limit', 1, 'X - u', 2, [860 YP; 860 Y+90; 830 Y+90]);
-    qk = port_xy(m, 'Kb', 'Inport', 1);
-    route(m, 'X - u', 1, 'Kb', 1, [880 Y+40; 880 qk(2)]);
-    qk = port_xy(m, 'Kb', 'Outport', 1);
-    route(m, 'Kb', 1, 'into I', 2, [510 qk(2)]);
+    %  2026-10-13, 사용자 수정: 되돌아가는 길을 **맨 아래 한 줄의 통로**로. 뺄셈과
+    %  Kb 를 그 통로에 나란히 놓고 둘 다 왼쪽을 보게 돌린다. 두 신호가 곧장 아래로
+    %  떨어지고, 통로를 따라 곧게 왼쪽으로 가고, 한 번만 올라간다 → §15-32.
+    %  The return path is one lane along the bottom: the subtraction and Kb sit in
+    %  it facing left, so each signal drops straight down, runs back along the lane
+    %  and rises once.
+    add_sum(m, 'X - u', '-+', [790 YB]);
+    set_param([m '/X - u'], 'Orientation','left');
+    blk(m, 'simulink/Math Operations/Gain', 'Kb', 690, YB, [50 36], {'Gain','Kb', 'Orientation','left'});
+    route(m, last{1}, last{2}, 'X - u', 1, [775 YP; 775 YB-5]);
+    route(m, 'thrust limit', 1, 'X - u', 2, [860 YP; 860 YB+5]);
+    route(m, 'X - u', 1, 'Kb', 1, zeros(0,2));
+    qk = port_xy(m, 'into I', 'Inport', 2);
+    route(m, 'Kb', 1, 'into I', 2, [640 YB; 640 qk(2)]);
     set_param([m '/X - u'], 'NamePlacement','alternate');
 end
 for nm = {'e','p+d','u','into I'}
