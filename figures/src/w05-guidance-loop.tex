@@ -133,10 +133,14 @@
 \node[lbl, soft, anchor=west] at (13.47,-3.70) {$\psi,\ r$};
 \node[capt, anchor=west] at (15.6,-4.40) {INNER feedback --- fast};
 
-\draw[bus] (22.05,-4.55) -- (22.05,-6.05) -- (2.5,-6.05);
-%  상자가 얇아지면 이 화살표가 허공에서 멈춘다. 좌표를 박지 말고 GD.south 에
-%  맞춘다 — 상자 높이가 또 바뀌어도 선이 끊기지 않는다.
-\draw[fb] (2.5,-6.05) -- (2.5,0 |- GD.south);
+%  바깥 되먹임은 **GUIDANCE 상자 안으로** 들어가야 한다. 높이만 맞추면 모자란다 —
+%  x 도 상자의 폭 안에 있어야 한다. 2026-10-14 에 상자를 7.6 cm 에서 5.2 cm 로
+%  줄이자 상자의 왼쪽 변이 2.63 으로 옮겨 가, x=2.5 의 화살표가 상자 **옆**에서
+%  멈췄다 (사용자 지적). 그래서 x 를 숫자로 두지 않고 상자의 왼쪽 아래 모서리에서
+%  6 mm 들어온 자리로 잡는다 — 폭이 또 바뀌어도 늘 상자 안이다.
+\coordinate (OFB) at ([xshift=6mm]GD.south west);
+\draw[bus] (22.05,-4.55) -- (22.05,-6.05) -- (OFB |- 0,-6.05);
+\draw[fb] (OFB |- 0,-6.05) -- (OFB);
 \node[lbl, soft, anchor=south] at (7.0,-6.00) {position $(N, E)$ and heading $\psi$};
 \node[capt, anchor=west] at (15.6,-5.90) {OUTER feedback --- slow};
 
