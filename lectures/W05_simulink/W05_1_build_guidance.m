@@ -53,9 +53,16 @@ evalin('base', 'W05_0_setup');
 %  LOS 법칙이지만 실험 5-5a 의 것이다 — 조류 속에서 LOS 가 남기는 오차를 재는 데 쓴다.
 %  One model per experiment: W05_F_LOS carries the same LOS law as W05_D_LOS and
 %  belongs to Experiment 5-5a, where the offset a current leaves is measured.
+%  `laws` 가 그 모델에 **들어가는** 법칙이고, `n` 이 그 절이 **재는** 법칙이다.
+%  법칙 하나만 든 모델에는 law 플래그도 Multiport Switch 도 없다 — 절이 설명하지
+%  않은 것은 모델에 없다 (사용자 지시, 2026-10-14).
+%  `laws` is what the model contains, `n` what the section measures. A model
+%  holding one law has no `law` flag and no switch: what the section has not
+%  explained is not in its model.
 M = struct( ...
   'name',  {'W05_C_atan2','W05_D_LOS','W05_E_switching','W05_F_LOS','W05_F_ILOS','W05_G_tuning','W05_H_speed_path'}, ...
-  'n',     {1, 2, 2, 2, 3, 3, 3}, ...          % law: 1 atan2, 2 LOS, 3 ILOS
+  'n',     {1, 2, 2, 2, 3, 3, 3}, ...          % law: 1 atan2, 2 LOS, 3 ILOS, 4 ILOS(보통 적분)
+  'laws',  {1, 2, 2, 2, [3 4], [1 2 3], 3}, ...
   'speed', {false, false, false, false, false, false, true}, ...
   'title', {'AIM AT THE NEXT WAYPOINT', 'LINE OF SIGHT, AND THE LOOK-AHEAD DISTANCE', ...
             'WAYPOINT SWITCHING ON A MISSION', 'LOS IN A CURRENT: THE OFFSET IT LEAVES', ...
@@ -75,89 +82,68 @@ if isfile(out), delete(out); end
 new_system(m);
 set_param(m, 'SolverType','Fixed-step', 'Solver','ode4', 'FixedStep','h', ...
              'StartTime','0', 'StopTime','T_final', 'ReturnWorkspaceOutputs','off');
-Y = 200;
+Y = 340;
 
 %% 유도 / guidance
-%  웨이포인트 목록과 튜닝 값들은 **캔버스에 보이는 Constant 블록**으로 들어간다
-%  (사용자 지시, 2026-09-29). 파라미터로 숨기면 포트가 사라져서, 이 주차가 고르는
-%  값 — Delta, R_switch, kappa — 이 어디로 들어가는지 그림만 보고는 알 수 없다.
-%  값 자체는 여전히 작업공간에서 온다: Constant 의 Value 가 변수 이름이다.
-%  The waypoint list and the tuning values enter as Constant blocks that can be
-%  seen. As hidden parameters they had no ports, so the canvas did not show where
-%  the numbers this week chooses go in. The values still come from the workspace:
-%  each Constant's Value is the variable's name.
-%  일곱째 입력이 **법칙을 고르는 flag** 다 (사용자 지시, 2026-09-30). 1 atan2,
-%  2 LOS, 3 ILOS. 값은 작업공간의 `law` 에서 오므로 명령창에서 바꾸고 Run 만 누르면
-%  같은 모델이 다른 법칙으로 돈다. 절마다 쓰는 법칙은 W05_read 가 명시해 넘긴다.
-%  The seventh input is the flag that chooses the law: 1 atan2, 2 LOS, 3 ILOS. Its
-%  value comes from the workspace variable `law`, so changing it and pressing Run
-%  makes the same model follow a different law; the section scripts pass it
-%  explicitly so that each experiment states which law it measured.
-GIN = {'WP_N','WP_E','Delta','R_switch','kappa','law','stop_at_end','stop_hold'};
-add_block('simulink/User-Defined Functions/MATLAB Function', [m '/guidance'], ...
-          'Position', [300 Y-200 520 Y+200]);   % 입력 12, 출력 9 / twelve in, nine out
-set_mlfcn([m '/guidance'], guidance_code(), 'psi_d', '[1 1]', 'h');
-mlfcn_params([m '/guidance'], {'h'});     % 고정 스텝만 숨긴다 / only the step stays hidden
+%  **법칙마다 MATLAB Function 하나, 그것들을 담은 서브시스템 하나**다 (사용자 지시,
+%  2026-10-14). 두 번 누르면 그 주차가 쓰는 법칙의 식이 **한 블록에 하나씩** 보이고,
+%  법칙이 둘 이상인 모델에서는 밖에서 들어온 law 플래그가 Multiport Switch 로 고른다.
+%  법칙이 하나인 모델에는 스위치도 플래그도 없다 — 절이 설명하지 않은 것은 모델에 없다.
+%  배선과 코드는 모두 `_tools/add_guidance.m` 에 있다.
+%  One MATLAB Function per law, gathered into one subsystem. Double-clicking shows
+%  each law as its own block; where a model holds more than one, the `law` flag
+%  coming in from outside picks between them through a Multiport Switch. A model
+%  holding a single law has neither switch nor flag.
+%
+%  샘플 시간 h 도 **포트로** 들어간다 (사용자 지시, 2026-10-14). 전에는 블록
+%  파라미터였으므로 적분이 무엇으로 곱해지는지 도면에 없었다. 이제 적분 법칙의
+%  블록에 h 포트가 보이고, 그 선이 캔버스의 Constant 까지 이어진다.
+%  The step h enters through a port as well. As a block parameter it was invisible,
+%  so the diagram did not say what the integral was multiplied by.
+[~, GIN] = add_guidance(m, [300 Y-30 520 Y+30], o.laws);
+%  GIN 의 첫 칸은 x(상태 되먹임), 마지막 칸은 state(기억) 이고 둘은 Constant 가
+%  아니다. 그 사이가 캔버스에 세워지는 Constant 열이다.
+%  The first entry of GIN is x and the last is state; neither is a Constant. What
+%  lies between becomes the column of Constants on the canvas.
 q = port_xy(m, 'guidance', 'Inport', 1);
 from_at(m, 'x', [150 q(2)]);
 route(m, 'From x', 1, 'guidance', 1, zeros(0,2));
-for i = 1:numel(GIN)
-    q = port_xy(m, 'guidance', 'Inport', i+1);
+for i = 2:numel(GIN)-1
+    q = port_xy(m, 'guidance', 'Inport', i);
     add_block('simulink/Sources/Constant', [m '/' GIN{i}], 'Value', GIN{i}, ...
               'Position', [150 q(2)-13 230 q(2)+13]);
-    route(m, GIN{i}, 1, 'guidance', i+1, zeros(0,2));
+    route(m, GIN{i}, 1, 'guidance', i, zeros(0,2));
 end
 
 %% 유도가 기억하는 것 / what the guidance remembers
 %  **persistent 이 아니라 Unit Delay 다** (사용자 지시, 2026-10-13). 적분 상태는
 %  이 주차의 주제인데, 블록 안의 persistent 로 두면 도면에 전혀 보이지 않는다.
-%  밖으로 꺼내면 세 상태가 **이름 붙은 포트**로 드러나고, 초기값이 블록의
-%  파라미터로 보이며, 되먹임이라는 것이 선으로 읽힌다 — 5주차가 제어기를
-%  서브시스템으로 그리는 것과 같은 이유다 (standing-orders 15-23, 15-42 절).
-%  A Unit Delay, not PERSISTENT: the integral state is what this week is about,
-%  and inside the block it could not be seen. Outside, the three states are named
-%  ports, the initial condition is a parameter one can read, and the feedback is
-%  a line — the same argument that made the controllers subsystems.
+%  밖으로 꺼내면 초기값이 블록의 파라미터로 보이고, 되먹임이라는 것이 선으로 읽힌다 —
+%  5주차가 제어기를 서브시스템으로 그리는 것과 같은 이유다.
+%  A Unit Delay, not PERSISTENT: the integral state is what this week is about, and
+%  inside the block it could not be seen. Outside, the initial condition is a
+%  parameter one can read and the feedback is a line.
 %
-%  상태가 셋이므로 Unit Delay 를 셋 두면 **뒤로 가는 선이 셋**이 된다 (CLAUDE.md 5
-%  절은 두 개 이하). Mux 로 묶어 하나로 보내고 Demux 로 푼다 — 통로는 하나,
-%  이름은 셋이다. 통로는 캔버스 **맨 아래**로 내린다: 그 높이에는 블록이 없다.
-%  Three states would be three backward lines; a Mux and a Demux make it one lane
-%  while keeping the three names. The lane runs below everything else.
-ylane = Y + 300;
-add_block('simulink/Signal Routing/Mux', [m '/state'], 'Inputs','3', ...
-          'Orientation','left', 'ShowName','off', ...
-          'Position', [640 ylane-45 645 ylane+45]);
+%  **묶고 푸는 일은 서브시스템 안에서 한다** (2026-10-14). 최상위에는 `state next`
+%  하나가 나가고 `state` 하나가 들어오므로, 뒤로 가는 선은 **하나**다. 이름이 붙은
+%  상태들은 서브시스템 안쪽 Demux 의 출력에서 보인다.
+%  The packing and unpacking happen inside the subsystem, so the top level has one
+%  backward line: `state next` out, `state` in. The named states appear on the
+%  Demux inside.
+%  적분 법칙이 없는 모델은 상태가 둘(다리 번호, 임무 종료 시각)이고, 있으면 셋이다.
+%  Without an integral law the state is two long, with one it is three.
+nSt = 2 + any(o.laws >= 3);
+IC  = ['[1;' repmat('0;', 1, nSt-2) '0]'];
+ylane = Y + 320;
 add_block('simulink/Discrete/Unit Delay', [m '/1 step'], ...
-          'InitialCondition','[1;0;0]', 'SampleTime','h', 'Orientation','left', ...
+          'InitialCondition', IC, 'SampleTime','h', 'Orientation','left', ...
           'Position', [420 ylane-20 480 ylane+20]);
-add_block('simulink/Signal Routing/Demux', [m '/state back'], 'Outputs','3', ...
-          'Orientation','left', 'ShowName','off', ...
-          'Position', [200 ylane-45 205 ylane+45]);
-
-%  세 상태 출력 -> Mux. 포트가 **왼쪽을 보므로** 선은 오른쪽에서 들어온다: 오른쪽으로
-%  나갔다가 내려와 왼쪽으로 꺾어 든다. 통로 x 를 하나씩 다르게 주어 겹치지 않게 한다.
-%  Into a left-facing port the line arrives travelling leftward, so each one goes
-%  right, down, then left; a different corner x keeps the three apart.
-for i = 1:3
-    a = port_xy(m, 'guidance', 'Outport', 6+i);
-    b = port_xy(m, 'state', 'Inport', i);
-    xc = 672 + 8*i;
-    add_line(m, [a; xc a(2); xc b(2); b]);
-end
-route(m, 'state', 1, '1 step', 1, zeros(0,2));
-route(m, '1 step', 1, 'state back', 1, zeros(0,2));
-
-%  Demux 의 출력도 왼쪽을 본다. 왼쪽으로 조금 나갔다가 올라가 유도 블록의 입력으로
-%  오른쪽으로 들어간다. 그 높이(입력 10~12)에는 Constant 가 없어 통로가 비어 있다.
-%  The Demux outputs face left too: out a little, up, then right into the guidance
-%  inputs. Nothing stands at those heights — the constants stop at input 9.
-for i = 1:3
-    a = port_xy(m, 'state back', 'Outport', i);
-    b = port_xy(m, 'guidance', 'Inport', 9+i);
-    xc = 176 - 8*i;
-    add_line(m, [a; xc a(2); xc b(2); b]);
-end
+a = port_xy(m, 'guidance', 'Outport', 7);
+b = port_xy(m, '1 step', 'Inport', 1);      % 왼쪽을 보므로 오른쪽 변 / right edge
+add_line(m, [a; 560 a(2); 560 ylane; b]);
+c = port_xy(m, '1 step', 'Outport', 1);
+d = port_xy(m, 'guidance', 'Inport', numel(GIN));   % state 가 마지막 / state is last
+add_line(m, [c; 260 ylane; 260 d(2); d]);
 
 %% 선수각 오토파일럿 / heading autopilot
 %  **서브시스템이고, 안은 시뮬링크 블록이다** (사용자 지시, 2026-09-29). 4주차
@@ -235,7 +221,7 @@ if o.speed
     %  state machine - that is Week 8 - so one block ends it, on a condition the
     %  guidance produced.
     add_block('simulink/Sinks/Stop Simulation', [m '/mission over'], ...
-              'Position', [600 Y+330 630 Y+360]);
+              'Position', [600 Y+400 630 Y+430]);  % 상태 통로 아래 / below the state lane
     q = port_xy(m, 'mission over', 'Inport', 1);
     from_at(m, 'stop', [480 q(2)], 'From stop');
     route(m, 'From stop', 1, 'mission over', 1, zeros(0,2));
@@ -243,37 +229,50 @@ end
 
 %% 배분 / allocation
 add_block('simulink/User-Defined Functions/MATLAB Function', [m '/allocation'], ...
-          'Position', [930 Y-30 1110 Y+30]);
+          'Position', [1040 Y-20 1220 Y+332]);
 set_mlfcn([m '/allocation'], allocation_code(o), 'n', '[2 1]');
-%  배분기가 받는 것은 둘이다 - 요 모멘트 N 과 **전진력 X**. 선체 상수 셋만 숨은
-%  파라미터이고, 두 힘은 **캔버스에서 보이는 입력**이다 (사용자 지시, 2026-09-29).
-%  The allocator takes two things: the yaw moment N and the surge force X. Only
-%  the three hull constants are parameters; both forces are visible inputs.
-mlfcn_params([m '/allocation'], {'y_pont','k_pos','k_neg','n_max','n_min'});
+%  배분기가 받는 것은 **일곱 개 전부 포트**다 (사용자 지시, 2026-10-14). 전에는
+%  선체 상수 다섯이 숨은 파라미터였으므로, 추력 곡선의 계수 k_pos·k_neg 와 폰툰
+%  간격 y_pont 가 배분식에 들어간다는 사실이 도면에 없었다. 6주차가 다루는 것이
+%  바로 그 다섯이므로, 5주차에서 이미 선으로 보여 둔다.
+%  All seven inputs are ports now. As hidden parameters the five hull constants
+%  did not appear, so the diagram did not say that the thrust-curve coefficients
+%  and the pontoon separation enter the allocation. Week 6 is about those five.
+ALLIN = {'y_pont','k_pos','k_neg','n_max','n_min'};
 p = port_xy(m, 'heading autopilot', 'Outport', 1);  q = port_xy(m, 'allocation', 'Inport', 1);
 set_param([m '/allocation'], 'Position', get_param([m '/allocation'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));
 route(m, 'heading autopilot', 1, 'allocation', 1, zeros(0,2));
 goto_at(m, {'heading autopilot', 1}, [p(1)+20 p(2)], 'up', 'Nmom');
-q = port_xy(m, 'allocation', 'Inport', 2);
 if o.speed
     %  속도 루프가 낸 힘 / the force the speed loop asked for
     add_block('simulink/Signal Routing/From', [m '/From X'], 'GotoTag','X', 'ShowName','off', ...
-              'Position', [870 q(2)-10 915 q(2)+10]);
-    route(m, 'From X', 1, 'allocation', 2, zeros(0,2));
+              'Position', [945 0 990 20]);
+    xsrc = 'From X';
 else
     %  속도 루프가 없는 모델에서는 전진력이 상수다. 그 상수도 캔버스에 둔다 -
     %  숨은 파라미터로 두면 5-7 절에서 무엇이 바뀌었는지 보이지 않는다.
     %  Without a speed loop the surge force is a constant, and the constant is put
     %  on the canvas too: hidden, it would not show what 5-7 changes.
     add_block('simulink/Sources/Constant', [m '/X_ff'], 'Value','X_ff', ...
-              'Position', [845 q(2)-13 915 q(2)+13]);
-    route(m, 'X_ff', 1, 'allocation', 2, zeros(0,2));
-    goto_at(m, {'X_ff', 1}, [q(1)-20 q(2)], 'down', 'X');
+              'Position', [900 0 990 26]);
+    xsrc = 'X_ff';
+end
+for i = 1:numel(ALLIN)
+    add_block('simulink/Sources/Constant', [m '/' ALLIN{i}], 'Value', ALLIN{i}, ...
+              'Position', [900 0 990 26]);
+end
+%  row_feed 가 여섯 소스를 포트 높이에 맞춰 올려놓고 가로선으로 잇는다. 첫 포트는
+%  오토파일럿에서 오므로 빈칸이다. / row_feed lifts each source onto its port's
+%  height; the first port is blank because it comes from the autopilot.
+row_feed(m, 'allocation', [{''} {xsrc} ALLIN]);
+if ~o.speed
+    p = port_xy(m, 'X_ff', 'Outport', 1);
+    goto_at(m, {'X_ff', 1}, [p(1)+20 p(2)], 'down', 'X');
 end
 
 %% Otter
 cfg = otter_config('base');
-add_otter_plant(m, 'Otter', [1180 Y-30 1280 Y+30], cfg);
+add_otter_plant(m, 'Otter', [1290 Y-30 1390 Y+30], cfg);
 set_param([m '/Otter'], 'BackgroundColor', gnc_colour('plant'));
 p = port_xy(m, 'allocation', 'Outport', 1);  q = port_xy(m, 'Otter', 'Inport', 1);
 set_param([m '/Otter'], 'Position', get_param([m '/Otter'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));
@@ -285,7 +284,7 @@ goto_at(m, {'Otter', 1}, [p(1)+30 p(2)], 'up', 'x');
 add_block('simulink/Sinks/Terminator', [m '/end'], 'Position', [p(1)+70 p(2)-8 p(1)+86 p(2)+8]);
 route(m, 'Otter', 1, 'end', 1, zeros(0,2));
 
-measure(m, 1430, o);
+measure(m, 1540, o);
 note(m, o);
 %  Run 만 눌러도 절 스크립트와 **같은 그림**이 뜬다 (CLAUDE.md §5, 사용자 지시)
 %  Pressing Run alone draws the same figure the section script draws.
@@ -316,7 +315,7 @@ print(['-s' m], '-dpng', '-r45', fullfile(here, 'img', [m '.png']));
 %  check_overlaps already descends into subsystems; this loop is for the pictures,
 %  since most of what there is to look at now lives inside the controllers.
 n = check_overlaps(m);  nd = check_diagonals(m);
-for sb = {'heading autopilot','speed loop','moment limit'}
+for sb = {'guidance','heading autopilot','speed loop','moment limit'}
     if isempty(find_system(m, 'SearchDepth',1, 'Name',sb{1})), continue; end
     %  `print('-s<path>')` 는 창을 **열지 않고** 뽑는다. open_system 으로 먼저 열면
     %  일곱 모델을 연달아 지을 때 창이 쌓여 세션이 멈춘다 — 실제로 멈췄다.
@@ -552,201 +551,6 @@ C = { ...
 end
 
 % =========================================================================
-%  MATLAB Function 코드 / the code of the MATLAB Function blocks
-function C = guidance_code()
-%GUIDANCE_CODE  유도 블록의 코드. **세 법칙이 한 블록 안에 있고 law 가 고른다**
-%               (사용자 지시, 2026-09-30: "flag를 둬서 atan2, los, ilos 등 알고리즘을
-%               선택할 수 있도록"). 예전에는 모델마다 다른 코드를 넣어서, 블록을 열면
-%               그 모델의 법칙 하나만 보였다 — 셋을 나란히 읽을 수가 없었다.
-%               The three laws live in one block and `law` chooses. Previously each
-%               model carried only its own law, so opening the block showed one of
-%               the three and never let the reader compare them.
-%
-%               상태는 **블록 밖에** 있다 (사용자 지시, 2026-10-13: "일곱 모델 다
-%               unit delay로 바꿔줘"). 예전에는 persistent 로 블록이 들고 있었고,
-%               그러면 이 주차의 핵심인 적분 상태가 도면에 보이지 않았다. 지금은
-%               포트로 들어오고 포트로 나가며, Unit Delay 가 한 스텝 들고 있는다.
-%               The state lives outside the block: it enters and leaves through
-%               ports, and a Unit Delay holds it for one step. Under PERSISTENT
-%               the integral state of this week — the subject of 5-5 — could not
-%               be seen on the diagram at all.
-C = { ...
-'function [psi_d, y_e, aux, wp, gate, stop, k_n, y_int_n, n_after_n] = guidance(x, WP_N, WP_E, Delta, R_switch, kappa, law, stop_at_end, stop_hold, h, k_p, y_int_p, n_after_p)'
-'%#codegen'
-'%GUIDANCE  웨이포인트 목록과 배의 위치에서 명령 선수각 psi_d 를 만든다.'
-'%          Make the commanded heading psi_d from the waypoint list and the position.'
-'%'
-'%   입력 x 는 Otter 의 12 상태 (위치 N = x(7), E = x(8)). 나머지는 작업공간 변수.'
-'%   The input x is the Otter''s 12 states (position N = x(7), E = x(8));'
-'%   the rest are workspace variables (W05_0_setup).'
-'%'
-'%   law 이 법칙을 고른다 / law selects the law'
-'%     1  atan2   다음 웨이포인트를 곧장 겨냥한다 / aim straight at the next waypoint'
-'%     2  LOS     경로 위 Delta 앞의 점을 겨냥한다 / aim Delta ahead on the path'
-'%     3  ILOS    LOS + **비선형** 적분 (Borhaug 2008) / LOS plus the nonlinear integral'
-'%     4  ILOS-C  LOS + **보통** 적분 (교과서형)       / LOS plus a plain integral'
-'%   3 과 4 는 **적분기의 갱신식만** 다르다. 겨냥하는 식은 글자까지 같다 - 그래서'
-'%   둘을 같은 임무에 돌리면 차이가 전부 적분기에서 온 것이다 (5-5b 절).'
-'%   Laws 3 and 4 differ only in how the integral state is updated; the aiming'
-'%   expression is identical, so a difference between them is the integrator''s.'
-'%   캔버스의 Constant `law` 에서 온다. 명령창에서 law = 2 로 바꾸고 Run 을 누르면'
-'%   같은 모델이 다른 법칙으로 돈다 — 셋을 같은 임무에서 비교할 수 있다.'
-'%   It arrives from the Constant `law` on the canvas: change it in the Command'
-'%   Window, press Run, and the same model follows a different law.'
-'%'
-'%   출력 / outputs'
-'%     psi_d  명령 선수각 [rad] -> 선수각 오토파일럿 / commanded heading -> the autopilot'
-'%     y_e    횡방향 오차 [m], 경로 오른쪽이 + / cross-track error, right of the path +'
-'%     aux    ILOS 의 적분 상태 (다른 법칙은 0) / the ILOS integral (0 for the others)'
-'%     wp     지금 따라가는 다리 번호 / the leg being followed'
-'%     gate   속도 명령에 곱하는 0/1. 임무가 끝나면 0 이 되어 배가 선다'
-'%            0/1 multiplying the speed command: 0 once the mission is over'
-'%     stop   시뮬레이션을 끝내라는 0/1 (Stop Simulation 블록으로)'
-'%            0/1 asking the run to end, wired to a Stop Simulation block'
-'%'
-'%   임무의 끝 / the end of the mission  (사용자 지시, 2026-10-13)'
-'%     마지막 다리의 끝에 R_switch 안으로 들어오면 **임무가 끝난 것**이다. 그때'
-'%     gate 가 0 이 되어 속도 명령이 0 으로 떨어지고, stop_hold 초 뒤에 stop 이 1 이'
-'%     되어 실행이 끝난다. 그 몇 초는 배가 서는 모습을 보기 위한 것이다.'
-'%     stop_at_end = 0 이면 둘 다 하지 않는다 - 5-2 ~ 5-6 절의 모델들이 그렇다.'
-'%     Reaching within R_switch of the end of the LAST leg ends the mission: gate'
-'%     drops to 0 so the speed command goes to zero, and stop_hold seconds later'
-'%     stop goes to 1 and the run ends. Those seconds are there so the vessel can'
-'%     be seen slowing down. With stop_at_end = 0 neither happens.'
-''
-'% 0) 기억하는 값 셋이 **포트로 들어온다**: 지금 다리 k, 적분 y_int, 도착 뒤 스텝 수.'
-'%    셋 다 **직전 스텝의** 값이다 — 캔버스의 Unit Delay 가 들고 있다가 돌려준다.'
-'%    이 함수는 그것으로 출력을 만들고, 맨 아래에서 **다음** 상태를 내놓는다.'
-'%    The three remembered values arrive through ports, and all three are the'
-'%    values of the PREVIOUS step: the Unit Delay on the canvas held them. The'
-'%    function makes its outputs from them and returns the next state at the end.'
-'%'
-'%    순서가 둘을 같게 만든다 / the order is what makes this exact'
-'%      pi_p, x_e, y_e 와 psi_d 는 **옛** 상태로, wp 와 gate 는 **새** 상태로 구한다.'
-'%      그래서 한 스텝의 모든 출력이 (x, 직전 상태) 만의 함수다 — 그것이 persistent'
-'%      판과 비트 단위로 같아지는 조건이다 (standing-orders 15-42 절).'
-'%      The errors and psi_d come from the OLD state, wp and the gate from the NEW'
-'%      one, so every output of a step is a function of (x, previous state) alone.'
-'k = round(k_p);'
-'n = numel(WP_N);'
-'%    신호로 들어온 지표를 범위 안에 가둔다. 블록이 혼자 들고 있을 때는 필요 없던'
-'%    것이고, 실제로 도달하는 값 위에서는 항등이다.'
-'%    Clamp the index now that it arrives as a signal: unnecessary while the block'
-'%    owned it, and the identity map on every value it can actually take.'
-'if k < 1, k = 1; end'
-'if k > n-1, k = n-1; end'
-'y_int   = y_int_p;'
-'n_after = n_after_p;'
-'N = x(7);  E = x(8);'
-''
-'% 1) 지금 다리: 웨이포인트 k 에서 k+1 로. 그 방향이 경로 각 pi_p 다.'
-'%    The active leg runs from waypoint k to k+1; its direction is the path angle pi_p.'
-'kn = min(k+1, n);'
-'Nk = WP_N(k);   Ek = WP_E(k);'
-'Nn = WP_N(kn);  En = WP_E(kn);'
-'pi_p = atan2(En - Ek, Nn - Nk);'
-''
-'% 2) 배의 위치를 경로 좌표로 돌린다: x_e = 다리를 따라 간 거리, y_e = 다리에서 옆으로 벗어난 거리.'
-'%    Rotate the position into path coordinates: x_e = distance along the leg,'
-'%    y_e = distance off it, to the side.'
-'dN = N - Nk;  dE = E - Ek;'
-'x_e =  dN*cos(pi_p) + dE*sin(pi_p);'
-'y_e = -dN*sin(pi_p) + dE*cos(pi_p);'
-''
-'% 3) 다리 끝까지 R_switch 보다 적게 남으면 다음 다리로 (MSS 와 같은 판정).'
-'%    이 판정은 **세 법칙이 모두 같이 쓴다** — 바뀌는 것은 겨냥하는 방법뿐이다.'
-'%    With less than R_switch left to the end of the leg, move to the next leg (the'
-'%    same test as MSS). All three laws share it; only the aiming differs.'
-'d = sqrt((Nn - Nk)^2 + (En - Ek)^2);'
-'near_end = (d - x_e) < R_switch;'
-'if near_end && k < n-1'
-'    k = k + 1;'
-'    near_end = false;          % 새 다리는 방금 시작했다 / the new leg has just begun'
-'end'
-'wp = k;'
-''
-'% 3b) 임무의 끝. **마지막 다리**에서 같은 판정이 참이 되면 더 갈 곳이 없다.'
-'%     다음 다리로 넘어가는 대신 속도 명령을 0 으로 내리고, 잠시 뒤 실행을 끝낸다.'
-'%     The end of the mission: when the same test becomes true on the LAST leg'
-'%     there is nowhere to switch to, so the speed command is taken to zero and'
-'%     the run is ended a few seconds later.'
-'arrived = near_end && k == n-1;'
-'if arrived'
-'    n_after = n_after + 1;'
-'end'
-'gate = 1;'
-'stop = 0;'
-'if stop_at_end > 0.5'
-'    if n_after > 0'
-'        gate = 0;'
-'    end'
-'    if n_after * h > stop_hold'
-'        stop = 1;'
-'    end'
-'end'
-''
-'% 4) 법칙을 고른다 / choose the law.'
-'%    셋이 나란히 있다. 위에서 아래로 읽으면 유도 법칙이 자라는 순서다:'
-'%    점을 겨냥한다 -> 선을 겨냥한다 -> 선을 겨냥하면서 밀리는 만큼을 기억한다.'
-'%    Read top to bottom and the three are the order in which a guidance law grows:'
-'%    aim at a point, then at a line, then at a line while remembering the push.'
-'if law < 1.5'
-'    % 1) atan2 - 다음 웨이포인트를 곧장 겨냥한다. 점까지의 방향이지 선까지가 아니다.'
-'    %    Aim straight at the next waypoint. It points at a POINT, not at the LINE.'
-'    psi_d = atan2(En - E, Nn - N);'
-'    y_int = 0;'
-'elseif law < 2.5'
-'    % 2) LOS - 경로 위에서 Delta 만큼 앞의 점을 겨냥한다.'
-'    %        psi_d = pi_p - atan(y_e / Delta)'
-'    %    pi_p 는 "경로와 나란히", atan 은 "벗어난 만큼 경로 쪽으로 기울여라".'
-'    %    y_e 가 작으면 atan(y_e/Delta) ~ y_e/Delta: 횡방향 오차에 대한 P 제어기, Kp = 1/Delta.'
-'    %    Aim at the point Delta ahead on the path. pi_p says "line up with the'
-'    %    path"; the atan says "lean towards it by how far off you are". For small'
-'    %    y_e, atan(y_e/Delta) ~ y_e/Delta: a P controller with Kp = 1/Delta.'
-'    psi_d = pi_p - atan(y_e / Delta);'
-'    y_int = 0;'
-'elseif law > 3.5'
-'    % 4) 보통 적분을 쓴 ILOS (교과서형 / conventional ILOS).'
-'    %        psi_d = pi_p - atan(Kp y_e + Ki y_int),   y_int'' = y_e'
-'    %    적분기가 오차를 **그대로** 쌓는다. 경로에서 멀리 떨어져 있을 때도 같은'
-'    %    속도로 쌓이므로, 첫 접근처럼 y_e 가 큰 구간에서 적분이 크게 자란다 -'
-'    %    그 뒤 풀리면서 **반대쪽으로 넘어간다**. 그것이 5-5b 절이 재는 것이다.'
-'    %    The integral accumulates the error as it stands, at the same rate far'
-'    %    from the path as near it, so a long first approach winds it up and the'
-'    %    unwinding carries the vessel past the path.'
-'    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);'
-'    y_int = y_int + h * y_e;'
-'else'
-'    % 3) ILOS - LOS 에 적분을 더한다. 횡방향 오차에 대한 PI 제어기.'
-'    %        psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)'
-'    %    조류가 배를 계속 밀면 LOS 는 오차를 남긴다 (P 가 남기는 오차와 같다).'
-'    %    적분이 그만큼을 맡는다.'
-'    %    LOS plus an integral: a PI controller on the cross-track error. A current'
-'    %    that keeps pushing leaves an error with LOS alone - the error a P'
-'    %    controller leaves - and the integral takes it over.'
-'    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta)*y_int);'
-'    %'
-'    %    적분 갱신. 분모가 y_e 와 함께 커지므로 멀리 벗어나 있을 때는 거의 적분하지'
-'    %    않는다: 법칙 안에 들어 있는 안티와인드업이다 (Borhaug, Pavlov, Pettersen 2008).'
-'    %    The denominator grows with y_e, so it barely integrates while far off the'
-'    %    path: anti-windup built into the law itself.'
-'    y_int = y_int + h * Delta*y_e / (Delta^2 + (y_e + kappa*y_int)^2);'
-'end'
-'aux = y_int;'
-''
-'% 5) 다음 스텝으로 넘길 상태. 캔버스의 Unit Delay 가 이것을 받아 한 스텝 뒤에'
-'%    돌려준다. 초기값 [1; 0; 0] 이 블록의 파라미터로 보인다 — 첫 다리는 1 번,'
-'%    적분은 0 에서, 도착 뒤 스텝 수는 0 에서 시작한다.'
-'%    The state handed to the Unit Delay, which returns it one step later. Its'
-'%    initial condition [1; 0; 0] is a parameter one can see on the block: leg 1,'
-'%    a zero integral, and nothing counted since arrival.'
-'k_n       = k;'
-'y_int_n   = y_int;'
-'n_after_n = n_after;'
-'end'};
-end
-
-% =========================================================================
 function C = allocation_code(o)
 sig = 'function n = allocation(N, X, y_pont, k_pos, k_neg, n_max, n_min)';
 if o.speed
@@ -820,19 +624,27 @@ function note(m, o)
 L = {sprintf('WEEK 5, SECTION %s  -  %s', o.sec, o.title), '', ...
      '   guidance -> heading autopilot (Week 4) -> allocation -> Otter', ...
      '   double-click a block to read its code and comments', ''};
-%  세 법칙을 모두 적는다 — 블록 안에 셋 다 있고 law 가 고르기 때문이다.
-%  이 절이 쓰는 값에 화살표를 붙여 어느 것이 이 실험인지 표시한다.
-%  All three are listed, because the block holds all three and `law` chooses; an
-%  arrow marks the one this section measures.
-LAWS = {'1  atan2   psi_d = atan2(E_next - E, N_next - N)              aims at a POINT', ...
-        '2  LOS     psi_d = pi_p - atan(y_e / Delta)                   a P controller on y_e, Kp = 1/Delta', ...
-        '3  ILOS    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)   a PI controller on y_e'};
-L{end+1} = sprintf('   law chooses the guidance law.  This section uses law = %d', o.n);
-for i = 1:3
-    mark = '     ';  if i == o.n, mark = '  -> '; end
-    L{end+1} = [mark LAWS{i}];
+%  **이 모델에 든 법칙만** 적는다 (사용자 지시, 2026-10-14). 전에는 셋을 전부
+%  적었으므로, 법칙 하나만 든 모델에서도 학생은 나머지 둘을 찾으려 들었다.
+%  Only the laws the model holds are listed. Listing all three sent the reader
+%  looking inside a model for two laws that were not there.
+LAWS = {'1  atan2   psi_d = atan2(E_next - E, N_next - N)                   aims at a POINT', ...
+        '2  LOS     psi_d = pi_p - atan(y_e / Delta)                        a P controller on y_e, Kp = 1/Delta', ...
+        '3  ILOS    psi_d = pi_p - atan(y_e/Delta + (kappa/Delta) y_int)    a PI controller on y_e', ...
+        '4  ILOS    the same psi_d, with y_int integrating y_e plainly      the comparison of 5-5c'};
+if numel(o.laws) == 1
+    L{end+1} = sprintf('   the guidance block holds one law: %s', strtrim(LAWS{o.laws}));
+else
+    L{end+1} = sprintf('   law chooses among the laws in the guidance block.  This section uses law = %d', o.n);
+    for i = o.laws
+        mark = '     ';  if i == o.n, mark = '  -> '; end
+        L{end+1} = [mark LAWS{i}];
+    end
 end
-L = [L, {'', 'Change law, Delta, R_switch, kappa or V_c in the Command Window and press Run:', ...
+TUNE = {'Delta, R_switch or V_c'};
+if any(o.laws >= 3), TUNE = {'Delta, R_switch, kappa or V_c'}; end
+if numel(o.laws) > 1, TUNE = {['law, ' TUNE{1}]}; end
+L = [L, {'', ['Change ' TUNE{1} ' in the Command Window and press Run:'], ...
          'the Scope shows the cross-track error and the heading; the XY Graph draws the track.'}];
 a = Simulink.Annotation([m '/note']);
 a.Text = strjoin(L, newline);
@@ -840,6 +652,6 @@ a.Text = strjoin(L, newline);
 %  Constant 위에 겹쳐 찍혔다 — Animate 블록이 y = 520 까지 내려오므로 그 아래다.
 %  The note goes below every block: at y = 330 it printed on top of the kappa
 %  Constant, and the Animate block now reaches y = 520.
-a.Position = [40 560 900 700];
+a.Position = [40 820 1100 1000];
 a.HorizontalAlignment = 'left';  a.BackgroundColor = 'lightBlue';
 end

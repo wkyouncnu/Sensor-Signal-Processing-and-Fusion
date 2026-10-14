@@ -112,23 +112,40 @@ end
 
 % ------------------------------------------------------------------------
 function s = law_name()
-%LAW_NAME  지금 작업공간에 들어 있는 law 값의 이름. 유도 블록의 네 가지와 같다.
-%          The name of the law now in the workspace; the same four the block holds.
+%LAW_NAME  이 그림을 그린 법칙의 이름.
+%          The name of the law that drew this figure.
 %
-%  law 가 없으면 (그 모델에 유도가 없거나 setup 을 안 돌렸으면) 빈 문자열을 주어
-%  제목에 둘째 줄이 생기지 않게 한다. 틀린 이름보다 없는 편이 낫다.
-%  With no law in the workspace the title gets no second line: no name is better
-%  than a wrong one.
+%  **모델에게 먼저 묻는다** (2026-10-14). 법칙 하나만 든 모델에는 law 플래그가
+%  없으므로 작업공간에서 알아낼 수 없다 — 그러나 유도 서브시스템 안에 그 법칙의
+%  블록이 **하나** 서 있고, 블록 이름이 곧 법칙의 이름이다. 둘 이상 들어 있으면
+%  고르는 것은 law 플래그이므로 그때는 작업공간을 읽는다.
+%  The model is asked first: a model holding one law has no `law` flag, but it has
+%  exactly one law block inside the guidance subsystem, and the block's name is the
+%  law's name. Where more than one stands there, the flag chooses, so the workspace
+%  is read instead.
+%
+%  둘 다 실패하면 빈 문자열이다 — 틀린 이름보다 없는 편이 낫다.
+%  Failing both, the title gets no second line: no name is better than a wrong one.
+NAMES = {'atan2  —  aiming at the next waypoint', ...
+         'LOS  —  aiming \Delta ahead on the path', ...
+         'ILOS  —  LOS with the nonlinear integral', ...
+         'ILOS  —  LOS with a plain integral'};
+BLOCKS = {'aim at the waypoint', 'LOS', 'ILOS', 'ILOS, plain integral'};
 s = '';
+try
+    held = false(1, 4);
+    for i = 1:4
+        held(i) = ~isempty(find_system([bdroot '/guidance'], 'SearchDepth',1, ...
+                           'LookUnderMasks','all', 'Name', BLOCKS{i}));
+    end
+    if sum(held) == 1, s = NAMES{find(held)}; return, end
+catch
+end
 try
     v = evalin('base', 'law');
 catch
     return
 end
-NAMES = {'atan2  —  aiming at the next waypoint', ...
-         'LOS  —  aiming \Delta ahead on the path', ...
-         'ILOS  —  LOS with the nonlinear integral', ...
-         'ILOS  —  LOS with a plain integral'};
 i = round(v);
 if i >= 1 && i <= numel(NAMES), s = NAMES{i}; else, s = sprintf('law = %g', v); end
 end

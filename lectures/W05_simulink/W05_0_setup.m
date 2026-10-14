@@ -118,7 +118,7 @@ V_c    = 0;           % 조류 속도. 실험 5-5 는 0.3 / current speed; Exper
 beta_c = pi/2;        % 조류가 흘러가는 방향. pi/2 = 동쪽으로 / direction it flows to; pi/2 = east
 
 %% ---- 시뮬레이션 / simulation -------------------------------------------------
-h       = 0.02;       % [s]
+h        = 0.02;       % [s]
 T_final = 400;        % [s]
 
 fprintf(['\n  W05_0_setup\n' ...
