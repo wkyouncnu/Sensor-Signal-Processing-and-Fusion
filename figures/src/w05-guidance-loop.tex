@@ -55,12 +55,13 @@
 \node[wp, text width=1.9cm] (WP) at (-0.2,0.55)
   {\textbf{WAYPOINTS}\\[2pt] $(N_k, E_k)$\\ $k = 1 \ldots n$};
 
-\node[guid, text width=7.6cm] (GD) at (5.4,0.55)
-  {\textbf{GUIDANCE} \ \ \emph{outer loop}\\[4pt]
-   {\scriptsize 1 \ \ leg direction \ $\pi_p = \mathrm{atan2}(\Delta E, \Delta N)$}\\[3pt]
-   {\scriptsize 2 \ \ rotate into the leg \ $(x_e,\, y_e)$}\\[3pt]
-   {\scriptsize 3 \ \ switch when $d - x_e < R$}\\[3pt]
-   {\scriptsize 4 \ \ the law \ $\psi_d = \pi_p - \arctan\bigl[(y_e + \kappa\, y_{\mathrm{int}})/\Delta\bigr]$}};
+%  2026-10-14 (사용자 지시): "Guidance outer loop는 LOS기준으로 간단히 수식만
+%  적어줘.... 1, 2, 3, 4 는 필요 없어" — 네 단계를 지우고 LOS 법칙 하나만 둔다.
+%  단계는 본문 §5 가 순서대로 유도하므로, 이 그림에서 되풀이할 것이 아니다.
+%  기호는 그림 뒤의 범례 표가 받는다.
+\node[guid, text width=5.2cm] (GD) at (5.4,0.55)
+  {\textbf{GUIDANCE} \ \ \emph{outer loop}\\[6pt]
+   $\psi_d = \pi_p - \arctan\dfrac{y_e}{\Delta}$};
 \node[slx, anchor=north, yshift=-1pt] at (GD.south) {guidance};
 \draw[sig] (WP.east) -- (GD.west);
 
@@ -83,7 +84,7 @@
 % 두 명령 — 이 그림의 요점. 꺾이는 곳이 없다.
 % =====================================================================
 \draw[cmd] (GD.east) -- (HD.west);
-\node[lbl, accent, anchor=south] at (9.8,0.62) {$\psi_d$};
+\node[lbl, accent, anchor=south] at (9.2,0.62) {$\psi_d$};
 \draw[cmd] (UD.east) -- (SP.west);
 \node[lbl, accent, anchor=south] at (9.8,-2.03) {$u_d$};
 
@@ -96,7 +97,10 @@
    $n = \pm\sqrt{\lvert F\rvert/k}$};
 \node[slx, anchor=north, yshift=-1pt] at (AL.south) {allocation};
 
-\node[plant, text width=1.5cm] (OT) at (20.4,-0.78)
+%  2026-10-14: $n_L,n_R$ 의 아래첨자가 OTTER 의 왼쪽 테두리를 물었다. 배분기와
+%  선체 사이가 1.2 cm 인데 라벨이 1.1 cm 였다. 선체를 0.35 cm 밀고 라벨을
+%  화살표의 가운데로 보낸다 — 양쪽에 0.2 cm 씩 남는다.
+\node[plant, text width=1.5cm] (OT) at (20.75,-0.78)
   {\textbf{OTTER}\\[1pt] equations\\ of motion};
 \node[slx, anchor=north, yshift=-1pt] at (OT.south) {Otter};
 
@@ -106,15 +110,22 @@
 \draw[sig] (SP.east) -- (15.0,-2.1) -- (15.0,-1.18) -- (AL.west |- 0,-1.18);
 \node[lbl, anchor=north] at (14.6,-2.17) {$X$};
 \draw[sig] (AL.east) -- (OT.west);
-\node[lbl, anchor=south] at (19.1,-0.71) {$n_L,n_R$};
-\draw[sig] (OT.east) -- (22.7,-0.78);
-\node[lbl, anchor=west] at (22.05,-0.78) {$\mathbf{x}$};
+\node[lbl, anchor=south] at (19.05,-0.71) {$n_L,n_R$};
+\draw[sig] (OT.east) -- (23.05,-0.78);
+\node[lbl, anchor=south] at (22.55,-0.70) {$\mathbf{x}$};
 
 % =====================================================================
 % 되먹임 둘 — 안쪽은 짧고 빠르게, 바깥은 길고 느리게
+%
+%   2026-10-14 (사용자 지적): 되먹임 띠가 **허공에서 시작했다.** 상태선의
+%   화살표는 x=22.7 에서 끝나는데 띠는 23.25 에서 비로소 시작해, 그 사이
+%   0.55 cm 가 비어 있었다. 분기점(21.7)도 띠에 닿지 않아 혼자 떠 있었다.
+%   띠를 **분기점에서** 내린다 — 점 하나에서 가로는 계측으로, 세로는
+%   되먹임으로 갈라지는 것이 블록도에서 탭을 그리는 방법이다.
+%   덤으로 그림이 2 cm 좁아져 PDF 축소율이 나아진다.
 % =====================================================================
-\draw[bus] (23.25,-0.78) -- (23.7,-0.78) -- (23.7,-4.55) -- (11.0,-4.55);
-\fill[soft] (21.7,-0.78) circle (1.4pt);
+\fill[soft] (22.05,-0.78) circle (1.4pt);
+\draw[bus] (22.05,-0.78) -- (22.05,-4.55) -- (11.0,-4.55);
 \draw[fb] (11.0,-4.55) -- (11.0,-2.72);
 \node[lbl, soft, anchor=west] at (11.07,-3.70) {$u$};
 \draw[fb] (13.4,-4.55) -- (13.4,-0.08);
@@ -122,8 +133,10 @@
 \node[lbl, soft, anchor=west] at (13.47,-3.70) {$\psi,\ r$};
 \node[capt, anchor=west] at (15.6,-4.40) {INNER feedback --- fast};
 
-\draw[bus] (23.7,-4.55) -- (23.7,-6.05) -- (2.5,-6.05);
-\draw[fb] (2.5,-6.05) -- (2.5,-0.72);
+\draw[bus] (22.05,-4.55) -- (22.05,-6.05) -- (2.5,-6.05);
+%  상자가 얇아지면 이 화살표가 허공에서 멈춘다. 좌표를 박지 말고 GD.south 에
+%  맞춘다 — 상자 높이가 또 바뀌어도 선이 끊기지 않는다.
+\draw[fb] (2.5,-6.05) -- (2.5,0 |- GD.south);
 \node[lbl, soft, anchor=south] at (7.0,-6.00) {position $(N, E)$ and heading $\psi$};
 \node[capt, anchor=west] at (15.6,-5.90) {OUTER feedback --- slow};
 
@@ -132,12 +145,12 @@
 % =====================================================================
 \node[band, anchor=west] at (-1.4,2.85)
   {OUTER LOOP \ --- \ guidance makes commands, never forces};
-\draw[bus] (-1.3,2.55) -- (9.3,2.55);
+\draw[bus] (-1.3,2.55) -- (8.3,2.55);
 \node[band, anchor=west, ctrlc] at (10.3,2.85) {INNER LOOP \ --- \ Weeks 3 and 4};
 \draw[bus] (10.3,2.55) -- (21.9,2.55);
 
 %  이 문장이 그림의 요점이다. 되먹임 상승선(x = 2.5)과 겹치지 않도록 오른쪽에 둔다.
-\node[capt, anchor=north, align=center] at (6.8,-1.25)
+\node[capt, anchor=north, align=center] at (7.2,-1.25)
   {the output of the outer loop \emph{is} the command of the inner loop};
 
 \end{tikzpicture}

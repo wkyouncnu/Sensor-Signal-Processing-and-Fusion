@@ -226,7 +226,7 @@ A perpendicular **distance** formula would give the size of $y_e$ and nothing el
 
 | In the diagram | What it is | Which week |
 |---|---|---|
-| `guidance`, the four numbered steps | leg direction, the rotation into $(x_e, y_e)$, the switching test, the law | **this week** |
+| `guidance`, carrying the LOS law alone | $\psi_d = \pi_p - \arctan(y_e/\Delta)$. The leg direction $\pi_p$, the rotation that produces $y_e$ and the switching test are what §5-2 to §5-4 build underneath it | **this week** |
 | the thick arrow marked $\psi_d$ | the output of the outer loop, and **the command of the heading loop** | this week → Week 4 |
 | the thick arrow marked $u_d$ | the speed order, which goes straight past the guidance into the speed loop | §5-7 |
 | `heading autopilot`, `speed loop` | unchanged from Weeks 4 and 3, and not retuned | Weeks 3, 4 |
