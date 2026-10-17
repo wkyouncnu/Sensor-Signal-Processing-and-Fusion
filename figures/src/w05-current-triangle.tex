@@ -1,0 +1,167 @@
+% figures/w05-current-triangle.svg — 대지속도는 대수속도와 조류의 합이다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w05-current-triangle.tex figures/w05-current-triangle.svg
+%
+% 2026-10-17, 사용자의 한국어 참고 그림("해류 삼각형")을 영어로 옮겨 그렸다.
+% W05 §5-5 가 쓰던 w04-course-crab 은 조류가 없는 그림이라 이 절의 주제를
+% 다 담지 못한다. 이 그림은 각을 **셋이 아니라 다섯**으로 보여 준다.
+%
+% 각도 규약: 북이 위, 동이 오른쪽. 방위각 a 인 단위벡터의 화면 성분은
+% (sin a, cos a) 이고, TikZ 의 수학각은 90 - a 다.
+%   psi   = 30 deg  (수학각 60)   선수각
+%   chi_r = 40 deg  (수학각 50)   대수 침로  -> beta_r = 10 deg
+%   beta_c = 90 deg (수학각  0)   조류가 가는 방위 = 정동
+% 길이: U_r = 42 mm, U_c = 14 mm
+%   U_r 벡터 = 42 (sin40, cos40) = (27.00, 32.17)
+%   U        = U_r + (14, 0)     = (41.00, 32.17),  |U| = 52.11 mm
+%   chi = atan2(41.00, 32.17) = 51.88 deg  (수학각 38.12)
+%   beta = chi - psi = 21.88 deg
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\tikzset{
+  ttl/.style   = {font=\small\bfseries, ink},
+  blurb/.style = {font=\scriptsize, ink, align=left},
+  ang/.style   = {soft, line width=0.45pt},
+  vec/.style   = {line width=0.9pt, -{Stealth[length=4.6pt,width=3.4pt]}},
+  thin/.style  = {soft, line width=0.35pt, densely dashed},
+}
+
+\definecolor{relc}{HTML}{0D9488}   % 대수 — pathc 와 같은 청록
+\definecolor{gndc}{HTML}{1D4ED8}   % 대지 — 파랑
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% =====================================================================
+% 위 — 해류 삼각형
+% =====================================================================
+\begin{scope}[shift={(0,44)}]
+  \node[ttl, anchor=north west] at (-10,62) {the current triangle};
+
+  % ---- 축 ----
+  \draw[thin] (0,-4) -- (0,52);
+  \node[font=\small, anchor=south west] at (1.0,51.5) {$x$~(North)};
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (-4,0) -- (58,0);
+  \node[font=\small, anchor=west] at (58.8,0) {$y$~(East)};
+
+  % ---- 선체 : 선수는 방위각 30 도 ----
+  \draw[ink, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (24.0,41.6);
+  \node[ink, font=\small, anchor=south east] at (23.0,41.8) {$x_b$};
+  \draw[soft, line width=0.6pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (17.3,-10.0);
+  \node[soft, font=\small, anchor=north west] at (17.0,-10.4) {$y_b$};
+  %  선체는 작게. 크면 원점의 각들을 덮는다
+  \fill[ink] (1.9,3.2) -- (-2.9,1.6) -- (-1.2,-3.2) -- cycle;
+
+  % ---- 세 속도 벡터 ----
+  \draw[relc, vec] (0,0) -- (27.00,32.17);
+  \node[relc, font=\small, anchor=south east] at (23.4,33.0) {$\mathbf{U}_r$};
+  \draw[flow, vec] (27.00,32.17) -- (41.00,32.17);
+  \node[flow, font=\small, anchor=south] at (34.0,33.0) {$\mathbf{U}_c$};
+  \draw[gndc, vec] (0,0) -- (41.00,32.17);
+  \node[gndc, font=\small, anchor=west] at (41.8,31.6) {$\mathbf{U}$};
+
+  % ---- 각 ----
+  %  세 침로각은 모두 북에서 시작하므로, 이름표를 **arc 가 시작하는 자리**에
+  %  나란히 둔다. 중앙에 두면 벡터 셋과 겹친다
+  \draw[ang] (0,22) arc (90:60:22);
+  \node[soft, font=\small, anchor=south west] at (1.4,22.0) {$\psi$};
+  \draw[relc, line width=0.45pt] (0,28) arc (90:50:28);
+  \node[relc, font=\small, anchor=south west] at (1.4,28.0) {$\chi_r$};
+  \draw[gndc, line width=0.45pt] (0,34) arc (90:38.12:34);
+  \node[gndc, font=\small, anchor=south west] at (1.4,34.0) {$\chi$};
+
+  \draw[accent, line width=0.45pt] (7.00,12.12) arc (60:38.12:14);
+  \node[accent, font=\small] at (14.8,7.6) {$\beta$};
+  \draw[relc, line width=0.45pt] (9.00,15.59) arc (60:50:18);
+  \node[relc, font=\small] at (14.6,15.6) {$\beta_r$};
+
+  % ---- 조류가 가는 방위 : 조류 화살표가 시작하는 곳에서 북에서 잰다 ----
+  \draw[thin] (27.00,32.17) -- (27.00,46.0);
+  \draw[flow, line width=0.45pt] (27.00,41.17) arc (90:0:9);
+  \node[flow, font=\small] at (31.6,40.4) {$\beta_c$};
+
+  \node[note, anchor=north west, text width=60mm] at (-10,-14) {%
+    Drawn with $\psi = 30^\circ$, $\chi_r = 40^\circ$ and a current running due
+    east, which puts $\chi$ at $51.9^\circ$ and the crab angle at
+    $\beta = 21.9^\circ$.};
+\end{scope}
+
+% =====================================================================
+% 아래 — 같은 대지속도를 선체 축에서 보면 u 와 v
+% =====================================================================
+\begin{scope}[shift={(6,-26)}]
+  %  제목은 x_b 이름표(0,30.6)보다 위에 둔다 — 같은 높이면 글자가 겹친다
+  \node[ttl, anchor=north west] at (-16,40) {the same $\mathbf{U}$, read on the hull's own axes};
+
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,30);
+  \node[ink, font=\small, anchor=south] at (0,30.6) {$x_b$};
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (32,0);
+  \node[ink, font=\small, anchor=west] at (32.8,0) {$y_b$};
+
+  \draw[gndc, vec] (0,0) -- (11.0,25.0);
+  \node[gndc, font=\small, anchor=south west] at (11.2,25.0) {$\mathbf{U}$};
+  \draw[alng, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,25.0);
+  \node[alng, font=\small, anchor=east] at (-1.2,13.0) {$u$};
+  \draw[errc, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}] (0,25.0) -- (11.0,25.0);
+  \node[errc, font=\small, anchor=north] at (5.5,24.0) {$v$};
+  \draw[soft, line width=0.35pt, densely dotted] (11.0,25.0) -- (11.0,0);
+  \draw[accent, line width=0.45pt] (0,9) arc (90:66.2:9);
+  \node[accent, font=\small] at (4.6,8.0) {$\beta$};
+
+  \node[note, anchor=north west, text width=60mm] at (-16,-6) {%
+    $u$ is surge and $v$ is sway, both taken \emph{over the ground}. The
+    water-relative pair $u_r$, $v_r$ is read on these same two axes, and
+    $\beta_r$ is the angle it makes with $x_b$.};
+\end{scope}
+
+% =====================================================================
+% 오른쪽 — 다섯 각의 이름, 그리고 그 사이의 식
+% =====================================================================
+\begin{scope}[shift={(86,0)}]
+  \node[ttl, anchor=north west] at (0,102) {five angles, and what separates them};
+
+  \node[blurb, anchor=north west, text width=84mm] at (0,95) {%
+    \textcolor{soft}{$\psi$}\quad \textbf{heading} --- the direction the bow points\\[2pt]
+    \textcolor{gndc}{$\chi$}\quad \textbf{course over ground} --- the direction the
+      vessel travels \emph{over the ground}\\[2pt]
+    \textcolor{relc}{$\chi_r$}\quad \textbf{course through the water} --- the direction
+      it travels \emph{through the water}\\[2pt]
+    \textcolor{accent}{$\beta$}\quad \textbf{crab angle} --- the gap between the bow and
+      the course over ground\\[2pt]
+    \textcolor{relc}{$\beta_r$}\quad \textbf{drift angle} --- the gap between the bow and
+      the course through the water\\[2pt]
+    \textcolor{flow}{$\beta_c$}\quad the direction the current flows \emph{towards},
+      measured from north};
+
+  \draw[soft, line width=0.3pt] (0,38) -- (84,38);
+
+  \node[anchor=north west, font=\small] at (0,35)
+       {$\mathbf{U} = \mathbf{U}_r + \mathbf{U}_c$};
+  \node[blurb, anchor=north west, text width=50mm] at (34,35) {%
+    speed over ground $=$ speed through the water $+$ current};
+  \node[anchor=north west, font=\small] at (0,26)
+       {$U = \sqrt{u^2+v^2}, \qquad U_r = \sqrt{u_r^2+v_r^2}$};
+  \node[anchor=north west, font=\small] at (0,16)
+       {$\chi = \psi + \beta, \qquad \beta = \operatorname{atan2}(v,\ u)$};
+  \node[anchor=north west, font=\small] at (0,6)
+       {$\chi_r = \psi + \beta_r, \qquad \beta_r = \arcsin(v_r/U_r)$};
+
+  \draw[soft, line width=0.3pt] (0,-2) -- (84,-2);
+
+  \node[blurb, anchor=north west, text width=84mm, soft] at (0,-5) {%
+    \textbf{What measures what.} A compass gives $\psi$. GNSS gives $\chi$ and $U$,
+    by differencing position. Nothing gives $\beta$: it is what is left over,
+    $\chi-\psi$.};
+  \node[blurb, anchor=north west, text width=84mm, gndc] at (0,-21) {%
+    With no current $\mathbf{U} = \mathbf{U}_r$, so $\chi = \chi_r$ and
+    $\beta = \beta_r$. Everything that separates the two triangles in this figure
+    is the current, and nothing else.};
+  \node[blurb, anchor=north west, text width=84mm, warn] at (0,-37) {%
+    An autopilot holds $\psi$. The path is walked along $\chi$. Hold the first and
+    the vessel travels sideways off the path by $\beta$ --- which is the error
+    §5-5 has to remove.};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

@@ -202,10 +202,13 @@ The figures of this week write the two errors as $x_e^{\,p}$ and $y_e^{\,p}$, wi
 
 | Where to look | What is there | Why |
 |---|---|---|
-| the black arrow from the waypoint to the hull | $\mathbf d$, the position error before it is resolved | the one vector both errors are components of — the figure's subject |
-| the dashed pair at waypoint $k$ | $\hat{\mathbf t}$ along the leg, $\hat{\mathbf n}$ to starboard | step 2: the leg carries its own frame, and that frame is all the rotation is |
-| the brown segment along the leg, the red one across it | $x_e$ and $y_e$, meeting at a right angle | step 3: the two shadows. They meet at the point the vessel is abeam of |
-| the grey arc at the waypoint | $\pi_p$, measured from north | step 1, and the only angle in the construction |
+| panel (1) | the same arrow read on north and east: two subtractions | where the position error starts, and the panel that shows what is **missing** — neither number mentions the leg |
+| panel (2), the black arrow | $\mathbf d = \mathbf p^n - \mathbf p_i^n$, unchanged from panel (1) | the arrow is never redrawn. Only the axes turn, which is the whole trick |
+| panel (2), the dashed pair at $\mathbf p_i^n$ | $\hat{\mathbf t}$ naming the leg's own direction, $\hat{\mathbf n}$ to starboard | step 2: the leg carries its own frame, and that frame is all the rotation is |
+| panel (2), the brown segment along the leg and the red one across it | $x_e$ and $y_e$, meeting at a right angle | step 3: the two shadows. They meet at the point the vessel is abeam of |
+| panel (2), the grey arc at the waypoint | $\pi_p$, measured from north at the start of the leg | step 1, and the only angle in the construction |
+| panel (3), the quarter circle | the unit circle: both arrows end on it, so both have length 1 | why the dot products are lengths and not lengths times something |
+| panel (3), the downward component of $\hat{\mathbf n}$ | $-\sin\pi_p$, the one negative entry in the whole construction | it is what turning $90°$ **clockwise** does, and clockwise is what puts $\hat{\mathbf n}$ to starboard |
 
 **Two properties, both used later.**
 
@@ -618,12 +621,12 @@ This section answers: at a corner, when does guidance switch to the next leg?
 $$
 \text{along-track:}\quad d - x_e < R
 \qquad\qquad
-\text{acceptance circle:}\quad \lVert \mathbf p - \mathbf p_{k+1}\rVert \le R
+\text{acceptance circle:}\quad \lVert \mathbf p^{\,n} - \mathbf p_{i+1}^{\,n}\rVert \le R
 $$
 
 | Symbol | Quantity | Value · source |
 |---|---|---|
-| $d$ | the length of the active leg | m · $\lVert\mathbf p_{k+1} - \mathbf p_k\rVert$ |
+| $d$ | the length of the active leg | m · $\lVert\mathbf p_{i+1}^{\,n} - \mathbf p_i^{\,n}\rVert$ |
 | $x_e$ | how far along it the vessel has come | m · §5-1 |
 | $d - x_e$ | what is **left to run** along the leg | m · negative once the vessel is past the waypoint |
 | $R$ | the switching distance | $3$ m · `R_switch`, chosen in line 4 |
@@ -631,7 +634,7 @@ $$
 Writing the true distance in path-frame components shows the relation exactly:
 
 $$
-\lVert \mathbf p - \mathbf p_{k+1}\rVert = \sqrt{(d - x_e)^2 + y_e^2} \;\ge\; d - x_e
+\lVert \mathbf p^{\,n} - \mathbf p_{i+1}^{\,n}\rVert = \sqrt{(d - x_e)^2 + y_e^2} \;\ge\; d - x_e
 $$
 
 2. **On the path the two agree; off it they never do.** With $y_e = 0$ the square root collapses to $d - x_e$ and the tests are identical. With $y_e \neq 0$ the circle test is **always the stricter of the two**, by an amount that grows with how far off the path the vessel is — so a vessel that is running wide can satisfy the along-track test and fail the circle at the same instant.
@@ -644,9 +647,11 @@ $$
 
 | Where to look | What is there | Which line predicts it |
 |---|---|---|
+| (a), the dimension across the top | $d$, the leg's whole length, and $R$ measured back from the far waypoint | the two lengths the test compares, drawn as lengths |
+| (a), the two dimensions under the leg | $x_e$, how far the vessel has come, and $d - x_e$, what is left | the test is the second of these against $R$, and nothing else |
 | (a), the shaded band before the waypoint | the region where $d - x_e < R$ | line 1: the test is a distance **along** the leg |
 | (a), the vessel a whole $y_e = 2R$ off the path | still inside the band, and it switches | line 3: being off the path cannot defeat the along-track test |
-| (b), the circle of radius $R$ round the waypoint | the region where $\lVert\mathbf p - \mathbf p_{k+1}\rVert \le R$ | the other test, drawn |
+| (b), the circle of radius $R$ round the waypoint | the region where $\lVert\mathbf p^{\,n} - \mathbf p_{i+1}^{\,n}\rVert \le R$ | the other test, drawn |
 | (b), the same vessel, outside the circle | $10.97$ m away, and it does **not** switch | line 2: the circle is the stricter test |
 | the two code lines under the panels | `d - x_e < R_switch` against `norm(p - wp_next) < R` | one line of difference, and the whole behaviour |
 | the caption's arithmetic | along-track remainder $4.50$ m passes; true distance $10.97$ m fails | line 2: $\sqrt{(d-x_e)^2 + y_e^2} \ge d - x_e$, here by $6.47$ m |
@@ -787,17 +792,30 @@ $$
 > | $\beta_c$ | $\beta$ | **the crab angle.** In this vault $\beta_c$ is reserved for the direction the current flows to, which is the variable `beta_c` in `W05_0_setup.m` |
 > | $U_h$ | $U$ | speed over ground |
 
-   Those three angles are the figure of Week 4 §4-4, repeated here because everything that follows turns on the gap between two of them.
+   Week 4 §4-4 put three of those angles on one figure. A current adds two more, and the five together are one triangle of velocities: the vessel's velocity through the water, plus the water's own velocity, equals its velocity over the ground.
 
-![Heading, course and the crab angle between them](../figures/w04-course-crab.svg)
+![The current triangle: speed over ground is speed through the water plus the current](../figures/w05-current-triangle.svg)
 
 | In the figure | Meaning |
 |---|---|
-| orange ray | the heading $\psi$ — the direction the bow points, and the only one the autopilot closes on |
-| blue ray | the course $\chi$ — the direction the vessel actually travels, which is what the path cares about |
-| green arc | the crab angle $\beta$ between them: zero in still water, $22.8°$ in this section's current |
+| the teal arrow $\mathbf U_r$ | what the hull makes through the water — what the propellers produce, and all the autopilot can influence |
+| the blue arrow $\mathbf U_c$ | the current, drawn from the tip of the first: the water carries the vessel while the vessel swims through it |
+| the dark blue arrow $\mathbf U$ | the sum, and the only one the path cares about — the direction and speed over the ground |
+| the three arcs from north, $\psi$, $\chi_r$, $\chi$ | heading, course through the water, course over ground. They are three different directions and the figure's point is that they differ |
+| the arc at the hull, $\beta$ | the crab angle $\chi - \psi$: the gap between where the bow points and where the vessel goes |
+| the inner arc, $\beta_r$ | the drift angle $\chi_r - \psi$: the same gap taken against the water. The hull makes this one by itself, in a turn, with no current at all |
+| the lower panel | the same $\mathbf U$ read on the hull's own axes, where its two components are the logged $u$ and $v$ |
 
-- The whole difficulty is in that last row. The path is defined against the **blue** ray, the autopilot steers the **orange** one, and nothing aboard this vessel measures the green arc between them.
+| Symbol | Quantity | Value · source |
+|---|---|---|
+| $\mathbf U_r$, $U_r$ | velocity through the water, and its magnitude | m/s · `otter.m` states 1–2 relative to the current |
+| $\mathbf U_c$, $U_c$ | the current's velocity and speed | m/s · `V_c` in `W05_0_setup.m` |
+| $\beta_r$ | drift angle, $\arcsin(v_r/U_r)$ | zero on a straight leg in still water |
+| $\beta_c$ | the direction the current flows **towards**, from north | rad · `beta_c` in `W05_0_setup.m`, $\pi/2$ = east |
+
+- **Two of the five are not measured.** A compass gives $\psi$ and GNSS gives $\chi$ and $U$. The crab angle is what is left over, $\chi - \psi$, and $\mathbf U_r$ is unknown unless the current is.
+- **Without a current the figure collapses.** $\mathbf U_c = 0$ makes $\mathbf U = \mathbf U_r$, so $\chi = \chi_r$ and $\beta = \beta_r$: the three rays become two and Week 4 §4-4 is recovered exactly. Everything that separates them here is the current.
+- The whole difficulty is in the gap marked $\beta$. The path is defined against $\chi$, the autopilot steers $\psi$, and nothing aboard this vessel measures the arc between them.
 
 7. **LOS, closed.** Substitute $\psi = \psi_d$ from §5-3 into line 6:
 

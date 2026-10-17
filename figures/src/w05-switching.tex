@@ -8,6 +8,16 @@
 \documentclass[border=5pt]{standalone}
 \input{gnc-style}
 
+%  2026-10-17: 사용자의 한국어 참고 그림대로 **치수선**을 넣었다. d · R · x_e ·
+%  d - x_e 를 길이로 보여 주지 않으면 "남은 거리가 R 보다 작은가" 가 그림에서
+%  읽히지 않고 글로만 남는다.
+\tikzset{
+  dim/.style  = {soft, line width=0.35pt,
+                 {Stealth[length=3pt,width=2.2pt]}-{Stealth[length=3pt,width=2.2pt]}},
+  ext/.style  = {soft, line width=0.3pt, densely dotted},
+  dlbl/.style = {font=\scriptsize, soft, inner sep=1.4pt, fill=white},
+}
+
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
@@ -25,8 +35,23 @@
   % 전환 띠 : 남은 거리 < R 인 곳 전부
   \fill[pathc, opacity=0.10] ({\LEG-\RR},-24) rectangle ({\LEG+4},14);
   \draw[pathc, line width=0.4pt, densely dashed] ({\LEG-\RR},-24) -- ({\LEG-\RR},14);
-  \node[pathc, font=\scriptsize, anchor=south east] at ({\LEG-\RR-1},9)
+  \node[pathc, font=\scriptsize, anchor=south east] at ({\LEG-\RR-1},4.5)
        {the band $d-x_e^{\,p} < R$};
+
+  %  치수선 — 위에 d 와 R, 아래에 x_e 와 남은 거리
+  \draw[ext] (0,0)     -- (0,22);
+  \draw[ext] (\LEG,0)  -- (\LEG,22);
+  \draw[ext] ({\LEG-\RR},14) -- ({\LEG-\RR},16.5);
+  \draw[dim] (0,20) -- (\LEG,20);
+  \node[dlbl] at ({0.5*\LEG},20) {$d$ — the leg's length};
+  \draw[dim] ({\LEG-\RR},15) -- (\LEG,15);
+  \node[dlbl, anchor=south] at ({\LEG-0.5*\RR},15.8) {$R$};
+
+  \draw[ext] (\XV,0) -- (\XV,-10);
+  \draw[dim] (0,-5) -- (\XV,-5);
+  \node[dlbl] at ({0.5*\XV},-5) {$x_e^{\,p}$ — how far it has come};
+  \draw[dim] (\XV,-10) -- (\LEG,-10);
+  \node[dlbl, anchor=east] at ({\XV-1.5},-10) {$d-x_e^{\,p}$};
 
   \draw[pathc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\LEG,0);
   \filldraw[pathc, fill=white, line width=0.7pt] (0,0)     circle (1.1);
@@ -61,6 +86,12 @@
   \filldraw[pathc, fill=white, line width=0.7pt] (\LEG,0)  circle (1.1);
   \node[pathc, font=\scriptsize, anchor=north] at (0,-2)   {$\mathbf{p}_i^{\,n}$};
   \node[pathc, font=\scriptsize, anchor=south] at (\LEG,2) {$\mathbf{p}_{i+1}^{\,n}$};
+
+  %  같은 두 길이를 직각삼각형의 두 변으로 보여 준다 — 빗변이 참 거리다
+  \draw[ext] (\XV,-10) -- (\LEG,-10);
+  \draw[dim] (\XV,-10) -- (\LEG,-10);
+  \node[dlbl, anchor=east] at ({\XV-1.5},-10) {$d-x_e^{\,p}$};
+  \draw[errc, line width=0.4pt] (\XV,-2.6) -- ({\XV+2.6},-2.6) -- ({\XV+2.6},0);
 
   % 참 거리 — 이것이 판정하는 양이다
   \draw[warn, line width=0.7pt, densely dotted] (\XV,-\YV) -- (\LEG,0);

@@ -1,114 +1,186 @@
-% figures/w05-track-frame.svg — 두 오차가 회전변환 하나에서 나온다.
+% figures/w05-track-frame.svg — 같은 화살표를 두 축으로 읽으면 두 오차가 나온다.
 %
 %   bash _tools/tikz2svg.sh figures/src/w05-track-frame.tex figures/w05-track-frame.svg
 %
-% 다리는 북에서 pi_p = 62 deg. 배는 다리 위 32 m 지점에서 우현으로 14 m.
-% [rotate=28] 안에서 다리를 +x 로 두면 우현이 국소 -y 다 (90 - 62 = 28).
+% 2026-10-17 에 사용자의 한국어 참고 그림대로 **세 칸**으로 다시 그렸다.
+%   ① 북·동 축으로 읽으면 — 성분은 그냥 뺄셈이다. 경로는 들어 있지 않다
+%   ② 경로 축으로 읽으면 — 화살표는 그대로다. 축만 pi_p 만큼 돌았다
+%   ③ t 와 n 이 왜 그 꼴인가 — 단위원에서 성분을 읽는다
+% 오른쪽은 그 셋을 한 줄로 묶는 회전행렬이다.
+%
+% 각도: pi_p = 35 deg (화면에서도 35 deg). 북이 위, 동이 오른쪽이므로
+% 방위각 a 인 단위벡터의 화면 성분은 (sin a, cos a) 다.
+%   t = (sin35, cos35) = (0.5736, 0.8192)   -> 30 mm 에서 (17.21, 24.57)
+%   n 은 t 를 시계방향 90 도: 방위각 125 deg -> (sin125, cos125) = (0.8192, -0.5736)
+%                                            -> 30 mm 에서 (24.57, -17.21)
+% n 의 북 성분이 음수이므로 **오른쪽 아래**로 간다. 그것이 우현이다.
 \documentclass[border=5pt]{standalone}
 \input{gnc-style}
+
+\tikzset{
+  blurb/.style  = {font=\scriptsize, ink, align=left},
+  ttl/.style  = {font=\small\bfseries, ink},
+  comp/.style = {soft, line width=0.35pt, densely dotted},
+  rmark/.style= {soft, line width=0.4pt},
+}
 
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
-\def\XE{51.2}      % x_e^{\,p} = 32 m at 1.6 mm/m
-\def\YE{22.4}      % y_e^{\,p} = 14 m
-\def\LG{104}       % 다리 65 m
+% =====================================================================
+% (1)  북·동 축으로 읽으면
+% =====================================================================
+\begin{scope}[shift={(0,80)}]
+  \node[ttl, anchor=north west] at (-6,52) {(1)\ \ read on the north-east axes};
 
-% ---- NED --------------------------------------------------------------------
-\begin{scope}[shift={(-4,54)}]
-  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,10);
-  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (10,0);
-  \node[font=\small, anchor=east]  at (-0.8,9) {$x^n$};
-  % 화살표 **오른쪽**에 붙인다. 아래에 두면 밑의 설명글과 겹친다 (CLAUDE.md §4 규칙 6)
-  % to the RIGHT of the arrow: below it, the label collides with the note under the axes
-  \node[font=\small, anchor=west] at (10.4,0) {$y^n$};
-  \node[note, anchor=north west] at (0,-3) {the frame that never moves};
-\end{scope}
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,44);
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (60,0);
+  \node[font=\small, anchor=south east] at (-0.6,43) {$x^n$~(North)};
+  \node[font=\small, anchor=west]       at (60.8,0)  {$y^n$~(East)};
 
-\begin{scope}[rotate=28]
-  % 다리. **두 웨이포인트를 모두 점으로 찍고 성분까지 적는다** (사용자 지적, 2026-10-13:
-  % "p^{n}_{i+1}이 어디인지 정의가 않되어 있어"). w05-los-geometry 와 같은 방식이다 —
-  % 두 그림이 같은 기호를 같은 모양으로 써야 학생이 하나로 읽는다.
-  % Both waypoints are marked and written out in components, exactly as in
-  % w05-los-geometry: the two figures must label the same symbols the same way.
-  \draw[pathc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\LG,0);
+  %  시작 웨이포인트와 배
   \filldraw[pathc, fill=white, line width=0.7pt] (0,0) circle (1.1);
-  \fill[ink] (\LG,0) circle (1.3);
+  \node[pathc, font=\small, anchor=north east] at (-1.2,-1.2) {$\mathbf{p}_i^{\,n}$};
+  \fill[ink] (49.3,34.2) -- (44.5,35.3) -- (46.2,30.9) -- cycle;
+  \node[note, anchor=west] at (49.0,33.0) {$\mathbf{p}^{\,n}$};
 
-  % 다리가 정하는 프레임 : t 는 다리를 따라, n 은 우현으로
-  \draw[pathc, line width=0.6pt, densely dashed, -{Stealth[length=4pt,width=3pt]}]
-        (0,0) -- (22,0);
-  \draw[pathc, line width=0.6pt, densely dashed, -{Stealth[length=4pt,width=3pt]}]
-        (0,0) -- (0,-22);
-  \node[pathc, font=\small, anchor=south] at (17,1.2) {$\hat{\mathbf{t}}$};
-  \node[pathc, font=\small, anchor=west]  at (1.5,-19) {$\hat{\mathbf{n}}$ (to starboard)};
+  %  같은 화살표 — 두 칸이 공유하는 것
+  \draw[ink, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (44.6,31.3);
+  \node[ink, font=\small, anchor=south, rotate=35] at (21.0,15.4)
+       {$\mathbf{p}^{\,n} - \mathbf{p}_i^{\,n}$};
 
-  % 위치오차 벡터
-  \draw[ink, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
-        (0,0) -- (\XE,-\YE);
-  % 두 성분
-  \draw[alng, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (\XE,0);
-  \draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
-        (\XE,0) -- (\XE,-\YE);
-  \draw[errc, line width=0.4pt] (\XE,-2.4) -- ({\XE-2.4},-2.4) -- ({\XE-2.4},0);
+  %  두 성분은 좌표의 뺄셈이다
+  \draw[comp] (44.0,30.8) -- (0,30.8);
+  \draw[comp] (44.0,30.8) -- (44.0,0);
+  \draw[rmark] (0,27.8) -- (3.0,27.8) -- (3.0,30.8);
+  \draw[rmark] (41.0,0)  -- (41.0,3.0) -- (44.0,3.0);
+  \node[font=\small, anchor=south, rotate=90] at (-2.0,15.4) {$x^n - x_i^n$};
+  \node[font=\small, anchor=north]            at (22.0,-2.0) {$y^n - y_i^n$};
 
-  % 배 — 다리 방향으로 대충 놓는다 (이 그림의 주제가 아니다)
-  \fill[ink] ({\XE+3.6},{-\YE+1.9}) -- ({\XE-3.4},{-\YE+2.6})
-          -- ({\XE-1.4},{-\YE-3.4}) -- cycle;
-
-  %  출발 웨이포인트와 그 성분 / the waypoint the leg starts from, and its components
-  \node[pathc, font=\small, anchor=north east] at (-1.5,-1.5) {$\mathbf{p}_i^{\,n}$};
-  \node[note, anchor=north west] at (-1.0,-6.5) {$[\,x_i^n,\ y_i^n\,]^{\!\top}$};
-  %  도착 웨이포인트. **다리의 끝에** 둔다 - 중간에 두면 어느 점인지 알 수 없다
-  \node[pathc, font=\small, anchor=south east] at ({\LG-1},2.0) {$\mathbf{p}_{i+1}^{\,n}$};
-  \node[note, anchor=north west] at ({\LG-13},-1.5) {$[\,x_{i+1}^n,\ y_{i+1}^n\,]^{\!\top}$};
-  %  수선의 발 - x_e 가 끝나고 y_e 가 시작하는 점 / the foot of the perpendicular
-  \fill[ink] (\XE,0) circle (1.1);
-  \node[alng, font=\small, anchor=south]  at ({0.5*\XE},1.5) {$x_e^{\,p}$};
-  \node[errc, font=\small, anchor=west]   at ({\XE+2},{-0.55*\YE}) {$y_e^{\,p}$};
-  \node[ink, font=\scriptsize, anchor=north east] at ({0.62*\XE},{-0.62*\YE-3.5})
-       {the position error};
-  %  배의 위치도 **성분으로** 적는다: 회전식의 오른쪽에 그대로 들어가는 두 수다
-  %  The vessel's position is written in components too: those two numbers are
-  %  what goes into the right-hand side of the rotation.
-  \node[ink, font=\scriptsize, anchor=north] at ({\XE+3},{-\YE-4}) {the vessel};
-  \node[note, anchor=north] at ({\XE+3},{-\YE-8.5}) {$(x^n,\ y^n)$};
+  \node[blurb, anchor=north west, text width=66mm] at (-6,-9) {%
+    The axes are north and east, so the two components are a subtraction and
+    nothing more. What is missing is the leg: these two numbers do not say how
+    far along the path the vessel has come, nor how far off it.};
 \end{scope}
 
-% pi_p
-\draw[soft, line width=0.4pt, densely dashed] (0,0) -- (0,30);
-\draw[soft, line width=0.5pt] (0,23) arc (90:28:23);
-\node[soft, font=\small] at (7,26) {$\pi_p$};
+% =====================================================================
+% (2)  경로 축으로 읽으면 — 같은 화살표
+% =====================================================================
+\begin{scope}[shift={(86,80)}]
+  \node[ttl, anchor=north west] at (-8,52) {(2)\ \ read on the path axes --- the same arrow};
 
-% ===================== 오른쪽 : 대수 =======================================
-\begin{scope}[shift={(122,0)}]
-  \node[font=\small\bfseries, anchor=north west] at (0,58) {one rotation, two answers};
+  %  북쪽 점선과 pi_p — **웨이포인트에서** 잰다 (w05-los-geometry 와 같은 규칙)
+  \draw[soft, line width=0.4pt, densely dashed] (0,0) -- (0,38);
+  \node[note, anchor=south] at (0,38.4) {$x^n$};
+  \draw[soft, line width=0.5pt] (0,27) arc (90:35:27);
+  \node[soft, font=\small] at (8.0,20.5) {$\pi_p$};
 
-  %  무엇이 **주어진 것**인지 먼저 적는다. 5-3 절의 그림(w05-los-geometry)이 같은
-  %  방식으로 "Known" 을 적으므로, 두 그림을 나란히 놓고 읽을 수 있다.
-  %  What is given, stated first, in the same way as the figure of §5-3.
-  \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,52) {%
-    \textbf{Known:} the two waypoints $\mathbf{p}_i^{\,n} = [\,x_i^n,\ y_i^n\,]^{\!\top}$
-    and $\mathbf{p}_{i+1}^{\,n} = [\,x_{i+1}^n,\ y_{i+1}^n\,]^{\!\top}$, and the
-    vessel's position $(x^n,\ y^n)$.\\[5pt]
-    The leg gives the frame its direction:};
-  \node[anchor=north west, font=\small] at (0,30)
-       {$\pi_p = \mathrm{atan2}(y_{i+1}^n-y_i^n,\ x_{i+1}^n-x_i^n)$};
-  \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,23) {%
-    and the error, written in that frame, is};
-  \node[anchor=north west, font=\small] at (0,16)
-       {$\begin{bmatrix} x_e^{\,p} \\ y_e^{\,p} \end{bmatrix}
-         = \mathbf{R}_p^{\,n}(\pi_p)^{\!\top}
-           \begin{bmatrix} x^n-x_i^n \\ y^n-y_i^n \end{bmatrix}$};
+  \begin{scope}[rotate=35]
+    %  다리
+    \draw[pathc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (76,0);
+    \filldraw[pathc, fill=white, line width=0.7pt] (0,0) circle (1.1);
+    \fill[pathc] (70,0) circle (1.3);
+    \node[pathc, font=\small, anchor=south east] at (69.0,1.6) {$\mathbf{p}_{i+1}^{\,n}$};
+    \node[pathc, font=\small, anchor=north east] at (-1.2,-1.2) {$\mathbf{p}_i^{\,n}$};
 
-  \node[anchor=north west, align=left, text width=68mm, font=\scriptsize] at (0,-6) {%
-    $x_e^{\,p}$ — how far \textbf{along} the leg the vessel has come.
-    The switching test of §5-4 uses it.\\[3pt]
-    $y_e^{\,p}$ — how far \textbf{to the side}. The guidance law drives this one to
-    zero.\\[6pt]
-    Both are projections of the same vector onto the same orthonormal pair, so
-    $x_e^2 + y_e^2 = \lVert\mathbf{p}-\mathbf{p}_i^{\,n}\rVert^2$ — a rotation
-    preserves length, and that is the cheapest check on the whole construction.};
+    %  경로가 지고 있는 두 단위벡터. t 는 다리 자체의 방향이므로 **다리 화살표에
+    %  이름만 붙인다** — 같은 반직선에 선을 셋(다리·t·x_e) 그리면 엉킨다.
+    \draw[pathc, line width=0.6pt, densely dashed, -{Stealth[length=4pt,width=3pt]}]
+          (0,0) -- (0,-17);
+    \node[pathc, font=\small, anchor=south] at (74.0,1.4) {$\hat{\mathbf{t}}$};
+    \node[pathc, font=\small, anchor=west]  at (1.4,-14.5) {$\hat{\mathbf{n}}$ (to starboard)};
+
+    %  같은 화살표, 그리고 그것이 경로 축에 드리운 두 그림자
+    \draw[comp] (0,-21) -- (50,-21) -- (50,0);
+    \draw[ink, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (47.8,-20.1);
+    \draw[alng, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (50,0);
+    \draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (50,0) -- (50,-18.9);
+    \draw[errc, line width=0.4pt] (50,-2.6) -- (47.4,-2.6) -- (47.4,0);
+    \fill[ink] (50,0) circle (1.0);
+    \node[alng, font=\small, anchor=south] at (25.0,2.6)  {$x_e^{\,p}$};
+    \node[errc, font=\small, anchor=west]  at (51.6,-11.0) {$y_e^{\,p}$};
+
+    %  배 — 다리 방향으로 놓는다
+    \fill[ink] (52.4,-19.4) -- (47.6,-18.7) -- (49.0,-23.4) -- cycle;
+  \end{scope}
+
+  \node[blurb, anchor=north west, text width=88mm] at (-8,-22) {%
+    The axes are turned by $\pi_p$ and the arrow is untouched. Turning the axes
+    cannot change a length, so $x_e^2 + y_e^2$ is still
+    $\lVert\mathbf{p}^{\,n}-\mathbf{p}_i^{\,n}\rVert^2$ --- the cheapest check
+    there is on the whole construction.};
+\end{scope}
+
+% =====================================================================
+% (3)  t 와 n 이 왜 그 꼴인가
+% =====================================================================
+\begin{scope}[shift={(2,-8)}]
+  \node[ttl, anchor=north west] at (-8,44) {(3)\ \ why $\hat{\mathbf{t}}$ and $\hat{\mathbf{n}}$ look like that};
+
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,-24) -- (0,36);
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (-6,0) -- (46,0);
+  \node[font=\small, anchor=south east] at (-0.6,35) {$x^n$~(North)};
+  \node[font=\small, anchor=west]       at (46.8,0)  {$y^n$~(East)};
+
+  %  단위원 — 반지름 30 mm 가 길이 1 이다
+  \draw[soft, line width=0.35pt] (0,30) arc (90:-40:30);
+  \node[note, anchor=west] at (31.0,22.0) {length $1$};
+
+  %  t : 방위각 pi_p
+  \draw[pathc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (17.21,24.57);
+  \node[pathc, font=\small, anchor=south west] at (17.6,24.8) {$\hat{\mathbf{t}}$};
+  \draw[comp] (17.21,24.57) -- (0,24.57);
+  \draw[comp] (17.21,24.57) -- (17.21,0);
+  \node[pathc, font=\small, anchor=south, rotate=90] at (-1.6,12.3) {$\cos\pi_p$};
+  \node[pathc, font=\small, anchor=north]            at (8.6,-1.6)  {$\sin\pi_p$};
+  \draw[soft, line width=0.5pt] (0,11) arc (90:55:11);
+  \node[soft, font=\small] at (4.6,12.6) {$\pi_p$};
+
+  %  n : t 를 시계방향 90 도 — 북 성분이 음수가 된다
+  \draw[errc, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (24.57,-17.21);
+  \node[errc, font=\small, anchor=north west] at (24.9,-17.4) {$\hat{\mathbf{n}}$};
+  \draw[comp] (24.57,-17.21) -- (24.57,0);
+  \draw[comp] (24.57,-17.21) -- (0,-17.21);
+  \node[errc, font=\small, anchor=west]  at (25.4,-8.6)  {$-\sin\pi_p$};
+  \node[errc, font=\small, anchor=north] at (12.3,-18.6) {$\cos\pi_p$};
+
+  \node[blurb, anchor=north west, text width=66mm] at (-8,-27) {%
+    A unit vector at bearing $a$ has north component $\cos a$ and east component
+    $\sin a$. Put $a = \pi_p$ and the first arrow follows; put
+    $a = \pi_p + 90^\circ$ and the second does, because
+    $\cos(\pi_p+90^\circ) = -\sin\pi_p$ and $\sin(\pi_p+90^\circ) = \cos\pi_p$.};
+\end{scope}
+
+% =====================================================================
+% 오른쪽 — 그 셋을 묶는 한 줄
+% =====================================================================
+\begin{scope}[shift={(86,-8)}]
+  \node[ttl, anchor=north west] at (-8,44) {reading components is multiplying by a rotation};
+
+  \node[blurb, anchor=north west, text width=88mm] at (-8,37) {%
+    The dot product of a vector with a \emph{unit} vector is the length of its
+    shadow on that direction. Both components are therefore one dot product
+    each, taken against the pair drawn in panel (3):};
+  \node[anchor=north west, font=\small] at (-8,18) {%
+    $x_e^{\,p} = \hat{\mathbf{t}}^{\!\top}\big(\mathbf{p}^{\,n}-\mathbf{p}_i^{\,n}\big),
+     \qquad
+     y_e^{\,p} = \hat{\mathbf{n}}^{\!\top}\big(\mathbf{p}^{\,n}-\mathbf{p}_i^{\,n}\big)$};
+  \node[blurb, anchor=north west, text width=88mm] at (-8,9) {%
+    Stacked, the two dot products are the two rows of one matrix, and that
+    matrix is a rotation:};
+  \node[anchor=north west, font=\small] at (-8,-2) {%
+    $\begin{bmatrix} x_e^{\,p} \\ y_e^{\,p} \end{bmatrix}
+      = \mathbf{R}_p^{\,n}(\pi_p)^{\!\top}
+        \begin{bmatrix} x^n-x_i^n \\ y^n-y_i^n \end{bmatrix},
+      \qquad
+      \mathbf{R}_p^{\,n}(\pi_p)
+      = \begin{bmatrix} \cos\pi_p & -\sin\pi_p \\ \sin\pi_p & \ \ \cos\pi_p \end{bmatrix}$};
+  \node[blurb, anchor=north west, text width=88mm] at (-8,-24) {%
+    The columns of $\mathbf{R}_p^{\,n}(\pi_p)$ are $\hat{\mathbf{t}}$ and
+    $\hat{\mathbf{n}}$, so that matrix carries path-frame values \emph{into}
+    north and east. The traffic in panel (2) runs the other way, which is why
+    the transpose appears --- and for a rotation
+    $\mathbf{R}^{-1} = \mathbf{R}^{\!\top}$, so nothing is ever inverted.};
 \end{scope}
 
 \end{tikzpicture}
