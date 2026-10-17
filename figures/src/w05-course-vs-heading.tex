@@ -9,7 +9,7 @@
 % 이 그림이 말하는 것 하나:
 %   LOS 계열의 유도법칙은 **침로(course) 명령**을 낸다. 그런데 이 강의의 배는
 %   **선수각(heading) 자동조타**를 쓴다. 그래서 chi_d 를 psi_d 로 바꾸는 자리가
-%   필요하고, 그 자리에 들어가는 값이 크랩각 beta_c 다. beta_c 를 모르면 그것은
+%   필요하고, 그 자리에 들어가는 값이 크랩각 beta 다. beta 를 모르면 그것은
 %   요(yaw)에 들어오는 **외란**이고, 5-5 절의 적분이 그 외란을 메운다.
 \documentclass[border=6pt]{standalone}
 \input{gnc-style}
@@ -96,7 +96,7 @@
 
   %  빼는 것: 크랩각. **부호는 합산점에 둔다** (CLAUDE.md §5)
   \draw[dist] (45,14) -- (SU.north);
-  \node[lbl, errc, anchor=west] at (46.8,8.5) {$\beta_c$};
+  \node[lbl, errc, anchor=west] at (46.8,8.5) {$\beta$};
   \node[small, anchor=east] at (44.0,5.2) {$-$};
   \node[small, errc, anchor=south, align=center] at (45,14.6) {the crab angle,\\\textbf{unknown}};
 
@@ -115,7 +115,7 @@
 
   \node[band, anchor=south, ctrlc] at (45,24) {HEADING CONTROL \ --- \ this course};
   \node[capt, anchor=north, align=center] at (45,-26)
-       {the output must be converted, and the converter is $\beta_c$};
+       {the output must be converted, and the converter is $\beta$};
 \end{scope}
 
 % =====================================================================
@@ -123,20 +123,20 @@
 % =====================================================================
 \begin{scope}[shift={(0,-44)}]
   \node[anchor=north west, font=\small] at (0,0)
-       {$\chi = \psi + \beta_c$};
+       {$\chi = \psi + \beta$};
   \node[small, anchor=north west, text width=56mm] at (0,-7)
        {course is heading plus crab angle: where the vessel \emph{goes} against where it
         \emph{points}};
 
   \node[anchor=north west, font=\small] at (76,0)
-       {$\beta_c = \arctan\dfrac{v}{u} = \arcsin\dfrac{v}{\sqrt{u^2+v^2}}$};
+       {$\beta = \arctan\dfrac{v}{u} = \arcsin\dfrac{v}{\sqrt{u^2+v^2}}$};
   \node[small, anchor=north west, text width=58mm] at (76,-12)
        {computable \textbf{only if $v$ is measured}, and singular as the speed goes to zero};
 
   \node[anchor=north west, font=\small] at (158,0)
-       {$\psi_d = \pi_p - \arctan\!\left(K_p y_e^{\,p}\right) - \beta_c$};
+       {$\psi_d = \pi_p - \arctan\!\left(K_p y_e^{\,p}\right) - \beta$};
   \node[small, anchor=north west, text width=66mm] at (158,-9)
-       {with $\beta_c$ unknown the last term is missing, and what is missing acts as a
+       {with $\beta$ unknown the last term is missing, and what is missing acts as a
         \textbf{disturbance in yaw} - which is what the integral of §5-5 supplies};
 \end{scope}
 

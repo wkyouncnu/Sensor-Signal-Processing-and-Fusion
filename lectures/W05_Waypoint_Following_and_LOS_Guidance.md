@@ -756,6 +756,29 @@ $$
 | $\chi$ | course, the direction actually travelled | $\chi = \psi + \beta$ |
 | $\beta$ | crab angle, the sideways push of the current | $22.8°$ at $V_c = 0.3$ m/s, Experiment 5-5a |
 
+   The same equation is written for a heading-controlled craft in the reference material, with the crab angle already inside the sine:
+
+![The error motion and the proportional LOS law, as given in the 2025 notes and in Fossen (2021) §12.3](../figures/refs/w05-ref-los-heading-geometry.png)
+
+| On the slide | What it is |
+|---|---|
+| the upper boxed equation | the displayed equation above, with $\chi$ already written out as $\psi + \beta$ |
+| the lower grey box | the law of §5-3 for a heading-controlled craft: the course command, less the crab angle |
+| the geometry on the left | the triangle of §5-3, drawn around a vehicle that also dives — hence the subscript $h$ for "horizontal plane" |
+| the yellow box | the sentence this whole section turns on: to the heading autopilot, the crab angle is a disturbance in yaw |
+
+> [!note] Reading the reference slides of this section
+> The slides reproduced in §5-5 come from *2. USV 제어기 설계* of the 2025 notes and from Fossen (2021) §12.3. Their symbols map onto this course's as follows, and the mapping is not repeated at each slide.
+>
+> | On the slides | In this course | |
+> |---|---|---|
+> | $y_e^p$, $y_{\text{int}}^p$ | $y_e$, $y_{\text{int}}$ | the superscript marks path-tangential coordinates, which is the only frame used here |
+> | $\pi_p$, $\pi_h$ | $\pi_p$ | both name the direction of the leg; $\pi_h$ is the horizontal-plane form used for a vehicle that also dives |
+> | $\Delta$, $\Delta_h$ | $\Delta$ | the look-ahead distance of §5-3 |
+> | $K_p$ | $1/\Delta$ | §5-3 — the slides keep the gain and this course keeps the distance, and they are reciprocals |
+> | $\beta_c$ | $\beta$ | **the crab angle.** In this vault $\beta_c$ is reserved for the direction the current flows to, which is the variable `beta_c` in `W05_0_setup.m` |
+> | $U_h$ | $U$ | speed over ground |
+
    Those three angles are the figure of Week 4 §4-4, repeated here because everything that follows turns on the gap between two of them.
 
 ![Heading, course and the crab angle between them](../figures/w04-course-crab.svg)
@@ -775,6 +798,49 @@ $$
 $$
 
    Set $\dot y_e = 0$ and the bracket must vanish, so $\arctan(y_e/\Delta) = \beta$ and $y_e = \Delta\tan\beta$. This is line 4 again, but arrived at from the **dynamics** rather than from a statement about steady state, and it says something stronger: that offset is **the equilibrium of the closed loop**, and the only one. It is not a transient that has not finished. Waiting does not remove it, and neither does any gain, because $\Delta$ is the only gain in the law and line 5 already priced it.
+
+> [!note] What a Lyapunov argument is, in one box
+> **Why it is needed.** The error motion of line 7 is a sine of an arctangent of the state. It has no transfer function, no poles and no root locus, so the stability tests of Weeks 2 to 4 do not apply to it. Lyapunov's method is the one that does, and it works without solving the equation.
+>
+> **The principle.** Invent a scalar $V(x)$ that behaves like an energy: it is zero at the equilibrium, positive everywhere else, and grows without bound far away. Then watch $\dot V$ along the system's own motion. If the energy is strictly falling whenever the state is away from the equilibrium, the state cannot stay away: it has nowhere to go but down the bowl.
+>
+> | Condition | In symbols | What it says |
+> |---|---|---|
+> | $V$ is positive definite | $V(0) = 0$, $V(x) > 0$ for $x \neq 0$ | the bowl has its single lowest point at the equilibrium |
+> | $V$ is radially unbounded | $V(x) \to \infty$ as $\lVert x\rVert \to \infty$ | the bowl has no rim to escape over — this is what makes the conclusion **global** |
+> | $\dot V$ is negative definite | $\dot V(x) < 0$ for $x \neq 0$ | the state loses energy at every instant it is not at the bottom |
+>
+> **What follows.** The three together give global asymptotic stability: from **any** initial state, $x \to 0$. Weaker versions give weaker conclusions — with $\dot V \le 0$ only, the state is stable but need not converge, and Krasovskii–LaSalle is then used to recover convergence by showing that the set where $\dot V = 0$ holds no trajectory but the equilibrium. That is the step cited at the end of line 9b.
+>
+> **Two cautions.** The test is **sufficient, not necessary**: a $V$ that fails proves nothing, since another $V$ may succeed. And the quantity need not be a physical energy — in line 7b it is half the squared cross-track error, which has units of m² and no physical meaning at all. It only has to have the shape of a bowl.
+
+7b. **Without a current the same equation proves the law works, from anywhere.** Set $\beta = 0$ in line 7. The sine of an arctangent is the opposite side over the hypotenuse of the triangle of §5-3, $\sin\arctan(y_e/\Delta) = y_e/\sqrt{\Delta^2 + y_e^2}$, so
+
+$$
+\dot y_e = -U \sin\!\left(\arctan\frac{y_e}{\Delta}\right) = -\frac{U}{\sqrt{\Delta^2 + (y_e)^2}}\; y_e
+$$
+
+   Take $V = \tfrac12 (y_e)^2$ — half the squared error, zero on the path and positive everywhere else. Its rate along that motion is
+
+$$
+\dot V = y_e\,\dot y_e = -\frac{U}{\sqrt{\Delta^2 + (y_e)^2}}\,(y_e)^2 < 0, \qquad \forall\, y_e \neq 0
+$$
+
+   This is the derivation given in the 2025 notes and in Fossen (2021) §12.3, transcribed unchanged except for the notation of line 6.
+
+![Cross-track error dynamics and the Lyapunov argument, as given in the 2025 notes](../figures/refs/w05-ref-los-lyapunov.webp)
+
+| On the slide | Which equation above |
+|---|---|
+| *Cross-track error dynamics*, the two lines | the first display: the sine of the arctangent, then the same thing with the triangle substituted |
+| *Lyapunov stability analysis*, $V = \tfrac12 (y_e^p)^2$ | the candidate, chosen as in the box above |
+| $\dot V < 0,\ \forall y_e^p \neq 0$ | the second display, and the conclusion drawn from it |
+| the geometry on the right | the look-ahead triangle of §5-3, with the aim point at $\Delta$ and the angle $\arctan(y_e^p/\Delta)$ |
+
+- **What it establishes.** $V$ falls at every instant the vessel is off the path and stops falling only on it, for **any** starting error — not merely a small one. Experiment 5-3 starts $20$ m off a $5$ m look-ahead and converges for every $\Delta$ in the sweep, which is this line in measured form.
+- **The one condition is $U > 0$.** A vessel making no way over ground cannot be steered onto anything, and the factor in front of $y_e$ vanishes with $U$. The same condition returns at the end of this section as the reason a heading-controlled craft is used at all.
+- **The denominator is the distance to the aim point**, $\sqrt{\Delta^2 + y_e^2}$, read off the triangle of §5-3. Far from the path the closing rate tends to $U$ itself: the vessel heads straight at the path and closes at full speed. Near it the rate becomes $U y_e/\Delta$ — the P controller of §5-3 once more.
+- **It says nothing about a current**, because $\beta$ was set to zero to get it. With $\beta \neq 0$ the equilibrium moves to line 7's $y_e = \Delta\tan\beta$ and the argument above holds about *that* point instead, which is exactly the trouble: the law is stable, and stable about the wrong place.
 
 8. **What would have to be true instead.** For $y_e = 0$ to become an equilibrium, the bracket in line 7 must vanish *at* $y_e = 0$. Since $\beta \ne 0$, the arctan must be fed by something that is **not** $y_e$. Add a second term to it and give that term a state of its own:
 
@@ -835,10 +901,55 @@ $$
 | $\kappa$ | integral constant — a **speed**, since $\kappa y_{\text{int}}$ is a length | $0.3$ m/s, `W05_0_setup.m` |
 | $\kappa/\Delta$ | the resulting I gain | $0.06$ s⁻¹ |
 
+9b. **The same state, with a published proof.** Line 9 argued for the update law from two requirements. The literature arrives at the same place and proves it, in the variant Fossen (2021) §12.3 sets out as equations (12.96) to (12.100) — the one MSS implements. The law is written as a course command, with a square root in the denominator and the speed over ground in the numerator:
+
+$$
+\chi_d = \pi_p - \arctan\!\left(K_p\, y_e + K_i\, y_{\text{int}}\right),
+\qquad
+\dot y_{\text{int}} = \frac{U\, y_e}{\sqrt{\Delta^2 + (y_e + \kappa\, y_{\text{int}})^2}}
+$$
+
+   with $K_p = 1/\Delta$, $K_i = \kappa K_p$ and $\kappa > 0$. Substituting it into line 6 gives the closed-loop error motion
+
+$$
+\dot y_e = U \sin(\chi - \pi_p) = -U\,\frac{y_e + \kappa\, y_{\text{int}}}{\sqrt{\Delta^2 + (y_e + \kappa\, y_{\text{int}})^2}}
+$$
+
+   The Lyapunov candidate is the one of line 7b with a second term for the new state, $V = \tfrac12 (y_e)^2 + \tfrac{\kappa}{2}(y_{\text{int}})^2$, and its rate is
+
+$$
+\begin{aligned}
+\dot V &= y_e\left(-U\,\frac{y_e + \kappa\, y_{\text{int}}}{\sqrt{\Delta^2 + (y_e + \kappa y_{\text{int}})^2}}\right) + \kappa\, y_{\text{int}}\,\dot y_{\text{int}} \\[4pt]
+&= -U\,\frac{(y_e)^2}{\sqrt{\Delta^2 + (y_e + \kappa y_{\text{int}})^2}}
+ + \frac{\kappa\, y_{\text{int}}\left(\dot y_{\text{int}}\sqrt{\Delta^2 + (y_e + \kappa y_{\text{int}})^2} - U y_e\right)}{\sqrt{\Delta^2 + (y_e + \kappa y_{\text{int}})^2}}
+\end{aligned}
+$$
+
+   The second term is why the update law is the one it is: choosing $\dot y_{\text{int}}$ as above makes its bracket vanish identically, and what is left is negative,
+
+$$
+\dot V = -U\,\frac{(y_e)^2}{\sqrt{\Delta^2 + (y_e + \kappa\, y_{\text{int}})^2}} < 0,
+\qquad \forall\, y_e \neq 0,\ y_{\text{int}} \neq 0
+$$
+
+   With $U$ and $\Delta$ constant, $(y_e, y_{\text{int}}) = (0,0)$ is globally asymptotically stable by Krasovskii–LaSalle. The proof is on p. 362 of the handbook; the algorithm is Lekkas and Fossen (2014), and MSS implements it as `ILOSchi.m`.
+
+![The nonlinear ILOS algorithm with guaranteed stability, and the MSS function that implements it](../figures/refs/w05-ref-ilos-nonlinear.png)
+
+| On the slide | What it is |
+|---|---|
+| the two displayed equations | the law and the update above, equations (12.96) and (12.97) of the handbook |
+| $K_p = 1/\Delta$, $K_i = \kappa K_p$, $\kappa > 0$ | the design parameters: one distance and one ratio, as in §5-3 and line 9 |
+| the boxed function signature | `ILOSchi(x, y, Delta, kappa, h, U, R_switch, wpt, chi)` — the MSS implementation, whose arguments are this week's §5-3, §5-4 and §5-5 in one line |
+| *trial and failure* in the line above | why the form with a proof is preferred to tuning the conventional one blind |
+
+> [!important] Which form this proof covers
+> The update law proved above carries $U/\sqrt{\cdot}$; the one this course uses, in line 9, carries $\Delta/(\cdot)$ — Børhaug, Pavlov and Pettersen (2008), who prove UGAS/ULES for it in cascade with a 3-DOF ship model. The two differ in how the rate scales with speed and therefore in the units of $\kappa$, not in the two requirements of line 9: both vanish only with $y_e$ and both shrink as the error grows. This course keeps the $\Delta$ form so that $\kappa$ reads as a speed and can be compared with the current directly, and the reconstruction check of Experiment 5-5b is run against that form.
+
 10. **Small signals: it is a PI controller.** Near the path $\arctan x \approx x$ once more, so $\psi_d - \pi_p \approx -(1/\Delta)\,y_e - (\kappa/\Delta)\,y_{\text{int}}$ — proportional plus integral on the cross-track error, with $K_p = 1/\Delta$ from §5-3 and $K_i = \kappa/\Delta$. Everything Week 2 established about a PI controller applies here unchanged, including that the integral costs overshoot.
 11. **And $\kappa$ has a ceiling.** The bound in line 9 holds while $y_{\text{int}}$ is small; once $\kappa y_{\text{int}}$ is comparable to $y_e$ and opposite in sign the denominator shrinks again and the update is no longer capped. The last column of the table in line 8 is past $\tfrac12$ at $\kappa = 1$ and $\kappa = 3$, and the second of those never settles. The stability proof in the source paper carries a condition on $\kappa$ for exactly this reason; this course chooses $\kappa$ by measurement instead, in §5-6.
 
-That is the derivation: lines 1 to 5 say the offset is unavoidable under LOS, lines 6 to 8 say what has to replace the law, and lines 9 to 11 say how to drive the new state and how hard it may be driven. Two obvious alternatives are left over, and both have to be dismissed before the experiments.
+That is the derivation: lines 1 to 5 say the offset is unavoidable under LOS, lines 6 to 8 say what has to replace the law — with line 7b showing that the old law was never unstable, only settled in the wrong place — and lines 9 to 11 say how to drive the new state and how hard it may be driven, line 9b giving the published proof that it converges. Two obvious alternatives are left over, and both have to be dismissed before the experiments.
 
 **Why not the plain integral?** The obvious update is the one Week 2 used: integrate the error itself, $\dot y_{\text{int}} = y_e$, giving
 
@@ -847,6 +958,10 @@ $$
 $$
 
    This is the **conventional ILOS** of the literature, and it satisfies requirement (a) — it stops only where $y_e = 0$. It fails requirement (b): far from the path it integrates at full rate.
+
+![Conventional ILOS: the integral added to compensate the offset a constant disturbance leaves](../figures/refs/w05-ref-ilos-conventional.png)
+
+- The slide states the cost in the same words Week 2 used: integral action needs careful design to avoid wind-up and overshooting. The law of line 9 does not avoid them by careful design — it avoids them by the shape of its denominator.
 
 ![The two integrators: one aiming law above, two update laws below, and the rate each one asks for](../figures/w05-two-integrators.svg)
 
@@ -857,19 +972,52 @@ $$
 | the orange curve | the nonlinear rate: it rises, peaks at $\tfrac12$ where $y_e = \Delta$, and **falls away** |
 | the blue line | the plain rate, $\dot y_{\text{int}} = y_e$, straight off the top of the axes |
 
+The two laws set side by side, and the transient the difference buys:
+
+![The two ILOS forms as the reference material sets them out, with the windup argument spelled out](../figures/refs/w05-ref-ilos-two-forms.png)
+
+![The published comparison: conventional ILOS dotted, nonlinear ILOS solid, from 100 m off the path](../figures/refs/w05-ref-ilos-transient.png)
+
+| On the slides | What to read |
+|---|---|
+| the dashed red box on the left slide | the one line that differs — the same comparison the figure above makes |
+| the sentence beside it | *the influence of the integrator diminishes when the cross-track error increases*, which is requirement (b) of line 9 |
+| the lower slide, the dotted curve | conventional ILOS overshooting to $+50$ m after an approach from $-100$ m |
+| the lower slide, the solid curve | the nonlinear law settling without that excursion |
+
+- Those traces are a published result for a different vessel, so the numbers are not this course's. Experiment 5-5c runs the same comparison on the Otter and reports $13.5$ m against $3.9$ m — a different pair of numbers with the same shape.
+
 - That is the whole argument. An integrator that **slows down when it is far from the path** cannot wind up during an approach; one that speeds up must. This mission starts $20$ m off, so the plain state accumulates for half a minute before the vessel even reaches the path, and then has to unwind through the other side. Experiment 5-5c measures the cost: at the same $\kappa$ the plain integral does not follow the path at all, and tuned down until it does, it still swings $13.5$ m where the nonlinear law swings $3.9$ m.
 
 **Why not measure the crab angle instead?** If the sway velocity $v$ is measured, the crab angle can be computed and subtracted outright, with no integrator anywhere:
 
 $$
-\psi_d = \pi_p - \arctan\frac{y_e}{\Delta} - \beta_c, \qquad \beta_c = \arcsin\frac{v}{\sqrt{u^2+v^2}}
+\psi_d = \chi_d - \beta = \pi_p - \arctan\frac{y_e}{\Delta} - \beta, \qquad \beta = \arctan\frac{v}{u} = \arcsin\frac{v}{\sqrt{u^2+v^2}}
 $$
+
+![The guidance law written for a heading-controlled craft: the course command, less the crab angle](../figures/refs/w05-ref-heading-form.png)
+
+| On the slide | What it is |
+|---|---|
+| the block diagram | the right-hand panel of the figure at the end of this section: a heading autopilot, with the crab angle subtracted ahead of it |
+| the grey box | the equation above, written in two steps: first $\chi_d - \beta$, then $\chi_d$ expanded |
+| the blue box, $\chi = \psi + \beta$ | the identity of Week 4 §4-4 that makes the subtraction the right one |
+| the red annotation | the same sentence as the callout below: to the autopilot, the crab angle is a disturbance in yaw |
 
    It works, and it is the cleanest thing to do **when the measurement exists**. Three reasons the integral is used instead:
 
-- **It is singular at zero speed.** $\beta_c$ is undefined as $U \to 0$ and ill-conditioned just above it — exactly where a vessel manoeuvres near a berth.
+- **It is singular at zero speed.** $\beta$ is undefined as $U \to 0$ and ill-conditioned just above it — exactly where a vessel manoeuvres near a berth.
 - **The measurement must exist.** It needs $v$: a Doppler log, or course over ground differenced against the compass. **The Otter of this course logs no $v$ to the guidance block,** and that is the reason that decides it here.
-- **It is never complete.** Roll and pitch coupling leaves a small offset even after $\beta_c$ is subtracted, so an integral is usually added anyway.
+- **It is never complete.** Roll and pitch coupling leaves a small offset even after $\beta$ is subtracted, so an integral is usually added anyway — which is the reference material's own conclusion, below.
+
+![Estimating the crab angle from the velocity pair, its singularity, and why integral action is used instead](../figures/refs/w05-ref-crab-measured.webp)
+
+| On the slide | What to take from it |
+|---|---|
+| the boxed estimator | the second equation above, in the slide's notation |
+| the words beside it | *numerical problem: singular for zero speed* — the first bullet |
+| the paragraph below | kinematic coupling in roll and pitch leaves an offset even so, which is the third bullet |
+| the photograph | the same angle on an aircraft: a B777 lands crabbed by up to $16°$ in a $38$-knot crosswind. The vessel of Experiment 5-5a crabs $22.8°$ in a $0.3$ m/s current |
 
    And the two are not really rivals: line 8 showed that the integral converges to $\kappa y_{\text{int}}^\star = \Delta\tan\beta$. **The integral reconstructs the number the measurement would have supplied**, from the path error alone, without a sensor and without a singularity at zero speed.
 
@@ -881,11 +1029,11 @@ $$
 > | | Course control | Heading control — **this course** |
 > |---|---|---|
 > | the autopilot closes on | $\chi$, measured as course over ground (GNSS) | $\psi$, measured by a compass or gyro (Week 4) |
-> | the guidance output is | used directly: $\chi_d$ | converted: $\psi_d = \chi_d - \beta_c$ |
+> | the guidance output is | used directly: $\chi_d$ | converted: $\psi_d = \chi_d - \beta$ |
 > | works at zero speed | no — $\chi$ is undefined when $U = 0$ | yes, which is why marine craft carry a compass |
 > | the crab angle is | inside the loop, measured | **a disturbance in yaw**, outside it |
 >
-> The Otter sits in the right-hand column, and the conversion in its second row is the subtraction above — the one this vessel cannot perform. So $\beta_c$ arrives as an unmeasured yaw disturbance, which is the classic case for an integrator, and §5-5 is that integrator.
+> The Otter sits in the right-hand column, and the conversion in its second row is the subtraction above — the one this vessel cannot perform. So $\beta$ arrives as an unmeasured yaw disturbance, which is the classic case for an integrator, and §5-5 is that integrator.
 
 ![The same guidance law wired two ways: to a course autopilot, and to the heading autopilot of Week 4](../figures/w05-course-vs-heading.svg)
 
@@ -894,9 +1042,22 @@ $$
 | both panels, the left half | identical: the same waypoint list and the same LOS law, producing $\chi_d$ |
 | the feedback into the autopilot | $\chi$ from GNSS on the left, $\psi$ from a compass on the right |
 | right panel, the circle before the autopilot | where $\chi_d$ becomes $\psi_d$, by subtracting the crab angle |
-| right panel, the red arrow into that circle | $\beta_c$ — and the word **unknown**: nothing in this vessel measures it |
+| right panel, the red arrow into that circle | $\beta$ — and the word **unknown**: nothing in this vessel measures it |
 
 - The vessel of this course is the right-hand panel **with the red arrow missing**. Lines 6 to 11 are what is done instead of drawing it in.
+
+The same two architectures in the reference material, with the definitions that go with them:
+
+![Course angle, heading angle and the crab angle between them, with the two autopilot architectures](../figures/refs/w05-ref-course-vs-heading.png)
+
+![Why a marine craft is steered on heading: the course angle is not defined at zero speed](../figures/refs/w05-ref-zero-speed.png)
+
+| On the slides | What to take from it |
+|---|---|
+| the two block diagrams of the first slide | the two columns of the table above, drawn: the course autopilot closes on $\chi$ from GNSS, the heading autopilot on $\psi$ from a compass |
+| the highlighted sentence | a vessel in an environmental force has a non-zero sway velocity, therefore a non-zero crab angle; it is said to **sideslip** |
+| the second slide, first line | the course angle is undefined at $U = 0$, while the compass reads at rest — the reason the right-hand column is the one marine craft use |
+| the second slide, the yellow box | the estimator of the previous subsection, and its ill-conditioning for small $u$ and $v$ |
 
 **What the derivation predicts, measured.** Experiment 5-5b runs the mission at $0.3$ m/s with $\Delta = 5$ m:
 
@@ -910,10 +1071,7 @@ $$
 
 - Every $\kappa$ removes the offset — line 8 — and a larger one overshoots more, which is the price of every integral since Week 2. On a single long leg $\kappa = 0.1$ is the cleanest; §5-6 chooses on the mission, where the legs are short and the integral has less time.
 
-**Sources.** The law and its Lyapunov analysis: Børhaug, Pavlov and Pettersen, "Integral LOS control for path following of underactuated marine surface vessels in the presence of constant ocean currents", *47th IEEE Conference on Decision and Control*, 2008, pp. 4984–4991, DOI [10.1109/CDC.2008.4739352](https://doi.org/10.1109/CDC.2008.4739352) — they prove UGAS/ULES for a 3-DOF ship model in cascade with the guidance law. Fossen, *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed., 2021, §12.3 gives the same law with the notation used here and the proof on p. 362; Lekkas and Fossen (2014) is where the form with guaranteed stability properties is set out. The MSS implementations are `ILOSpsi.m` and `ILOSchi.m`.
-
-> [!note] The MSS integrator is the same idea with a different scaling
-> `ILOSchi.m` updates the state as $\dot y_{\text{int}} = U\,y_e\,/\sqrt{\Delta^2 + (y_e + \kappa y_{\text{int}})^2}$ — the speed over ground in the numerator and a square root in the denominator, where the form used here and in Fossen's lecture notes has $\Delta$ and no root. Both vanish only with $y_e$ and both shrink as the error grows, which is all lines 8 and 9 require; the difference is the units of $\kappa$ and how the rate scales with speed. This course keeps the book's form so that $\kappa$ can be read as a speed and compared with the current directly.
+**Sources.** The law and its Lyapunov analysis: Børhaug, Pavlov and Pettersen, "Integral LOS control for path following of underactuated marine surface vessels in the presence of constant ocean currents", *47th IEEE Conference on Decision and Control*, 2008, pp. 4984–4991, DOI [10.1109/CDC.2008.4739352](https://doi.org/10.1109/CDC.2008.4739352) — they prove UGAS/ULES for a 3-DOF ship model in cascade with the guidance law. Fossen, *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed., 2021, §12.3 gives the same law with the notation used here and the proof on p. 362, which is transcribed in line 9b; Lekkas and Fossen (2014) is where the form with guaranteed stability properties is set out. The MSS implementations are `ILOSpsi.m` and `ILOSchi.m`, and `ILOSchi.m` carries the $U/\sqrt{\cdot}$ scaling of line 9b rather than the $\Delta/(\cdot)$ scaling used here. The Lyapunov method itself is stated in the box before line 7b.
 
 ### Experiment 5-5a · The offset a current leaves under LOS (7 min)
 
@@ -964,6 +1122,15 @@ Expected output:
 
 > [!note] The same experiment in the 2025 notes, on a different vessel
 > *2. USV 제어기 설계* reports $\operatorname{mean}\lvert\chi-\psi\rvert = 1.38°$ with no current and $13.63°$ in a $0.4$ m/s current at $20°$, over a five-waypoint mission. The numbers here are larger because the scenario is harder, not because the vessels differ in kind: this leg runs **across** the current rather than at $20°$ to it, and the Otter makes good only $0.77$ m/s at $X_{ff} = 60$ N, so the same current turns the bow further. What the two measurements share is the shape of the answer — a crab angle that is negligible in still water and tens of degrees in a current — and that is what the integral of §5-5 has to supply.
+>
+> ![The 2025 experiment: the same two runs, without a current and with one](../figures/refs/w05-ref-current-effect.png)
+>
+> | On the slide | Here |
+> |---|---|
+> | the left column, `current_speed = 0` | the left panel of the figure above: $\chi$ and $\psi$ on top of each other |
+> | the right column, `current_speed = 0.4` at $20°$ | the right panel: the two angles apart by the crab angle |
+> | the upper plots | $u$ and $v$ — the sway velocity that is the crab angle's origin, and that the Otter does not log to its guidance block |
+> | $\operatorname{mean}\lvert\chi-\psi\rvert$ = $1.38$ and $13.63$ | the same quantity this experiment reports as $0.098$ and $23.007$, on the harder scenario described above |
 
 ### Experiment 5-5b · The integral that removes it (8 min)
 

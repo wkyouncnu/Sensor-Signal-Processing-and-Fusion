@@ -358,8 +358,11 @@ check_legend() {
       n="${ln%%:*}"; img="${ln#*:}"
       # "In the diagram" 도 인정한다 — 블록도에 붙는 표의 제목으로는 그 쪽이 옳다
       # (2026-09-29, W05 §5-7 이 제어기 서브시스템 셋을 실으면서).
+      # "On the slide(s)" · "슬라이드에서" 도 인정한다 — 사용자의 옛 강의자료나
+      # 교재에서 가져온 슬라이드를 실을 때 그 쪽이 옳은 제목이다
+      # (2026-10-17, W05 §5-5 가 2025년 PPT 열한 장을 실으면서).
       if ! sed -n "$((n+1)),$((n+12))p" "$f" \
-           | grep -qE '^\*\*Reading the figure|^\| *In the (figure|diagram|live view) *\||^\*\*그림을 .*읽기|^\| *(실시간 )?(그림에서|다이어그램에서|화면에서) *\|'; then
+           | grep -qE '^\*\*Reading the figure|^\| *In the (figure|diagram|live view) *\||^\| *On the slides? *\||^\*\*그림을 .*읽기|^\| *(실시간 )?(그림에서|다이어그램에서|화면에서|슬라이드에서) *\|'; then
         printf '     [범례 표 없음] %s:%s  %s\n' "${f#./}" "$n" \
                "$(printf '%s' "$img" | sed -E 's/.*\]\(([^)]*)\).*/\1/')"
         miss=$((miss+1))

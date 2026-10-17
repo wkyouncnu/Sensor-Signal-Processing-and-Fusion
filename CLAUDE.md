@@ -57,8 +57,10 @@
 │   └── A1_simulink/
 │
 ├── figures/                 개념도 SVG (w01-… … w12-…). 러너가 만든 PNG 는 여기 아니다
-│   └── src/                 그 SVG 의 TikZ 원본 (*.tex) + gnc-style.tex
-│                            `tikz2svg.sh` 이 여기서 ../*.svg 를 만든다
+│   ├── src/                 그 SVG 의 TikZ 원본 (*.tex) + gnc-style.tex
+│   │                        `tikz2svg.sh` 이 여기서 ../*.svg 를 만든다
+│   └── refs/                **가져온** 그림 — 사용자의 옛 강의 슬라이드·교재 캡처
+│                            (`wNN-ref-….png|webp`). 이 볼트가 만든 SVG 와 섞지 않는다
 ├── _templates/              week.md
 ├── _tools/                  md2pdf.sh · pdf-template.html · marked.min.js
 │                            mathjax-tex-svg.js · lab_fig.m · mss_path.m
@@ -117,6 +119,11 @@
 |---|---|---|
 | 개념도 (좌표계·기하·배치) | `figures/wNN-….svg` | 손으로 그리거나 `_tools/*.awk` 가 계산 |
 | 블록도 · 결과 그래프 | `lectures/WNN_simulink/img/*.png` | **러너가** 저장한다 |
+| 가져온 슬라이드·교재 캡처 | `figures/refs/wNN-ref-….png\|webp` | 사용자의 옛 강의자료에서 온다 |
+
+가져온 그림은 그 슬라이드가 말하는 **그 절**에 넣고, 범례 표(`| On the slide |`)를 붙이며,
+기호가 다르면 **첫 자리에 대응표 하나**를 둔다. 크기는 손대지 않는다 — 본문 폭에 맞는다.
+**교재의 수식 쪽은 이미지로 싣지 않고 LaTeX 으로 전사한다** → `standing-orders.md` §15-40
 
 주차 실습 폴더는 항상 같은 모양이다. **강의 절 하나에 스크립트 하나**이고, 파일명이
 강의 순서 그대로다. 하나를 돌리면 그 절의 표와 그림만 나온다.
