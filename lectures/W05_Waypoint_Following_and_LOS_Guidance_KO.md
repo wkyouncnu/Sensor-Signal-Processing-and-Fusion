@@ -144,12 +144,14 @@ W05_1_build_guidance
 | `allocation` | $N$ → 축 회전수 둘 | 4주차 §4-1, 일정한 전진력 $X_{ff} = 60$ N (약 0.77 m/s) 과 함께 |
 | `Otter` | 축 회전수 → 상태 열둘 | 1주차 |
 
-**유도가 다루는 오차.** "경로를 따라가라" 는 제어기가 작용할 수 있기 전에 수가 되어야 하고, **수 하나로는 부족하다.** 경로는 웨이포인트 $k$ 에서 $k{+}1$ 로 가는 직선 다리다. 필요한 것은 배가 그 다리를 **따라** 얼마나 왔는지, 그리고 그 다리에서 얼마나 **벗어나** 있는지다. 둘이 한 구성에서 함께 나온다.
+**유도가 다루는 오차.** "경로를 따라가라" 는 제어기가 작용할 수 있기 전에 수가 되어야 하고, **수 하나로는 부족하다.** 경로는 웨이포인트 $\mathbf p_i^n$ 에서 $\mathbf p_{i+1}^n$ 로 가는 직선 다리다. 필요한 것은 배가 그 다리를 **따라** 얼마나 왔는지, 그리고 그 다리에서 얼마나 **벗어나** 있는지다. 둘이 한 구성에서 함께 나온다.
+
+위치는 이 강의의 그림이 쓰는 표기 그대로 쓴다 — 배는 $\{n\}$ 에서의 북·동인 $(x^n, y^n)$, 웨이포인트는 $\mathbf p_i^n = [\,x_i^n,\ y_i^n\,]^{\mathsf T}$ 다. $N$ 과 $E$ 라는 글자는 위치에 쓰지 않는다. 로그의 열 이름은 그대로 `N`·`E` 이고, `W05_read` 가 이어 준다.
 
 **1단계 — 다리가 프레임의 방향을 준다.** 두 웨이포인트가 북에서 잰 방향 하나를 고정한다.
 
 $$
-\pi_p = \operatorname{atan2}\big(E_{k+1} - E_k,\ N_{k+1} - N_k\big)
+\pi_p = \operatorname{atan2}\big(y_{i+1}^n - y_i^n,\ x_{i+1}^n - x_i^n\big)
 $$
 
 - $\pi_p$ 는 **한 다리 위에서 상수**이고, 웨이포인트 번호가 바뀔 때에만 다시 계산된다.
@@ -165,12 +167,12 @@ $$
 
 둘은 수직이고 길이가 1 이므로 함께 **프레임** — 경로 프레임 $\{p\}$ — 이고, $\hat{\mathbf n}$ 은 다리를 따라 달리는 배의 우현을 가리킨다.
 
-**3단계 — 두 오차는 두 그림자다.** 어떤 벡터와 단위벡터의 내적은 **그 방향 위에 드리운 그림자의 길이**다. 그래서 활성 웨이포인트에서 배까지의 벡터 $\mathbf d = [\,N - N_k,\ E - E_k\,]^{\mathsf T}$ 를 두 단위벡터에 차례로 드리운다.
+**3단계 — 두 오차는 두 그림자다.** 어떤 벡터와 단위벡터의 내적은 **그 방향 위에 드리운 그림자의 길이**다. 그래서 활성 웨이포인트에서 배까지의 벡터 $\mathbf d = \mathbf p^n - \mathbf p_i^n = [\,x^n - x_i^n,\ y^n - y_i^n\,]^{\mathsf T}$ 를 두 단위벡터에 차례로 드리운다.
 
 $$
 \begin{aligned}
-x_e &= \mathbf d \cdot \hat{\mathbf t} = \ \ (N - N_k)\cos\pi_p + (E - E_k)\sin\pi_p \qquad &&\text{along the leg}\\
-y_e &= \mathbf d \cdot \hat{\mathbf n} = -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p \qquad &&\text{across it, positive to starboard}
+x_e &= \mathbf d \cdot \hat{\mathbf t} = \ \ (x^n - x_i^n)\cos\pi_p + (y^n - y_i^n)\sin\pi_p \qquad &&\text{along the leg}\\
+y_e &= \mathbf d \cdot \hat{\mathbf n} = -(x^n - x_i^n)\sin\pi_p + (y^n - y_i^n)\cos\pi_p \qquad &&\text{across it, positive to starboard}
 \end{aligned}
 $$
 
@@ -179,19 +181,25 @@ $$
 두 그림자를 쌓으면 두 줄이 $\hat{\mathbf t}^{\mathsf T}$ 와 $\hat{\mathbf n}^{\mathsf T}$ 인 회전이 된다. 그것이 문헌의 표기이고 — $\{n\}$ 은 북동 프레임, $\{p\}$ 는 경로 프레임 — 알아볼 가치가 있지만, 두 번째 생각은 아니다.
 
 $$
-\begin{bmatrix} x_e \\ y_e \end{bmatrix}_p = \mathbf R^p_n \begin{bmatrix} N - N_k \\ E - E_k \end{bmatrix}_n,
+\begin{bmatrix} x_e \\ y_e \end{bmatrix}
+= \mathbf R_p^n(\pi_p)^{\mathsf T}
+  \begin{bmatrix} x^n - x_i^n \\ y^n - y_i^n \end{bmatrix},
 \qquad
-\mathbf R^p_n = \begin{bmatrix}\ \ \cos\pi_p & \sin\pi_p\\ -\sin\pi_p & \cos\pi_p\end{bmatrix}
+\mathbf R_p^n(\pi_p) = \begin{bmatrix}\cos\pi_p & -\sin\pi_p\\ \sin\pi_p & \ \ \cos\pi_p\end{bmatrix}
 $$
+
+$\mathbf R_p^n(\pi_p)$ 는 벡터를 경로 프레임 **에서** $\{n\}$ **으로** 돌리므로, 그 전치가 반대 방향으로 가져온다. 열이 $\hat{\mathbf t}$ 와 $\hat{\mathbf n}$ 이고, 그래서 전치의 행이 위의 내적 둘이다. 회전행렬의 역은 전치이므로 여기서 역행렬을 구하는 일은 없다.
 
 | 기호 | 양 | 단위 · 출처 |
 |---|---|---|
-| $(N_k, E_k)$, $(N_{k+1}, E_{k+1})$ | 활성 다리의 두 웨이포인트 | m · `WP_N`, `WP_E` |
-| $(N, E)$ | 배의 위치, 북과 동 | m · 상태 7 과 8 |
+| $\mathbf p_i^n = [\,x_i^n,\ y_i^n\,]^{\mathsf T}$, $\mathbf p_{i+1}^n$ | 활성 다리의 두 웨이포인트 | m · `WP_N`, `WP_E` |
+| $\mathbf p^n = [\,x^n,\ y^n\,]^{\mathsf T}$ | 배의 위치, 북과 동 | m · 상태 7 과 8, 로그 열 이름은 `N`·`E` |
 | $\pi_p$ | 다리의 방향, 북에서 | rad |
 | $x_e$ | **종방향 오차**: 다리를 따라 간 거리 | m · §5-4 가 이것으로 전환한다 |
 | $y_e$ | **횡방향 오차**: 다리에서 벗어난 거리, 오른쪽이 양 | m · §5-3 이 이것을 0 으로 보낸다 |
-| $d = \lVert \mathbf p_{k+1} - \mathbf p_k\rVert$ | 다리의 길이 | m · $d - x_e$ 가 남은 거리다 |
+| $d = \lVert \mathbf p_{i+1}^n - \mathbf p_i^n\rVert$ | 다리의 길이 | m · $d - x_e$ 가 남은 거리다 |
+
+이번 주의 그림들은 두 오차를 $x_e^{\,p}$, $y_e^{\,p}$ 로 쓴다. 위 첨자는 그 오차가 어느 프레임에서 분해되었는지를 말한다. 본문은 그것을 떼고 쓴다 — 이번 주의 모든 오차가 $\{p\}$ 에 살고, 구별할 다른 것이 없기 때문이다.
 
 ![두 오차가 한 회전에서 나온다](../figures/w05-track-frame.svg)
 
@@ -363,7 +371,7 @@ W05_B_three_laws
 
 이 절이 답하는 것: 그냥 다음 웨이포인트를 가리키면 왜 안 되는가?
 
-**무엇이 관측되는가.** 배가 북으로 달리는 경로의 동쪽 20 m 에서 출발해 뻔한 법칙 $\psi_d = \operatorname{atan2}(E_{k+1} - E,\ N_{k+1} - N)$ — 다음 웨이포인트를 가리켜라 — 로 조종된다.
+**무엇이 관측되는가.** 배가 북으로 달리는 경로의 동쪽 20 m 에서 출발해 뻔한 법칙 $\psi_d = \operatorname{atan2}(y_{i+1}^n - y^n,\ x_{i+1}^n - x^n)$ — 다음 웨이포인트를 가리켜라 — 로 조종된다.
 
 - 웨이포인트까지 절반 왔을 때 아직 경로에서 $10.75$ m 벗어나 있다. 출발 편차의 절반이 넘는다.
 - 경로에 닿는 것은 웨이포인트에 **도착해서야**이고, 그 다음 다리에서 다시 벗어난다.
@@ -747,7 +755,7 @@ $$
 
 **처방을 유도하기.** 1번부터 5번 줄까지는 편차가 존재한다는 것과 그것이 얼마나 큰지를 말한다. 아직 그 법칙을 무엇으로 바꿀지는 말하지 않는다. 그것에는 방정식 하나가 더 필요하다 — 이번 주가 지금까지 쓰기를 피해 온 것, 곧 **오차 자신의 운동**이다.
 
-6. **$y_e$ 는 어떻게 움직이는가.** §5-1 의 정의 $y_e = -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p$ 를, $\pi_p$ 가 상수인 직선 다리 위에서 미분한다. NED 에서의 속도를 $\dot N = U\cos\chi$, $\dot E = U\sin\chi$ 로 쓰면, $U$ 는 대지속력이고 $\chi$ 는 침로이므로
+6. **$y_e$ 는 어떻게 움직이는가.** §5-1 의 정의 $y_e = -(x^n - x_i^n)\sin\pi_p + (y^n - y_i^n)\cos\pi_p$ 를, $\pi_p$ 가 상수인 직선 다리 위에서 미분한다. $\{n\}$ 에서의 속도를 $\dot x^n = U\cos\chi$, $\dot y^n = U\sin\chi$ 로 쓰면, $U$ 는 대지속력이고 $\chi$ 는 침로이므로
 
 $$
 \dot y_e = -U\cos\chi\,\sin\pi_p + U\sin\chi\,\cos\pi_p = U\,\sin(\chi - \pi_p)
@@ -1113,7 +1121,7 @@ W05_F_LOS_in_a_current             % 조류 네 가지를 한 번에 / all four 
 
 - 첫 표의 마지막 두 열이 4번 줄이고, 모든 줄에서 밀리미터까지 맞는다. 배는 $0.3$ m/s 조류 쪽으로 $22.8°$ 를 가리키고 정북으로 간다 — 4주차 §4-4 가, 이제 경로 오차를 비용으로 치르며.
 
-**침로 대 선수각, 측정으로.** 둘째 표는 위 콜아웃의 크랩각을, 정의가 아니라 이 배에서 받아낸 것이다. 대지침로는 항적을 미분해 $\chi = \operatorname{atan2}(\dot E,\ \dot N)$ 으로 계산한다. GNSS 수신기가 보고하는 것이고 이 배가 공급할 수 있는 것이다 — 횡동요 속도 $v$ 는 기록하지 않고, 그것이 §5-5 가 크랩각을 재지 않는 이유로 든 셋 중 하나다.
+**침로 대 선수각, 측정으로.** 둘째 표는 위 콜아웃의 크랩각을, 정의가 아니라 이 배에서 받아낸 것이다. 대지침로는 항적을 미분해 $\chi = \operatorname{atan2}(\dot y^n,\ \dot x^n)$ 으로 계산한다. GNSS 수신기가 보고하는 것이고 이 배가 공급할 수 있는 것이다 — 횡동요 속도 $v$ 는 기록하지 않고, 그것이 §5-5 가 크랩각을 재지 않는 이유로 든 셋 중 하나다.
 
 ![곧은 다리 하나에서의 선수각과 침로, 조류 없이 그리고 조류와 함께](W05_simulink/img/W05_result_course_vs_heading.png)
 

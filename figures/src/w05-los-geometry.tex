@@ -74,11 +74,19 @@
 %  경로선 **아래** 오른쪽에 둔다. 선 위에 두면 글자가 선에 물린다.
 \node[note, anchor=north west]         at (119.5,96.0)  {$[\,x_{i+1}^n,\ y_{i+1}^n\,]^{\!\top}$};
 
-% ---- 선박을 지나는 북쪽 점선, 그리고 pi_p ------------------------------
+% ---- 선박을 지나는 북쪽 점선 (psi, chi, chi_d 가 여기서 잰다) -----------
 \draw[aux] \Ves -- \Xntop;
-\node[font=\small, soft, anchor=south east] at (53.0,59.0) {$x_n$};
-\draw[ang] (53.937,58.258) arc (90:\ScrPip:13);
-\node[font=\small, anchor=east] at \LabPip {$\pi_p$};
+\node[font=\small, soft, anchor=south east] at (53.0,59.0) {$x^n$};
+
+% ---- pi_p 는 **웨이포인트에서** 잰다 ------------------------------------
+%  2026-10-17, 사용자 지적: "pi_p 가 어디인지 ... 잘못 되었어".
+%  전에는 선박의 북쪽 점선이 경로와 만나는 점에 그렸다. 그 교점은 아무 뜻이
+%  없는 점이고, pi_p 는 **다리 자체의 방위각**이므로 다리가 시작하는 p_i 에서
+%  북에서부터 재야 읽힌다. 반지름 14 는 x_e^p 이름표(17,17.8)를 피한 값이다.
+\draw[aux] \WPi -- (0,22);
+\node[font=\small, soft, anchor=south] at (0,22.5) {$x^n$};
+\draw[ang] (0,14) arc (90:\ScrPip:14);
+\node[font=\small] at (4.2,9.0) {$\pi_p$};
 
 % ---- 수선의 발, along-track 과 cross-track -----------------------------
 \draw[alngline] \WPi -- \Foot;
@@ -94,8 +102,14 @@
 \fill[accent] \Aim circle (1.4pt);
 \node[alng, font=\small, anchor=south east] at \LabDelta {$\Delta$};
 %  Delta 가 무엇인지 말로도 짚어 준다 — 슬라이드의 "look-ahead distance".
-\node[capt,anchor=east] at (44.0,74.0) {look-ahead distance};
-\draw[lead] (45.0,73.4) -- (57.0,60.0);
+%  2026-10-17, 사용자 지적: 화살표가 경로 **위가 아닌 허공**을 가리키고 있었다
+%  ((57,60) 은 경로에서 11 mm 떨어진 점이다). 경로 위의 점 (66,55.4) 로 보낸다 —
+%  66 * tan(40도) = 55.4 이므로 그 점은 Foot-Aim 선분 위에 있다.
+\node[capt,anchor=east] at (55.0,66.0) {look-ahead distance};
+\draw[lead] (56.0,65.5) -- (66.0,55.4);
+%  Delta 가 **어디서 어디까지인지**를 양 끝에 적는다. 그래야 x_e^p 와 섞이지 않는다.
+\node[note, anchor=south east] at (36.5,33.5) {foot of the perpendicular};
+\node[note, anchor=south west] at (84.0,73.5) {aim point};
 
 % ---- LOS 벡터 ------------------------------------------------------------
 \draw[losline] \Ves -- \Aim;

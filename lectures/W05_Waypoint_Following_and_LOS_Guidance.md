@@ -139,12 +139,14 @@ Every model this week has the same four stages, left to right. Only the first is
 | `allocation` | $N$ → two shaft speeds | Week 4 §4-1, with a constant surge force $X_{ff} = 60$ N (about 0.77 m/s) |
 | `Otter` | shaft speeds → twelve states | Week 1 |
 
-**The error guidance works on.** "Follow the path" has to become a number before a controller can act on it, and **one number is not enough**. The path is a straight leg from waypoint $k$ to waypoint $k{+}1$; what is needed is how far **along** it the vessel has come and how far **off** it the vessel is. Both come out of one construction.
+**The error guidance works on.** "Follow the path" has to become a number before a controller can act on it, and **one number is not enough**. The path is a straight leg from waypoint $\mathbf p_i^n$ to waypoint $\mathbf p_{i+1}^n$; what is needed is how far **along** it the vessel has come and how far **off** it the vessel is. Both come out of one construction.
+
+Positions are written as this course's figures write them: $(x^n, y^n)$ for the vessel, north and east in the frame $\{n\}$, and $\mathbf p_i^n = [\,x_i^n,\ y_i^n\,]^{\mathsf T}$ for a waypoint. The letters $N$ and $E$ are not used for them; the logged columns still carry those names, and `W05_read` maps them.
 
 **Step 1 — the leg gives the frame its direction.** The two waypoints fix a direction measured from north:
 
 $$
-\pi_p = \operatorname{atan2}\big(E_{k+1} - E_k,\ N_{k+1} - N_k\big)
+\pi_p = \operatorname{atan2}\big(y_{i+1}^n - y_i^n,\ x_{i+1}^n - x_i^n\big)
 $$
 
 - $\pi_p$ is **constant along a leg** and is recomputed only when the waypoint index changes.
@@ -160,12 +162,12 @@ $$
 
 They are perpendicular and of unit length, so together they are a **frame** — the path frame $\{p\}$ — and $\hat{\mathbf n}$ points to starboard of a vessel running along the leg.
 
-**Step 3 — the two errors are the two shadows.** The dot product of a vector with a unit vector is the length of its shadow on that direction. So cast the vector from the active waypoint to the vessel, $\mathbf d = [\,N - N_k,\ E - E_k\,]^{\mathsf T}$, on each of the two in turn:
+**Step 3 — the two errors are the two shadows.** The dot product of a vector with a unit vector is the length of its shadow on that direction. So cast the vector from the active waypoint to the vessel, $\mathbf d = \mathbf p^n - \mathbf p_i^n = [\,x^n - x_i^n,\ y^n - y_i^n\,]^{\mathsf T}$, on each of the two in turn:
 
 $$
 \begin{aligned}
-x_e &= \mathbf d \cdot \hat{\mathbf t} = \ \ (N - N_k)\cos\pi_p + (E - E_k)\sin\pi_p \qquad &&\text{along the leg}\\
-y_e &= \mathbf d \cdot \hat{\mathbf n} = -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p \qquad &&\text{across it, positive to starboard}
+x_e &= \mathbf d \cdot \hat{\mathbf t} = \ \ (x^n - x_i^n)\cos\pi_p + (y^n - y_i^n)\sin\pi_p \qquad &&\text{along the leg}\\
+y_e &= \mathbf d \cdot \hat{\mathbf n} = -(x^n - x_i^n)\sin\pi_p + (y^n - y_i^n)\cos\pi_p \qquad &&\text{across it, positive to starboard}
 \end{aligned}
 $$
 
@@ -174,19 +176,25 @@ There is nothing else in the construction, and those are two lines of the block'
 Stacked, the two shadows are a rotation whose rows are $\hat{\mathbf t}^{\mathsf T}$ and $\hat{\mathbf n}^{\mathsf T}$. That is the form the literature uses, with $\{n\}$ the north-east frame and $\{p\}$ the path frame, and it is worth recognising, but it is not a second idea:
 
 $$
-\begin{bmatrix} x_e \\ y_e \end{bmatrix}_p = \mathbf R^p_n \begin{bmatrix} N - N_k \\ E - E_k \end{bmatrix}_n,
+\begin{bmatrix} x_e \\ y_e \end{bmatrix}
+= \mathbf R_p^n(\pi_p)^{\mathsf T}
+  \begin{bmatrix} x^n - x_i^n \\ y^n - y_i^n \end{bmatrix},
 \qquad
-\mathbf R^p_n = \begin{bmatrix}\ \ \cos\pi_p & \sin\pi_p\\ -\sin\pi_p & \cos\pi_p\end{bmatrix}
+\mathbf R_p^n(\pi_p) = \begin{bmatrix}\cos\pi_p & -\sin\pi_p\\ \sin\pi_p & \ \ \cos\pi_p\end{bmatrix}
 $$
+
+$\mathbf R_p^n(\pi_p)$ turns a vector **from** the path frame **into** $\{n\}$, so its transpose brings one the other way; its columns are $\hat{\mathbf t}$ and $\hat{\mathbf n}$, which is why the transpose's rows are the two dot products above. A rotation's inverse is its transpose, so no matrix is ever inverted here.
 
 | Symbol | Quantity | Unit · source |
 |---|---|---|
-| $(N_k, E_k)$, $(N_{k+1}, E_{k+1})$ | the two waypoints of the active leg | m · `WP_N`, `WP_E` |
-| $(N, E)$ | the vessel's position, north and east | m · states 7 and 8 |
+| $\mathbf p_i^n = [\,x_i^n,\ y_i^n\,]^{\mathsf T}$, $\mathbf p_{i+1}^n$ | the two waypoints of the active leg | m · `WP_N`, `WP_E` |
+| $\mathbf p^n = [\,x^n,\ y^n\,]^{\mathsf T}$ | the vessel's position, north and east | m · states 7 and 8, logged as `N` and `E` |
 | $\pi_p$ | the direction of the leg, from north | rad |
 | $x_e$ | **along-track error**: distance travelled along the leg | m · §5-4 switches on it |
 | $y_e$ | **cross-track error**: distance off the leg, positive to its right | m · §5-3 drives it to zero |
-| $d = \lVert \mathbf p_{k+1} - \mathbf p_k\rVert$ | the leg's length | m · $d - x_e$ is what is left to run |
+| $d = \lVert \mathbf p_{i+1}^n - \mathbf p_i^n\rVert$ | the leg's length | m · $d - x_e$ is what is left to run |
+
+The figures of this week write the two errors as $x_e^{\,p}$ and $y_e^{\,p}$, with the superscript naming the frame they are resolved in. The running text drops it, because every error in this week lives in $\{p\}$ and there is nothing to tell it apart from.
 
 ![The two errors come out of one rotation](../figures/w05-track-frame.svg)
 
@@ -358,7 +366,7 @@ The three laws are not three tunings of one idea. They aim at different things, 
 
 This section answers: why not simply point at the next waypoint?
 
-**What is observed.** The vessel starts 20 m east of a path running north and is steered by the obvious law, $\psi_d = \operatorname{atan2}(E_{k+1} - E,\ N_{k+1} - N)$ — point at the next waypoint:
+**What is observed.** The vessel starts 20 m east of a path running north and is steered by the obvious law, $\psi_d = \operatorname{atan2}(y_{i+1}^n - y^n,\ x_{i+1}^n - x^n)$ — point at the next waypoint:
 
 - halfway to the waypoint it is still $10.75$ m off the path, more than half its starting offset,
 - it reaches the path only **at** the waypoint, and then leaves it again on the next leg,
@@ -742,7 +750,7 @@ $$
 
 **Deriving the cure.** Lines 1 to 5 say the offset exists and how large it is. They do not yet say what to replace the law with. That takes one more equation — the one this week has so far avoided writing, the **motion of the error itself**.
 
-6. **How $y_e$ moves.** Differentiate the definition of §5-1, $y_e = -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p$, along a straight leg where $\pi_p$ is constant. Writing the velocity in NED as $\dot N = U\cos\chi$ and $\dot E = U\sin\chi$, with $U$ the speed over ground and $\chi$ the course,
+6. **How $y_e$ moves.** Differentiate the definition of §5-1, $y_e = -(x^n - x_i^n)\sin\pi_p + (y^n - y_i^n)\cos\pi_p$, along a straight leg where $\pi_p$ is constant. Writing the velocity in $\{n\}$ as $\dot x^n = U\cos\chi$ and $\dot y^n = U\sin\chi$, with $U$ the speed over ground and $\chi$ the course,
 
 $$
 \dot y_e = -U\cos\chi\,\sin\pi_p + U\sin\chi\,\cos\pi_p = U\,\sin(\chi - \pi_p)
@@ -1107,7 +1115,7 @@ Expected output:
 
 - The last two columns of the first table are line 4, to the millimetre in every row. The vessel points $22.8°$ into a $0.3$ m/s current and travels due north — Week 4 §4-4, now costing a path error.
 
-**Course against heading, measured.** The second table is the crab angle of the callout above, taken from this vessel rather than from a definition. The course over ground is computed by differentiating the track, $\chi = \operatorname{atan2}(\dot E,\ \dot N)$, which is what a GNSS receiver reports and what this vessel can supply — it logs no sway velocity $v$, which is one of the three reasons §5-5 gives for not measuring the crab angle.
+**Course against heading, measured.** The second table is the crab angle of the callout above, taken from this vessel rather than from a definition. The course over ground is computed by differentiating the track, $\chi = \operatorname{atan2}(\dot y^n,\ \dot x^n)$, which is what a GNSS receiver reports and what this vessel can supply — it logs no sway velocity $v$, which is one of the three reasons §5-5 gives for not measuring the crab angle.
 
 ![The heading and the course on one straight leg, without a current and with one](W05_simulink/img/W05_result_course_vs_heading.png)
 
