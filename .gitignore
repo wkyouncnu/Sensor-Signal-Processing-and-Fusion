@@ -28,3 +28,8 @@ desktop.ini
 *.bak
 *.orig
 Tools/
+
+# Dropbox 충돌 사본. 두 대에서 같은 파일을 건드리면 생기고, `git add -A` 가
+# 그대로 올린다 — 2026-10-17 에 Chrome 캐시 사본 6개가 그렇게 올라갔다.
+*충돌된 사본*
+*conflicted copy*
