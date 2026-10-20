@@ -74,7 +74,7 @@ d_form = 1;
 %   PI of Week 3. Both commands move in small steps, so what is seen is tracking
 %   rather than one step response.
 u_d_steps   = [0.8 1.2 1.0 1.4];   % 목표 속도의 계단 / the speed command   [m/s]
-psi_d_steps = [0 20 -15 30];       % 목표 선수각의 계단 / the heading command [deg]
+psi_d_steps = [0 20 -15 90];       % 목표 선수각의 계단 / the heading command [deg]
 cmd_hold    = 30;                  % 한 계단이 유지되는 시간 / how long each step is held [s]
 
 Kp_u  = 200;          % 속도 루프 비례 / surge proportional   [N per m/s]
