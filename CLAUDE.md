@@ -94,6 +94,8 @@
 │                            verify_w03_speed.m                        (W03 모델 없는 속도 튜닝의 수치)
 │                            verify_w04_heading.m                      (W04 모델 없는 선수각 튜닝의 식과 수치)
 │                            verify_w05_guidance.m                     (W05 모델 없는 유도 튜닝: LOS=P, ILOS=PI)
+│                            verify_w06_actuation.m                    (W06 선수추진기: B 의 열·계급, 횡력 한계,
+│                              누출, 두 좌표계의 등가성, 포화 모양 둘 — 검사 17 개)
 │                            verify_w07_allocation.m                   (W07 제어 배분: pinv(B), 잔차, 자르기 대 비율)
 │                            verify_w08_waves.m · wave_train.m         (W08 파랑: 스펙트럼 한 실현, 노치 필터)
 │                            verify_w09_dp.m                          (W09 위치제어: B 의 계급, 웨더베인, 임무 상태기계)
