@@ -24,7 +24,36 @@ function add_otter_plant(mdl, name, pos, cfg)
 %
 %     cfg.input_mode = 'n'   Inport  1 : n   shaft speeds, cfg.n_thr x 1
 %     cfg.input_mode = 'f'   Inport  1 : f   extended thrust vector
+%     cfg.ext_force = true   Inport  2 : tau_ext  [X; Y; N] that otter.m cannot
+%                                        carry, added by superposition
 %                            Outport 1 : x   12 states
+%
+%   THE SECOND INPORT (Week 6)
+%
+%   otter.m accepts two shaft speeds and builds its own generalized force
+%
+%       tau = [ T1 + T2,  0, 0, 0, 0,  y_pont*(T1 - T2) ]'
+%
+%   whose sway component is identically zero. A bow thruster produces a sway
+%   force and a yaw moment, and there is no argument through which to pass
+%   them. They are therefore added outside the call:
+%
+%       nu_dot = M \ (tau + tau_damp + tau_crossflow - C nu_r - G eta - g_0)
+%       nu_dot <- nu_dot + M \ tau_ext
+%
+%   The acceleration otter.m returns is AFFINE in tau, so this superposition is
+%   exact rather than approximate: at the same state the damping, Coriolis and
+%   restoring terms are identical and only tau differs. Measured residual over
+%   a non-trivial state is 1.8e-15, which is round-off (otter_M.m).
+%
+%   M comes from otter_M(), which rebuilds the inertia line by line as otter.m
+%   builds it. It is NOT measured by finite differences: M is not block
+%   diagonal, so a pure surge force divided by the resulting acceleration
+%   returns 1/[inv(M)]_11 = 76.71 kg instead of M(1,1) = 85.50 kg.
+%
+%   The port appears only when cfg.ext_force is true, which is true exactly
+%   when the configuration's B has a non-zero sway row. The base configuration
+%   does not, so Weeks 1 to 5 are untouched.
 %
 %   The hull is Fossen's otter.m from Tools/MSS/VESSELS, called UNCHANGED.
 %   It is not written for code generation, so the call is declared extrinsic
@@ -57,16 +86,22 @@ switch cfg.input_mode
     otherwise, error('add_otter_plant:mode','cfg.input_mode must be ''n'' or ''f''.');
 end
 
+ext = isfield(cfg, 'ext_force') && cfg.ext_force;
+
 sub = [mdl '/' name];
 add_block('built-in/Subsystem', sub, 'Position', pos);
 clear_subsystem(sub);
 
 %% ---- ports --------------------------------------------------------------
-add_block('simulink/Sources/In1', [sub '/' in_name], 'Position',[ 40 143  70 157]);
+add_block('simulink/Sources/In1', [sub '/' in_name], 'Position',[ 40 123  70 137]);
 add_block('simulink/Sinks/Out1',  [sub '/x'],        'Position',[700 143 730 157]);
+if ext
+    add_block('simulink/Sources/In1', [sub '/tau_ext'], 'Position',[40 163 70 177]);
+end
 
 %% ---- payload and current, read from the base workspace -----------------
 K = {'mp','rp','V_c','beta_c'};
+if ext, K = [K {'Minv'}]; end
 for i = 1:numel(K)
     add_block('simulink/Sources/Constant', [sub '/' K{i}], ...
               'Value', K{i}, 'Position', [40 200+40*i 150 226+40*i]);
@@ -76,7 +111,31 @@ end
 blk = [sub '/Otter hull'];
 add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
           'Position',[330 100 520 340]);
-set_mlfcn(blk, { ...
+if ext
+    code = { ...
+'function xdot = otter_hull(x, u_thr, tau_ext, mp, rp, V_c, beta_c, Minv)'
+'% Fossen''s otter.m, called unchanged from Tools/MSS/VESSELS, plus the'
+'% generalized force the hull function has no argument for.'
+'%'
+'%   x        12 states, fed back from the integrator'
+'%   u_thr    shaft speeds of the two stern propellers [rad/s]'
+'%   tau_ext  [X; Y; N] from the bow thruster [N, N, N m]'
+'%   Minv     inverse of the 6x6 system inertia, from otter_M()'
+'%'
+'% otter.m is not written for code generation, so the call is extrinsic and'
+'% xdot has to be pre-sized for Simulink to know the output width.'
+'coder.extrinsic(''otter'');'
+''
+'xdot = zeros(12,1);'
+'xdot = otter(x, u_thr, mp, rp, V_c, beta_c);'
+''
+'% Superposition. The acceleration above is affine in tau, so adding the'
+'% missing part as M \ tau_ext is exact. Rows 1:6 of xdot are nu_dot.'
+'tau6 = [tau_ext(1); tau_ext(2); 0; 0; 0; tau_ext(3)];'
+'xdot(1:6) = xdot(1:6) + Minv * tau6;'
+'end'};
+else
+    code = { ...
 'function xdot = otter_hull(x, u_thr, mp, rp, V_c, beta_c)'
 '% Fossen''s otter.m, called unchanged from Tools/MSS/VESSELS.'
 '%'
@@ -89,7 +148,9 @@ set_mlfcn(blk, { ...
 ''
 'xdot = zeros(12,1);'
 'xdot = otter(x, u_thr, mp, rp, V_c, beta_c);'
-'end'}, 'xdot', '[12 1]');
+'end'};
+end
+set_mlfcn(blk, code, 'xdot', '[12 1]');
 
 %% ---- integrator ---------------------------------------------------------
 add_block('simulink/Continuous/Integrator', [sub '/states'], ...
@@ -105,7 +166,12 @@ add_block('simulink/Signal Routing/From', [sub '/Fr_x'], ...
 L = @(a,b) add_line(sub, a, b, 'autorouting','smart');
 L('Fr_x/1',        'Otter hull/1');
 L([in_name '/1'],  'Otter hull/2');
-for i = 1:numel(K), L([K{i} '/1'], sprintf('Otter hull/%d', i+2)); end
+np = 2;
+if ext
+    L('tau_ext/1', 'Otter hull/3');
+    np = 3;
+end
+for i = 1:numel(K), L([K{i} '/1'], sprintf('Otter hull/%d', i+np)); end
 L('Otter hull/1',  'states/1');
 L('states/1',      'Go_x/1');
 L('states/1',      'x/1');
