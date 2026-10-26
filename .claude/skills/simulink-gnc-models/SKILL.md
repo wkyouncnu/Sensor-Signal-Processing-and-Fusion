@@ -34,6 +34,14 @@ Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하�
 
 ## 1. 배치 정리 — `tidy_layout`
 
+> [!warning] 이 절은 **캡스톤(VRX) 시절의 것**이다. 이 볼트의 모델에는 쓰지 않는다
+> 이 볼트는 좌표를 `gnc_chain` 으로 직접 잡으므로 `tidy_layout`·`arrangeSystem` 은
+> 열 순서를 망가뜨린다. 쓰는 것은 `mss_style` → `compact_layout` → `straighten_lines`
+> 이고, 합격선은 겹침 0 **과 대각선 0 둘 다**이며 **디스크의 파일에서** 센다.
+> 아래 아홉 색 표도 ROS·외란 단계가 있는 VRX 모델의 것이다 — 이 볼트의 원본은
+> `_tools/gnc_colour.m` 의 **여섯 키**다 (`'mission'` 은 없다).
+> 둘의 대응은 `references/build-models.md` 의 「캡스톤 Simulink 규칙을 접어 넣는다」 에 있다.
+
 `scripts/tidy_layout.m` 을 모델 폴더에 복사하고 부른다.
 
 ```matlab

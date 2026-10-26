@@ -73,7 +73,15 @@
 │                              (선은 가로·세로만, 빈 복도는 좁힌다 — §15-31)
 │                            add_heading_loop.m · add_speed_loop.m
 │                              (4·5 주차가 **함께 쓰는** 제어기 서브시스템 — §15-34)
+│                            otter_M.m · add_allocation3.m
+│                            add_position_loop.m · add_velocity_loop.m
+│                            add_position_loop_ned.m · add_velocity_loop_ned.m
+│                              (6 주차 위치제어. 선체고정과 NED 가 **포트 이름·수·순서가 같아서**
+│                               빌더의 한 가지가 양쪽을 만든다 — §15-52)
 │                            ensure_base_vars.m · hmi_bind.m · image_button.m  (대화형 모델)
+│                            run_alone.m                            (Run 만 눌러도 돈다 —
+│                              InitFcn 이 매 Run 마다 부른다. MSS 경로 · 없는 변수만 채우기 ·
+│                              실시간 화면 켜기 · pace. 있는 값은 **덮지 않는다**)
 │                            crosstrack_err.m · wp_switch.m · path_plot.m
 │                            verify_guidance.m · verify_alos.m        (W05 유도)
 │                            run_sim.m · step_metrics.m · recovery_time.m · prop_thrust.m

@@ -313,11 +313,17 @@ pick(m, 'tau_ext', 2, 3, 'F_B',   Y0 + 8*dy);
 % ---------------------------------------------------------------- 6) 끝내기
 note(m, o);
 set_param(m, 'StopFcn', 'W06_plot;');
-%  현실 시간으로 도는 것은 모델에 박아 두지 않는다. 매 Run 마다 작업공간의
-%  pace 를 읽는다 — 수치는 같고 기다리는 시간만 다르다
-set_param(m, 'InitFcn', ['if base_var(''pace'', 0) > 0, ' ...
-    'set_param(bdroot, ''EnablePacing'', ''on'', ''PacingRate'', ''1''); else, ' ...
-    'set_param(bdroot, ''EnablePacing'', ''off''); end']);
+%  **Run 만 눌러도 돈다.** 학생이 .slx 를 더블클릭해 열고 Run 을 누르는 것이
+%  가장 흔한 길인데, 그때 작업공간은 비어 있다. 모델의 Constant 는 숫자가 아니라
+%  이름을 담으므로 (h · T_final · x0 · 게인들) 그대로면 첫 변수에서 멈춘다.
+%  InitFcn 이 매 Run 마다 ① 도구 경로와 MSS ② 없는 변수 ③ 실시간 화면
+%  ④ 현실 시간 진행을 챙긴다. 경로를 **먼저** 얹어야 run_alone 을 부를 수
+%  있으므로 addpath 는 콜백 안에 있다 / press Run alone and it works
+set_param(m, 'InitFcn', [ ...
+    'addpath(fullfile(fileparts(fileparts(fileparts(' ...
+        'get_param(bdroot, ''FileName'')))), ''_tools''), ' ...
+        'fileparts(get_param(bdroot, ''FileName''))); ' ...
+    'run_alone(''W06'', bdroot);']);
 
 mss_style(m);
 compact_layout(m, 60);                 % 빈 복도를 좁힌다 / squeeze empty corridors

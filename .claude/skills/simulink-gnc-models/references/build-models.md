@@ -198,3 +198,139 @@ end
 속성 대입이 성공한 것은 **확인이 아니다.** 임시 모델에 그 글을 붙여
 `print(['-s' sh],'-dpng','-r90', ...)` 로 PNG 를 뽑고 **눈으로 본다.**
 고친 뒤에도 다시 뽑아 본다 (CLAUDE.md §4-6).
+
+---
+
+## Run 만 눌러도 돈다 (2026-10-27)
+
+> 사용자 지시: **"시뮬링크만 돌려도 애니메이션 나오도록..스킬로 추가...그리고 선들은
+> 최대한 직선으로 ..캡스톤 디자인 시뮬링크 스킬과 규칙들도 최대한 반영해서.."**
+
+학생이 모델을 여는 가장 흔한 길은 `.slx` 를 **더블클릭**하고 Run 을 누르는 것이다.
+그런데 이 볼트의 Constant 는 **숫자가 아니라 이름**을 담고(`h` · `T_final` · `x0` ·
+`Kp_pos` · …), 솔버 줄도 `'FixedStep','h'`, `'StopTime','T_final'` 이다. 새 세션에서는
+작업공간이 비어 있으므로 첫 변수에서 멈춘다 —
+
+```
+Error: Undefined function or variable 'h'
+```
+
+그리고 그 메시지는 **모델이 깨진 것처럼** 읽힌다. 깨진 것이 아니다. `WXX_0_setup` 을
+먼저 돌리면 되지만 학생은 그것을 모른다. 그래서 **모델이 스스로 챙긴다.**
+
+### 배선은 두 문장이다
+
+빌더의 끝(`StopFcn` 바로 뒤, `mss_style` 앞)에 `InitFcn` 을 적는다.
+
+```matlab
+set_param(m, 'InitFcn', [ ...
+    'addpath(fullfile(fileparts(fileparts(fileparts(' ...
+        'get_param(bdroot, ''FileName'')))), ''_tools''), ' ...
+        'fileparts(get_param(bdroot, ''FileName''))); ' ...
+    'run_alone(''W06'', bdroot);']);
+```
+
+- `addpath` 가 **콜백 안에** 있어야 한다. `run_alone` 자신이 `_tools` 에 있으므로,
+  경로를 먼저 얹지 않으면 둘째 문장을 부를 수 없다
+- 볼트 뿌리는 `.slx` 의 `FileName` 에서 `fileparts` **세 번**으로 얻는다 —
+  `root/lectures/WXX_simulink/X.slx` → `WXX_simulink` → `lectures` → `root`.
+  `pwd` 에 기대지 않는다. 학생이 어디서 열었는지 알 수 없다
+- 네 모델 모두 이 `InitFcn` 이 **160 자**로 같다. 길이를 세어 보면 빠뜨린 모델이 보인다
+
+### `_tools/run_alone.m` 이 매 Run 마다 하는 넷
+
+| | 무엇을 | 왜 |
+|---|---|---|
+| 1 | `mss_path()` | `otter.m` 이 없으면 플랜트가 돌지 않는다 |
+| 2 | `ensure_base_vars(WXX_vars())` | **없는 것만** 채운다 |
+| 3 | `animate = 1` | 사람이 Run 을 눌렀으면 화면을 보고 싶은 것이다 |
+| 4 | `pace` → `EnablePacing` | 모델에 박아 두지 않고 매 Run 마다 읽는다 |
+
+> [!important] 2번은 **덮지 않는다**
+> `ensure_base_vars` 는 `exist` 가 0 인 것만 `assignin` 한다. 학생이 `Kp_pos` 를
+> 0.44 로 바꿔 놓고 Run 을 눌렀을 때 그 값이 기본값으로 **되살아나면** 학생은
+> 자기가 바꾼 것이 안 먹힌다고 생각한다. 실험이 거기서 끝난다.
+
+> [!important] 3번과 절 스크립트가 부딪히지 않는 이유 둘
+> ① `WXX_read` 는 `Simulink.SimulationInput.setVariable` 로 넘기고, 그것은 작업공간보다
+> **우선**한다 — 절 스크립트의 `animate = 0` 이 이긴다.
+> ② 그 위에 `<tag>batch` 검사가 한 겹 더 있다 (`WXX_read` 가 세우고 `onCleanup` 이 치운다).
+> 화면을 그리면 표 한 줄 뽑는 데 몇 분이 걸리므로 두 겹으로 막는다.
+
+### Animate 블록을 **빼서 끄지 않는다**
+
+끄는 것은 **상수 하나**(`animate`)이지 블록이 아니다. `animate = 0` 이면 블록은 그대로
+있고 아무것도 하지 않는다. 빼 버리면 도면이 주차마다 달라지고, 학생이
+"내 모델에는 그 블록이 없다" 고 묻게 된다. `WXX_vars` 는 0, `WXX_0_setup` 은 1,
+`run_alone` 은 사람이 눌렀을 때 1 이다.
+
+> [!warning] 블록이 어디 있는지 — 빌더를 grep 해서 단정하지 않는다
+> W05 는 Animate 를 **최상위**에 직접 만들지만(11 입력), W06 은
+> `add_measurement(..., struct('dash', true, ...))` 이 **Measurements 서브시스템 안에**
+> 만든다. 그래서 `grep Animate W06_1_build_bow.m` 은 아무것도 내놓지 않는다 — 그것은
+> 블록이 없다는 뜻이 **아니다.** 빌더가 아니라 **공유 도구**를 grep 한다.
+> 실제로 이것을 "네 모델 모두 Animate 가 없다" 고 잘못 읽었다.
+> 확인은 `find_system(mdl,'LookUnderMasks','all','BlockType','SubSystem','Name','Animate')`.
+
+### 검증 — 차갑게 만들어서 학생이 하는 것을 그대로 한다
+
+속성이 들어간 것은 확인이 아니다. 경로에서 `_tools` 와 MSS 를 **떼어내고**
+작업공간을 비운 뒤, `load_system` → compile → `sim` 까지 해 본다.
+
+```matlab
+%  차갑게 만든다
+rmpath(genpath(mss_root)); rmpath(fullfile(root,'_tools')); rmpath(here);
+evalin('base','clearvars'); clear functions
+assert(isempty(which('otter')) && isempty(which('run_alone')));
+%  학생이 하나만 고쳐 놓은 경우까지 함께 본다 — 이것은 덮이면 안 된다
+assignin('base','T_final', 6);  assignin('base','Kp_pos', 0.44);
+load_system(fullfile(here,'W06_F_position.slx'));
+sim('W06_F_position');
+```
+
+합격선 다섯 — compile 성공 · `h` 가 채워졌다 · `T_final` 과 `Kp_pos` 가 **그대로** ·
+`animate` 가 1 · `W06 live view` 창이 떴다.
+
+> [!caution] MATLAB MCP 는 **base 작업공간에서** 평가한다
+> `evaluate_matlab_code` 로 보낸 스크립트의 변수도 base 에 산다. 그래서
+> `evalin('base','clearvars')` 는 스크립트 자신의 `root` · `here` 까지 지운다 —
+> 다음 줄에서 `'here'은(는) 인식할 수 없는 함수 또는 변수입니다` 가 난다.
+> 모델이 아니라 **시험 틀**이 터진 것이다. 비운 뒤에 쓸 경로는 **리터럴**로 다시 적는다.
+
+---
+
+## 캡스톤 Simulink 규칙을 접어 넣는다 (2026-10-27)
+
+캡스톤(`캡스톤디자인/1_2026-2학기_강의자료/CLAUDE.md` §11)의 규칙 가운데 이 볼트에
+해당하는 것은 전부 아래로 들어왔다. **VRX · Gazebo 항목은 해당하지 않는다** —
+대학원 과정은 Simulink 하나다.
+
+| 캡스톤 규칙 | 이 볼트에서 |
+|---|---|
+| 모델은 `build_wXX_models.m` 만이 만든다 | 그대로. 손으로 그리지 않는다 |
+| `tidy_layout` 을 두 번 부른다 | **쓰지 않는다.** 좌표를 직접 잡으므로 `arrangeSystem` 계열은 순서를 망가뜨린다. 대신 `mss_style` → `compact_layout` → `straighten_lines` |
+| `tidy_all.m` 의 합격선은 **겹침 0** | 더 엄하다 — **`check_overlaps` 0 과 `check_diagonals` 0 둘 다** |
+| 선은 **직선 또는 직각만. 대각선 금지** | 같다. 기계로 센다 (`check_diagonals`) |
+| 되먹임은 Goto/From 태그 | 같다. 더해서 되먹임 통로의 블록은 `Orientation`=`left` 로 돌려 한 줄에 세운다 (CLAUDE.md §15-32) |
+| 왼쪽→오른쪽 유도 → 제어 → 추진기 → 운동모델 → 로깅 | 같다. 이 볼트의 이름은 command → reference → controller → allocation → plant → measurement (`model-layout.md`) |
+| **`Animate` 블록을 넣는다. 주행 중 항적이 보인다** | 같다. 더해서 **Run 만 눌러도** 뜬다 (위 절) |
+| 모델을 고쳤으면 다시 빌드 → PNG 다시 뽑기 → MD 수치 다시 재기 → PDF 재생성 | 같다. 넷을 한 응답 안에서 끝낸다 |
+| 수치는 전부 실행에서, 구간을 밝혀서 | 같다 (CLAUDE.md §4-8) |
+| 아홉 색 표 | **`gnc_colour` 의 여섯 키가 이 볼트의 원본이다** — `command` · `reference` · `controller` · `allocation` · `plant` · `measurement`. 캡스톤의 아홉 색은 ROS·외란 단계가 있는 VRX 모델의 것이다. `'mission'` 키는 **없다** — 미션 서브시스템은 `gnc_colour('reference')` 를 쓴다 |
+
+### 선을 직선으로 — 끝내는 순서와, 디스크에서 다시 세는 이유
+
+```matlab
+mss_style(m);              % MSS 치수로 되돌린다 (MATLAB Function 과 Mux 는 건드리지 않는다)
+compact_layout(m, 60);     % 빈 복도를 좁힌다
+straighten_lines(m);       % 대각선 0
+save_system(m, out);
+```
+
+**끝내고 디스크의 파일로 다시 센다.** `save_system` 이 가지선의 꺾임점을 다시 쓰므로,
+메모리에서 0 이던 것이 파일에서 0 이 아닐 수 있다 (CLAUDE.md §15-31).
+
+```matlab
+bdclose('all'); load_system(out);
+fprintf('%s  overlaps %d  diagonals %d\n', m, check_overlaps(m), check_diagonals(m));
+```
