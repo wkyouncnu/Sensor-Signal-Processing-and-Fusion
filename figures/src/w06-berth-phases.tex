@@ -1,0 +1,228 @@
+%  w06-berth-phases — 접안 전략 둘 / two berthing strategies (Section 6-6)
+%
+%  캡스톤의 w06-berth-phases.tex 를 옮긴 것이다. 바뀐 것 넷.
+%    ① 단계 번호 0/1/2/3 -> 1/2/3/4, 이름도 모델의 phase 신호 그대로
+%       TRANSIT / ALIGN / BERTH / MOORED
+%    ② 회전하는 부두 (psi_t, s) 를 버린다 — W06 의 부두는 북남으로 고정이다
+%    ③ **선체 위치와 선수각을 전부 실측값으로 둔다.** 캡스톤은 보기 좋은 자리에
+%       배를 놓았지만, 여기 좌표는 W06_G_berthing 이 찍은 수치다. 그래서 두 전략이
+%       같은 곳에서 갈라지는 것이 그림에서 그대로 보인다
+%    ④ "일하는 추진기" 산문 칸은 `.md` 로 옮긴다 — 그림에는 잰 수치 한 줄만 남긴다
+%
+%  실측 (W06_read('W06_H_berth', 'psi_berth', ..., 'T_final', 150))
+%      alongside   p2 (38.622, 8.768) -22.42    p3 (39.450, 8.464)  -0.08
+%                  mid (39.989, 4.663)   0.00   v = -0.350   p4 (39.999, 1.344)
+%      bow-first   p2 (38.622, 8.768) -22.42    p3 (39.780, 8.255) -89.85
+%                  mid (39.957, 3.990) -90.00   u = +0.800   p4 (39.992, 1.598)
+%
+%  화면 = NED 를 위에서 본 것.  screen x = east,  screen y = north.
+%  축척 1 m = 6 mm. 선체는 실척이다 (LOA 2.0 m = 12 mm, 폭 1.08 m = 6.48 mm).
+%
+%  호의 각도는 **요구한 회전**이다. W06_G_berthing 이 'turn asked' 로 찍는 것이
+%  |psi_berth - psi(2 단계 진입)| 이고, 그래서 22.4 / 67.6 이다. 선체 글리프의
+%  선수각은 **실측**(-0.08, -89.85)이지만 호의 끝각은 **명령값**(0, -90)에 둔다 —
+%  그래야 호가 라벨의 수치와 정확히 같은 각을 쓸어 낸다.
+%  실측으로 잰 회전은 22.34 / 67.43 이다. 강의가 인용하는 것은 러너가 찍는 쪽이다.
+%
+%  회전 방향 — 그려 놓고 확인한 것 (§15-28)
+%      화면각 = 90 - psi 이므로
+%      (가) psi -22.42 -> 0   이면 화면각 112.42 -> 90,  **줄어든다** = 시계방향
+%      (나) psi -22.42 -> -90 이면 화면각 112.42 -> 180, **늘어난다** = 반시계
+%      TikZ 의 arc(a:b:r) 은 b 가 작을 때 시계방향이다.
+%
+%  주석만 한국어다. 조판되는 글자에 한글을 넣으면 pdflatex 이 멈춘다.
+
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{bodyc}{HTML}{1D4ED8}
+\definecolor{plantc}{HTML}{16A34A}
+
+\pgfmathsetmacro{\PS}{6}                                   % 1 m = 6 mm
+
+\tikzset{
+  io/.style    = {font=\footnotesize, ink, inner sep=1.6pt},
+  un/.style    = {font=\scriptsize, soft, inner sep=1.4pt},
+  enote/.style = {font=\scriptsize, errc, inner sep=1.4pt},
+  vlab/.style  = {font=\scriptsize, warn, inner sep=1.4pt},
+  ttl/.style   = {font=\small\bfseries, ink, inner sep=1.6pt, align=left},
+}
+
+%  선체 하나, 실척 / one hull, to scale.  #1 north  #2 east  #3 psi [deg]  #4 colour
+%  shift= 에는 좌표 매크로를 줄 수 없다 — 숫자 식으로 푼다 (§15-바로 아래 교훈)
+%
+%  꼭짓점은 **다섯**이다 — 좌현 선미, 좌현 어깨, 뱃머리, 우현 어깨, 우현 선미.
+%  넷만 적고 cycle 하면 우현 어깨에서 좌현 선미로 대각선이 그어져 선체가
+%  **연꼴**이 된다. 실제로 그렇게 그려 놓고 한 번 넘어갈 뻔했다 (교훈 lxxxii).
+\newcommand{\hullf}[4]{%
+  \begin{scope}[shift={({((#2) - 1.2)*\PS},{((#1) - 40)*\PS})}, rotate={90 - (#3)}]
+    \fill[white]                  (-6,-3.24) -- (3.3,-3.24) -- (6,0) -- (3.3,3.24) -- (-6,3.24) -- cycle;
+    \fill[#4!14]                  (-6,-3.24) -- (3.3,-3.24) -- (6,0) -- (3.3,3.24) -- (-6,3.24) -- cycle;
+    \draw[#4, line width=0.6pt]   (-6,-3.24) -- (3.3,-3.24) -- (6,0) -- (3.3,3.24) -- (-6,3.24) -- cycle;
+    \draw[#4, line width=0.3pt]   (-6,0) -- (6,0);
+  \end{scope}}
+
+%  돌기 전의 선체 — 외곽선만. 돌고 난 선체가 그 위에 그려져 일부를 가린다
+\newcommand{\hulld}[3]{%
+  \begin{scope}[shift={({((#2) - 1.2)*\PS},{((#1) - 40)*\PS})}, rotate={90 - (#3)}]
+    \draw[soft, line width=0.45pt, densely dashed]
+         (-6,-3.24) -- (3.3,-3.24) -- (6,0) -- (3.3,3.24) -- (-6,3.24) -- cycle;
+  \end{scope}}
+
+%  두 패널이 **똑같이** 쓰는 무대. 다른 것은 선체의 선수각뿐임을 보이려는 것이다
+%  세로 예산 — 노드를 놓기 전에 전부 적어 둔다 (교훈 lxxvii)
+%      36    제목 위, 두 줄이 아래로 자라 26 까지
+%      22    부두 띠 위
+%      18    호 라벨 줄 (두 줄 아니라 한 줄, 21.5 까지)
+%      13~15 호
+%      9.8   속도 라벨 (두 줄, 16.5 까지)
+%      8.5   속도 화살표
+%      0     선체 줄 — **패널마다 다르다**
+%                (가) psi=0   : 뱃머리가 북쪽. 세로 ±6,   가로 ±3.24
+%                (나) psi=-90 : 뱃머리가 서쪽. 세로 ±3.24, 가로 ±6
+%                한 줄로 "±3.3" 이라고 적어 두었다가 (가) 패널의 단계
+%                번호가 선체 **속에서** 시작했다 (교훈 lxxxiii)
+%      -7.5  단계 번호 줄 — (가) 에서 1.4 mm, (나) 에서 4.2 mm 뜬다
+%      -8.3  2 ALIGN
+%      -22   1 TRANSIT
+%      -30   부두 띠 아래
+%      -42   패널 주석
+%      -56   구분선
+\newcommand{\scene}{%
+  \begin{scope}
+    \clip (-16,-30) rectangle (-7.2,22);
+    \fill[black!5] (-16,-30) rectangle (-7.2,22);
+    \foreach \k in {-44,-40,...,24}
+      {\draw[soft, line width=0.3pt] (-16,\k) -- (-7.2,{\k+10});}
+  \end{scope}
+  \draw[ink, line width=0.9pt] (-7.2,-30) -- (-7.2,22);
+  \node[un, anchor=north] at (-11.6,-30.4) {quay};
+  %  1 단계가 들어오는 길 — 방위 atan2(8.2-25, 40-0) = -22.8 deg
+  %  화살촉은 2 단계 선체의 **밖**에서 멈춘다. (47.4,-12.9) 는 선체 중심에서
+  %  뒤로 5.0 mm 라 반길이 6 mm 안쪽, 즉 선체 속이었다 (교훈 lxxii).
+  \draw[bodyc, line width=0.3pt, densely dotted] (57.0,-35.6) -- (54.6,-29.9);
+  \draw[bodyc, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}] (53.6,-27.7) -- (49.0,-16.6);
+  \node[io, anchor=east] at (44,-22) {\textbf{1} \textsc{transit}};}
+
+%  2 단계에 들어서는 순간의 선체 — 두 전략이 **같다**.
+%  이것은 \scene 이 아니라 **실선 선체 뒤에** 그린다. 2 단계는 2.62 s 뿐이라
+%  38.622,8.768 과 3 단계의 39.450,8.464 이 0.87 m 밖에 안 떨어져 있고, 먼저
+%  그리면 실선 선체가 점선을 덮어 **모서리만 삐져나온 부서진 상자**로 읽힌다.
+%  위에 얹으면 같은 선체가 제자리에서 22.4 deg 돌았다는 것이 그대로 보인다.
+\newcommand{\alignghost}{%
+  \hulld{38.622}{8.768}{-22.42}
+  %  선체의 화면 최대 x 는 45.4 + 5.29 = 50.7 이다. 49 에 anchor=west 로 두면
+  %  라벨이 선체 안에서 시작한다.
+  \node[io, anchor=west] at (51.5,-8.3) {\textbf{2} \textsc{align}};}
+
+%  판정원은 맨 나중에 그린다 — 선체에 가려지지 않게
+\newcommand{\radii}{%
+  \draw[pathc, densely dashed, line width=0.45pt] (42,0) circle (9.0);
+  \node[dot, pathc, fill=pathc] at (42,0) {};
+  \draw[errc, densely dashed, line width=0.45pt] (0,0) circle (2.4);
+  \node[dot, errc, fill=errc, minimum size=1.1mm] at (0,0) {};}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+%% =========================================================================
+%% (a) 옆걸음 접안 / alongside — psi_berth = 0
+%% =========================================================================
+\begin{scope}[shift={(0,0)}]
+
+  \node[ttl, anchor=north west] at (-16,36)
+    {(a) alongside --- $\psi_{berth} = 0^{\circ}$\\
+     {\scriptsize\mdseries the hull holds its heading and moves sideways to the quay}};
+
+  \scene
+
+  %  화면각 112.42 -> 90 : 줄어든다 = 시계방향 = 우현으로 돌린다
+  \draw[errc, line width=0.5pt, -{Stealth[length=3pt,width=2.2pt]}]
+        (42,0) ++(112.42:15) arc (112.42:90:15);
+  \node[enote, anchor=south east] at (34,18) {$\psi$ turns $22.4^{\circ}$ to $0^{\circ}$};
+
+  \hullf{39.450}{8.464}{-0.08}{ink}
+  \hullf{39.989}{4.663}{0}{ink}
+  \hullf{39.999}{1.344}{-0.12}{plantc}
+
+  \alignghost
+
+  %  두 줄로 끊는다. 한 줄이면 폭이 55 mm 라 호의 아래를 자른다 — (나) 패널의
+  %  호는 라벨의 가로 범위 안으로 내려오므로 **나쁜 쪽**에 맞춘다 (교훈 lxxviii).
+  %  y = 5.5 는 (가) 패널의 중간 선체 꼭대기(5.93)보다 **낮았다** — 화살표 꼬리가
+  %  선체 속에 있었다. 8.5 로 올리면 2.57 mm 뜨고, (나) 패널의 호와도 5.6 mm 뜬다.
+  \draw[warn, line width=1.0pt, -{Stealth[length=4pt,width=3pt]}] (24,8.5) -- (12,8.5);
+  \node[vlab, anchor=south, align=center] at (12,9.8)
+    {mid-leg $v = -0.350$ m/s,\\ on the $v_{lim} = 0.35$ cap};
+
+  %  (가) 패널의 선체는 북쪽을 보므로 세로로 ±6 mm 다. -4.5 는 선체 속이었다
+  \node[io, anchor=north] at (0.9,-7.5)  {\textbf{4} \textsc{moored}};
+  \node[io, anchor=north] at (20.8,-7.5) {\textbf{3} \textsc{berth}};
+
+  \radii
+
+  \node[un, anchor=north west, text width=72mm] at (-16,-42)
+    {berth leg: $\max|Y| = 35.13$ N --- the sway rating --- for 4.0\,\% of the leg,
+     while $\max|X|$ stays at 9.90 N. The bow thruster carries the hull in.};
+\end{scope}
+
+%% =========================================================================
+%% (b) 전진 접안 / bow-first — psi_berth = -90 deg
+%% =========================================================================
+\begin{scope}[shift={(92,0)}]
+
+  \node[ttl, anchor=north west] at (-16,36)
+    {(b) bow-first --- $\psi_{berth} = -90^{\circ}$\\
+     {\scriptsize\mdseries the hull turns to face the quay and moves ahead}};
+
+  \scene
+
+  %  화면각 112.42 -> 180 : 늘어난다 = 반시계 = 좌현으로 돌린다.
+  %  끝각은 **명령값** -90 deg 에 둔다 (실측 -89.85 가 아니다) — 라벨이 'turn asked'
+  %  67.6 을 말하므로 호가 쓸어 내는 각도 그와 같아야 한다.
+  \draw[errc, line width=0.5pt, -{Stealth[length=3pt,width=2.2pt]}]
+        (42,0) ++(112.42:15) arc (112.42:180:15);
+  \node[enote, anchor=south east] at (34,18) {$\psi$ turns $67.6^{\circ}$ to $-90^{\circ}$};
+
+  \hullf{39.780}{8.255}{-89.85}{ink}
+  \hullf{39.957}{3.990}{-90}{ink}
+  \hullf{39.992}{1.598}{-90}{plantc}
+
+  \alignghost
+
+  %  (가) 패널과 **같은 자리**에 둔다. 이 패널의 호는 라벨의 가로 범위 안으로
+  %  내려오므로 두 줄로 끊은 (가) 쪽 폭(27 mm)이 여기서도 필요하다.
+  \draw[warn, line width=1.0pt, -{Stealth[length=4pt,width=3pt]}] (24,8.5) -- (12,8.5);
+  \node[vlab, anchor=south, align=center] at (12,9.8)
+    {mid-leg $u = +0.800$ m/s,\\ on the $u_{lim} = 0.80$ cap};
+
+  %  2.4 와 16.7 로 두면 두 라벨이 x = 10.5~11 에서 겹친다 (교훈 lxxiii).
+  %  0 과 20 이면 폭이 [-8.5, 8.5] 와 [13.7, 26.3] 이라 5 mm 뜬다.
+  %  (가) 패널과 **같은 높이**로 둔다 — 두 패널이 나란히 읽혀야 한다
+  \node[io, anchor=north] at (0,-7.5)  {\textbf{4} \textsc{moored}};
+  \node[io, anchor=north] at (20,-7.5) {\textbf{3} \textsc{berth}};
+
+  \radii
+
+  \node[un, anchor=north west, text width=72mm] at (-16,-42)
+    {berth leg: $\max|X| = 120.00$ N --- the surge rating --- while $\max|Y|$
+     stays at 3.96 N. The stern pair carries the hull in; the bow thruster rests.};
+\end{scope}
+
+%% =========================================================================
+%% 갈리는 곳은 한 줄이다 / only one line differs
+%% =========================================================================
+\draw[wire, soft] (-16,-56) -- (158,-56);
+\node[un, anchor=north west, text width=174mm] at (-16,-60)
+  {One line differs: \texttt{psi\_berth}. The approach point, the three
+   transition tests, the three control loops and the allocation $B$ are
+   identical in both runs --- and so is every number in phase 1, because
+   \texttt{psi\_berth} is not read until phase 2. Turning further costs
+   2.88 s in \textsc{align} and saves 11.54 s in \textsc{berth}.};
+
+\gnccaption{174mm}{Section 6-6. Two berthing strategies on one grid. Every
+hull is drawn at a position and heading measured by \texttt{W06\_G\_berthing};
+the dashed hull is the moment phase 2 begins, which is the same in both runs.}
+
+\end{tikzpicture}
+\end{document}

@@ -76,6 +76,10 @@ fprintf(['\n  W06 Experiment 6-5/6-6  berthing at (%g, %g) m from (%g, %g) m,' .
          ' approach point (%g, %g) m\n'], V.berth_N, V.berth_E, V.x0(7), V.x0(8), ...
         V.app_N, V.app_E);
 for i = 1:n
+    %  psi_berth 를 **직접** 준다. bow_on 은 W06_vars·W06_0_setup 안에서
+    %  psi_berth 를 고르는 편의 스위치일 뿐이고, 모델이 읽는 블록이 없다.
+    %  W06_read 는 변수를 하나씩 setVariable 하므로 bow_on 을 바꿔도
+    %  psi_berth 가 다시 계산되지 않는다 — 그래서 둘 다 준다.
     Rs{i} = W06_read('W06_H_berth', 'psi_berth', C{i,2}, ...
                      'bow_on', double(C{i,2} ~= 0), 'T_final', 150);
     R = Rs{i};
