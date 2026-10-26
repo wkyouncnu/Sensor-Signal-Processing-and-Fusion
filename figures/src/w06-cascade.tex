@@ -1,0 +1,279 @@
+% figures/w06-cascade.svg — 고리 셋. 바깥은 위치, 안쪽은 속도와 선수각.
+%
+%   bash _tools/tikz2svg.sh figures/src/w06-cascade.tex figures/w06-cascade.svg
+%
+% 캡스톤 assets/src/w06-cascade.tex 를 옮긴 것이다. 바뀐 것 다섯:
+%   ① WAM-V 수치 대신 Otter 수치 — u_lim 0.80, v_lim 0.35, X_max 120,
+%      Y_max 35.13, N_max 52.70, Kp_pos 0.30, 속도 PI 200|200 과 150|120
+%   ② 캡스톤은 선수각 고리를 **글로만** 적어 두었다. 6-3 절은 고리가 셋이라고
+%      말하므로 셋째 고리를 **그린다** (캡스톤 w06-control-loop 은 Gazebo 판이라
+%      옮기지 않고, 그 그림의 쓸 만한 것 하나 — r 을 직접 받는 P-D — 를 여기 넣었다)
+%   ③ 되먹임선 다섯을 가로로 늘어놓으면 서로 넷을 가로지른다. 모델이 실제로
+%      쓰는 것은 상태 벡터 x 하나이므로 (각 서브시스템 안에 Selector 가 있다)
+%      **계측 버스 한 줄**로 그리고 갈라지는 가지만 다섯 둔다. 교차 0 개가 된다
+%   ④ 안티와인드업 back-calculation 을 **그린다**. 적분기 안의 Limit output 은
+%      도면에 보이지 않는다 (CLAUDE.md §5)
+%   ⑤ **한 줄로 늘어놓지 않고 두 줄로 접었다.** 캡스톤처럼 일곱 블록을 한 줄에
+%      세우면 폭이 375 mm = 1419 px 이고, 본문 폭 703 px 로 줄면 0.50 배다.
+%      그러면 \footnotesize 9 pt 가 인쇄본에서 **4.5 pt** 로 나온다 — w01-euler
+%      에서 이미 밟은 지뢰다 (CLAUDE.md §4-6-0). 접은 뒤 **실측** 866 px 이고
+%      703/866 = 0.811 배, \footnotesize 9 pt -> 7.3 pt 다. 받아들인 w05-guidance-loop
+%      (920 px, 6.1 pt) 보다 크다
+%
+% T^{-1} 이 아니라 B^{-1} 이다. 이 볼트의 추진기 배치 행렬 이름은 B 다.
+%
+% 캡스톤 그림에 있던 아래 세 칸 — psi = 90 도 수치 예, "왜 둘로 나누는가" 불릿,
+% 모델 파일 표 — 중 앞의 둘은 강의 .md 본문으로 옮겼다. 그림이 할 일은 도면이고,
+% 유도와 판단 근거는 글이 할 일이다 (CLAUDE.md §9-5). 모델 파일 표만 남겼다 —
+% 짧고, 빈 자리에 들어가며, "이 그림이 모델의 어디인가" 는 도면의 일부다.
+%
+% 좌표 메모 (mm) — 선은 가로·세로만, 호는 하나도 없다. arc ( 가 없으므로
+% CLAUDE.md §4-6-2 의 회전 방향 점검은 이 그림에 해당하지 않는다
+%   첫째 줄 (바깥 고리)  y = 0      블록 x = 32 / 72 / 112, 합산점 x = 0
+%   되돌아오는 통로        y = -30    (127,0) -> (142,0) -> (142,-30) -> (-12,-30)
+%   둘째 줄 (안쪽 고리)   y = -58    블록 x = 34 / 72, 합산점 x = 0
+%   안티와인드업           y = -76    sa x = 53, kb x = 34 (pi 와 같은 x — 세로선)
+%   배분과 선체            y = -76    al x = 118, sh x = 154
+%   선수각 띠              y = -102   블록 x = 74, 합산점 x = 34
+%   계측 버스 세로 줄기    x = -20    y = -124 에서 -12 까지. 가지 다섯은 전부
+%                                     줄기에서 **오른쪽으로** 갈라진다
+%   가지 y = -12(p) / -16(psi) / -70(u,v) / -114(psi) / -118(r)
+%   전체 x = -30 .. 198 (228 mm), 블록 글자 \footnotesize, 단위 꼬리표만
+%   \scriptsize 다. \tiny 는 없다
+
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{bodyc}{HTML}{1D4ED8}
+\definecolor{plantc}{HTML}{16A34A}
+
+\tikzset{
+  bx/.style  = {draw=ink, line width=0.55pt, fill=white, align=center,
+                font=\footnotesize, inner sep=2pt,
+                minimum width=24mm, minimum height=15mm},
+  tx/.style  = {bx, draw=alng, fill=alng!6},
+  px/.style  = {bx, draw=plantc, fill=plantc!10},
+  hx/.style  = {bx, draw=errc, fill=errc!5},
+  tag/.style = {draw=soft, line width=0.5pt, fill=black!3, rounded corners=1.5pt,
+                font=\footnotesize, inner sep=2.2pt},
+  io/.style  = {font=\footnotesize, ink, inner sep=1.6pt},
+  un/.style  = {font=\scriptsize, soft, inner sep=1.4pt},
+  sgn/.style = {font=\scriptsize, ink},
+  fb/.style  = {soft, line width=0.6pt, -{Stealth[length=4pt, width=3pt]}},
+  bus/.style = {soft, line width=0.9pt},
+  grp/.style = {line width=0.7pt, densely dashed, rounded corners=2pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 첫째 줄 — 바깥 고리. 위치 오차가 **속도 요구**로 나간다
+% ===========================================================================
+\node[sum] (s1) at (0,0) {};
+\node[sgn] at (-3.4,2.8)  {$+$};
+\node[sgn] at (3.0,-3.2)  {$-$};
+
+\node[bx, draw=accent, fill=accent!5] (rot) at (32,0)
+     {rotate $R(\psi)^{\mathsf T}$\\[1pt] NED axes\\[1pt] $\to$ body axes};
+\node[bx, draw=bodyc, fill=bodyc!5] (kp) at (72,0)
+     {position P\\[1pt] $K_{p,\mathrm{pos}} = 0.30$};
+\node[bx, draw=bodyc, fill=bodyc!5, minimum width=30mm] (sl) at (112,0)
+     {speed limit $\times$ gate\\[1pt] $u_{\lim}\,0.80$ \ $v_{\lim}\,0.35$};
+
+\draw[sig] (-28,0) -- (s1);
+\node[io, anchor=south] at (-14,1.8) {$p_d = [N_d\ E_d]$};
+\node[un, anchor=north] at (-14,-1.8) {[m] NED};
+
+\draw[sig] (s1) -- (rot);
+\node[io, anchor=south] at (11,1.8) {$p_e$};
+\node[un, anchor=north] at (11,-1.8) {[m] NED};
+
+\draw[sig] (rot) -- (kp);
+\node[io, anchor=south] at (52,1.8) {$p_b$};
+\node[un, anchor=north] at (52,-1.8) {[m] body};
+
+\draw[sig] (kp) -- (sl);
+\node[anote, font=\footnotesize, anchor=south] at (90.5,1.8) {$\nu_d$};
+\node[un, anchor=north] at (90.5,-1.8) {[m/s]};
+
+% ===========================================================================
+% 게이트 — 도착 판정이 속도 지령을 0 으로 만든다 (6-4 절)
+% ===========================================================================
+\node[tag] (gatetag) at (112,-18) {gate $\in \{0, 1\}$};
+\draw[fb] (112,-15.2) -- (112,-7.5);
+\node[un, anchor=north, align=center] at (112,-22.6)
+     {Section 6-4:\\ the arrival latch};
+
+% ===========================================================================
+% 되돌아오는 통로 — 첫째 줄의 끝을 둘째 줄의 머리로 가져온다.
+% 되먹임이 아니다. 같은 신호가 계속 앞으로 가는 것이고, 한 줄에 다 세우면
+% 폭이 넘쳐서 접은 것이다
+% ===========================================================================
+\draw[wire] (127,0)    -- (142,0);
+\draw[wire] (142,0)    -- (142,-30);
+\draw[wire] (142,-30)  -- (-12,-30);
+\draw[wire] (-12,-30)  -- (-12,-58);
+\draw[sig]  (-12,-58)  -- (-2.3,-58);
+\node[io, anchor=south] at (84,-28.6) {$\nu_{cmd}$};
+\node[un, anchor=north] at (84,-31.4) {the same signal, carried down one row};
+
+% ===========================================================================
+% 둘째 줄 — 안쪽 고리. 속도 오차가 **힘**으로 나간다
+% ===========================================================================
+\node[sum] (s2) at (0,-58) {};
+\node[sgn] at (-3.4,-55.2) {$+$};
+\node[sgn] at (3.0,-61.2)  {$-$};
+
+\node[hx, minimum width=26mm] (pi) at (34,-58)
+     {velocity PI\\[1pt] surge $200\,|\,200$\\[1pt] sway $150\,|\,120$};
+\node[hx] (lim) at (72,-58)
+     {force limit\\[1pt] $|X| \le 120$\\[1pt] $|Y| \le 35.13$};
+
+\draw[sig] (s2) -- (pi);
+\node[io, anchor=south] at (11,-56.2) {$\nu_e$};
+\node[un, anchor=north] at (11,-59.8) {[m/s]};
+
+\draw[sig] (pi) -- (lim);
+\node[io, anchor=south] at (53.5,-56.2) {$\tau_{raw}$};
+
+% ===========================================================================
+% 배분과 선체 — 힘 셋이 추진기 셋으로
+% ===========================================================================
+\node[tx, minimum height=34mm] (al) at (118,-76)
+     {thrust\\[2pt] allocation\\[4pt] $\mathbf{u} = B^{-1}\boldsymbol{\tau}$\\[2pt]
+      $\mathbf{u} = [T_L\ T_R\ F_B]^{\mathsf T}$};
+\node[px, minimum width=22mm, minimum height=34mm] (sh) at (160,-76)
+     {Otter hull\\[2pt] 3 DOF\\[4pt] bow unit\\ as $\tau_{ext}$};
+
+\draw[wire] (84,-58) -- (94,-58);
+\draw[wire] (94,-58) -- (94,-66);
+\draw[sig]  (94,-66) -- (106,-66);
+\node[io, anchor=south] at (100,-65.4) {$\tau_{uv}$};
+
+\draw[sig] (130,-76) -- (149,-76);
+\node[io, anchor=south] at (139.5,-74.4) {$T_L\,T_R\,F_B$};
+
+\draw[wire] (171,-76) -- (194,-76);
+\node[un, anchor=south east] at (193,-74.6) {$x$ \ (12 states)};
+
+% ===========================================================================
+% 안티와인드업 — back-calculation. 적분기 안의 Limit output 이 아니다.
+% kb 의 x 를 pi 의 x 와 같게 두었다. 그래야 kb -> pi 가 **세로선 하나**다
+% ===========================================================================
+\node[dot] (a1) at (53,-58) {};
+\node[dot] (a2) at (89,-58) {};
+\node[sum] (sa) at (53,-76) {};
+\node[sgn] at (50.0,-72.6) {$-$};
+\node[sgn] at (56.2,-79.0) {$+$};
+\node[bx, draw=errc, fill=errc!5, minimum width=22mm, minimum height=10mm]
+     (kb) at (34,-76) {$K_b = 1$};
+
+\draw[fb]        (53,-58)   -- (53,-73.7);
+\draw[wire,soft] (89,-58)   -- (89,-76);
+\draw[fb]        (89,-76)   -- (55.3,-76);
+\draw[fb]        (50.7,-76) -- (45,-76);
+\draw[fb]        (34,-71)   -- (34,-65.5);
+\node[un, anchor=north, text width=52mm, align=center] at (46,-82)
+     {$\dot I = K_i e + K_b\,(\tau - \tau_{raw})$ \\
+      the integrator is unwound by exactly what the limit threw away};
+
+% ===========================================================================
+% 선수각 고리 — 셋째 고리. P 는 오차에, D 는 **측정한** 요각속도에.
+% 미분 블록이 하나도 없으므로 psi_set 이 계단으로 뛰어도 킥이 없다
+% ===========================================================================
+\node[sum] (s3) at (34,-102) {};
+\node[sgn] at (30.6,-99.2)  {$+$};
+\node[sgn] at (37.0,-105.2) {$-$};
+
+\node[hx, minimum width=40mm, minimum height=18mm] (hd) at (74,-102)
+     {heading P--D\\[1pt] $N = K_p\,\mathrm{ssa}(e_\psi) - K_d\,r$\\[1pt]
+      $K_p\,300$ \ $K_d\,100$\\[1pt] $|N| \le 52.70$};
+
+\node[tag] (pstag) at (6,-102) {$\psi_{set}$};
+\draw[sig] (13.6,-102) -- (31.7,-102);
+\draw[sig] (36.3,-102) -- (54,-102);
+\node[un, anchor=south] at (45,-100.6) {$e_\psi$ \ [rad]};
+
+\draw[wire] (94,-102)  -- (100,-102);
+\draw[wire] (100,-102) -- (100,-86);
+\draw[sig]  (100,-86)  -- (106,-86);
+\node[io, anchor=south] at (97,-100.6) {$N$};
+
+% ===========================================================================
+% 계측 버스 — 모델이 쓰는 것은 상태 벡터 x 하나다. 각 고리는 그 안의
+% Selector 로 필요한 것만 꺼낸다. 세로 줄기 하나에서 가지 다섯이 전부
+% 오른쪽으로 갈라지므로 되먹임선이 서로를 가로지르는 자리가 **하나도 없다**
+% ===========================================================================
+\node[dot] (bt) at (176,-76) {};
+\draw[bus] (176,-76)  -- (176,-124);
+\draw[bus] (176,-124) -- (-20,-124);
+\draw[bus] (-20,-124) -- (-20,-12);
+
+\draw[bus] (-20,-12)  -- (0,-12);
+\draw[fb]  (0,-12)    -- (0,-2.3);
+\draw[bus] (-20,-16)  -- (32,-16);
+\draw[fb]  (32,-16)   -- (32,-7.5);
+\draw[bus] (-20,-70)  -- (0,-70);
+\draw[fb]  (0,-70)    -- (0,-60.3);
+\draw[bus] (-20,-114) -- (34,-114);
+\draw[fb]  (34,-114)  -- (34,-104.3);
+\draw[bus] (-20,-118) -- (74,-118);
+\draw[fb]  (74,-118)  -- (74,-111);
+
+\node[un, anchor=south west] at (1.6,-11.4)  {$p = x(7{:}8)$};
+\node[un, anchor=south west] at (33.6,-15.4) {$\psi = x(12)$};
+\node[un, anchor=south west] at (1.6,-69.4)  {$u, v = x(1{:}2)$};
+\node[un, anchor=south west] at (35.6,-113.4) {$\psi$};
+\node[un, anchor=south west] at (75.6,-117.4) {$r = x(6)$};
+\node[un, anchor=south east, align=right] at (174,-122.6)
+     {one bus, five branches\\ no feedback line crosses another};
+
+% ===========================================================================
+% 이 그림이 모델의 어디인가 — 빈 자리에 넣는다
+% ===========================================================================
+\node[anchor=north west, font=\scriptsize, soft] at (108,-97)
+     {\begin{tabular}{@{}ll@{}}
+        outer loop      & \texttt{\_tools/add\_position\_loop.m} \\
+        \ \ its rotation & the \texttt{to body} MATLAB Function \\
+        inner loop      & \texttt{\_tools/add\_velocity\_loop.m} \\
+        heading loop    & \texttt{\_tools/add\_heading\_loop.m} \\
+        allocation      & \texttt{\_tools/add\_allocation3.m} \\
+        hull            & \texttt{\_tools/add\_otter\_plant.m} \\
+      \end{tabular}};
+
+% ===========================================================================
+% 두 띠로 묶는다 — 바깥 하나, 안쪽 둘
+% ===========================================================================
+\draw[grp, draw=errc] (-8,-122) rectangle (104,-48);
+\node[font=\footnotesize\bfseries, errc, anchor=south west] at (-7,-47.2)
+     {inner loops --- velocity PI and heading P--D (fast)};
+
+\draw[grp, draw=bodyc] (-30,14) rectangle (198,-128);
+\node[font=\footnotesize\bfseries, bodyc, anchor=south west] at (-29,15)
+     {outer loop --- position (slow)};
+
+% ===========================================================================
+% 위 띠 — 고리마다 묻는 것이 다르다
+% ===========================================================================
+\node[font=\footnotesize, bodyc, anchor=south west, text width=73mm] at (-30,22)
+     {\textbf{What the outer loop asks} --- \emph{the berth is 12 m north and
+      3 m east from here: at how many m/s should the hull close that?} \ The
+      answer is proportional to the distance that is left, and what leaves the
+      block is a \textbf{velocity}, not a force};
+
+\node[font=\footnotesize, accent, anchor=south west, text width=73mm] at (48,22)
+     {\textbf{Why a rotation sits between them} --- the outer loop measures
+      \textbf{metres north and east}; the inner loop holds \textbf{m/s ahead
+      and to starboard}. The two frames differ by $\psi$, so one rotation has
+      to stand between them};
+
+\node[font=\footnotesize, errc, anchor=south west, text width=73mm] at (125,22)
+     {\textbf{What the inner loops ask} --- \emph{0.80 m/s ahead was ordered
+      and 0.62 m/s is being made: how much harder?} \ P answers at once, I
+      removes what is left, and the limit fixes what the three thrusters are
+      actually asked for. The heading loop runs beside it on the same
+      measurements};
+
+\end{tikzpicture}
+\end{document}
