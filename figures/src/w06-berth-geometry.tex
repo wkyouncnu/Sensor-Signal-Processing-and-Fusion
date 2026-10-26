@@ -1,0 +1,125 @@
+%  w06-berth-geometry — 접안 기하 / the berthing geometry (Section 6-5)
+%
+%  캡스톤의 w06-berth-geometry.tex 를 옮긴 것이다. 두 가지를 버렸다.
+%    ① 회전하는 부두 좌표계 (psi_t, berth_side, s) — 볼트 코드에는 그 일반성이
+%       없다. W06_vars 의 부두는 북남으로 뻗은 고정 부두이고, 모델 변수가
+%       뒷받침하지 않는 기호를 강의에 싣지 않는다 (§15-바로 아래 교훈).
+%    ② 넓은 산문 칸 — `.md` 로 옮겼다.
+%
+%  화면 = NED 를 위에서 본 것.  screen x = east,  screen y = north.
+%  \NE{북}{동} 이 **참 NED 수치**를 받아 접안지점을 원점으로 옮긴다. 그래서
+%  이 파일의 기하는 W06_vars.m 의 숫자를 그대로 읽는다.
+%
+%  축척 1 m = 5 mm. 선체는 **실척**이다 — Otter LOA 2.0 m = 10 mm.
+%  캡스톤은 고정 12.8 mm 글리프를 썼고, 그러면 R_berth = 0.40 m 가 선체보다
+%  얼마나 작은지가 거짓말이 된다.
+%
+%  주석만 한국어다. 조판되는 글자에 한글을 넣으면 pdflatex 이 멈춘다.
+
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{bodyc}{HTML}{1D4ED8}
+\definecolor{plantc}{HTML}{16A34A}
+
+\pgfmathsetmacro{\PS}{5}                                   % 1 m = 5 mm
+
+%  참 NED 수치 -> 화면 좌표 / true NED numbers -> screen coordinates
+\newcommand{\NE}[2]{({((#2) - 1.2)*\PS},{((#1) - 40)*\PS})}
+
+%  선체 하나, 실척 / one hull, to scale.  #1 north  #2 east  #3 psi [deg]  #4 colour
+%  shift= 에는 좌표 매크로를 줄 수 없다 — 숫자 식으로 푼다
+\newcommand{\hull}[4]{%
+  \begin{scope}[shift={({((#2) - 1.2)*\PS},{((#1) - 40)*\PS})}, rotate={90 - (#3)}]
+    \fill[#4!12]                  (-5.0,-2.7) -- (2.75,-2.7) -- (5.0,0) -- (2.75,2.7) -- cycle;
+    \draw[#4, line width=0.6pt]   (-5.0,-2.7) -- (2.75,-2.7) -- (5.0,0) -- (2.75,2.7) -- cycle;
+    \draw[#4, line width=0.3pt]   (-5.0,0) -- (5.0,0);
+  \end{scope}}
+
+\tikzset{
+  io/.style    = {font=\footnotesize, ink, inner sep=1.6pt},
+  un/.style    = {font=\scriptsize, soft, inner sep=1.4pt},
+  enote/.style = {font=\scriptsize, errc, inner sep=1.4pt},
+  tag/.style   = {draw=soft, line width=0.5pt, fill=black!3, rounded corners=1.5pt,
+                  font=\scriptsize, inner sep=2.2pt, align=left},
+  dimn/.style  = {ink, line width=0.5pt,
+                  {Stealth[length=3.4pt,width=2.6pt]}-{Stealth[length=3.4pt,width=2.6pt]}},
+  ext/.style   = {soft, line width=0.35pt, densely dotted},
+}
+
+\begin{document}
+%  x=1mm, y=1mm 을 빼면 모든 좌표가 기본 단위(cm)로 읽혀 그림이 몇 배로 커진다.
+%  실제로 한 번 3018 px 로 나왔다 — 920 px 천장의 세 배다.
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+%% ---- 접안지점 규칙 / the approach-point rule --------------------------------
+\node[tag, anchor=north west] at (-18.5,33)
+  {approach point: \texttt{app} $=$ (\texttt{berth\_N},\ \texttt{berth\_E} $+$
+   \texttt{stand\_off}) $= (40.0,\ 8.2)$ m\\
+   due east of the berth, because this quay runs north--south};
+
+%% ---- 부두 / the quay --------------------------------------------------------
+\begin{scope}
+  \clip (-18.5,-34) rectangle (-6,23);
+  \fill[black!5] (-18.5,-34) rectangle (-6,23);
+  \foreach \k in {-48,-44,...,26}
+    {\draw[soft, line width=0.35pt] (-18.5,\k) -- (-6,{\k+12.5});}
+\end{scope}
+\draw[ink, line width=1.0pt] (-6,-34) -- (-6,23);
+\node[un, anchor=north, align=center] at (-12.25,-34.8) {quay\\ $E \le 0$};
+
+%% ---- 접안지점과 그 허용원 / the berth and its arrival circle ----------------
+\hull{40}{1.2}{0}{plantc}
+\draw[errc, densely dashed, line width=0.5pt] \NE{40}{1.2} circle (2.0);
+\node[dot, errc, fill=errc, minimum size=1.2mm] at \NE{40}{1.2} {};
+
+%  지시선은 선체 **바깥**에서 끝낸다. (1.5,1.6) 은 선체 아래에 깔려 보이지 않았다.
+%  (1.6,3.6) 은 뱃머리 사면 위의 점이다.
+\draw[ext] (4.0,9.8) -- (1.6,3.6);
+%  석 줄로 끊는다. 한 줄로 두면 동쪽 설명과 가로로 겹친다 — 실제로 18.5 mm 겹쳤다.
+\node[io, anchor=south west, align=left] at (4.2,10.0)
+  {berth $(40.0,\ 1.2)$ m\\
+   {\scriptsize $R_{berth} = 0.40$ m}\\
+   {\scriptsize smaller than the hull}};
+
+%% ---- 대기지점과 그 판정원 / the approach point and its test circle ----------
+\draw[pathc, densely dashed, line width=0.5pt] \NE{40}{8.2} circle (7.5);
+\node[dot, pathc, fill=pathc] at \NE{40}{8.2} {};
+
+\draw[ext] (55.8,12.6) -- (40.6,5.6);
+\node[io, anchor=south west, align=left] at (56,12.8)
+  {approach point $(40.0,\ 8.2)$ m\\
+   {\scriptsize $R_{app} = 1.5$ m --- phase 1 ended at 1.490 m}};
+
+%% ---- 3 단계: 목표가 접안지점으로 바뀐다 / phase 3 switches the target -------
+\draw[errc, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}] (27.5,0) -- (6.0,0);
+\node[enote, anchor=south] at (16.7,0.9) {\textsc{berth}};
+
+%% ---- 떨어져 선 거리 / the stand-off ----------------------------------------
+\draw[ext]  (0,-2.6)  -- (0,-17.5);
+\draw[ext]  (35,-8.1) -- (35,-17.5);
+\draw[dimn] (0,-16)   -- (35,-16);
+\node[un, anchor=south] at (17.5,-15.4) {\texttt{stand\_off} $= 7.0$ m};
+
+%% ---- 1 단계가 들어오는 길 / the TRANSIT leg arriving -----------------------
+%  방위 atan2(8.2-25, 40-0) = -22.8 deg 그대로 — 거의 북쪽, 조금 서쪽이다
+\draw[bodyc, line width=0.35pt, densely dotted] (53.5,-36.8) -- (50.2,-28.9);
+\draw[bodyc, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}] (48.8,-25.6) -- (40.3,-5.3);
+\node[io, anchor=west, align=left] at (55,-22)
+  {the \textsc{transit} leg\\
+   {\scriptsize from the start point $(0,\ 25)$ m}\\
+   {\scriptsize 43.4 m to the approach point}};
+
+%% ---- NED / the NED frame ---------------------------------------------------
+\draw[sig, accent] (6,-30) -- (6,-22);
+\draw[sig, accent] (6,-30) -- (14,-30);
+\node[anote, anchor=south, inner sep=1pt] at (6,-21.6) {$x_n$, north};
+\node[anote, anchor=west,  inner sep=1pt] at (14.4,-30) {$y_n$, east};
+
+\gnccaption{126mm}{Section 6-5. The berthing geometry of \texttt{W06\_H\_berth},
+drawn to scale: the hull is 2.0 m long, the arrival circle 0.40 m in radius.
+Phase 1 steers to the approach point and ends inside $R_{app}$; phase 3 replaces
+the target with the berth itself.}
+
+\end{tikzpicture}
+\end{document}
