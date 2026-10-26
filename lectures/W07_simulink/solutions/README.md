@@ -1,6 +1,6 @@
 # Week 7 · Laboratory Solutions
 
-- Reference answers, not the only correct ones. The checker tests the physics, not the diagram — with one structural exception, explained below.
+- Reference answers, not the only correct ones. The checker tests the physics, not the diagram.
 - Read them after attempting the problem.
 
 ---
@@ -9,7 +9,7 @@
 
 ```matlab
 cd lectures/W07_simulink/solutions
-W07_S1_notch                 % builds W07_S1.slx — all three problems in one model
+W07_S1_allocation            % builds W07_S1.slx — all three problems in one block
 W07_S_expected               % regenerates the expected-result figures
 
 W07_check(1,'W07_S1')
@@ -21,26 +21,34 @@ All three pass and `check_overlaps('W07_S1')` is **0**.
 
 ```
   W07 problem 1
-    filter        heading std   moment std   moment max   what it filters
-    none             1.550 deg       18.86 Nm      70.85 Nm        0.000 deg
-    notch            1.042 deg       13.41 Nm      70.85 Nm        2.164 deg
-  the wave is in the measurement                 2.865  (expected    3.000 +- 0.3 deg)  PASS
-  zeta_n = zeta_d leaves it untouched            0.000  (expected    0.000 +- 1e-06 deg)  PASS
-  the notch is actually in the loop                     PASS
+    t [s]   demanded X    N        delivered X    N        T1      T2
+       10       100.00   0.00        100.00   0.00    50.00   50.00
+       25       100.00  20.00        100.00  20.00    75.32   24.68
+       40       100.00 -20.00        100.00 -20.00    24.68   75.32
+  leg 2  port thrust T1                         75.316  (expected   75.320 +- 0.05 N)  PASS
+  leg 2  starboard thrust T2                    24.684  (expected   24.680 +- 0.05 N)  PASS
+  leg 2  the sum T1 + T2                       100.000  (expected  100.000 +- 0.05 N)  PASS
 
   W07 problem 2
-    filter        overshoot   rise [s]   settle [s]   phase of H at 1.6 rad/s
-    none              0.93 %      1.14        1.72               0.0 deg
-    notch             9.07 %      0.86        7.76             -18.5 deg
+    t [s]   demanded X      N       delivered X      N
+       10        100.0   0.00        100.00   0.00
+       25       -100.0   0.00       -100.00   0.00
+       40          0.0  20.00         -0.00  20.00
+       55          0.0 -20.00         -0.00 -20.00
+  surge during +yaw (none asked for)            -0.000  (expected    0.000 +- 0.05 N)  PASS
+  surge during -yaw (none asked for)            -0.000  (expected    0.000 +- 0.05 N)  PASS
 
   W07 problem 3
-    controller              mean heading error   mean moment   heading std
-    P-D  (Ki = 0)                  3.071 deg        -15.13 Nm      1.198 deg
-    PI-D                           0.084 deg        -15.13 Nm      1.191 deg
-  the ripple is the same on both                -0.007  (expected    0.000 +- 0.06 deg)  PASS
+    t [s]   demanded X      N    X/N      clip X      N    X/N     scale X      N    X/N
+       10       220.0    0.0     --      220.0    0.0     --       220.0    0.0     --
+       25       220.0   50.0   4.40      166.4   28.8   5.77       151.9   34.5   4.40
+       40       100.0   50.0   2.00      100.0   50.0   2.00       100.0   50.0   2.00
+       55      -220.0    0.0     --     -133.4    0.0     --      -133.4    0.0     --
+  leg 2  clip  turns the force,  X/N             5.773  (expected    5.770 +- 0.08 -)  PASS
+  leg 2  scale keeps it,         X/N             4.400  (expected    4.400 +- 0.05 -)  PASS
 ```
 
-Two rows are worth pausing on. The `what it filters` column is $0.000$ with $\zeta_n = \zeta_d$ — not small, **zero**, because $H(s)$ is then the identity and the transfer function has unity direct feedthrough. And in Problem 3 the two heading standard deviations differ by $0.007°$: the integral removed a $3°$ offset and left the $1.19°$ of wave ripple exactly where it was.
+The two ratios of Problem 3 are the numbers worth pausing on. Scaling returns $4.400$, which is the demanded ratio to every digit the checker prints — not to within a tolerance, but exactly, because $X$ and $N$ are both linear in $\mathbf{T}$ and one factor multiplies both. Clipping returns $5.773$. The vessel is being turned less than the controller believes, and nothing upstream is told.
 
 ---
 
@@ -48,43 +56,34 @@ Two rows are worth pausing on. The `what it filters` column is $0.000$ with $\ze
 
 | | The choice | Why the alternative is worse |
 |---|---|---|
-| **The rate is filtered too** | two transfer functions, not one | The wave carries $11.64$ deg/s of yaw rate, comparable with what this vessel can produce. Filtering the heading alone leaves most of the disturbance in the loop through the D term, and the moment std barely moves |
-| **The filter is switched off by a number** | $\zeta_n = \zeta_d$, never by deleting a block | Two models can differ in ways nobody intended. One model run twice cannot. This is the same argument as Week 5's single guidance block with a law flag, and Week 6's single allocator with `fit_mode` |
-| **The integral goes inside the autopilot, after the notch** | it integrates $e$, formed from the **filtered** heading | Integrating the raw error would accumulate the wave. It would still average to nearly zero — but "nearly" is doing work there, and the transient at each saturation would not |
+| **One block, not three** | the square rule, the limit step and the curve are three sections of one function | Three blocks would suggest three things were built. Problem 2 is two lines of Problem 1 made correct, and Problem 3 is one step placed in front of it. The exercise is one map, corrected twice |
+| **The limit precedes the curve** | clip or scale the **thrusts**, then invert | The limit is a limit on thrust. Clamping shaft speeds gives the same answer for clipping and the wrong one for scaling: scaling is linear in $T$, and the curve is not |
+| **The sign test is on $T$, not on the demand** | `if T(i) >= 0` inside the loop | A demand for pure yaw has $X = 0$ and yet one propeller runs astern. Testing the sign of the demand, or of $X$, leaves that propeller on the wrong coefficient — which is the whole of Problem 2 |
 
 ---
 
-## Why $\psi_f$ is logged, and why that is a structural test
+## Why the thrusts are not logged
 
-Every other check in this course measures an outcome. This one looks at the wiring.
+The checker asks for the command and the **shaft speeds**, and recomputes the thrust itself through $T = k\,n\lvert n\rvert$ — the same curve the hull uses.
 
-The reason is that a model can contain a correctly built notch that is **not in the loop** — filtered signals computed, logged, and then ignored while the autopilot reads $\psi_m$. Such a model produces the unfiltered numbers, and the only way to distinguish it from a model with no filter at all is to ask what the controller used.
+Logging $T_1$ and $T_2$ directly would have been easier to write and would have made Problem 2 untestable. A model that inverts the curve with $k_{\text{pos}}$ in both directions still *computes* the right thrusts; it simply asks for a shaft speed that does not produce them. The intended thrust and the delivered thrust are different quantities, and they part company precisely where the exercise is.
 
-Hence the contract asks for $\psi_f$, and the checker makes two assertions about it that no performance number could make:
-
-- with $\zeta_n = \zeta_d$ it must equal $\psi_m$ to $10^{-6}$ — the filter is the identity, so nothing may be removed;
-- with the notch in it must differ measurably — the filter is doing something.
-
-A test of what a signal *is* rather than what it *achieves* is worth one line here because the failure it catches is silent.
+This is the general form of a rule this course applies to its own figures: **measure what the plant receives, not what the controller meant.**
 
 ---
 
-## The order of the three problems, and why Problem 2 exists
+## The order of the three problems
 
-Problem 1 makes the filter look free. Every column of its table improves and nothing was retuned.
+Problem 2 could have been part of Problem 1 — it is, after all, one `if` inside the same loop. It is separate because of what the run shows.
 
-Problem 2 exists to refuse that reading. With the sea switched off, the same filter turns a $0.93\,\%$ overshoot into $9.07\,\%$ and a $1.72$ s settling into $7.76$ s. Nothing changed but the day.
+A student who writes $n = \operatorname{sign}(T)\sqrt{\lvert T\rvert/k_{\text{pos}}}$ and tests it going ahead sees a perfect result. Every number in Problem 1 passes with the wrong curve, because every thrust in Problem 1 is positive. The fault appears only when something runs astern, and the worst of it — surge appearing during a pure turn — appears only when **one** propeller of a pair runs astern.
 
-The two results are not in tension, and a student who reports only one has not finished. The filter bought $-15.6$ dB at $\omega_0$ and paid $-18.5°$ of phase at $1.6$ rad/s — which is where the vessel is actually steered. Attenuation is bought with phase, and phase is what damping is made of. Week 2 §2-10 paid the same price for the derivative term; this is the second instalment.
-
-The engineering conclusion is in §7-7, not here: **which** of those two days the vessel is to be tuned for is a decision, and the filter's two numbers are where it is written down.
+Problem 1 is therefore a test that a wrong model passes, and that is deliberate. It is the situation a sea trial is in.
 
 ---
 
 ## What is deliberately missing
 
-No spectrum estimation, no sweep of $\zeta_d$, no observer.
+No pseudo-inverse, no sway row, no constrained least squares. Two demands and two propellers, which is a square problem with one answer.
 
-The width $\zeta_d$ is chosen in §7-7 by the trade Problem 2 measures, and the hour is not long enough to sweep it honestly. The larger absence is the one §9-7 names: this vessel is **given** $\psi$ and $r$ and adds a known wave to them. A real one estimates both from a GNSS receiver and an IMU, and the notch is then one term inside an observer rather than a block in front of a controller — which is the companion course, *Sensor Signal Processing and Fusion*.
-
-What this hour does establish is the question that observer must answer, and it is the question of Problem 3: **not how to make the measurement quiet, but which part of it the controller is supposed to act on.**
+Sections 7-3, 7-4 and 7-7 are where the problem stops being square: a third demand the hull cannot answer, more thrusters than demands, and a cost function that says which demand matters when not all of them can be met. Problem 3 ends exactly where §7-7 begins — with two rules that both discard part of the demand and **neither of which was asked which part mattered**.

@@ -639,7 +639,7 @@ $$
 
 2. **On the path the two agree; off it they never do.** With $y_e = 0$ the square root collapses to $d - x_e$ and the tests are identical. With $y_e \neq 0$ the circle test is **always the stricter of the two**, by an amount that grows with how far off the path the vessel is — so a vessel that is running wide can satisfy the along-track test and fail the circle at the same instant.
 
-3. **The circle can be missed altogether.** A vessel whose cross-track error never falls below $R$ never enters the circle, passes the waypoint, and waits for an arrival that has already happened — for ever. The along-track test cannot fail that way: $d - x_e$ goes negative the moment the vessel crosses the line through the waypoint perpendicular to the leg, whatever its cross-track error. This is not a hypothetical; Week 9 §9-5 loses a whole mission to it at $1.3$ m/s of current.
+3. **The circle can be missed altogether.** A vessel whose cross-track error never falls below $R$ never enters the circle, passes the waypoint, and waits for an arrival that has already happened — for ever. The along-track test cannot fail that way: $d - x_e$ goes negative the moment the vessel crosses the line through the waypoint perpendicular to the leg, whatever its cross-track error. This is not a hypothetical; Week 10 §10-5 loses a whole mission to it at $1.3$ m/s of current.
 
 ![The same position judged by both tests: one switches, the other does not](../figures/w05-switching.svg)
 
@@ -1375,7 +1375,7 @@ W05_I_performance
 | **Corner excursion is set by the turn radius, not by the guidance.** With $N$ at its limit the vessel turns at some $r_{\max}$, and $R_{\text{turn}} = U/r_{\max}$ | $r_{\max} = 15.1$ deg/s at $1.0$ m/s $\Rightarrow R_{\text{turn}} = 3.8$ m | excursion $2.86$ m at the first corner | as expected, and **smaller** than $R_{\text{turn}}$ because §5-4 starts the turn $R = 3$ m early |
 | **Large-signal separation does not hold.** A $62°$ corner saturates the moment, so the inner loop is rate-limited | inner response slower than the look-ahead time $\Delta/U = 5.0$ s | $8.4$ s to come within $10\%$ of the new command | **as expected, and it is the binding constraint** |
 
-- The last two rows are the honest answer to "how well does this follow a path". On the straight parts the cascade behaves exactly as a cascade should, and the error is a fraction of $\Delta$. At the corners it does not: the moment saturates, the inner loop becomes the slow one, and the excursion that results is the vessel's turning circle. **No value of $\Delta$, $R$ or $\kappa$ can improve that** — only more moment, a slower speed, or a path with gentler corners. Week 6 is where more moment comes from; Week 8 is where the mission stops asking for right angles.
+- The last two rows are the honest answer to "how well does this follow a path". On the straight parts the cascade behaves exactly as a cascade should, and the error is a fraction of $\Delta$. At the corners it does not: the moment saturates, the inner loop becomes the slow one, and the excursion that results is the vessel's turning circle. **No value of $\Delta$, $R$ or $\kappa$ can improve that** — only more moment, a slower speed, or a path with gentler corners. Week 7 is where more moment comes from; Week 9 is where the mission stops asking for right angles.
 
 > [!note] What is left out this week
 > The previous version of this week derived the laws in full, proved their stability with Lyapunov functions, and added a third law, ALOS, which estimates the crab angle directly. That material is kept in `W05_simulink/_previous_version/` for reference; nothing in this week's tuning depends on it.
@@ -1756,7 +1756,7 @@ A second window opens **while the model is still running**, redrawn at every ste
 > | the run ending | one `Stop Simulation` block, fed by the `stop` output |
 > | switching it off | `stop_at_end = 0` in `W05_0_setup`, which restores the old behaviour |
 >
-> The other six models keep `stop_at_end` unused: they hold the last leg and sail along its extension, which is what §5-4's reading table describes. A mission with waiting, re-planning and a state machine is Week 8; this is the smallest thing that deserves the name *end of mission*.
+> The other six models keep `stop_at_end` unused: they hold the last leg and sail along its extension, which is what §5-4's reading table describes. A mission with waiting, re-planning and a state machine is Week 9; this is the smallest thing that deserves the name *end of mission*.
 
 | What to try | What to watch |
 |---|---|
@@ -1833,7 +1833,7 @@ Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so t
 
 ## Progress Check
 
-> [!important] Minimum condition for following Week 6
+> [!important] Minimum condition for following Week 7
 
 ### Theory
 
@@ -1876,7 +1876,7 @@ W05_check(1)                 % run this whenever, as often as needed
 
 ## Assignment 5
 
-- **Due**: before the Week 6 session
+- **Due**: before the Week 7 session
 - **Submit**: the modified `W05_0_setup.m`, the numbers requested below, and two figures
 
 ### ① Requirements
@@ -1936,4 +1936,4 @@ Compare the chosen $\kappa$ with 0.3, and explain from the leg length why it mov
 
 ## Next Week
 
-**Week 6 — Control Allocation.** This week gave the vessel the square allocation of Week 4 and never questioned it. Week 6 asks what happens when there are more actuators than degrees of freedom, when a thruster saturates, and when one fails.
+**Week 7 — Control Allocation.** This week gave the vessel the square allocation of Week 4 and never questioned it. Week 7 asks what happens when there are more actuators than degrees of freedom, when a thruster saturates, and when one fails.

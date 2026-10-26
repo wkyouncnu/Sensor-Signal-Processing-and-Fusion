@@ -1141,7 +1141,7 @@ $$
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | buoyancy and weight acting through different points |
 | $\boldsymbol{\tau}$ | control force | what the thrusters produce |
 
-- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 5 §5-5 pays for it with a permanent path error, and Week 7 adds wind and waves beside it.
+- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 5 §5-5 pays for it with a permanent path error, and Week 8 adds wind and waves beside it.
 
 > [!important] The added mass is not a correction term
 > For the Otter, $-X_{\dot u} = 5.50$ kg against a hull-plus-payload mass of $80.0$ kg, so the water contributes $6.4\%$ of the effective surge inertia. In sway it contributes far more, $-Y_{\dot v} = 82.5$ kg against the same $80.0$ kg. It is part of the model, not a refinement of it.
@@ -1438,7 +1438,7 @@ $$
 - The middle row is **exactly zero**, and $\operatorname{rank}(\mathbf{B}) = 2$. Appendix A1 derives this matrix from a general rule and shows what it costs; this week only records that the row is empty.
 
 > [!important] Zero is not a small number
-> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 10 meets this fact again as a hard limit on what can be controlled.
+> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 11 meets this fact again as a hard limit on what can be controlled.
 
 ### The whole chain, from revolutions to generalised force
 
@@ -2689,4 +2689,4 @@ W01_check(1)                 % run this whenever, as often as needed
 - **Week 3 — Surge Speed Control** then closes the first loop on the Otter. Bring $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-11, and the derivation of $u_{ss}(n)$ from Assignment 1.
 
 > [!note] Appendix A1 is available but not required yet
-> The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 3 and 4 quote its two results where they need them. It becomes required reading before Week 6.
+> The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 3 and 4 quote its two results where they need them. It becomes required reading before Week 7.

@@ -5,29 +5,28 @@ function W09_P1_start(mdl)
 %   >> W09_P1_start                 W09_P1.slx 를 만든다 / creates W09_P1.slx
 %   >> W09_P1_start('W09_P1_kim')   다른 이름으로 만든다 / another name
 %
-%   이번 주는 거의 전부를 준다 / almost everything is given this week
+%   무엇을 주고 무엇을 주지 않는가
+%   what this script gives, and what it withholds
 %
-%   9주차는 새 법칙을 만들지 않는다. 그러므로 실습도 제어기를 만들지 않는다.
-%   2~8주차가 사슬로 다 얹혀 있고, 비어 있는 자리는 하나다 —
-%   **어느 주차의 것도 아닌 조각, 임무 논리.**
+%   임무 논리와 7주차의 배분과 선체를 준다. 그 사이가 비어 있다 — **어디로
+%   얼마의 힘이 필요한가**, 그리고 이 선체가 낼 수 없는 방향을 어떻게 할 것인가.
 %
-%       wave -> measurement -> notch -> [ your mission ] -> controller
-%                                    -> allocation -> Otter USV
+%       mission --> [ your controller ] --> X, N --> allocation --> Otter USV
 %
-%   Week 9 adds no new law, so the laboratory builds no controller. Weeks 2 to
-%   8 are all on the chain already, and one place is empty: the piece that
-%   belongs to no single week.
+%   The mission logic, Week 7's allocation and the hull are given, with the
+%   space between them empty: how much force is needed and in which direction,
+%   and what to do about the direction this hull cannot push.
 %
 %   없는 것, 그래서 문제인 것 / what is missing, and is therefore the exercise
 %
-%     the mission block — [wp ; mode] from where the vessel is — and slog
+%     the controller, and the log dlog
 %
-%   빈 자리를 Constant 둘이 채우고 있어 모델은 처음부터 돈다: 배는 첫 지점을
-%   향해 이동하고 영원히 거기 머문다. 지우고 자기 블록을 그 자리에 넣는다.
-%   Two Constants hold the place so the model runs at once: the vessel transits
-%   towards the first waypoint and stays in transit for ever. Replace them.
+%   빈 자리를 Constant 0 둘이 채우고 있어 모델은 처음부터 돈다 — 배는 아무것도
+%   하지 않고 조류에 떠내려간다. 지우고 자기 블록을 그 자리에 넣는다.
+%   Two Constants hold the place so the model runs at once: the vessel does
+%   nothing and is carried away by the current. Delete them and build there.
 %
-%   See also W09_CHECK, W09_0_SETUP, W09_S1_MISSION.
+%   See also W09_CHECK, W09_0_SETUP, W09_S1_DP.
 
 if nargin < 1 || isempty(mdl), mdl = 'W09_P1'; end
 
@@ -46,58 +45,63 @@ set_param(mdl, 'SolverType','Fixed-step', 'Solver','ode4', ...
                'FixedStep','h', 'StartTime','0', 'StopTime','T_final', ...
                'ReturnWorkspaceOutputs','off');
 
-w09_lab_bench(mdl, 140);
+w09_lab_bench(mdl, 120);
 
 %  모델이 처음부터 돌도록 자리를 채우는 상수 둘 / two placeholders
-MT = {'wp','mode'};  MV = {'1','1'};
+CT = {'X_ctrl','N_ctrl'};
 for i = 1:2
-    add_block('simulink/Sources/Constant', [mdl '/' MT{i} ' placeholder'], ...
-              'Value', MV{i}, 'Position', [240 760+60*(i-1) 380 800+60*(i-1)]);
-    add_block('simulink/Signal Routing/Goto', [mdl '/' MT{i} ' out'], ...
-              'GotoTag', MT{i}, 'Position', [430 770+60*(i-1) 500 790+60*(i-1)]);
-    add_line(mdl, [MT{i} ' placeholder/1'], [MT{i} ' out/1'], 'autorouting','smart');
+    add_block('simulink/Sources/Constant', [mdl '/' CT{i} ' placeholder'], ...
+              'Value','0', 'Position', [420 620+60*(i-1) 560 660+60*(i-1)]);
+    add_block('simulink/Signal Routing/Goto', [mdl '/' CT{i} ' out'], ...
+              'GotoTag', CT{i}, 'Position', [610 630+60*(i-1) 680 650+60*(i-1)]);
+    add_line(mdl, [CT{i} ' placeholder/1'], [CT{i} ' out/1'], 'autorouting','smart');
 end
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 9 LABORATORY  -  BUILD THE MISSION, THEN MEASURE THE VESSEL'
+'WEEK 8 LABORATORY  -  BUILD THE POSITION CONTROLLER YOURSELF'
 ''
-'Weeks 2 to 8 are already on the chain. The empty place is the piece that'
-'belongs to none of them: the logic that decides WHERE the vessel is going'
-'and WHETHER it has arrived.'
+'The mission, the allocation and the hull are given. What decides how much'
+'force is needed, and in which direction, is not.'
 ''
-'PROBLEM 1   The two rules of the mission. A block with memory, running at'
-'            the fixed step h:'
+'PROBLEM 1   How much force, and how much of it can be delivered. A PID on'
+'            the position error in BOTH north and east:'
 ''
-'               in transit and reached          -> hold, and reset the clock'
-'               in hold and T_hold has passed   -> the next waypoint, transit'
-'               after the last one              -> done'
+'               f_n = Kp_x e_n + I_n - Kd_x v_n'
+'               f_e = Kp_x e_e + I_e - Kd_x v_e'
 ''
-'            Use the acceptance circle for `reached`:   d < R_arrive'
+'            Only the along-bow part can reach the propellers:'
 ''
-'PROBLEM 2   That test is not safe. Add the along-track test of Week 5 --'
-'            has the vessel gone PAST the waypoint? -- under the switch'
-'            use_pass, and find the current at which the two part company:'
+'               X = f_n cos(psi) + f_e sin(psi)'
 ''
-'               x_left = (p_k - p) . [cos(pi_p) ; sin(pi_p)]'
-'               reached = d < R_arrive  ||  (use_pass && x_left < 0)'
+'            Hold the heading FIXED at psi_fix and watch what happens.'
 ''
-'PROBLEM 3   No building. Set each of the nine switches to zero in turn and'
-'            measure what that week was worth on this mission.'
+'PROBLEM 2   Point the bow along the force that is needed:'
+''
+'               psi_d = atan2(f_e, f_n)      while |f| > e_min'
+''
+'            Then Week 4''s autopilot, gains unchanged:'
+''
+'               N = Kp ssa(psi_d - psi) - Kd r,   |N| <= N_max'
+''
+'PROBLEM 3   Three waypoints. Add the transit branch -- a constant push X_ff'
+'            and the bow towards the waypoint -- and hand the integral over'
+'            at a change of mode, so that a hold does not begin with the'
+'            transit''s accumulated demand.'
 ''
 'THE MODEL MUST CONTAIN'
 ''
 '   xlog   To Workspace, Structure With Time, the plant''s 12 states  (given)'
-'   plog   To Workspace, Structure With Time, [psi_d ; y_e ; X ; N]  (given)'
-'   slog   To Workspace, Structure With Time, [wp ; mode]'
-'          -- which waypoint is active, and 1 transit, 2 hold, 3 done'
+'   mlog   To Workspace, Structure With Time, [N_d ; E_d ; mode]     (given)'
+'   dlog   To Workspace, Structure With Time, [psi_d ; X ; N]'
+'          -- the heading YOU command, in deg, and the two demands, in N and N m'
 ''
 'CHECK YOUR WORK AT ANY TIME'
 ''
 ['   >> W09_check(1, ''' mdl ''')      and 2, and 3']
 ''
 'DO NOT CHANGE the solver settings: fixed-step ode4 at h = 0.02 s.'}, newline);
-a.Position = [140 900 1200 1400];
+a.Position = [120 760 1180 1300];
 a.HorizontalAlignment = 'left';
 a.BackgroundColor = 'lightBlue';
 

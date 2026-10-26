@@ -6,7 +6,7 @@
 function build_w07_models()
     here = fileparts(mfilename('fullpath'));  cd(here);
     if evalin('base','~exist(''wp_north'',''var'')')
-        error('먼저 W07_setup 을 실행하십시오.');
+        error('먼저 W08_setup 을 실행하십시오.');
     end
     build_offline();
     build_vrx();

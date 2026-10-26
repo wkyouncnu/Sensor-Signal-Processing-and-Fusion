@@ -47,10 +47,10 @@ for i = 1:numel(L)
     %  A line with branches has several ends; those are handled on the branches.
     %  포트가 어느 쪽을 보고 있는지에 맞춘다. 둥근 합산점의 두 번째 입력은 **아래쪽**에
     %  달리므로(MSS 식 '|++'), 그 포트로는 세로로 들어가야 한다. 가로로 들여보냈더니
-    %  W07 의 느린 외란이 본선과 같은 줄을 15 px 타고 갔다 (2026-10-13).
+    %  W08 의 느린 외란이 본선과 같은 줄을 15 px 타고 갔다 (2026-10-13).
     %  Follow the direction the port faces. The second input of a round summing
     %  junction sits on its underside (the MSS '|++' shape), so a line must enter
-    %  it vertically; entering horizontally made W07's slow disturbance ride 15 px
+    %  it vertically; entering horizontally made W08's slow disturbance ride 15 px
     %  along the main row.
     dst = get_param(h, 'DstPortHandle');
     if numel(dst) == 1 && dst > 0

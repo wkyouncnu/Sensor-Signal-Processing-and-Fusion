@@ -1335,7 +1335,7 @@ The Bode plot and the two time traces are in §2-10.
 **The corner of a step.** A step setpoint makes the error jump. The filtered derivative of a jump of height $\Delta$ starts at $K_d N_f \Delta$ and decays with time constant $1/N_f$ — the **derivative kick** (`verify_w02_pid` check 6: $80.000$ N for $K_d = 4$, $N_f = 20$, $\Delta = 1$). An unfiltered derivative of a step is an impulse. The 제어조교 Ctrl튜브 video's remedy is to take the corner off the setpoint by passing it through a first-order filter $1/(T_f s + 1)$, so that its slope is at most $\Delta/T_f$.
 
 > [!note] Two other remedies, used later
-> Differentiating the measurement instead of the error — setting the setpoint weight $c_d = 0$ — removes the kick altogether, and is the choice Week 4 makes. A reference model that produces a smooth setpoint together with its derivative is the complete answer; it is the subject of Week 8.
+> Differentiating the measurement instead of the error — setting the setpoint weight $c_d = 0$ — removes the kick altogether, and is the choice Week 4 makes. A reference model that produces a smooth setpoint together with its derivative is the complete answer; it is the subject of Week 9.
 
 In the loop (`W02_G_noise_kick`, $K_p = 10$, $K_i = 8$, $K_d = 4$), measured by Experiment 2-10c, below:
 

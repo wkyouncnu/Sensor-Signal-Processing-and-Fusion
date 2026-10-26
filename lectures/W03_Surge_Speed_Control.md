@@ -787,7 +787,7 @@ The block has no clamp on $n$. It does not need one here, because `otter.m` clam
 - The allocator is not one operation but two, and only the first is linear; the limits of §3-4 live in the second.
 
 > [!note] Why the inverse exists at all, and when it stops existing
-> Two propellers, two demanded quantities, a square and nonsingular $\mathbf{T}$: the inverse is exact and unique. That is the easy case, and it holds for every vessel in Weeks 3 to 5. Week 6 removes it — with more thrusters than demanded forces the matrix is no longer square, there is no inverse, and the choice of which combination to use becomes the subject of its own week.
+> Two propellers, two demanded quantities, a square and nonsingular $\mathbf{T}$: the inverse is exact and unique. That is the easy case, and it holds for every vessel in Weeks 3 to 5. Week 7 removes it — with more thrusters than demanded forces the matrix is no longer square, there is no inverse, and the choice of which combination to use becomes the subject of its own week.
 
 **To check every number in this section**
 

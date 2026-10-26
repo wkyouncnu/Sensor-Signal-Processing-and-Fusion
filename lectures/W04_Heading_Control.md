@@ -526,7 +526,7 @@ $$
 3. That spike is spent on the actuator, not on the vessel: it is cut off by the limit within a few hundredths of a second, and §4-5 records the windup it causes even in a $10°$ turn.
 4. **The seam makes it worse.** When a command crosses $\pm180°$, the wrapped error jumps by a full $2\pi$ — that is what `ssa` does, and §4-6 shows why it must. Differentiating that jump asks for $K_d N_f\,2\pi = 12\,566$ N·m, some 177 times the limit, for a turn of a few degrees. The rate form is untouched by it.
 5. **The sensor decides it too.** A vessel carries a **gyroscope**, and $r$ is what it reports directly. The error form has no measurement of $\dot\psi$: it must compute one by differentiating the heading, and a derivative multiplies every frequency by $\omega$ (§2-10) — so it amplifies heading noise, and then needs the filter $N_f$, whose phase lag costs some of the damping it was added for.
-6. The price of the rate form is that it does not anticipate a **moving** command; a ramped command is followed with a small lag. A reference model that supplies $\psi_d$ together with $\dot\psi_d$ removes even that, and is the subject of Week 8.
+6. The price of the rate form is that it does not anticipate a **moving** command; a ramped command is followed with a small lag. A reference model that supplies $\psi_d$ together with $\dot\psi_d$ removes even that, and is the subject of Week 9.
 
 **Why the sign must be negative.** The rate term is written $-K_d r$ with $K_d > 0$, and the minus is not a convention — it is the whole of the term's purpose. Put the law into the yaw equation of §4-2 line 5:
 
@@ -569,7 +569,7 @@ so the vessel grows its oscillation until the turn rate reaches about that value
 | `VESSELS/SIMremus100.m` | `delta_r = -Kp_psi*ssa( x(12)-psi_d ) - Kd_psi*x(6)` | the same, with the error written the other way round; $x(6)$ is $r$ |
 | `VESSELS/SIMrig.m` | `tau3 = -R'*(Kp*eta3 + Ki*z3) - Kd*nu3` | 3-DOF DP: P and I on the **position error**, D on the measured **velocity** $\boldsymbol\nu$ |
 
-`SIMrig` is the one worth reading twice. The proportional and integral terms act on an error, and the damping term acts on a measured velocity — they are not three derivatives of one signal. That is exactly the structure Week 8 §8-3 builds and Week 9 assembles.
+`SIMrig` is the one worth reading twice. The proportional and integral terms act on an error, and the damping term acts on a measured velocity — they are not three derivatives of one signal. That is exactly the structure Week 9 §9-3 builds and Week 10 assembles.
 
 > [!note] Two ways to write the same gain
 > Some texts — including the companion Capstone course — fold the minus into the gain and write $N = K_p e + K_{d,\psi}\,r$ with $K_{d,\psi} < 0$. This course keeps $K_d > 0$ and writes the minus in the law, so that every gain in every week is positive. They are the same controller; $K_{d,\psi} = -K_d$.

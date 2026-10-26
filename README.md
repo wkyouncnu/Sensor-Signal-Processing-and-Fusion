@@ -46,13 +46,13 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W03 | [Surge Speed Control](lectures/W03_Surge_Speed_Control.md) | `W03_C_open_loop` · `W03_D_P` · `W03_E_PID` · `W03_F_windup` · `W03_G_tuning` (model-free tuning) |
 | W04 | [Heading Control](lectures/W04_Heading_Control.md) | `W04_C_open_loop` · `W04_D_P` · `W04_E_PD` · `W04_F_PID` · `W04_G_wrap` · `W04_H_tuning` (model-free tuning) |
 | W05 | [Waypoint Following and LOS Guidance](lectures/W05_Waypoint_Following_and_LOS_Guidance.md) | `W05_C_atan2` · `W05_D_LOS` · `W05_E_switching` · `W05_F_ILOS` · `W05_G_tuning` (model-free tuning) |
-| W06 | [Control Allocation](lectures/W06_Control_Allocation.md) | `W06_C_square` · `W06_D_pseudo` · `W06_E_curve` · `W06_F_limits` (실험 하나에 모델 하나) |
-| W07 | [Environmental Loads and Wave Filtering](lectures/W07_Environmental_Loads_and_Wave_Filtering.md) | `W07_C_wave` · `W07_D_no_filter` · `W07_E_notch` · `W07_G_slow` (실험 하나에 모델 하나) |
-| W08 | [Dynamic Positioning and Mission Integration](lectures/W08_Dynamic_Positioning_and_Mission_Integration.md) | `W08_C_fixed` · `W08_D_weathervane` · `W08_E_cascade` · `W08_F_mission` (실험 하나에 모델 하나) |
-| W09 | [Integration: One Vessel, One Mission](lectures/W09_Integration_One_Vessel_One_Mission.md) | `W09_C_full` · `W09_D_ablation` · `W09_E_weather` · `W09_F_limits` (실험 하나에 모델 하나) |
+| W07 | [Control Allocation](lectures/W07_Control_Allocation.md) | `W07_C_square` · `W07_D_pseudo` · `W07_E_curve` · `W07_F_limits` (실험 하나에 모델 하나) |
+| W08 | [Environmental Loads and Wave Filtering](lectures/W08_Environmental_Loads_and_Wave_Filtering.md) | `W08_C_wave` · `W08_D_no_filter` · `W08_E_notch` · `W08_G_slow` (실험 하나에 모델 하나) |
+| W09 | [Dynamic Positioning and Mission Integration](lectures/W09_Dynamic_Positioning_and_Mission_Integration.md) | `W09_C_fixed` · `W09_D_weathervane` · `W09_E_cascade` · `W09_F_mission` (실험 하나에 모델 하나) |
+| W10 | [Integration: One Vessel, One Mission](lectures/W10_Integration_One_Vessel_One_Mission.md) | `W10_C_full` · `W10_D_ablation` · `W10_E_weather` · `W10_F_limits` (실험 하나에 모델 하나) |
 | A1 | [Actuation and the Control Effectiveness Matrix](lectures/A1_Actuation_and_the_Control_Effectiveness_Matrix.md) (부록) | `A1_actuation` |
 
-W06 이후는 [PLAN.md](PLAN.md) §2 참조. **W05 는 유도, W06 는 Control Allocation** 이다 —
+W07 이후는 [PLAN.md](PLAN.md) §2 참조. **W05 는 유도, W07 는 Control Allocation** 이다 —
 사용자 결정으로 둘의 순서를 바꿨다. 2026-09-21 에 PID 입문을 새 W02 로 넣으면서
 그 뒤 주차가 모두 한 칸씩 밀렸다 (옛 W02 속도 → W03, 옛 W03 선수각 → W04, 옛 W04 유도 → W05).
 

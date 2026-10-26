@@ -6,28 +6,35 @@ function pass = W08_check(problem, mdl)
 %   W08_check(2, 'W08_P1_kim')  다른 모델을 검사한다 / checks another model
 %   pass = W08_check(3, mdl)    모두 통과하면 true / true when every test passed
 %
-%   체커는 강의와 **같은 정의**로 잰다 (CLAUDE.md §2): 유지 성능은 마지막 50 s,
-%   넘겨받기는 두 번째 유지가 시작하고 10 s 안의 최대 |X| 다.
-%   The checker measures by the lecture's definitions: station-keeping over the
-%   last 50 s, and the handover as the peak |X| in the first 10 s of the second
-%   hold.
+%   체커는 강의와 **같은 정의**로 잰다 (CLAUDE.md §2): 표준편차는 모두 t > 20 s
+%   구간이고, 계단 지표는 `step_metrics` 가 강의와 같은 시종점 정의로 낸다.
+%   The checker measures by the lecture's definitions: every standard deviation
+%   is taken over t > 20 s, and the step metrics come from `step_metrics`, the
+%   same function and the same endpoint definition the lecture used.
+%
+%   필터를 **끄는 방법** / how the filter is switched off
+%       블록을 빼지 않는다. zeta_n = zeta_d 로 두면 H(s) = 1 이 되어 같은 모델이
+%       필터 없는 모델을 정확히 재현한다 (§8-4 줄 4). 그래야 비교가 정직하다.
+%       No block is removed. Setting zeta_n = zeta_d makes H(s) = 1 identically,
+%       so one model reproduces the unfiltered one exactly — which is what keeps
+%       the comparison honest.
 %
 %   무엇을 검사하는가 / what is being checked
 %
-%     Problem 1   a fixed heading cannot hold station against a beam current,
-%                 and the surge force stays at ZERO while it fails     §8-2
-%     Problem 2   the bow set free holds it, settles into the flow, and the
-%                 force it holds is the drag at that speed             §8-3
-%     Problem 3   the mission runs by its two rules, and the integral is
-%                 handed over rather than carried across               §8-5
+%     Problem 1   the notch: heading std 1.551 -> 1.042 deg and moment std
+%                 18.85 -> 13.41 N m, on the same sea and the same gains  §8-4
+%     Problem 2   what it costs: with the sea off, overshoot 0.93 -> 9.07 %
+%                 and settling 1.72 -> 7.76 s                             §8-5
+%     Problem 3   the slow part is passed, and the integral removes it:
+%                 3.071 -> 0.084 deg against the same -15.13 N m          §8-6
 %
 %   WHAT THE MODEL MUST CONTAIN
 %
-%     dlog   To Workspace, 'Structure With Time', [psi_d ; X ; N]
-%            the commanded heading in deg, the surge force in N, the yaw
-%            moment in N m
+%     flog   To Workspace, 'Structure With Time', [psi_m ; psi_f ; N]
+%            the measurement and what the controller uses, both in deg,
+%            and the moment it asks for, in N m
 %
-%   See also W08_P1_START, W08_0_SETUP.
+%   See also W08_P1_START, W08_0_SETUP, STEP_METRICS.
 
 if nargin < 2 || isempty(mdl), mdl = 'W08_P1'; end
 here = fileparts(mfilename('fullpath'));
@@ -52,149 +59,130 @@ end
 
 % =========================================================================
 function pass = check_p1(mdl)
-%  §8-2. 선수각을 북쪽에 고정한 채 동쪽으로 흐르는 조류에 맞선다 — 맞설 수 없다.
-%  이 문제의 요점은 **제어기가 잘못한 것이 없다**는 것이다.
+%  §8-4. 같은 바다, 같은 게인. 달라지는 것은 두 수 zeta_n, zeta_d 뿐이다.
 pass = true;
-V = base_setup();  V.vane = 0;
-y = run_student(mdl, V);
+V = base_setup();
+A = run_student(mdl, V, 'zeta_n', V.zeta_d);      % 필터 없음 / H(s) = 1
+B = run_student(mdl, V, 'zeta_n', 0.05);          % 노치 / the notch
 
-fprintf('    after %.0f s on a fixed heading of %.0f deg, in a %.2f m/s current:\n', ...
-        V.T_final, V.psi_fix, V.V_c);
-fprintf('      the vessel is %7.2f m from the station\n', y.e(end));
-fprintf('      it has been carried %7.2f m to the east\n', y.E(end));
-fprintf('      the largest surge force ever asked of it was %.2f N\n', max(abs(y.X)));
-pass = report(pass, 'it drifts away from the station', y.e(end), 56.64, 3.0, 'm');
-pass = report(pass, 'and the surge force stays at zero', max(abs(y.X)), 0, 1.0, 'N');
-pass = report(pass, 'the heading never moves',  std(y.psi), 0, 1.0, 'deg');
-fprintf('\n     Nothing here is a fault of the controller. The position loop is\n');
-fprintf('     asking for a force to the west, correctly and the whole time; the\n');
-fprintf('     projection of that force on a bow pointing north is zero, and the\n');
-fprintf('     sway row of B is zero (Week 6 §6-3), so no pair of shaft speeds\n');
-fprintf('     can produce it. This is underactuation, not bad tuning. (8-2)\n');
+fprintf('    %-12s  heading std   moment std   moment max   what it filters\n', 'filter');
+NM = {'none','notch'};  RUN = {A, B};
+for i = 1:2
+    R = RUN{i};
+    fprintf('    %-12s %9.3f deg %11.2f Nm %10.2f Nm %12.3f deg\n', NM{i}, ...
+            R.psi_std, R.N_std, R.N_max, R.cut);
+end
+%  ① 파랑이 실제로 섞여 있는가. 이 구간에서 잰 값이므로 sigma_psi = 3 도의
+%     유한표본 추정이다 — 정확히 3.008 이 나오는 것은 전체 구간이다 (§8-2).
+%     The wave really is in the measurement. Measured over this window it is a
+%     finite-sample estimate of sigma_psi = 3 deg; the 3.008 of §8-2 is the
+%     whole run.
+pass = report(pass, 'the wave is in the measurement', A.wave_std, 3.0, 0.30, 'deg');
+%  ② 필터를 끄면 psi_f 가 psi_m 과 **정확히** 같아야 한다 (H(s) = 1)
+pass = report(pass, 'zeta_n = zeta_d leaves it untouched', A.cut, 0, 1e-6, 'deg');
+%  ③ 필터를 넣으면 무언가를 실제로 덜어 내야 한다
+if B.cut > 0.5
+    fprintf('  %-42s %9s  %s\n', 'the notch is actually in the loop', '', 'PASS');
+else
+    fprintf('  %-42s %9.4f  %s\n', 'the notch removes nothing — is it wired?', B.cut, 'FAIL');
+    pass = false;
+end
+%  ④ 그리고 강의가 잰 네 수
+pass = report(pass, 'no filter   heading std', A.psi_std, 1.551, 0.03, 'deg');
+pass = report(pass, 'notch       heading std', B.psi_std, 1.042, 0.03, 'deg');
+pass = report(pass, 'no filter   moment std',  A.N_std,  18.85, 0.40, 'N m');
+pass = report(pass, 'notch       moment std',  B.N_std,  13.41, 0.40, 'N m');
+fprintf('\n     |H(j w0)| = zeta_n/zeta_d = %.3f, which is %.1f dB, and every\n', ...
+        0.05/V.zeta_d, 20*log10(0.05/V.zeta_d));
+fprintf('     column of the table improves at once. Nothing was retuned: the\n');
+fprintf('     vessel steers better because it is no longer being shaken. (8-4)\n');
 end
 
 % =========================================================================
 function pass = check_p2(mdl)
-%  §8-3. 선수각을 놓아 준다. 적분이 상류 쪽 힘을 배우고 뱃머리가 그것을 따라간다.
+%  §8-5. 바다를 끄고 같은 10 도 계단. 감쇠를 사서 위상으로 갚는다.
 pass = true;
-V = base_setup();  V.vane = 1;
-y = run_student(mdl, V);
-j = y.t > 150;                                % 마지막 50 s / the last 50 s
-X_drag = V.V_c/0.012894;                      % 0.3 m/s 에서의 항력 / the drag there
+V = base_setup();  V.wave_on = 0;  V.T_final = 40;  V.N_slow = 0;
+A = run_student(mdl, V, 'zeta_n', V.zeta_d);
+B = run_student(mdl, V, 'zeta_n', 0.05);
 
-fprintf('    over the last 50 s, with the bow free:\n');
-fprintf('      |e| mean %.3f m, max %.3f m\n', mean(y.e(j)), max(y.e(j)));
-fprintf('      the bow settles at %.1f deg;  the current runs towards %.0f deg\n', ...
-        mean(y.psi(j)), V.beta_c*180/pi);
-fprintf('      surge force %.1f N;  the drag at %.2f m/s is %.1f N\n', ...
-        mean(y.X(j)), V.V_c, X_drag);
-pass = report(pass, 'the station is held', mean(y.e(j)), 0.193, 0.25, 'm');
-pass = report(pass, 'the bow turns into the flow', mean(y.psi(j)), -90.6, 6.0, 'deg');
-pass = report(pass, 'the force it holds is the drag', mean(y.X(j)), X_drag, 2.5, 'N');
-%  명령한 선수각을 실제로 따라갔는가 — 오토파일럿이 연결되어 있는가
-he = mean(atan2d(sind(y.psi_d(j) - y.psi(j)), cosd(y.psi_d(j) - y.psi(j))));
-pass = report(pass, 'the bow follows the command', he, 0, 2.0, 'deg');
-fprintf('\n     The same current, the same gains, and now the station is held.\n');
-fprintf('     Nothing was added to the position loop: the integral learned an\n');
-fprintf('     upstream force, and the bow was allowed to follow it. That the\n');
-fprintf('     force it settles on equals the drag at %.2f m/s is the check\n', V.V_c);
-fprintf('     that the vessel is doing physics rather than holding still. (8-3)\n');
+s = tf('s');
+fprintf('    %-12s  overshoot   rise [s]   settle [s]   phase of H at 1.6 rad/s\n', 'filter');
+NM = {'none','notch'};  RUN = {A, B};  ZN = [V.zeta_d 0.05];
+for i = 1:2
+    H = (s^2 + 2*ZN(i)*V.w0*s + V.w0^2)/(s^2 + 2*V.zeta_d*V.w0*s + V.w0^2);
+    [~, ph] = bode(H, 1.6);
+    fprintf('    %-12s %9.2f %% %9.2f %11.2f %17.1f deg\n', NM{i}, ...
+            RUN{i}.Mp, RUN{i}.tr, RUN{i}.ts, ph);
+end
+pass = report(pass, 'no filter   overshoot', A.Mp, 0.93, 0.35, '%');
+pass = report(pass, 'no filter   settling',  A.ts, 1.72, 0.30, 's');
+pass = report(pass, 'notch       overshoot', B.Mp, 9.07, 1.20, '%');
+pass = report(pass, 'notch       settling',  B.ts, 7.76, 1.20, 's');
+if B.Mp > 4*A.Mp
+    fprintf('  %-42s %9s  %s\n', 'the filter makes this manoeuvre worse', '', 'PASS');
+else
+    fprintf('  %-42s %9s  %s\n', 'the filter should cost a visible overshoot', '', 'FAIL');
+    pass = false;
+end
+fprintf('\n     The filter that improved every column of Problem 1 makes this\n');
+fprintf('     manoeuvre visibly worse, and both are true at once. The notch\n');
+fprintf('     buys its attenuation with phase, and phase is what damping is\n');
+fprintf('     made of — Week 2 §2-10, paid a second time. (8-5)\n');
 end
 
 % =========================================================================
 function pass = check_p3(mdl)
-%  §8-5. 세 지점을 차례로. 그리고 모드가 바뀔 때 적분을 넘겨받는가.
+%  §8-6. 느린 외란 15 N m. 노치가 그것을 통과시키므로 적분이 없앨 수 있다.
 pass = true;
-%  1·2번 문제는 지점 하나를 영원히 붙잡았다. 여기서는 세 지점을 40 s 씩.
-%  Problems 1 and 2 held one station for ever; here there are three, 40 s each.
-V = base_setup();  V.vane = 1;  V.T_final = 400;
-V.WP_N = [0 40 40]';  V.WP_E = [0 0 40]';  V.T_hold = 40;
-A = run_student(mdl, V, 'hand_over', 1);
-B = run_student(mdl, V, 'hand_over', 0);
+%  구간은 t > 60 s — 강의 §8-6 과 같다. 느린 외란이 60 s 로 변하므로 한 주기를
+%  다 본 뒤라야 "평균" 이 뜻을 가진다 / the lecture's window: the disturbance
+%  varies over 60 s, so a mean means nothing before one period has passed.
+V = base_setup();  V.N_slow = 15;  V.T_final = 120;
+A = run_student(mdl, V, 'zeta_n', 0.05, 'Ki', 0,  'win', 60);   % P-D
+B = run_student(mdl, V, 'zeta_n', 0.05, 'Ki', 20, 'win', 60);   % PI-D
 
-ch = find(diff(A.mode) ~= 0) + 1;
-fprintf('    the mission, with the integral handed over:\n');
-for i = 1:numel(ch)
-    k = ch(i);
-    fprintf('      t = %6.1f s   %-7s -> %-7s   at (N %6.2f, E %6.2f)\n', ...
-            A.t(k), name(A.mode(k-1)), name(A.mode(k)), A.N(k), A.E(k));
-end
-%  배는 첫 지점 위에서 출발하므로 시작하자마자 유지로 들어간다. 그 뒤로 기록되는
-%  변화는 다섯이고, 번갈아 가다 끝난다 — 강의 §8-5 의 표와 같은 다섯 시각이다.
-%  The vessel starts on the first waypoint and enters hold at once, so the five
-%  recorded changes alternate and end in done, at the five instants of §8-5.
-seq = A.mode(ch)';
-pass = report(pass, 'five changes of mode, alternating', ...
-              double(isequal(seq, [1 2 1 2 3])), 1, 0.5, '-');
-holds = hold_lengths(A, V);
-pass = report(pass, 'each hold lasts T_hold', max(abs(holds - V.T_hold)), 0, 0.5, 's');
-
-%  넘겨받기 / the handover, measured in the first 10 s of the second hold
-[pA, eA] = second_hold(A, V);
-[pB, eB] = second_hold(B, V);
-fprintf('\n    %-12s  peak |X| in the first 10 s of the second hold   |e| over that hold\n', 'hand_over');
-fprintf('    %-12d %38.1f N %20.3f m\n', 1, pA, eA);
-fprintf('    %-12d %38.1f N %20.3f m\n', 0, pB, eB);
-pass = report(pass, 'handed over: the hold begins calmly', pA, 43.3, 12.0, 'N');
-pass = report(pass, 'handed over: and holds',              eA, 0.420, 0.35, 'm');
-pass = report(pass, 'not handed over: it saturates',       pB, 120.0, 1.0, 'N');
-if eB > 10*max(eA, 0.05)
-    fprintf('  %-42s %9s  %s\n', 'not handed over: and is thrown clear', '', 'PASS');
-else
-    fprintf('  %-42s %9.3f  %s\n', 'without the handover it should be far worse', eB, 'FAIL');
-    pass = false;
-end
-fprintf('\n     In transit the position error is tens of metres, and an integrator\n');
-fprintf('     left running accumulates all of it. When the hold begins it demands\n');
-fprintf('     what it has stored — the limit — and throws the vessel past the\n');
-fprintf('     station before it unwinds. A controller that is not in charge must\n');
-fprintf('     not integrate. Integration is where a controller that works and a\n');
-fprintf('     mission that works stop being the same thing. (8-5)\n');
-end
-
-% =========================================================================
-function s = name(m)
-N = {'transit','hold','done'};  s = N{max(1, min(3, round(m)))};
-end
-
-function L = hold_lengths(y, V)
-L = zeros(1,0);
-for k = 1:numel(V.WP_N)
-    j = y.mode == 2 & y.N_d == V.WP_N(k) & y.E_d == V.WP_E(k);
-    if any(j), L(end+1) = sum(j)*V.h; end   %#ok<AGROW>
-end
-end
-
-function [pk, er] = second_hold(y, V)
-%  두 번째 유지 = 두 번째 웨이포인트에서 붙잡는 구간 / the hold at waypoint 2
-j = y.mode == 2 & y.N_d == V.WP_N(2) & y.E_d == V.WP_E(2);
-if ~any(j), pk = NaN;  er = NaN;  return; end
-t = y.t(j);
-q = j & y.t <= t(1) + 10;
-pk = max(abs(y.X(q)));
-er = mean(y.e(j));
+fprintf('    %-22s  mean heading error   mean moment   heading std\n', 'controller');
+fprintf('    %-22s %13.3f deg %13.2f Nm %10.3f deg\n', 'P-D  (Ki = 0)', A.err, A.N_mean, A.psi_std);
+fprintf('    %-22s %13.3f deg %13.2f Nm %10.3f deg\n', 'PI-D', B.err, B.N_mean, B.psi_std);
+pass = report(pass, 'P-D  settles off the command',  A.err,  3.071, 0.30, 'deg');
+pass = report(pass, 'PI-D settles on it',            B.err,  0.084, 0.25, 'deg');
+pass = report(pass, 'P-D  mean moment',              A.N_mean, -15.13, 0.60, 'N m');
+pass = report(pass, 'PI-D mean moment',              B.N_mean, -15.13, 0.60, 'N m');
+%  적분이 파랑을 쌓지 않는다는 것 — 잔물결이 양쪽에서 같아야 한다
+pass = report(pass, 'the ripple is the same on both', B.psi_std - A.psi_std, 0, 0.06, 'deg');
+fprintf('\n     The notch is unity two decades below w0, so it PASSES the slow\n');
+fprintf('     push and the loop can oppose it. The wave has zero mean, so the\n');
+fprintf('     integral does not accumulate it — which is why a notch and an\n');
+fprintf('     integral can be used together. The two halves of the sea leave\n');
+fprintf('     by two different doors. (8-6)\n');
 end
 
 % =========================================================================
 function V = base_setup()
 cfg = otter_config('base');
-V.WP_N = 0;  V.WP_E = 0;                      % 한 지점 = 처음부터 유지 / one station
-V.R_arrive = 2;  V.T_hold = 1e9;              % 영원히 붙잡는다 / hold for ever
-V.psi_fix = 0;   V.vane = 1;
-V.Kp_x = 30;  V.Ki_x = 3;  V.Kd_x = 60;  V.e_min = 0.3;  V.X_max = 120;
-V.Kp = 300;   V.Kd = 100;
-V.N_max = min(2*cfg.y_pont*(cfg.k_pos*cfg.n_max^2 - V.X_max/2), ...
-              2*cfg.y_pont*(V.X_max/2 + cfg.k_neg*cfg.n_min^2));
-V.X_ff = 60;  V.Delta = 5;  V.hand_over = 1;
-V.V_c = 0.3;  V.beta_c = pi/2;
+V.Hs = 0.3;  V.T0 = 2.0;  V.gamma_j = 3.3;  V.N_comp = 20;  V.sigma_psi = 3;
+V.w0 = 2*pi/V.T0;  V.wave_on = 1;
+V.zeta_n = 0.05;  V.zeta_d = 0.3;
+V.Kp = 300;  V.Kd = 100;  V.Ki = 0;  V.Kb = 0.1;
+V.X_ff = 60;
+V.N_max = min(2*cfg.y_pont*(cfg.k_pos*cfg.n_max^2 - V.X_ff/2), ...
+              2*cfg.y_pont*(V.X_ff/2 + cfg.k_neg*cfg.n_min^2));
+V.psi_step = 10;  V.t_step = 5;
 V.y_pont = cfg.y_pont;  V.k_pos = cfg.k_pos;  V.k_neg = cfg.k_neg;
 V.T_max = cfg.k_pos*cfg.n_max^2;  V.T_min = -cfg.k_neg*cfg.n_min^2;
 V.mp = 25;  V.rp = [0.05 0 -0.35]';  V.x0 = zeros(12,1);
-V.h = 0.02;  V.T_final = 200;
+V.N_slow = 0;  V.T_slow = 60;  V.V_c = 0;  V.beta_c = pi/2;
+V.h = 0.02;  V.T_final = 60;
 end
 
 function y = run_student(mdl, V, varargin)
-for i = 1:2:numel(varargin), V.(varargin{i}) = varargin{i+1}; end
+win = 20;                                     % 기본 구간 / the default window
+for i = 1:2:numel(varargin)
+    if strcmp(varargin{i}, 'win'), win = varargin{i+1};
+    else, V.(varargin{i}) = varargin{i+1}; end
+end
+[V.w_i, V.a_i, V.phi_i, V.k_w] = wave_train(V.Hs, V.T0, V.gamma_j, V.N_comp, V.sigma_psi);
 b = 'base';
 f = fieldnames(V);
 for i = 1:numel(f), assignin(b, f{i}, V.(f{i})); end
@@ -202,25 +190,34 @@ for i = 1:numel(f), assignin(b, f{i}, V.(f{i})); end
 evalin(b, sprintf('bdclose(''%s'');', mdl));
 load_system(mdl);
 set_param(mdl,'StopTime','T_final','ReturnWorkspaceOutputs','off');
-need(mdl,'dlog');
+need(mdl,'flog');
 evalin(b, sprintf('sim(''%s'');', mdl));
 
-D = grab(evalin(b,'dlog'),  3, 'dlog');
-M = grab(evalin(b,'mlog'),  3, 'mlog');
+F = grab(evalin(b,'flog'), 3, 'flog');
 X = grab(evalin(b,'xlog'), 12, 'xlog');
-S = evalin(b,'dlog');
-y.t = S.time;
-y.psi_d = D(:,1);  y.X = D(:,2);  y.Nm = D(:,3);
-y.N_d = M(:,1);    y.E_d = M(:,2);  y.mode = M(:,3);
-y.N = X(:,7);      y.E = X(:,8);    y.psi = X(:,12)*180/pi;
-y.e = hypot(y.N_d - y.N, y.E_d - y.E);
+S = evalin(b,'flog');
+t = S.time;
+psi = X(:,12)*180/pi;
+y.t = t;  y.psi = psi;  y.psi_m = F(:,1);  y.psi_f = F(:,2);  y.N = F(:,3);
+
+j = t > win;                                  % 강의와 같은 구간 / the lecture's window
+y.psi_std  = std(psi(j));
+y.N_std    = std(y.N(j));
+y.N_max    = max(abs(y.N(j)));
+y.wave_std = std(y.psi_m(j) - psi(j));        % 계측에 섞인 파랑 / the wave in the measurement
+y.cut      = std(y.psi_m(j) - y.psi_f(j));    % 필터가 덜어 낸 것 / what the filter removed
+%  강의 §8-6 과 같은 부호: 명령보다 **얼마나 위에** 앉는가
+%  The lecture's sign: how far ABOVE the command it settles.
+y.err      = mean(psi(j)) - V.psi_step;
+y.N_mean   = mean(y.N(j));
+[y.Mp, y.ts, y.tr] = step_metrics(t, psi, V.psi_step, V.t_step);
 end
 
 function need(mdl, name)
 if isempty(find_system(mdl,'BlockType','ToWorkspace','VariableName',name))
     error('W08_check:noLog', ...
       ['The model has no To Workspace block whose variable name is %s.\n' ...
-       'It must carry [psi_d ; X ; N] with Save format\n' ...
+       'It must carry [psi_m ; psi_f ; N] with Save format\n' ...
        '''Structure With Time''.'], name);
 end
 end

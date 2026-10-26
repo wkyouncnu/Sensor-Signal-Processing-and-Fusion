@@ -216,9 +216,9 @@ if o.speed
     goto_at(m, {'speed loop', 1}, port_xy(m, 'speed loop', 'Outport', 1), 'down', 'X');
 
     %  임무가 끝나고 stop_hold 초 뒤에 실행을 끝낸다. 5주차에는 임무 상태기계가
-    %  없으므로(그것은 8주차다) 블록 하나로 끝낸다 - 조건은 유도가 만든다.
+    %  없으므로(그것은 9주차다) 블록 하나로 끝낸다 - 조건은 유도가 만든다.
     %  The run ends stop_hold seconds after the mission does. Week 5 has no mission
-    %  state machine - that is Week 8 - so one block ends it, on a condition the
+    %  state machine - that is Week 9 - so one block ends it, on a condition the
     %  guidance produced.
     add_block('simulink/Sinks/Stop Simulation', [m '/mission over'], ...
               'Position', [600 Y+400 630 Y+430]);  % 상태 통로 아래 / below the state lane
@@ -233,11 +233,11 @@ add_block('simulink/User-Defined Functions/MATLAB Function', [m '/allocation'], 
 set_mlfcn([m '/allocation'], allocation_code(o), 'n', '[2 1]');
 %  배분기가 받는 것은 **일곱 개 전부 포트**다 (사용자 지시, 2026-10-14). 전에는
 %  선체 상수 다섯이 숨은 파라미터였으므로, 추력 곡선의 계수 k_pos·k_neg 와 폰툰
-%  간격 y_pont 가 배분식에 들어간다는 사실이 도면에 없었다. 6주차가 다루는 것이
+%  간격 y_pont 가 배분식에 들어간다는 사실이 도면에 없었다. 7주차가 다루는 것이
 %  바로 그 다섯이므로, 5주차에서 이미 선으로 보여 둔다.
 %  All seven inputs are ports now. As hidden parameters the five hull constants
 %  did not appear, so the diagram did not say that the thrust-curve coefficients
-%  and the pontoon separation enter the allocation. Week 6 is about those five.
+%  and the pontoon separation enter the allocation. Week 7 is about those five.
 ALLIN = {'y_pont','k_pos','k_neg','n_max','n_min'};
 p = port_xy(m, 'heading autopilot', 'Outport', 1);  q = port_xy(m, 'allocation', 'Inport', 1);
 set_param([m '/allocation'], 'Position', get_param([m '/allocation'], 'Position') + [0 1 0 1]*round(p(2) - q(2)));

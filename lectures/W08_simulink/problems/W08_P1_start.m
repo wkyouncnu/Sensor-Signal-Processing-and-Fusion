@@ -8,25 +8,34 @@ function W08_P1_start(mdl)
 %   무엇을 주고 무엇을 주지 않는가
 %   what this script gives, and what it withholds
 %
-%   임무 논리와 6주차의 배분과 선체를 준다. 그 사이가 비어 있다 — **어디로
-%   얼마의 힘이 필요한가**, 그리고 이 선체가 낼 수 없는 방향을 어떻게 할 것인가.
+%   바다와 선체와 7주차의 배분을 준다. 그 사이가 비어 있다 — **제어기가 무엇을
+%   보는가**, 그리고 그중 무엇을 따라가야 하는가. 그것이 이번 주의 전부다.
 %
-%       mission --> [ your controller ] --> X, N --> allocation --> Otter USV
+%       wave + x --> [ your measurement ] --> [ your notch ] --> [ autopilot ] --> N
 %
-%   The mission logic, Week 6's allocation and the hull are given, with the
-%   space between them empty: how much force is needed and in which direction,
-%   and what to do about the direction this hull cannot push.
+%   The sea, the hull and Week 7's allocation are given, with the space between
+%   them empty: what the controller sees, and which part of it should be acted
+%   on. That is the whole of this week.
+%
+%   주어지는 블록 / the blocks that are provided
+%
+%     wave        [psi_w ; r_w], one fixed realisation of a JONSWAP sea
+%     step        the commanded heading, tag psi_d
+%     slow        the wind and drift of 8-6, added to the hull after the controller
+%     allocation  Week 7's, unchanged
+%     Otter USV   n -> twelve states, tag x
+%     xlog        the twelve states
 %
 %   없는 것, 그래서 문제인 것 / what is missing, and is therefore the exercise
 %
-%     the controller, and the log dlog
+%     the measurement, the notch, the autopilot, and the log flog
 %
-%   빈 자리를 Constant 0 둘이 채우고 있어 모델은 처음부터 돈다 — 배는 아무것도
-%   하지 않고 조류에 떠내려간다. 지우고 자기 블록을 그 자리에 넣는다.
-%   Two Constants hold the place so the model runs at once: the vessel does
-%   nothing and is carried away by the current. Delete them and build there.
+%   빈 자리를 Constant 0 이 채우고 있어 모델은 처음부터 돈다 (배는 명령을 무시하고
+%   파랑 속에 떠 있을 뿐이다). 지우고 자기 블록을 그 자리에 넣는다.
+%   A Constant 0 holds the place so the model runs from the start — the vessel
+%   simply drifts, ignoring the command. Delete it and build in its place.
 %
-%   See also W08_CHECK, W08_0_SETUP, W08_S1_DP.
+%   See also W08_CHECK, W08_0_SETUP, W08_S1_NOTCH.
 
 if nargin < 1 || isempty(mdl), mdl = 'W08_P1'; end
 
@@ -47,61 +56,58 @@ set_param(mdl, 'SolverType','Fixed-step', 'Solver','ode4', ...
 
 w08_lab_bench(mdl, 120);
 
-%  모델이 처음부터 돌도록 자리를 채우는 상수 둘 / two placeholders
-CT = {'X_ctrl','N_ctrl'};
-for i = 1:2
-    add_block('simulink/Sources/Constant', [mdl '/' CT{i} ' placeholder'], ...
-              'Value','0', 'Position', [420 620+60*(i-1) 560 660+60*(i-1)]);
-    add_block('simulink/Signal Routing/Goto', [mdl '/' CT{i} ' out'], ...
-              'GotoTag', CT{i}, 'Position', [610 630+60*(i-1) 680 650+60*(i-1)]);
-    add_line(mdl, [CT{i} ' placeholder/1'], [CT{i} ' out/1'], 'autorouting','smart');
-end
+%  모델이 처음부터 돌도록 자리를 채우는 상수 / a placeholder so it runs at once
+add_block('simulink/Sources/Constant', [mdl '/N placeholder'], ...
+          'Value','0', 'Position', [300 500 440 540]);
+add_block('simulink/Signal Routing/Goto', [mdl '/N_ctrl out'], 'GotoTag','N_ctrl', ...
+          'Position', [490 510 560 530]);
+add_line(mdl, 'N placeholder/1', 'N_ctrl out/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 8 LABORATORY  -  BUILD THE POSITION CONTROLLER YOURSELF'
+'WEEK 7 LABORATORY  -  BUILD THE MEASUREMENT PATH YOURSELF'
 ''
-'The mission, the allocation and the hull are given. What decides how much'
-'force is needed, and in which direction, is not.'
+'The sea, the hull and Week 7''s allocation are given. What the controller'
+'SEES is not. Delete the placeholder and build in its place.'
 ''
-'PROBLEM 1   How much force, and how much of it can be delivered. A PID on'
-'            the position error in BOTH north and east:'
+'PROBLEM 1   The measurement, and the notch. Form what the sensor really'
+'            reports, then take out of it only what cannot be followed:'
 ''
-'               f_n = Kp_x e_n + I_n - Kd_x v_n'
-'               f_e = Kp_x e_e + I_e - Kd_x v_e'
+'               psi_m = psi + psi_w            r_m = r + r_w'
 ''
-'            Only the along-bow part can reach the propellers:'
+'                       s^2 + 2 zeta_n w0 s + w0^2'
+'               H(s) = ---------------------------- ,   zeta_n < zeta_d'
+'                       s^2 + 2 zeta_d w0 s + w0^2'
 ''
-'               X = f_n cos(psi) + f_e sin(psi)'
+'            on BOTH channels. Then Week 4''s autopilot, gains unchanged:'
 ''
-'            Hold the heading FIXED at psi_fix and watch what happens.'
+'               N = Kp ssa(psi_d - psi_f) - Kd r_f,   |N| <= N_max'
 ''
-'PROBLEM 2   Point the bow along the force that is needed:'
+'PROBLEM 2   What it costs. No building. Switch the sea off and give the same'
+'            10 deg step, with the filter in and with zeta_n = zeta_d.'
 ''
-'               psi_d = atan2(f_e, f_n)      while |f| > e_min'
+'PROBLEM 3   The slow part must NOT be filtered. Add the integral of Week 4,'
+'            with back-calculation, and meet a 15 N m push:'
 ''
-'            Then Week 4''s autopilot, gains unchanged:'
-''
-'               N = Kp ssa(psi_d - psi) - Kd r,   |N| <= N_max'
-''
-'PROBLEM 3   Three waypoints. Add the transit branch -- a constant push X_ff'
-'            and the bow towards the waypoint -- and hand the integral over'
-'            at a change of mode, so that a hold does not begin with the'
-'            transit''s accumulated demand.'
+'               u = Kp e + I - Kd r_f ;   N = sat(u) ;   I += h(Ki e + Kb(N-u))'
 ''
 'THE MODEL MUST CONTAIN'
 ''
 '   xlog   To Workspace, Structure With Time, the plant''s 12 states  (given)'
-'   mlog   To Workspace, Structure With Time, [N_d ; E_d ; mode]     (given)'
-'   dlog   To Workspace, Structure With Time, [psi_d ; X ; N]'
-'          -- the heading YOU command, in deg, and the two demands, in N and N m'
+'   flog   To Workspace, Structure With Time, [psi_m ; psi_f ; N]'
+'          -- the measurement, what the controller USES, and the moment it asks'
+'             for, in deg, deg and N m'
+''
+'   psi_f is logged so that the checker can see WHETHER the filter is in the'
+'   loop, not merely whether the vessel behaved. With zeta_n = zeta_d it must'
+'   equal psi_m exactly, and that is how the comparison is kept honest.'
 ''
 'CHECK YOUR WORK AT ANY TIME'
 ''
 ['   >> W08_check(1, ''' mdl ''')      and 2, and 3']
 ''
 'DO NOT CHANGE the solver settings: fixed-step ode4 at h = 0.02 s.'}, newline);
-a.Position = [120 760 1180 1300];
+a.Position = [120 600 1140 1080];
 a.HorizontalAlignment = 'left';
 a.BackgroundColor = 'lightBlue';
 

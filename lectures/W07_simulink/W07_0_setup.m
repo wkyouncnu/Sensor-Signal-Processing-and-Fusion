@@ -1,17 +1,14 @@
 %% W07 · 실험 7-0 — 이번 주의 값들 / Experiment 7-0 — the parameters of this week
 %
-%  학생이 손으로 고치는 유일한 파일이다. 모델의 어느 블록에도 숫자가 없다.
-%  The only file edited by hand; no block holds a number.
+%  학생이 손으로 고치는 유일한 파일이다. 모델의 어느 블록에도 숫자가 없다 — 전부
+%  여기 있는 변수 이름을 읽는다. 값을 하나 바꾸고 모델에서 Run 을 누르면 된다.
+%  The only file edited by hand. No block holds a number; every one of them reads
+%  a variable defined here. Change one value and press Run in a model.
 %
-%  무엇이 들어 있는가 / what is in it
-%      바다 (유의파고·첨두주기·JONSWAP 첨두계수·성분 수·선수각 표준편차)
-%      노치 필터 두 값 (깊이 zeta_n, 너비 zeta_d)
-%      4주차의 오토파일럿 게인, 명령, 선체와 추진기, 조류
-%      the sea, the two numbers of the notch, the Week 4 autopilot, the command,
-%      the hull and its thrusters, and the current
-%
-%  같은 값이 W07_vars.m 에도 있다. 둘을 함께 고친다 — verify_w07_waves 의 검사 1 이 대조한다.
-%  The same values live in W07_vars.m; edit both, and check 1 compares them.
+%  같은 값이 W07_vars.m 에도 있다 (스크립트가 한 번에 여러 값을 바꿔 돌릴 때 쓴다).
+%  둘을 함께 고친다 — verify_w07_allocation 의 검사 1 이 대조한다.
+%  The same values live in W07_vars.m, which the section scripts use to change a
+%  few at a time. Edit both; check 1 of verify_w07_allocation compares them.
 
 clear
 
@@ -20,59 +17,36 @@ root = fileparts(fileparts(here));
 addpath(fullfile(root, '_tools'), here);
 mss_path();
 
-%% 바다 / the sea — JONSWAP
-Hs        = 0.3;              % 유의파고 / significant wave height             [m]
-T0        = 2.0;              % 첨두주기 / peak period                         [s]
-gamma_j   = 3.3;              % JONSWAP 첨두 계수 / peak enhancement
-N_comp    = 20;               % 성분 수 / number of components
-sigma_psi = 3;                % 1차 파랑이 만드는 선수각의 표준편차 / std of the wave-induced heading [deg]
-w0        = 2*pi/T0;          % 첨두 주파수 / peak frequency                   [rad/s]
-wave_on   = 1;                % 0 이면 바다를 끈다 / 0 switches the sea off
+%% 선체와 추진기 / the hull and its thrusters — 부록 A1 의 값
+cfg    = otter_config('base');
+y_pont = cfg.y_pont;          % 추진기 팔, 폰툰 간격의 절반 / thruster arm    [m]
+k_pos  = cfg.k_pos;           % 전진 추력계수 / ahead coefficient             [N/(rad/s)^2]
+k_neg  = cfg.k_neg;           % 후진 추력계수 / astern coefficient
+n_max  = cfg.n_max;           % 회전수 한계 / shaft speed limits              [rad/s]
+n_min  = cfg.n_min;
+T_max  =  k_pos*n_max^2;      % 추진기 하나의 추력 한계 / one propeller's limits  [N]
+T_min  = -k_neg*n_min^2;
 
-%  스펙트럼에서 성분을 뽑는다. 위상은 정해져 있으므로 실행할 때마다 같은 바다다.
-%  The components come from the spectrum; the phases are fixed, so the sea is
-%  the same on every run (→ _tools/wave_train.m).
-[w_i, a_i, phi_i, k_w] = wave_train(Hs, T0, gamma_j, N_comp, sigma_psi);
+%% 요구하는 일반화 힘 / the generalised force demanded — 시간표는 모델마다 다르다
+X_cmd = 100;                  % 전진력 / surge force                          [N]
+N_cmd = 20;                   % 요 모멘트 / yaw moment                        [N m]
+Y_cmd = 30;                   % 횡력 — 이 선체가 낼 수 없는 것 / sway, which this hull cannot make  [N]
+X_big = 220;                  % 한계를 넘기는 요구 / a demand past the limits  [N]
+N_big = 50;                   %                                               [N m]
 
-%% 노치 필터 / the notch filter
-%     H(s) = (s^2 + 2 zeta_n w0 s + w0^2) / (s^2 + 2 zeta_d w0 s + w0^2)
-%  zeta_n 이 작을수록 w0 에서 깊게 파이고, zeta_d 가 클수록 넓게 걸린다.
-%  zeta_n = zeta_d 로 두면 H(s) = 1 이 되어 필터가 사라진다 — 끄는 방법이다.
-zeta_n = 0.05;                % 깊이 / depth:  |H(j w0)| = zeta_n / zeta_d
-zeta_d = 0.3;                 % 너비 / width
+%% 배분기의 두 스위치 / the two switches of the allocator
+fit_mode = 1;                 % 1 = 비율로 줄인다 (방향 유지), 0 = 잘라 낸다 / 1 scales, 0 clips
+use_kneg = 1;                 % 1 = 후진에 k_neg 를 쓴다 (옳다), 0 = 양방향 k_pos
 
-%% 선수각 오토파일럿 (4주차) / the heading autopilot of Week 4
-cfg = otter_config('base');
-Kp = 300;  Kd = 100;  Ki = 20;  Kb = 0.1;
-X_ff  = 60;                   % 전진력 / surge force                           [N]
-N_max = min(2*cfg.y_pont*(cfg.k_pos*cfg.n_max^2 - X_ff/2), ...
-            2*cfg.y_pont*(X_ff/2 + cfg.k_neg*cfg.n_min^2));
-
-%% 명령 / the command
-psi_step = 10;                % 목표 선수각 / commanded heading                [deg]
-t_step   = 5;                 % 계단 시각 / the instant of the step            [s]
-
-%% 선체와 추진기 / hull and thrusters
-y_pont = cfg.y_pont;  k_pos = cfg.k_pos;  k_neg = cfg.k_neg;
-T_max  = cfg.k_pos*cfg.n_max^2;  T_min = -cfg.k_neg*cfg.n_min^2;
-mp = 25;  rp = [0.05 0 -0.35]';
+%% 선체 상태와 시뮬레이션 / the vessel and the run
+mp = 25;  rp = [0.05 0 -0.35]';     % 적재물 / payload
+V_c = 0;  beta_c = 0;               % 조류 없음 / no current
 x0 = zeros(12,1);
-
-%% 느린 외란 / the slow disturbance of §7-6 — 바람과 2차 파랑 표류
-%  바람과 2차 파랑 표류는 파랑보다 훨씬 느리게 변하는 힘이다. 여기서는 요 모멘트
-%  하나로 적고, 제어기 뒤에서 더한다 — 선체가 받는 것은 제어 모멘트와 그 합이다.
-%  Wind and second-order wave drift vary far more slowly than the waves. Here they
-%  are one yaw moment, added after the controller: the hull receives the sum.
-N_slow = 15;                  % 평균 요 모멘트 / mean yaw moment               [N m]
-T_slow = 60;                  % 그것이 변하는 주기 / the period it varies over [s]
-V_c = 0;  beta_c = pi/2;
-
-h = 0.02;  T_final = 60;
+h = 0.02;  T_final = 45;
 
 fprintf(['\n  W07_0_setup\n' ...
-         '    sea       Hs = %.2f m, T0 = %.1f s  ->  w0 = %.3f rad/s;  %d components\n' ...
-         '    response  the wave-induced heading has a standard deviation of %.1f deg\n' ...
-         '    notch     zeta_n = %.2f, zeta_d = %.2f  ->  |H(j w0)| = %.3f (%.1f dB)\n' ...
-         '    autopilot Kp = %g, Kd = %g, Ki = %g;  |N| <= %.2f N m\n\n'], ...
-        Hs, T0, w0, N_comp, sigma_psi, zeta_n, zeta_d, zeta_n/zeta_d, ...
-        20*log10(zeta_n/zeta_d), Kp, Kd, Ki, N_max);
+         '    hull      arm y_pont = %.3f m,  one propeller gives T in [%.2f, %.2f] N\n' ...
+         '    curve     T = k n|n| with k_pos = %.5f ahead, k_neg = %.5f astern\n' ...
+         '    demand    X = %g N, N = %g N m;  the sway asked for in 7-3 is Y = %g N\n' ...
+         '    allocator fit_mode = %g (1 scales, 0 clips),  use_kneg = %g\n\n'], ...
+        y_pont, T_min, T_max, k_pos, k_neg, X_cmd, N_cmd, Y_cmd, fit_mode, use_kneg);

@@ -4,10 +4,10 @@ function cfg = otter_config(name)
 %
 %   cfg = otter_config('base')          폰툰마다 고정 프로펠러 하나씩
 %                                       two fixed propellers, one per pontoon
-%   cfg = otter_config('aft_azimuth')   방향을 바꿀 수 있는 선미 추진기 둘 (10주차)
-%                                       two tilting stern thrusters (Week 10)
-%   cfg = otter_config('bow_thruster')  기본 구성에 선수 터널 추진기 하나 (11주차)
-%                                       base plus one bow tunnel thruster (Week 11)
+%   cfg = otter_config('aft_azimuth')   방향을 바꿀 수 있는 선미 추진기 둘 (11주차)
+%                                       two tilting stern thrusters (Week 11)
+%   cfg = otter_config('bow_thruster')  기본 구성에 선수 터널 추진기 하나 (12주차)
+%                                       base plus one bow tunnel thruster (Week 12)
 %   cfg = otter_config('quad_tilt')     ±45 도로 기우는 추진기 넷 (12주차)
 %                                       four tilting thrusters, ±45 deg (Week 12)
 %
@@ -85,7 +85,7 @@ switch cfg.name
         cfg.input_mode = 'n';                % Week 1 drives shaft speeds
 
     case 'aft_azimuth'
-        % Week 10. The two pontoon thrusters move aft and gain a servo.
+        % Week 11. The two pontoon thrusters move aft and gain a servo.
         cfg.n_thr = 2;
         cfg.tilt  = [true true];
         cfg.pos   = [ -l_a     -l_a   ;
@@ -95,7 +95,7 @@ switch cfg.name
         cfg.alpha_rlim = deg2rad([90 90]);
 
     case 'bow_thruster'
-        % Week 11. The base hull plus one fixed transverse thruster forward.
+        % Week 12. The base hull plus one fixed transverse thruster forward.
         cfg.n_thr = 3;
         cfg.tilt  = [false false false];
         cfg.pos   = [   0        0      l_f ;

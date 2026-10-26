@@ -1,8 +1,8 @@
 function tidy_all(root)
 % TIDY_ALL  주차별 Simulink 모델을 모두 정리하고 결과를 표로 보고한다.
 %
-%   tidy_all                       % 기본 볼트 경로
-%   tidy_all('<10-주차별-강의자료 경로>')
+%   tidy_all                       % 볼트의 lectures/
+%   tidy_all('<주차 폴더들이 있는 경로>')
 %
 %   각 모델에 tidy_layout 을 적용한 뒤
 %     - 블록 겹침 쌍
@@ -10,12 +10,16 @@ function tidy_all(root)
 %   를 센다. 겹침 0 이 목표다.
 
 if nargin < 1
-    root = fullfile(fileparts(fileparts(mfilename('fullpath'))), '10-주차별-강의자료');
+    here = fileparts(mfilename('fullpath'));            % .claude/skills/<스킬>/scripts
+    vault = fileparts(fileparts(fileparts(fileparts(here))));
+    root = fullfile(vault, 'lectures');
 end
 addpath(fileparts(mfilename('fullpath')));
 
-folders = {'W06_0_simulink','W06_simulink','W07_simulink', ...
-           'W08_simulink','W09_simulink'};
+%  폴더를 손으로 적지 않는다 — 주차 번호가 밀릴 때마다 틀어진다 (2026-10-26).
+%  `lectures/` 를 읽어 `*_simulink` 를 그대로 쓴다.
+d0 = dir(fullfile(root, '*_simulink'));
+folders = sort({d0([d0.isdir]).name});
 
 home = pwd;
 fprintf('\n%-26s %6s %6s %6s %6s\n','모델','블록','겹침','선','꺾임');

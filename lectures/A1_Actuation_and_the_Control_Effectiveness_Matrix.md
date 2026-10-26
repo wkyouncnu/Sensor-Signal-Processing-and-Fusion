@@ -57,7 +57,7 @@ status: done
 
 > [!important] When to read this
 > - This appendix is **optional for Weeks 3 and 4**. Those weeks need only two results from it, and both are quoted where they are used: the vessel can produce $X \in [-133.42,\ 239.36]$ N, and its yaw moment is $N = y_{\text{pont}}(T_1 - T_2)$.
-> - It becomes **required before Week 6**, where the allocation problem stops having an obvious answer, and before Weeks 10 to 12, where the thruster layout changes three times.
+> - It becomes **required before Week 7**, where the allocation problem stops having an obvious answer, and before Weeks 11 to 12, where the thruster layout changes three times.
 > - Prerequisites: Week 1 — the twelve states, $T = k\,n|n|$ with $k_{\text{pos}} \neq k_{\text{neg}}$, and the observation that $Y \equiv 0$. Here that observation becomes a theorem.
 
 ---
@@ -104,7 +104,7 @@ $$
 
 **Every $\mathbf{B}$ in this course is produced by that expression** — none is transcribed from another file. The Otter's sway row is empty because both propellers face forward and $e_y = 0$, not because someone decided it should be.
 
-This appendix is a prerequisite for Week 6 and is referenced from Weeks 3, 4 and 5 wherever a demanded force has to become a shaft speed.
+This appendix is a prerequisite for Week 7 and is referenced from Weeks 3, 4 and 5 wherever a demanded force has to become a shaft speed.
 
 ## A1-1. The problem this week solves
 
@@ -112,9 +112,9 @@ This appendix is a prerequisite for Week 6 and is referenced from Weeks 3, 4 and
 
 | Reason | Where it is felt |
 |---|---|
-| Weeks 10 to 12 change the thruster layout three times | a transcribed matrix would have to be re-derived and re-checked three times |
+| Weeks 11 to 12 change the thruster layout three times | a transcribed matrix would have to be re-derived and re-checked three times |
 | This project already ships two mutually **negative** $\mathbf{B}$ matrices | a transcribed matrix cannot be told apart from its own sign error |
-| Week 6 inverts $\mathbf{B}$ | an inverse is only as trustworthy as the matrix it inverts |
+| Week 7 inverts $\mathbf{B}$ | an inverse is only as trustworthy as the matrix it inverts |
 
 > [!caution] Two contradictory matrices exist in this repository
 > `Lecture/_tools/otter4_B.m` and `otter_params.m` line 41 differ by an overall sign. Neither is imported into this course. Every $\mathbf{B}$ used from this week onward is produced by `_tools/otter_B.m` from the single rule of §A1-2, so a sign convention cannot enter twice.
@@ -247,7 +247,7 @@ $$
 \mathbf{B}^{\dagger}\begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix} = \begin{bmatrix} 0 \\ 0 \end{bmatrix},
 $$
 
-- that is, the least-squares allocator correctly answers *do nothing*, because doing nothing is the closest reachable point to a request that lies outside the column space. Week 6 makes this precise.
+- that is, the least-squares allocator correctly answers *do nothing*, because doing nothing is the closest reachable point to a request that lies outside the column space. Week 7 makes this precise.
 
 ## A1-4. Tilting thrusters and the extended thrust vector
 
@@ -275,7 +275,7 @@ $$
 $$
 
 - This is the **extended thrust vector** of Fossen (2011) §12.3.4. The azimuth is recovered after the allocation rather than solved for during it.
-- The cost is that the two components of one machine are not independent: $\sqrt{f_{ix}^2 + f_{iy}^2} \le T_{\max}$ is a circular constraint, and $\delta_i$ is subject to a mechanical limit and a rate limit. Week 6 handles both; this week only records that the linear structure has been bought and what it was bought with.
+- The cost is that the two components of one machine are not independent: $\sqrt{f_{ix}^2 + f_{iy}^2} \le T_{\max}$ is a circular constraint, and $\delta_i$ is subject to a mechanical limit and a rate limit. Week 7 handles both; this week only records that the linear structure has been bought and what it was bought with.
 
 ### The four layouts of this course
 
@@ -310,11 +310,11 @@ The first panel shows why it is the exception. Both `base` arrows point the same
 
 That is exactly what the second panel is: the same two machines, moved aft and made steerable. Nothing was added, and the rank goes from 2 to 3. **Actuation authority is a property of directions, not of thrust** — the strongest claim in this appendix, and one panel apart from the one that contradicts it.
 
-The last two panels separate for a different reason. `bow_thruster` is square, three columns for three demands, so the allocation has exactly one answer and there is nothing to choose. `quad_tilt` has eight columns for three demands, so its answers form a five-dimensional set and **something has to decide between them**. That decision is what Week 6 is for.
+The last two panels separate for a different reason. `bow_thruster` is square, three columns for three demands, so the allocation has exactly one answer and there is nothing to choose. `quad_tilt` has eight columns for three demands, so its answers form a five-dimensional set and **something has to decide between them**. That decision is what Week 7 is for.
 
 - Two observations follow immediately, and both matter later.
   - `aft_azimuth` reaches rank 3 with **the same two physical machines** as `base`. The third degree of freedom is bought with servos, not with thrusters.
-  - `bow_thruster` has a **square** $\mathbf{B}$ with rank 3, so the allocation has a unique solution and there is nothing to optimise. `quad_tilt` has a five-dimensional null space, so it has infinitely many solutions and Week 6's machinery finally has something to do.
+  - `bow_thruster` has a **square** $\mathbf{B}$ with rank 3, so the allocation has a unique solution and there is nothing to optimise. `quad_tilt` has a five-dimensional null space, so it has infinitely many solutions and Week 7's machinery finally has something to do.
 
 ## A1-5. Symmetry in the command is not symmetry in the force
 
@@ -409,7 +409,7 @@ $$
 - Week 1 attributed the sway velocity of a turn to the Coriolis term. For the **steady** value that is correct: setting $\dot{\boldsymbol{\nu}} = \mathbf{0}$ removes $\mathbf{M}$ from the equation. This section is about the transient, and both mechanisms are real.
 
 > [!important] Actuation rank and controllability are different questions
-> A rank-2 $\mathbf{B}$ says the vessel cannot be *pushed* sideways. It does not say the vessel cannot *reach* a point to its side — it plainly can, by turning and driving. What underactuation costs is the ability to do so **without changing heading**, and that is exactly what Week 8 needs for dynamic positioning and cannot have from this hull.
+> A rank-2 $\mathbf{B}$ says the vessel cannot be *pushed* sideways. It does not say the vessel cannot *reach* a point to its side — it plainly can, by turning and driving. What underactuation costs is the ability to do so **without changing heading**, and that is exactly what Week 9 needs for dynamic positioning and cannot have from this hull.
 
 ---
 
@@ -497,7 +497,7 @@ The table is produced from `otter_config` alone; no simulation is involved.
   B * that            = [0.000e+00 ; 0.000e+00 ; 0.000e+00]
 ```
 
-- The least-squares allocator asks for no thrust at all when it is asked for pure sway. That is the correct answer to an impossible request, and it is worth seeing before Week 6 assigns it a name.
+- The least-squares allocator asks for no thrust at all when it is asked for pure sway. That is the correct answer to an impossible request, and it is worth seeing before Week 7 assigns it a name.
 
 ## D. The attainable control set (15 min)
 
@@ -769,5 +769,5 @@ Read the size honestly: sway reaches $-0.015$ m/s and then turns back. This coup
 | $X \in [-133.42,\ 239.36]$ N | Week 3, as the saturation that causes integrator windup |
 | $N = y_{\text{pont}}(T_1 - T_2)$ | Week 4, as the yaw allocation |
 | $n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}}$ | Week 4, which produces the same pair automatically by allocating **thrust** rather than shaft speed |
-| the column rule and $\mathbf{B}^{\dagger}$ | Week 6, control allocation |
-| the four layouts and their ranks | Weeks 10 to 12, the hull variants |
+| the column rule and $\mathbf{B}^{\dagger}$ | Week 7, control allocation |
+| the four layouts and their ranks | Weeks 11 to 12, the hull variants |

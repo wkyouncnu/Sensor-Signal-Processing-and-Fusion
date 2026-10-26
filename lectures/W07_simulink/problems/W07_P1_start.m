@@ -8,34 +8,30 @@ function W07_P1_start(mdl)
 %   무엇을 주고 무엇을 주지 않는가
 %   what this script gives, and what it withholds
 %
-%   바다와 선체와 6주차의 배분을 준다. 그 사이가 비어 있다 — **제어기가 무엇을
-%   보는가**, 그리고 그중 무엇을 따라가야 하는가. 그것이 이번 주의 전부다.
+%   요구를 내는 시간표와 선체를 준다. 그 둘 사이가 비어 있다 —
+%   **요구한 힘을 두 축의 회전수로 바꾸는 일**, 그것이 배분이고 이번 주의 전부다.
 %
-%       wave + x --> [ your measurement ] --> [ your notch ] --> [ autopilot ] --> N
+%       demand --> [ your allocator ] --> n --> Otter USV
 %
-%   The sea, the hull and Week 6's allocation are given, with the space between
-%   them empty: what the controller sees, and which part of it should be acted
-%   on. That is the whole of this week.
+%   It provides the demand timetable and the hull, with the space between them
+%   empty. Turning a demanded force into two shaft speeds is allocation, and it
+%   is the whole of this week.
 %
 %   주어지는 블록 / the blocks that are provided
 %
-%     wave        [psi_w ; r_w], one fixed realisation of a JONSWAP sea
-%     step        the commanded heading, tag psi_d
-%     slow        the wind and drift of 7-6, added to the hull after the controller
-%     allocation  Week 6's, unchanged
-%     Otter USV   n -> twelve states, tag x
-%     xlog        the twelve states
+%     demand       t -> [X_cmd ; N_cmd], tags X_cmd and N_cmd
+%     Otter USV    n -> twelve states
+%     xlog         the twelve states
 %
 %   없는 것, 그래서 문제인 것 / what is missing, and is therefore the exercise
 %
-%     the measurement, the notch, the autopilot, and the log flog
+%     the allocator, and the log alog
 %
-%   빈 자리를 Constant 0 이 채우고 있어 모델은 처음부터 돈다 (배는 명령을 무시하고
-%   파랑 속에 떠 있을 뿐이다). 지우고 자기 블록을 그 자리에 넣는다.
-%   A Constant 0 holds the place so the model runs from the start — the vessel
-%   simply drifts, ignoring the command. Delete it and build in its place.
+%   빈 자리를 Constant [0;0] 이 채우고 있어 모델은 처음부터 돈다. 지우고 자기
+%   블록을 그 자리에 넣는다 / a Constant [0;0] holds the place so the model runs
+%   from the start; delete it and put the allocator there.
 %
-%   See also W07_CHECK, W07_0_SETUP, W07_S1_NOTCH.
+%   See also W07_CHECK, W07_0_SETUP, W07_S1_ALLOCATION.
 
 if nargin < 1 || isempty(mdl), mdl = 'W07_P1'; end
 
@@ -57,57 +53,49 @@ set_param(mdl, 'SolverType','Fixed-step', 'Solver','ode4', ...
 w07_lab_bench(mdl, 120);
 
 %  모델이 처음부터 돌도록 자리를 채우는 상수 / a placeholder so it runs at once
-add_block('simulink/Sources/Constant', [mdl '/N placeholder'], ...
-          'Value','0', 'Position', [300 500 440 540]);
-add_block('simulink/Signal Routing/Goto', [mdl '/N_ctrl out'], 'GotoTag','N_ctrl', ...
-          'Position', [490 510 560 530]);
-add_line(mdl, 'N placeholder/1', 'N_ctrl out/1', 'autorouting','smart');
+add_block('simulink/Sources/Constant', [mdl '/n placeholder'], ...
+          'Value','[0;0]', 'Position', [560 180 700 220]);
+add_line(mdl, 'n placeholder/1', 'Otter USV/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 7 LABORATORY  -  BUILD THE MEASUREMENT PATH YOURSELF'
+'WEEK 6 LABORATORY  -  BUILD THE ALLOCATOR YOURSELF'
 ''
-'The sea, the hull and Week 6''s allocation are given. What the controller'
-'SEES is not. Delete the placeholder and build in its place.'
+'The demand and the hull are given. Only what turns one into the other is'
+'missing. Delete the placeholder and put your own allocator in its place.'
 ''
-'PROBLEM 1   The measurement, and the notch. Form what the sensor really'
-'            reports, then take out of it only what cannot be followed:'
+'PROBLEM 1   The square rule, and the propeller curve. From the demanded'
+'            surge force and yaw moment, produce two shaft speeds:'
 ''
-'               psi_m = psi + psi_w            r_m = r + r_w'
+'               T1 = X/2 + N/(2 y_pont)      T2 = X/2 - N/(2 y_pont)'
+'               n_i = sign(T_i) sqrt(|T_i| / k)'
 ''
-'                       s^2 + 2 zeta_n w0 s + w0^2'
-'               H(s) = ---------------------------- ,   zeta_n < zeta_d'
-'                       s^2 + 2 zeta_d w0 s + w0^2'
+'PROBLEM 2   Astern is a different curve. k_pos ahead, k_neg astern, chosen'
+'            by the SIGN OF THE THRUST. Getting this wrong turns a pure yaw'
+'            demand into surge that nobody asked for.'
 ''
-'            on BOTH channels. Then Week 4''s autopilot, gains unchanged:'
+'PROBLEM 3   The demand does not always fit. Put the thrust limits in FRONT'
+'            of the curve and choose between the two rules with fit_mode:'
 ''
-'               N = Kp ssa(psi_d - psi_f) - Kd r_f,   |N| <= N_max'
-''
-'PROBLEM 2   What it costs. No building. Switch the sea off and give the same'
-'            10 deg step, with the filter in and with zeta_n = zeta_d.'
-''
-'PROBLEM 3   The slow part must NOT be filtered. Add the integral of Week 4,'
-'            with back-calculation, and meet a 15 N m push:'
-''
-'               u = Kp e + I - Kd r_f ;   N = sat(u) ;   I += h(Ki e + Kb(N-u))'
+'               fit_mode = 0   clip each thrust into [T_min, T_max]'
+'               fit_mode = 1   scale BOTH by the one factor s <= 1 that fits'
 ''
 'THE MODEL MUST CONTAIN'
 ''
 '   xlog   To Workspace, Structure With Time, the plant''s 12 states  (given)'
-'   flog   To Workspace, Structure With Time, [psi_m ; psi_f ; N]'
-'          -- the measurement, what the controller USES, and the moment it asks'
-'             for, in deg, deg and N m'
+'   alog   To Workspace, Structure With Time, [X_cmd ; N_cmd ; n1 ; n2]'
+'          -- the COMMAND and the SHAFT SPEEDS, in that order'
 ''
-'   psi_f is logged so that the checker can see WHETHER the filter is in the'
-'   loop, not merely whether the vessel behaved. With zeta_n = zeta_d it must'
-'   equal psi_m exactly, and that is how the comparison is kept honest.'
+'The thrusts are deliberately not logged. The checker recovers them from the'
+'shaft speeds through the propeller curve, which is what the hull does, so a'
+'wrong curve cannot be hidden by logging the thrust that was intended.'
 ''
 'CHECK YOUR WORK AT ANY TIME'
 ''
 ['   >> W07_check(1, ''' mdl ''')      and 2, and 3']
 ''
 'DO NOT CHANGE the solver settings: fixed-step ode4 at h = 0.02 s.'}, newline);
-a.Position = [120 600 1140 1080];
+a.Position = [120 430 1040 810];
 a.HorizontalAlignment = 'left';
 a.BackgroundColor = 'lightBlue';
 

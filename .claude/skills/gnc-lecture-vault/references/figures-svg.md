@@ -9,7 +9,7 @@
 | 형식 | **SVG 가 기본.** PNG 는 실제 화면 스크린샷일 때만 |
 | 참조 | 표준 마크다운 `![인지 판단 제어 파이프라인](../figures/w01-pipeline.svg)` |
 
-모델 도면 PNG 는 예외로 주차 폴더 안에 둔다 — `W07_simulink/img/*.png`.
+모델 도면 PNG 는 예외로 주차 폴더 안에 둔다 — `W08_simulink/img/*.png`.
 `print('-s모델','-dpng','-r100', fullfile(pwd,'img','모델.png'))` 로 뽑는다.
 
 ---

@@ -5,9 +5,9 @@ function W08_S_expected()
 %   >> W08_S_expected
 %
 %   만드는 것 / produces
-%       ../problems/img/W08_P1_expected.png   the direction it cannot hold
-%       ../problems/img/W08_P2_expected.png   the bow set free
-%       ../problems/img/W08_P3_expected.png   the mission, and the handover
+%       ../problems/img/W08_P1_expected.png   the notch, and the effort it saves
+%       ../problems/img/W08_P2_expected.png   what it costs, with the sea off
+%       ../problems/img/W08_P3_expected.png   the slow part, and the integral
 
 here = fileparts(mfilename('fullpath'));
 week = fileparts(here);
@@ -16,68 +16,57 @@ addpath(fullfile(root,'_tools'), week, fullfile(week,'problems'), here);
 mss_path();
 img = fullfile(week, 'problems', 'img');
 if ~isfolder(img), mkdir(img); end
-if ~isfile(fullfile(here,'W08_S1.slx')), W08_S1_dp; end
+if ~isfile(fullfile(here,'W08_S1.slx')), W08_S1_notch; end
 V0 = defaults();
 
-%% ---- 문제 1 · 지킬 수 없는 방향 / the direction it cannot hold ---------
-V = V0;  V.vane = 0;
-A = run_one('W08_S1', V);
-f = lab_fig('W08 Problem 1  the direction it cannot hold', 1000, 460);
-subplot(1,2,1); hold on; grid on; axis equal;
-plot(A.E, A.N, 'LineWidth', 1.5);
-track_ships({[A.N A.E A.psi]}, [0 0.45 0.74], 'Marks', 7);
-plot(0, 0, 'kp', 'MarkerSize', 12, 'MarkerFaceColor', 'k');
-quiver(2, -6, 8, 0, 0, 'Color', [0 0.45 0.74], 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
-text(3, -9, 'current');  xlabel('east [m]');  ylabel('north [m]');
-title('the bow is held north; the vessel goes east');
-subplot(1,2,2); hold on; grid on;
-yyaxis left;  plot(A.t, A.e, 'LineWidth', 2);  ylabel('distance from the station [m]');
-yyaxis right; plot(A.t, A.X, 'LineWidth', 2);  ylabel('X [N]');  ylim([-5 5]);
-xlabel('time [s]');
-title('the error grows and the surge force never leaves zero');
+%% ---- 문제 1 · 노치와 그것이 아껴 주는 것 / the notch, and the effort saved
+A = run_one('W08_S1', V0, 'zeta_n', V0.zeta_d);
+B = run_one('W08_S1', V0, 'zeta_n', 0.05);
+s = tf('s');
+H = (s^2 + 2*0.05*V0.w0*s + V0.w0^2)/(s^2 + 2*V0.zeta_d*V0.w0*s + V0.w0^2);
+w = logspace(-1, 1.3, 400);  mag = squeeze(bode(H, w));
+f = lab_fig('W08 Problem 1  the notch', 1000, 620);
+subplot(2,1,1); semilogx(w, 20*log10(mag), 'LineWidth', 2); grid on;
+xline(V0.w0, 'r--', '\omega_0');  ylabel('|H| [dB]');  xlabel('frequency [rad/s]');
+title(sprintf('%.1f dB at \\omega_0, and 0 dB where the vessel is steered', ...
+              20*log10(0.05/V0.zeta_d)));
+subplot(2,1,2); hold on; grid on; xlim([20 40]);
+plot(A.t, A.N, 'Color', [0.7 0.7 0.7], 'LineWidth', 1.2, 'DisplayName', 'no filter');
+plot(B.t, B.N, 'LineWidth', 1.4, 'DisplayName', 'notch');
+yline([-1 1]*V0.N_max, 'r:', 'HandleVisibility','off');
+ylabel('N [N m]');  xlabel('time [s]');  legend('Location','northeast');
+title('the same sea, the same gains: what the propellers are asked for');
 exportgraphics(f, fullfile(img, 'W08_P1_expected.png'), 'Resolution', 150);
 
-%% ---- 문제 2 · 뱃머리를 놓아 준다 / the bow set free --------------------
-V = V0;  V.vane = 1;
-B = run_one('W08_S1', V);
-f = lab_fig('W08 Problem 2  the bow set free', 1000, 460);
-subplot(1,2,1); hold on; grid on; axis equal;
-plot(B.E, B.N, 'LineWidth', 1.5);
-track_ships({[B.N B.E B.psi]}, [0 0.45 0.74], 'Marks', 6);
-plot(0, 0, 'kp', 'MarkerSize', 12, 'MarkerFaceColor', 'k');
-quiver(1.2, -2.2, 1.2, 0, 0, 'Color', [0 0.45 0.74], 'LineWidth', 1.5, 'MaxHeadSize', 0.5);
-text(1.4, -2.6, 'current');  xlabel('east [m]');  ylabel('north [m]');
-title('the vessel stays; the bow turns into the flow');
-subplot(1,2,2); hold on; grid on;
-yyaxis left;  plot(B.t, B.psi, 'LineWidth', 2);  ylabel('\psi [deg]');
-yline(-90, 'k--', 'HandleVisibility','off');
-yyaxis right; plot(B.t, B.X, 'LineWidth', 2);   ylabel('X [N]');
-yline(V.V_c/0.012894, ':', 'the drag at 0.3 m/s', 'HandleVisibility','off');
-xlabel('time [s]');
-title('the heading it chose, and the force it holds');
+%% ---- 문제 2 · 그 값 / what it costs -----------------------------------
+V = V0;  V.wave_on = 0;  V.T_final = 40;
+C = run_one('W08_S1', V, 'zeta_n', V.zeta_d);
+D = run_one('W08_S1', V, 'zeta_n', 0.05);
+f = lab_fig('W08 Problem 2  the cost', 1000, 460);
+hold on; grid on; xlim([4 30]);
+plot(C.t, C.psi, 'LineWidth', 2, 'DisplayName', 'no filter');
+plot(D.t, D.psi, 'LineWidth', 2, 'DisplayName', 'notch');
+yline(V.psi_step, 'k--', 'HandleVisibility','off');
+xlabel('time [s]');  ylabel('\psi [deg]');  legend('Location','southeast');
+title('a 10 deg turn in still water: the filter that helped in waves is in the way here');
 exportgraphics(f, fullfile(img, 'W08_P2_expected.png'), 'Resolution', 150);
 
-%% ---- 문제 3 · 임무와 넘겨받기 / the mission, and the handover ----------
-V = V0;  V.vane = 1;  V.T_final = 400;
-V.WP_N = [0 40 40]';  V.WP_E = [0 0 40]';  V.T_hold = 40;
-C = run_one('W08_S1', V, 'hand_over', 1);
-D = run_one('W08_S1', V, 'hand_over', 0);
-f = lab_fig('W08 Problem 3  the mission and the handover', 1050, 480);
-subplot(1,2,1); hold on; grid on; axis equal;
-plot([0; V.WP_E], [0; V.WP_N], 'k--');
-plot(C.E, C.N, 'LineWidth', 1.4);  plot(D.E, D.N, 'LineWidth', 1.4);
-plot(V.WP_E, V.WP_N, 'kp', 'MarkerSize', 12, 'MarkerFaceColor', 'k');
-xlabel('east [m]');  ylabel('north [m]');
-legend({'path','hand\_over = 1','hand\_over = 0','waypoints'}, 'Location','southeast');
-title('the same mission, one integrator apart');
-subplot(2,2,2); hold on; grid on;
-stairs(C.t, C.mode, 'LineWidth', 1.8);  ylim([0.5 3.5]);  yticks(1:3);
-yticklabels({'transit','hold','done'});  title('the two rules, and nothing else');
-subplot(2,2,4); hold on; grid on;
-plot(C.t, C.e, 'LineWidth', 1.4);  plot(D.t, D.e, 'LineWidth', 1.4);
-xlabel('time [s]');  ylabel('distance to the station [m]');  ylim([0 40]);
-legend({'hand\_over = 1','hand\_over = 0'}, 'Location','northeast');
-title('what an integrator that was not in charge costs');
+%% ---- 문제 3 · 느린 부분과 적분 / the slow part, and the integral -------
+V = V0;  V.N_slow = 15;  V.T_final = 120;
+E = run_one('W08_S1', V, 'zeta_n', 0.05, 'Ki', 0);
+F = run_one('W08_S1', V, 'zeta_n', 0.05, 'Ki', 20);
+f = lab_fig('W08 Problem 3  the slow part', 1000, 620);
+subplot(2,1,1); hold on; grid on;
+plot(E.t, E.psi, 'LineWidth', 1.8, 'DisplayName', 'P-D  (Ki = 0)');
+plot(F.t, F.psi, 'LineWidth', 1.8, 'DisplayName', 'PI-D');
+yline(V.psi_step, 'k--', 'HandleVisibility','off');
+ylabel('\psi [deg]');  legend('Location','southeast');
+title('a slow push: without an integral the vessel settles beside the command, not on it');
+subplot(2,1,2); hold on; grid on;
+plot(E.t, E.N, 'LineWidth', 1.2, 'DisplayName', 'P-D  (Ki = 0)');
+plot(F.t, F.N, 'LineWidth', 1.2, 'DisplayName', 'PI-D');
+ylabel('N [N m]');  xlabel('time [s]');  legend('Location','southeast');
+title('both hold about -15 N m against it; only one does so without an error');
 exportgraphics(f, fullfile(img, 'W08_P3_expected.png'), 'Resolution', 150);
 
 fprintf('\n  three figures written to %s\n\n', img);
@@ -86,22 +75,23 @@ end
 % =========================================================================
 function V = defaults()
 cfg = otter_config('base');
-V.WP_N = 0;  V.WP_E = 0;  V.R_arrive = 2;  V.T_hold = 1e9;
-V.psi_fix = 0;  V.vane = 1;
-V.Kp_x = 30;  V.Ki_x = 3;  V.Kd_x = 60;  V.e_min = 0.3;  V.X_max = 120;
-V.Kp = 300;   V.Kd = 100;
-V.N_max = min(2*cfg.y_pont*(cfg.k_pos*cfg.n_max^2 - V.X_max/2), ...
-              2*cfg.y_pont*(V.X_max/2 + cfg.k_neg*cfg.n_min^2));
-V.X_ff = 60;  V.Delta = 5;  V.hand_over = 1;
-V.V_c = 0.3;  V.beta_c = pi/2;
+V.Hs = 0.3;  V.T0 = 2.0;  V.gamma_j = 3.3;  V.N_comp = 20;  V.sigma_psi = 3;
+V.w0 = 2*pi/V.T0;  V.wave_on = 1;
+V.zeta_n = 0.05;  V.zeta_d = 0.3;
+V.Kp = 300;  V.Kd = 100;  V.Ki = 0;  V.Kb = 0.1;  V.X_ff = 60;
+V.N_max = min(2*cfg.y_pont*(cfg.k_pos*cfg.n_max^2 - V.X_ff/2), ...
+              2*cfg.y_pont*(V.X_ff/2 + cfg.k_neg*cfg.n_min^2));
+V.psi_step = 10;  V.t_step = 5;
 V.y_pont = cfg.y_pont;  V.k_pos = cfg.k_pos;  V.k_neg = cfg.k_neg;
 V.T_max = cfg.k_pos*cfg.n_max^2;  V.T_min = -cfg.k_neg*cfg.n_min^2;
 V.mp = 25;  V.rp = [0.05 0 -0.35]';  V.x0 = zeros(12,1);
-V.h = 0.02;  V.T_final = 200;
+V.N_slow = 0;  V.T_slow = 60;  V.V_c = 0;  V.beta_c = pi/2;
+V.h = 0.02;  V.T_final = 60;
 end
 
 function y = run_one(mdl, V, varargin)
 for i = 1:2:numel(varargin), V.(varargin{i}) = varargin{i+1}; end
+[V.w_i, V.a_i, V.phi_i, V.k_w] = wave_train(V.Hs, V.T0, V.gamma_j, V.N_comp, V.sigma_psi);
 b = 'base';
 f = fieldnames(V);
 for i = 1:numel(f), assignin(b, f{i}, V.(f{i})); end
@@ -109,13 +99,8 @@ evalin(b, sprintf('bdclose(''%s'');', mdl));
 load_system(mdl);
 set_param(mdl,'StopTime','T_final','ReturnWorkspaceOutputs','off');
 evalin(b, sprintf('sim(''%s'');', mdl));
-S = evalin(b,'dlog');
-D = squeeze(S.signals.values);   if size(D,1)==3,  D = D.';  end
-M = squeeze(evalin(b,'mlog').signals.values);  if size(M,1)==3,  M = M.';  end
+S = evalin(b,'flog');   F = squeeze(S.signals.values);  if size(F,1)==3, F = F.'; end
 X = squeeze(evalin(b,'xlog').signals.values);  if size(X,1)==12, X = X.'; end
-y.t = S.time;
-y.psi_d = D(:,1);  y.X = D(:,2);  y.Nm = D(:,3);
-y.N_d = M(:,1);    y.E_d = M(:,2);  y.mode = M(:,3);
-y.N = X(:,7);      y.E = X(:,8);    y.psi = X(:,12)*180/pi;
-y.e = hypot(y.N_d - y.N, y.E_d - y.E);
+y.t = S.time;  y.psi = X(:,12)*180/pi;
+y.psi_m = F(:,1);  y.psi_f = F(:,2);  y.N = F(:,3);
 end
