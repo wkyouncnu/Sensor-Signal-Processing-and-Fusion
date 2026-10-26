@@ -44,13 +44,22 @@ function W06_1_build_bow(which)
 %   Direct lines join adjacent stages only, and then the two block heights are
 %   derived FROM the port heights so they agree from the start.
 %
-%   **포트 간격 52 px 를 두 공식으로 센다** / the two pitch formulas
+%   **포트 높이는 계산하지 않고 읽는다** / port heights are READ, not predicted
 %
-%   서브시스템과 MATLAB Function 은 높이 H 의 블록에서 k 번째 포트를
-%   top + H*k/(n+1) 에 놓는다. Mux 는 (H-40)/(n-1) 간격으로 top+20 에서 시작한다.
-%   둘이 다르다. 그래서 블록 높이는 **두 식이 모두 정수를 주고 실제 간격이 52 px
-%   이상**이 되게 고른다 — allocation 324, Otter 162, 열린 루프의 tau Mux 160 은
-%   그렇게 나온 값이다 (처음 쓴 300 · 150 · 120 은 간격이 50 · 50 · 40 이었다).
+%   시뮬링크는 포트를 `top + H*k/(n+1)` 에 놓지 않는다. 간격을 5 px 격자에 맞추고
+%   띠 전체를 블록 **중심**에 모은다 — 서브시스템·Mux·MATLAB Function·플랜트가
+%   모두 같은 규칙이고, 세 모델의 포트 337 개로 확인했다 (§15-52):
+%
+%       pitch = round(H/n/5)*5,   y_k = 중심 - (n-1)*pitch/2 + (k-1)*pitch
+%
+%   그래서 이 파일은 블록을 먼저 만들고 `port_xy` 로 **읽어서** From/Goto 를 놓는다.
+%   식은 **거꾸로**만 쓴다 — 포트를 주어진 줄에 떨어뜨리는 블록 높이를 고를 때
+%   (H = 160, n = 2 이면 pitch 80, 1 번 포트는 top+40).
+%   Simulink does not place ports at top + H*k/(n+1): it snaps the pitch to the
+%   5 px grid and centres the band on the block, the same way for subsystems,
+%   Mux, MATLAB Function and the plant alike. So blocks are created first and
+%   their port heights read with port_xy; the formula is used only backwards, to
+%   pick a height that lands a port on a given line.
 %
 %   See also W06_0_SETUP, W06_PLOT, W06_READ, ADD_POSITION_LOOP,
 %            ADD_VELOCITY_LOOP, ADD_HEADING_LOOP, ADD_ALLOCATION3.
