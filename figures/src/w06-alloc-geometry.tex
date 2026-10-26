@@ -1,0 +1,278 @@
+%  w06-alloc-geometry — 세 추진기가 앉은 자리 / where the three thrusters sit
+%                       (Sections 6-1 and 6-2)
+%
+%  캡스톤의 w06-alloc-geometry.tex 를 옮긴 것이다. 세 가지를 버렸다.
+%    ① 아래 띠 둘 — B 의 세 줄 읽기와 손으로 푼 역변환. `.md` 로 옮겼다.
+%       그림은 **기하**만 말하고, 행렬과 그 역은 본문이 말한다.
+%    ② 캡스톤의 수치 (half_beam = 1.027135 m, l_bow = 0.75 m, F_B = 250 N) —
+%       전부 WAM-V 값이다. 여기 적힌 것은 _tools/otter_config.m 의 Otter 값이다.
+%    ③ 행렬 이름 T — 볼트는 **B** 라고 부른다 (otter_B.m).
+%
+%  두 칸을 **세로로** 쌓는다. 캡스톤은 나란히 놓았으나, 역모멘트 라벨
+%  (`$-37.5$ N$\cdot$m`) 이 양쪽에 붙어 칸 하나가 119 mm 가 되고, 나란히 놓으면
+%  240 mm = 910 px 로 천장에 닿는다. 세로로 쌓으면 118 x 196 mm = 447 x 741 px 다.
+%
+%  화면 = 위에서 본 선체.  screen x = y_b (우현),  screen y = x_b (앞).
+%  \BP{x_b}{y_b} 가 **인자를 뒤집어** 받는다 — 참 선체좌표를 그대로 적기 위해서다.
+%
+%  축척 1 m = 18 mm. 선체는 **실척**이다 — Otter LOA 2.0 m = 36 mm,
+%  B = 1.08 m = 19.44 mm.  otter.m 57-58 행에서 읽었다.
+%
+%  양의 N 은 x_b 를 y_b 쪽으로 돌린다 = 화면에서 **시계방향**.
+%  TikZ 는 arc(시작:끝:r) 의 끝 각이 **작을 때** 시계다 (CLAUDE.md §6-2).
+%    (a) 규약 호     40 -> -15   끝이 작다  -> 시계      -> 양의 N   맞다
+%    (b) 선수추진기  50 ->  20   끝이 작다  -> 시계      -> +37.5    맞다
+%    (b) 선미 한 쌍 160 -> 190   끝이 크다  -> 반시계    -> -37.5    맞다
+%
+%  수치는 전부 MATLAB 으로 재확인했다 (2026-10-27).
+%    cfg = otter_config('bow_thruster');  B\[0;25;0]
+%      -> T_L = -47.4684  T_R = +47.4684  F_B = +25.0000
+%      -> l_f*F_B = +37.5000   y_pont*(T_L-T_R) = -37.5000   합 = 0
+%      -> T_L + T_R = 0        a = l_f/(2 y_pont) = 1.898734
+%
+%  l_f 에 대하여 — 그림이 드러내는 이상화다.
+%    otter_config.m 63-64 행이 l_f = 1.5 m 로 두는데 선체는 2.0 m 이다. 즉
+%    선수추진기가 **뱃머리보다 0.5 m 앞**에 앉는다. 그래도 그 값으로 그린다.
+%    ① B 에 들어가는 것은 선체 위의 위치가 아니라 **모멘트 팔**이다
+%    ② 6주차의 모든 수치(a = 1.898734, det B = 0.79, N_max = 52.6993,
+%       Y_max = 35.1329)가 그 값에서 나오고 verify_w06_actuation 이 17/17 로
+%       통과한다. 그림이 다른 팔을 말하면 그림만 거짓이 된다
+%    ③ l_f 는 12주차 quad_tilt 와 **공유**한다 — 한쪽만 고칠 수 없다
+%    그래서 아래 띠에 그 이상화를 적어 둔다. 숨기지 않는다.
+%
+%  y 예산 (mm). 다중행 라벨은 anchor 에서 **위로** 자라므로 먼저 적어 둔다
+%  (교훈 lxxvii). 선체의 화면 높이는 칸마다 같다 — psi = 0 고정이므로
+%  -18 .. +18 이고, 선수추진기 원이 +28.7 까지 올라간다 (교훈 lxxxiii).
+%
+%  칸 (a)  — shift 없음
+%     +40.0  제목 (footnotesize, anchor north west at (-59,40))
+%     +31.7  F_B 라벨 위       /  +28.2 anchor (south)
+%     +28.7  선수추진기 원 위  /  +27.0 중심  /  +25.3 원 아래
+%     +18.0  뱃머리            /  +17.4 규약 호 시작 (40 deg, r=27)
+%     +11.7  어깨
+%      +9.3  x_b 라벨 위       /   +5.8 anchor  /  +5.0 축 화살촉
+%      +4.5  CO 라벨 위        /   +1.0 anchor (south west)
+%      +3.0  T_L T_R 화살촉
+%      -6.0  T_L T_R 라벨 anchor (east/west, 선체 **밖**)  -7.75 .. -4.25
+%      -5.0  삼각축 원점
+%      -7.0  규약 호 끝 (-15 deg, r=27)
+%     -15.3  선미 추진기 중심
+%     -18.0  선미        /  -19.0 치수 보조선 시작 (선체 **바깥**, 교훈 lxxii)
+%     -25.0  y_pont 치수선
+%     -26.2  y_pont 라벨 anchor (north)             -> 아래 -29.7
+%
+%  칸 (b)  — shift (0,-86).  (a) 의 밑(-30) 과 (b) 의 제목(-46) 이 16 mm 뜬다
+%     +40.0  제목
+%     +32.0  F_B 라벨 위       /  +28.5 anchor (south west)
+%     +28.7  선수추진기 원 위
+%     +23.7  선수 호 시작 (50 deg, r=31)
+%     +18.0  뱃머리
+%     +10.6  선수 호 끝 (20 deg)
+%      +4.8  T_R 라벨 위       /   +3.0 anchor (west) 와 화살촉  /  +1.2 아래
+%     -10.6  선미 호 시작 (200 deg, r=31) — 선수 호의 점대칭이다
+%     -21.5  선미 호 라벨 anchor (east)   -19.75 .. -23.25
+%     -23.8  선미 호 끝 (230 deg)
+%     -15.3  선미 추진기 중심  /  -18.0 선미
+%     -30.0  T_L 화살촉 (후진)
+%     -31.2  T_L 라벨 anchor (north east)            -> 아래 -34.7
+%     -38.0  X = 0 주석 (anchor north)               -> 아래 -41.5
+%
+%  띠 (공용)
+%    -135.0  anchor north west, text width 118mm, 여섯 줄  -> 아래 -156.0
+%
+%  x 예산 (mm). 그림 전체는 -59 .. +59 = 118 mm 다
+%    -59.0  제목과 띠의 anchor
+%    -48.0  (b) 선미 호 라벨 왼쪽  /  -31.0 anchor (east)
+%    -42.5  (a) x_b 라벨 왼쪽   /  -40.0 삼각축  /  -30.0 y_b 화살촉
+%    -40.5  (b) X=0 주석 왼쪽
+%    -31.2  (a) l_f 라벨 왼쪽   /  -20.2 anchor (east)
+%    -19.0  (a) l_f 치수선      /  -18.0 보조선이 닿는 곳
+%    -15.7  (a) T_L 라벨 왼쪽 (anchor east at -11)  /  -28.0 (b) T_L 라벨 왼쪽
+%    -10.8  보조선 시작 (y=0 에서 선체 반폭 9.72 보다 1.08 mm 바깥)
+%     -9.72 선체 측면           /  -7.11 좌현 추진기
+%     -3.0  보조선 시작 (y=27 에서 선수추진기 원 r=1.7 보다 1.3 mm 바깥)
+%      0.0  중심선
+%     +7.11 우현 추진기
+%     +15.0 F_B 화살촉          /  +15.7 (a) T_R 라벨 오른쪽 (anchor west at 11)
+%     +17.5 (a) y_pont 라벨 오른쪽
+%     +20.7 (a) 규약 호 시작    /  +26.1 끝  /  +28.0 라벨 anchor (west) -> +59.0
+%     +19.9 (b) 선수 호 시작    /  +29.1 끝  /  +30.5 라벨 anchor (west) -> +52.5
+%     +23.5 (b) F_B 라벨 오른쪽 (anchor south west at 3.5, 원 r=1.7 밖)
+%     +36.5 (b) T_R 라벨 오른쪽 (anchor west at 11.5)  /  +40.5 X=0 주석 오른쪽
+%
+%  주석만 한국어다. 조판되는 글자에 한글을 넣으면 pdflatex 이 멈춘다.
+
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{bodyc}{HTML}{1D4ED8}
+\definecolor{plantc}{HTML}{16A34A}
+
+\pgfmathsetmacro{\BS}{18}                                  % 1 m = 18 mm
+
+%  참 선체좌표 -> 화면 좌표. **인자를 뒤집는다**: #1 = x_b (앞), #2 = y_b (우현)
+\newcommand{\BP}[2]{({(#2)*\BS},{(#1)*\BS})}
+
+\tikzset{
+  thrc/.style  = {circle, draw=alng, fill=white, line width=0.5pt,
+                  minimum size=3.4mm, inner sep=0pt},
+  ttl/.style   = {font=\footnotesize, ink, inner sep=1.5pt},
+  fl/.style    = {font=\scriptsize, alng, inner sep=1.4pt},
+  pnote/.style = {font=\scriptsize, ink, inner sep=1.4pt, align=left},
+  enote/.style = {font=\scriptsize, errc, inner sep=1.4pt, align=left},
+  gnote/.style = {font=\scriptsize, plantc, inner sep=1.4pt, align=left},
+  un/.style    = {font=\scriptsize, soft, inner sep=1.4pt},
+  dimn/.style  = {ink, line width=0.5pt,
+                  {Stealth[length=2.8pt,width=2.2pt]}-{Stealth[length=2.8pt,width=2.2pt]}},
+  ext/.style   = {soft, line width=0.35pt, densely dotted},
+  farr/.style  = {alng, line width=0.7pt, -{Stealth[length=3.4pt,width=2.6pt]}},
+}
+
+%  선체와 추진기 셋. 두 칸이 **똑같이** 받도록 매크로 하나로 둔다 (교훈 lxxxi).
+%
+%  꼭짓점은 **다섯**이다 — 좌현 선미, 좌현 어깨, 뱃머리, 우현 어깨, 우현 선미.
+%  넷만 적고 cycle 하면 우현 어깨에서 좌현 선미로 대각선이 그어져 선체가
+%  **연꼴**이 된다 (교훈 lxxxii).
+\newcommand{\plan}{%
+  \fill[bodyc!10]
+    \BP{-1.00}{-0.54} -- \BP{0.65}{-0.54} -- \BP{1.00}{0} --
+    \BP{0.65}{0.54}   -- \BP{-1.00}{0.54} -- cycle;
+  \draw[bodyc, line width=0.6pt]
+    \BP{-1.00}{-0.54} -- \BP{0.65}{-0.54} -- \BP{1.00}{0} --
+    \BP{0.65}{0.54}   -- \BP{-1.00}{0.54} -- cycle;
+  \draw[bodyc, line width=0.3pt, densely dotted] \BP{-1.00}{0} -- \BP{1.00}{0};
+  %  뱃머리에서 선수추진기까지 — 선체 밖에 앉은 것이 보이게 한다
+  \draw[bodyc, line width=0.3pt, densely dotted] (0,18) -- (0,25.3);
+  \node[dot, ink, fill=ink, minimum size=1.1mm] at (0,0) {};
+  \node[thrc] at \BP{-0.85}{-0.395} {};
+  \node[thrc] at \BP{-0.85}{0.395}  {};
+  \node[thrc] at \BP{1.50}{0}       {};}
+
+\begin{document}
+%  x=1mm, y=1mm 을 빼면 모든 좌표가 기본 단위로 읽혀 그림이 열 배로 커진다
+%  (교훈 lxxi).
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+%% ============================================================================
+%%  칸 (a) — 세 추진기가 앉은 자리
+%% ============================================================================
+\node[ttl, anchor=north west] at (-59,40)
+  {\textbf{(a)} where the three thrusters sit};
+
+\plan
+
+%  선미 한 쌍은 x_b 를 따라 **앞으로** 민다. 화살촉을 y=3 에서 멈춘다 —
+%  더 올리면 CO 라벨에 닿는다.
+\draw[farr] \BP{-0.85}{-0.395} -- (-7.11,3);
+\draw[farr] \BP{-0.85}{0.395}  -- ( 7.11,3);
+%  라벨은 선체 **밖**에 둔다. 화살표가 선체 안을 지나므로 화살표의 x 에 맞춰
+%  anchor 를 잡으면 글자가 선체 측면선(+-9.72) 위에 올라앉는다 (교훈 xci).
+\node[fl, anchor=east] at (-11,-6) {$T_L$};
+\node[fl, anchor=west] at ( 11,-6) {$T_R$};
+
+%  선수추진기는 y_b 를 따라 **우현으로** 민다.
+%  (a) 의 라벨은 두 자라 중앙정렬해도 원(x = -1.7 .. 1.7) 에 닿지 않는다.
+\draw[farr] (2,27) -- (15,27);
+\node[fl, anchor=south] at (8.5,28.2) {$F_B$};
+
+\node[un, anchor=south west, inner sep=1.2pt] at (1.0,1.0) {CO};
+
+%% ---- 팔 둘 / the two moment arms -------------------------------------------
+%  치수 보조선은 글리프 **바깥**에서 시작한다 (교훈 lxxii). 선미는 -18 이므로
+%  보조선 둘 다 -19 에서 시작한다 — 우현 원의 아래(-17.0)보다 선체가 더 낮다.
+\draw[ext]  (0,-19)    -- (0,-24);
+\draw[ext]  (7.11,-19) -- (7.11,-24);
+\draw[dimn] (0,-25)    -- (7.11,-25);
+\node[un, anchor=north] at (3.56,-26.2) {$y_{pont} = 0.395$ m};
+
+%  l_f 는 CO 에서 선수추진기까지. 보조선은 y=0 에서 선체 반폭(9.72) 바깥,
+%  y=27 에서 원 반지름(1.7) 바깥에서 시작한다.
+\draw[ext]  (-10.8,0) -- (-18,0);
+\draw[ext]  (-3.0,27) -- (-18,27);
+\draw[dimn] (-19,0)   -- (-19,27);
+%  두 줄로 끊는다. 한 줄이면 폭 19 mm 로 자라 삼각축의 y_b 라벨에 닿는다.
+\node[un, anchor=east, align=right] at (-20.2,13.5) {$l_f$\\ $= 1.5$ m};
+
+%% ---- 양의 N 의 규약 / the sign convention for N ----------------------------
+%  끝 각이 작으므로 시계방향이다 = x_b 가 y_b 쪽으로 = 뱃머리가 우현으로.
+\draw[errc, line width=0.6pt, -{Stealth[length=3.6pt,width=2.8pt]}]
+  (20.68,17.35) arc (40:-15:27);
+\node[enote, anchor=west] at (28,3)
+  {positive $N$ turns\\ the bow to starboard};
+
+%% ---- 선체좌표 삼각축 / the body axes ---------------------------------------
+%  중심선과 겹치지 않도록 선체 **왼쪽 밖**에 세운다
+\draw[sig, accent] (-40,-5) -- (-40,5);
+\draw[sig, accent] (-40,-5) -- (-30,-5);
+\node[anote, anchor=south, inner sep=1pt] at (-40,5.8)   {$x_b$};
+\node[anote, anchor=west,  inner sep=1pt] at (-29.2,-5)  {$y_b$};
+
+%% ============================================================================
+%%  칸 (b) — 순수 횡력. 세 추진기가 모두 일한다
+%% ============================================================================
+\begin{scope}[shift={(0,-86)}]
+
+\node[ttl, anchor=north west] at (-59,40)
+  {\textbf{(b)} pure sway --- all three thrusters work};
+
+\plan
+
+%  F_B = Y = +25.0 N 이 먼저 정해진다. 횡력을 낼 수 있는 것은 이것뿐이다.
+%  (b) 의 라벨은 열세 자라 중앙정렬하면 왼쪽 끝이 원 위로 간다. 원 오른쪽
+%  (x >= 3.5) 에서 시작하게 anchor 를 바꾼다 — 규칙은 (a) 와 같다, 글자 수가
+%  다를 뿐이다.
+\draw[farr] (2,27) -- (15,27);
+\node[fl, anchor=south west] at (3.5,28.5) {$F_B = +25.0$ N};
+
+%  선미 한 쌍은 **서로 반대로** 민다. 합은 X 에서 0, N 에서 -37.5 다.
+%  라벨은 선체 측면선(9.72) 밖에서 시작한다 (교훈 xci).
+\draw[farr] \BP{-0.85}{0.395}  -- (7.11,3);
+\node[fl, anchor=west] at (11.5,3) {$T_R = +47.5$ N};
+
+\draw[farr] \BP{-0.85}{-0.395} -- (-7.11,-30);
+\node[fl, anchor=north east] at (-5,-31.2) {$T_L = -47.5$ N};
+
+%% ---- 모멘트 둘이 정확히 지워진다 / the two moments cancel exactly ----------
+%  선수추진기: 끝 각이 작다 -> 시계 -> 양의 N
+\draw[errc, line width=0.6pt, -{Stealth[length=3.6pt,width=2.8pt]}]
+  (19.93,23.75) arc (50:20:31);
+\node[enote, anchor=west] at (30.5,17) {$+37.5$ N$\cdot$m};
+
+%  선미 한 쌍: 끝 각이 크다 -> 반시계 -> 음의 N.
+%  각 범위는 선수 호(50:20) 를 원점에 대해 **점대칭**시킨 200:230 이다. 원의
+%  옆구리(160:190) 에 두면 30 도를 돌아도 화면에서는 거의 직선이라 회전으로
+%  읽히지 않는다 — 두 호가 같은 휨을 보여야 "크기가 같고 방향이 반대" 가
+%  눈에 보인다 (교훈 xcii).
+\draw[plantc, line width=0.6pt, -{Stealth[length=3.6pt,width=2.8pt]}]
+  (-29.13,-10.60) arc (200:230:31);
+%  라벨은 호의 **바깥쪽**, 중간각 215 도 방향으로 r = 37.7 자리에 둔다
+\node[gnote, anchor=east] at (-31,-21.5) {$-37.5$ N$\cdot$m};
+
+\node[pnote, anchor=north, align=center] at (0,-38)
+  {$X = T_L + T_R = 0$ --- the stern pair cancel in surge};
+
+\end{scope}
+
+%% ============================================================================
+%%  띠 — 그림이 드러내는 이상화 / the idealization this drawing exposes
+%% ============================================================================
+\draw[wire, soft] (-59,-130) -- (59,-130);
+\node[pnote, anchor=north west, text width=118mm] at (-59,-135)
+  {\textbf{Read the arms, not the hull stations.} The lateral pair push along
+   $x_b$, so their fore-aft station never enters $B$ --- their only moment arm is
+   the offset $y_{pont} = 0.395$ m, and panel (a) draws them at the transom only
+   because that is where they are. The bow thruster enters through its forward
+   arm $l_f = 1.5$ m, the value \texttt{otter\_config} defines; the hull is 2.0 m
+   long, so that arm is drawn where it falls --- ahead of the bow. The arm, not a
+   hull station, is what $B$ is built from, and every Week 6 number follows from
+   it.};
+
+\gnccaption{118mm}{Sections 6-1 and 6-2. The three thrusters of the
+\texttt{bow\_thruster} configuration, drawn to scale from
+\texttt{otter\_config.m}: the hull is 2.0 m long and 1.08 m in beam. Panel (a)
+fixes the two moment arms and the sign of $N$; panel (b) solves
+$B\,\mathbf{u} = (0,\ 25,\ 0)$ and shows why a pure sideways push needs all
+three --- the bow thruster alone would turn the hull.}
+
+\end{tikzpicture}
+\end{document}
