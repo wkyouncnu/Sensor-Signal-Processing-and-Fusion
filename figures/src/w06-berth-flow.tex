@@ -1,0 +1,148 @@
+%  w06-berth-flow — 접안 상태기계 / the berthing state machine (Section 6-5)
+%
+%  캡스톤의 w06-berth-flow.tex 를 옮긴 것이다. 세 가지를 버렸다.
+%    ① 왼쪽의 넓은 산문 넷과 아래 띠 둘 — `.md` 로 옮겼다. 그림은 **판정**만
+%       말하고, "왜 선석으로 바로 가지 않는가" 같은 것은 본문이 말한다.
+%    ② 캡스톤의 수치 (R_dock=4, R_stop=1.5, L_app=15, R_brake=8, U_berth=0.2) —
+%       전부 WAM-V 값이다. 여기 적힌 것은 W06_vars.m 의 Otter 값이다.
+%    ③ 단계 셋 — 볼트의 phases() 는 **넷**이다 (TRANSIT ALIGN BERTH MOORED)
+%       이고 판정은 **셋**이다. 캡스톤은 끝을 캡슐로 따로 그렸으나, 여기서는
+%       MOORED 가 상태기계의 한 상태이므로 네모 하나로 둔다.
+%
+%  판정은 W06_1_build_bow.m 의 phases() 에 적힌 그대로다.
+%    1->2  norm(app - p) <= R_app   = 1.50 m
+%    2->3  |ssa(psi - psi_berth)| <= psi_tol = 5 deg  AND  |r| <= r_tol = 1 deg/s
+%    3->4  norm(brt - p) <= R_berth = 0.40 m          AND  |v| <= v_tol = 0.05 m/s
+%  3->4 의 속도 판정은 **횡동요 v 하나**다 — u 가 아니다.
+%
+%  y 예산 (mm). 다중행 라벨은 anchor 에서 **위로** 자라므로 먼저 적어 둔다
+%  (교훈 lxxvii). 띠 라벨이 두 줄이라 그림의 천장은 +17.8 이다.
+%     +17.8  띠 라벨 윗줄의 위
+%     +10.6  띠 라벨 anchor (south west)
+%     +10.0  래치 띠 윗변
+%      +6.0  p1 위           /  p1 중심   0.0  /  p1 아래  -6.0
+%     -15.0  d1 위           /  d1 중심 -23.0  /  d1 아래 -31.0
+%     -31.6  yes 1 (anchor north west, 아래로 3.6 자란다)
+%     -40.0  p2 위           /  p2 중심 -46.0  /  p2 아래 -52.0
+%     -61.0  d2 위           /  d2 중심 -69.0  /  d2 아래 -77.0
+%     -77.6  yes 2
+%     -86.0  p3 위           /  p3 중심 -92.0  /  p3 아래 -98.0
+%    -107.0  d3 위           /  d3 중심 -115.0 /  d3 아래 -123.0
+%    -123.6  yes 3           <- 띠 밑변(-129) 과 5.4 mm 떨어뜨린다. 가운데에
+%                               두면 밑변에 닿는다 — 그래서 틈의 중심이 아니라
+%                               d3 바로 아래에 붙인다
+%    -129.0  래치 띠 밑변
+%    -134.0  p4 위           /  p4 중심 -140.0 /  p4 아래 -146.0
+%
+%  x 예산 (mm)
+%    -38 .. +38   phase 네모 (폭 76 mm)
+%    -35 .. +35   판정 마름모 — 글자가 폭을 정하므로 렌더해서 확인한다
+%         +46     아니오 통로 한 줄. 세로 구간이 [-23,0] [-69,-46] [-115,-92]
+%                 셋으로 서로 떨어져 있다
+%    +47.4        아니오 라벨 (anchor west). 통로보다 1.4 mm 오른쪽이다
+%    -42 .. +54   래치 띠
+%
+%  주석만 한국어다. 조판되는 글자에 한글을 넣으면 pdflatex 이 멈춘다.
+
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+\usetikzlibrary{shapes.geometric}                          % diamond
+
+\definecolor{bodyc}{HTML}{1D4ED8}
+\definecolor{plantc}{HTML}{16A34A}
+
+\tikzset{
+  %  단계 — 네모. 목표가 무엇으로 바뀌는지를 적는다
+  pbox/.style  = {draw=bodyc, line width=0.6pt, fill=white, rounded corners=0.8mm,
+                  inner sep=2.6pt, font=\scriptsize, align=center,
+                  minimum width=76mm, minimum height=12mm},
+  %  끝 상태 — 같은 네모, 초록. 다른 W06 그림의 계류한 선체와 같은 색이다
+  ebox/.style  = {pbox, draw=plantc},
+  %  판정 — 마름모. 글자가 두 줄이라 폭을 넉넉히 준다
+  dec/.style   = {draw=ink, line width=0.55pt, fill=white, diamond, aspect=2.4,
+                  inner sep=1pt, font=\scriptsize, align=center,
+                  minimum width=58mm, minimum height=16mm},
+  ylab/.style  = {font=\scriptsize, ink, inner sep=1.5pt},
+  nlab/.style  = {font=\scriptsize, warn, inner sep=1.5pt},
+  latch/.style = {draw=warn, line width=0.5pt, densely dashed, rounded corners=1.2mm},
+}
+
+\begin{document}
+%  x=1mm, y=1mm 을 빼면 모든 좌표가 기본 단위로 읽혀 그림이 열 배로 커진다
+%  (교훈 lxxi).
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+%% ---- 래치 띠 — 이 그림에서 가장 자주 놓치는 것 ------------------------------
+%  단계는 한 번 올라가면 내려오지 않는다. 파도에 밀려 판정 거리를 잠깐 넘어서도
+%  앞 단계로 돌아가지 않는다 — 돌아가면 두 단계 사이를 오가며 영영 붙지 못한다.
+\draw[latch] (-42,-129) rectangle (54,10);
+\node[nlab, anchor=south west, align=left, inner sep=1.2pt] at (-41.5,10.6)
+  {\textbf{the phase index only increases} --- a \texttt{no} repeats the phase\\
+   \texttt{gate} $= 1$ inside this band, $0$ outside it};
+
+%% ---- 네 단계 / the four phases ---------------------------------------------
+\node[pbox] (p1) at (0,0)
+  {\textbf{1} \textsc{transit}\\
+   $p_d = \texttt{app} = (40.0,\ 8.2)$ m\\
+   $\psi_{set}$: bearing to \texttt{app}, frozen inside 2 m};
+
+\node[dec] (d1) at (0,-23)
+  {$\lVert \texttt{app} - p \rVert \le R_{app}$\\
+   $= 1.50$ m ?};
+
+\node[pbox] (p2) at (0,-46)
+  {\textbf{2} \textsc{align}\\
+   $p_d = \texttt{app}$, unchanged\\
+   $\psi_{set} = \psi_{berth}$ --- the turn is made at rest};
+
+\node[dec] (d2) at (0,-69)
+  {$\lvert \psi - \psi_{berth} \rvert \le 5^\circ$\\
+   and $\lvert r \rvert \le 1^\circ$/s ?};
+
+\node[pbox] (p3) at (0,-92)
+  {\textbf{3} \textsc{berth}\\
+   $p_d = \texttt{brt} = (40.0,\ 1.2)$ m\\
+   $\psi_{set} = \psi_{berth}$, pinned};
+
+\node[dec] (d3) at (0,-115)
+  {$\lVert \texttt{brt} - p \rVert \le 0.40$ m\\
+   and $\lvert v \rvert \le 0.05$ m/s ?};
+
+\node[ebox] (p4) at (0,-140)
+  {\textbf{4} \textsc{moored} --- terminal\\
+   $p_d = \texttt{brt}$, $\psi_{set} = \psi_{berth}$\\
+   $\texttt{gate} = 0$ --- zero velocity commanded};
+
+%% ---- 아래로 흐르는 선 / the flow downwards ---------------------------------
+%  yes 라벨은 틈의 가운데가 아니라 마름모 **바로 아래**에 붙인다 — 세 번째는
+%  가운데에 두면 래치 띠 밑변에 닿는다 (y 예산 참조).
+\draw[sig] (p1) -- (d1);
+\draw[sig] (d1) -- (p2);   \node[ylab, anchor=north west] at (1.8,-31.6) {yes};
+\draw[sig] (p2) -- (d2);
+\draw[sig] (d2) -- (p3);   \node[ylab, anchor=north west] at (1.8,-77.6) {yes};
+\draw[sig] (p3) -- (d3);
+\draw[sig] (d3) -- (p4);   \node[ylab, anchor=north west] at (1.8,-123.6) {yes};
+
+%% ---- 아니오 — 같은 단계를 한 스텝 더 돈다 ----------------------------------
+%  통로 한 줄(x = 46)에 모은다. 세로 구간 셋이 서로 떨어져 있으므로 겹치지 않는다.
+%  화살촉은 **마지막 구간**에 붙는다 (교훈 xxxii).
+\draw[wire, warn] (d1.east) -- (46,-23) -- (46,0);
+\draw[sig,  warn] (46,0)    -- (p1.east);
+\node[nlab, anchor=west] at (47.4,-23) {no};
+
+\draw[wire, warn] (d2.east) -- (46,-69) -- (46,-46);
+\draw[sig,  warn] (46,-46)  -- (p2.east);
+\node[nlab, anchor=west] at (47.4,-69) {no};
+
+\draw[wire, warn] (d3.east) -- (46,-115) -- (46,-92);
+\draw[sig,  warn] (46,-92)  -- (p3.east);
+\node[nlab, anchor=west] at (47.4,-115) {no};
+
+\gnccaption{96mm}{Section 6-5. The berthing state machine of
+\texttt{W06\_H\_berth}, exactly as \texttt{phases()} builds it. Every test is
+evaluated afresh at each step, so a \texttt{no} does not go backwards --- it
+repeats the same phase. The strategy is chosen by $\psi_{berth}$ alone; the
+flow itself is the same for every strategy.}
+
+\end{tikzpicture}
+\end{document}
