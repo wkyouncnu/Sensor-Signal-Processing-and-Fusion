@@ -167,7 +167,8 @@ subplot(1,3,1); hold on; grid on; axis equal;
 for i = 1:size(C,1)
     R = Rs{i};
     plot(R.E, R.N, 'Color', C{i,4}, 'LineStyle', C{i,5}, 'LineWidth', 1.3);
-    if i >= 3, track_ships({[R.N R.E R.psi*pi/180]}, C{i,4}, 'Marks', 4); end
+    %   track_ships 는 **도**를 받는다 (안에서 deg2rad 한다). 로그의 psi 가 이미 도다
+    if i >= 3, track_ships({[R.N R.E R.psi]}, C{i,4}, 'Marks', 4); end
 end
 plot(p_d(2), p_d(1), 'kp', 'MarkerSize', 13, 'MarkerFaceColor', [1 0.85 0.2]);
 xlabel('east [m]'); ylabel('north [m]');

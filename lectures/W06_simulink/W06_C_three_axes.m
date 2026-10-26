@@ -92,7 +92,8 @@ for i = 1:size(D,1)
     R = Rs{i};  c = D{i,2};
     subplot(2, 4, i); hold on; grid on; axis equal;
     plot(R.E, R.N, 'Color', [0 0.45 0.74], 'LineWidth', 1.3);
-    track_ships({[R.N R.E R.psi*pi/180]}, [0 0.45 0.74], 'Marks', 5);
+    %   track_ships 는 **도**를 받는다 (안에서 deg2rad 한다). 로그의 psi 가 이미 도다
+    track_ships({[R.N R.E R.psi]}, [0 0.45 0.74], 'Marks', 5);
     xlim(c0(2) + [-half half]);  ylim(c0(1) + [-half half]);
     xlabel('east [m]');  if i == 1, ylabel('north [m]'); end
     title(sprintf('%s\n\\tau = [%g %g %g]', D{i,1}, c(1), c(2), c(3)));

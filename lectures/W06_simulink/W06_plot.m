@@ -68,10 +68,10 @@ X_max = base_var('X_max', 120);
 Y_max = base_var('Y_max', 35.13);
 quay_E = base_var('quay_E', 0);
 
-%  선체를 그리는 쪽은 **라디안**을 받는다 (track_ships → draw_ship). 로그의 psi 는
-%  도이므로 여기서 한 번만 되돌린다 / the hull drawing takes RADIANS; the logged
-%  psi is in degrees, so it is converted here once
-psi_r = psi * pi/180;
+%  track_ships 는 psi 를 **도**로 받는다 — 안에서 deg2rad 한 뒤 라디안을 받는
+%  draw_ship 에 넘긴다. add_measurement 는 psi 행에만 180/pi 를 걸므로 로그의
+%  psi 는 이미 도다. 그대로 넘긴다 / track_ships takes psi in DEGREES and
+%  converts internally; the logged psi is already in degrees
 
 %  단계가 바뀐 시각. 단계가 없는 모델에서는 빈 벡터다 / when the phase changed
 ph = t([false; diff(phase) ~= 0]);
@@ -116,7 +116,7 @@ if any(isfinite(N_set))
          'MarkerEdgeColor', [0.75 0.10 0.10], 'MarkerFaceColor', [0.95 0.75 0.75]);
 end
 plot(E, N, 'Color', [0 0.45 0.74], 'LineWidth', 1.3);
-track_ships({[N E psi_r]}, [0 0.45 0.74], 'Marks', 12);
+track_ships({[N E psi]}, [0 0.45 0.74], 'Marks', 12);
 xlabel('east [m]');  ylabel('north [m]');
 title({'the track, with the hull and its heading', ...
        '\color[rgb]{0.35,0.25,0.15}\bfthe quay is the thick line at E = 0'});
