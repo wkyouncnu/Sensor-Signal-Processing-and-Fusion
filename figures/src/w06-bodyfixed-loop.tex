@@ -1,0 +1,219 @@
+% figures/w06-bodyfixed-loop.svg — 선체고정축에서 도는 위치제어. 회전은 **하나**다
+%
+%   bash _tools/tikz2svg.sh figures/src/w06-bodyfixed-loop.tex figures/w06-bodyfixed-loop.svg
+%
+% 캡스톤 assets/src/w06-bodyfixed-loop.tex (218 줄) 를 옮긴 것이다.
+% 짝인 w06-ned-loop.tex 와 **같은 격자**에 올려 두었다 — 두 장을 번갈아 보면
+% 다른 자리가 그 자리에서 보이게 하는 것이 이 짝의 목적이다. 같은 것:
+%   행 A y = 0 의 세 칸  x = 30 / 68 / 106,  합산점 x = 0
+%   되돌아오는 통로      y = -26,  내려오는 세로선 x = -14
+%   행 B y = -50 의 두 칸 x = 34 / 74
+%   배분·선체            al (130,-62) 30x34,  sh (170,-62) 24x34
+%   선수각 띠            hd (56,-72) 60x18 — **두 전략이 글자 하나까지 같다**
+%   파일 표              (122,-88) 왼위 기준
+% 다른 것은 **병진 줄 하나뿐**이다. 이 그림은 첫 칸에 회전이 서 있고,
+% NED 판은 그 칸이 **비어 있다**.
+%
+% 바꾼 것 여섯:
+%   ① WAM-V 수치 대신 Otter 수치 — 캡스톤의 추진기 정격 ±500 ±500 ±250 [N] 과
+%      u_max 1.5 / v_max 0.6 을 T_max 119.68 / T_min -66.71 / F_B_max 40 과
+%      u_lim 0.80 / v_lim 0.35 로 바꿨다. 게인은 Kp_pos 0.30, 속도 PI 200|200 과
+%      150|120, 선수각 Kp 300 Kd 100, 한계 X_max 120 / Y_max 35.13 / N_max 52.70
+%   ② 조판 글자를 전부 영어로. 한국어는 % 주석에만 남는다 (pdflatex 가 깨진다)
+%   ③ parts/*.m 대신 이 볼트의 _tools/*.m 이름
+%   ④ T^{-1} 이 아니라 B^{-1} 이다. 이 볼트의 추진기 배치 행렬 이름은 B 다
+%   ⑤ **캡스톤은 일곱 블록을 한 줄에 세웠다.** x 가 -62 에서 352 까지 414 mm =
+%      1565 px 이고, 본문 폭 703 px 로 줄면 0.45 배 — \scriptsize 8 pt 가 인쇄본
+%      에서 3.6 pt 가 된다 (CLAUDE.md §4-6-0). 두 줄로 접어 **실측 폭을 920 px
+%      아래**로 내렸다
+%   ⑥ **계측 버스를 그리지 않는다.** 되먹임 다섯 줄을 여기 또 그리면 이 그림이
+%      6-3 절의 고리 그림과 같은 그림이 된다. 버스는 그 그림이 가르치는 것이므로
+%      여기서는 **꼬리표 + §번호**로 가리킨다 (CLAUDE.md §9-5)
+%
+% 캡스톤 그림의 위 두 칸(줄글)과 아래 띠(5단/7단 비교표·측정 수치)는 강의 .md
+% 본문으로 옮겼다. 그림이 할 일은 도면이고 판단 근거는 글이 할 일이다. 캡스톤의
+% **측정 수치는 가져오지 않는다** — 이 볼트의 수치는 이 볼트의 러너에서 온다
+%
+% 좌표 메모 (mm) — 선은 가로·세로만, `arc (` 가 하나도 없다. 따라서
+% CLAUDE.md §4-6-2 의 회전 방향 점검은 이 그림에 해당하지 않는다
+%   전체 x = -34 .. 198 (232 mm),  y = +16 .. -111
+%   입력 화살 (-32,0) -> s1,   선체 출력 (182,-62) -> (196,-62)
+%   되먹임 꼬리표  p (0,-14) · psi (30,-18) · u,v (0,-64) · psi (42,-90) · r (70,-90)
+%   블록 글자 \footnotesize, 단위 꼬리표 \scriptsize. \tiny 는 없다
+
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{bodyc}{HTML}{1D4ED8}
+\definecolor{plantc}{HTML}{16A34A}
+
+\tikzset{
+  bx/.style  = {draw=ink, line width=0.55pt, fill=white, align=center,
+                font=\footnotesize, inner sep=2pt,
+                minimum width=24mm, minimum height=14mm},
+  tx/.style  = {bx, draw=alng, fill=alng!6},
+  px/.style  = {bx, draw=plantc, fill=plantc!10},
+  hx/.style  = {bx, draw=errc, fill=errc!5},
+  tag/.style = {draw=soft, line width=0.5pt, fill=black!3, rounded corners=1.5pt,
+                font=\scriptsize, inner sep=2.2pt},
+  io/.style  = {font=\footnotesize, ink, inner sep=1.6pt},
+  un/.style  = {font=\scriptsize, soft, inner sep=1.4pt},
+  sgn/.style = {font=\scriptsize, ink},
+  fb/.style  = {soft, line width=0.6pt, -{Stealth[length=4pt, width=3pt]}},
+  grp/.style = {line width=0.7pt, densely dashed, rounded corners=2pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 행 A — 바깥 고리. 위치 오차를 **선체축으로 돌려** 쓴다.
+% 첫 칸(x = 30)이 회전이다. NED 판에서는 이 칸이 비어 있다
+% ===========================================================================
+\node[sum] (s1) at (0,0) {};
+\node[sgn] at (-3.4,2.8)  {$+$};
+\node[sgn] at (-3.4,-3.2) {$-$};
+
+\node[bx, draw=accent, fill=accent!8, minimum width=26mm] (rot) at (30,0)
+     {rotate $R(\psi)^{\mathsf T}$\\[1pt] NED error\\[1pt] $\to$ body error};
+\node[bx, draw=bodyc, fill=bodyc!5] (kp) at (68,0)
+     {position P\\[1pt] $K_{p,\mathrm{pos}} = 0.30$};
+\node[bx, draw=bodyc, fill=bodyc!5, minimum width=28mm] (sl) at (106,0)
+     {speed limit $\times$ gate\\[1pt] per axis\\[1pt]
+      $u_{\lim}\,0.80$ \ $v_{\lim}\,0.35$};
+
+\draw[sig] (-32,0) -- (s1);
+\node[io, anchor=south] at (-16,1.8) {$p_d = [N_d\ E_d]$};
+\node[un, anchor=north] at (-16,-1.8) {[m] NED};
+
+%  칸 사이가 12 ~ 15 mm 뿐이라 단위 꼬리표를 달면 점선 띠의 모서리를 넘는다.
+%  그리고 회전 블록이 "NED error -> body error" 라고 이미 말한다 — 지운다 (§9-5)
+\draw[sig] (s1) -- (rot);
+\node[io, anchor=south] at (10,1.8) {$p_e$};
+
+\draw[sig] (rot) -- (kp);
+\node[io, anchor=south] at (49.5,1.8) {$p_b$};
+
+\draw[sig] (kp) -- (sl);
+\node[io, anchor=south] at (86,1.8) {$\nu_d$};
+
+% ---- 이 그림의 요점. 짝이 되는 NED 판에서는 이 네모가 **비어 있다**
+\draw[grp, draw=accent] (15,-11) rectangle (45,11);
+\node[font=\footnotesize\bfseries, accent, anchor=south, align=center] at (30,12)
+     {the only rotation --- on the position \emph{error}, in the \emph{outer} loop};
+
+% ===========================================================================
+% 되돌아오는 통로 — 행 A 의 끝을 행 B 의 머리로 가져온다. 되먹임이 아니다.
+% 한 줄에 다 세우면 폭이 920 px 를 넘어서 접은 것이다
+% ===========================================================================
+\draw[wire] (120,0)   -- (134,0);
+\draw[wire] (134,0)   -- (134,-26);
+\draw[wire] (134,-26) -- (-14,-26);
+\draw[wire] (-14,-26) -- (-14,-50);
+\draw[sig]  (-14,-50) -- (-2.3,-50);
+\node[io, anchor=south] at (60,-24.6) {$\nu_{cmd}$};
+\node[un, anchor=north] at (60,-27.4)
+     {the same signal, carried down one row --- still in \textbf{body} axes};
+
+% ===========================================================================
+% 행 B — 안쪽 고리. 속도 오차가 **힘**으로 나간다. 두 축이 게인을 따로 갖는다 —
+% 전진과 횡이 물리적으로 다른 축이기 때문이다 (NED 판은 그럴 수 없다)
+% ===========================================================================
+%  부호 둘을 **왼쪽에 세로로** 세운다. 오른쪽 아래는 나가는 선의 단위 꼬리표
+%  ([m/s] body, x 2.5 ~ 17.5) 가 차지하므로, 거기 두면 "-[m/s] body" 로 붙어 읽힌다
+\node[sum] (s2) at (0,-50) {};
+\node[sgn] at (-3.4,-47.2) {$+$};
+\node[sgn] at (-3.4,-53.2) {$-$};
+
+\node[hx, minimum width=28mm, minimum height=16mm] (pi) at (34,-50)
+     {velocity PI\\[1pt] surge $200\,|\,200$\\[1pt] sway $150\,|\,120$};
+\node[hx, minimum width=26mm] (lim) at (74,-50)
+     {force limit\\[1pt] $|X| \le 120$\\[1pt] $|Y| \le 35.13$};
+
+\draw[sig] (s2) -- (pi);
+\node[io, anchor=south] at (10,-48.2) {$\nu_e$};
+\node[un, anchor=north] at (10,-51.8) {[m/s] body};
+
+\draw[sig] (pi) -- (lim);
+\node[io, anchor=south] at (54.5,-48.2) {$\tau_{raw}$};
+
+\draw[sig] (87,-50) -- (115,-50);
+\node[io, anchor=south] at (101,-48.4) {$X, Y$};
+\node[un, anchor=north] at (101,-51.6) {[N] body};
+
+% ===========================================================================
+% 행 C — 선수각 고리. **두 전략이 글자 하나까지 같다.** 그래서 비교에서 빠진다
+% ===========================================================================
+\node[hx, minimum width=60mm, minimum height=18mm] (hd) at (56,-72)
+     {heading P--D \ \emph{(identical in both strategies)}\\[1pt]
+      $N = K_p\,\mathrm{ssa}(\psi_d - \psi) - K_d\,r$\\[1pt]
+      $K_p\,300$ \ $K_d\,100$ \ \ $|N| \le 52.70$};
+
+\node[tag] (pstag) at (8,-72) {$\psi_d$};
+\draw[sig] (13.4,-72) -- (26,-72);
+
+\draw[sig] (86,-72) -- (115,-72);
+\node[io, anchor=south] at (100,-70.4) {$N$};
+
+% ===========================================================================
+% 배분과 선체 — 힘 셋이 추진기 셋으로. 이 둘도 두 전략이 같다
+% ===========================================================================
+\node[tx, minimum width=30mm, minimum height=34mm] (al) at (130,-62)
+     {thrust\\[2pt] allocation\\[4pt] $\mathbf{u} = B^{-1}\boldsymbol{\tau}$\\[2pt]
+      $[T_L\ T_R\ F_B]^{\mathsf T}$};
+\node[px, minimum width=24mm, minimum height=34mm] (sh) at (170,-62)
+     {Otter hull\\[2pt] 3 DOF\\[4pt] bow unit\\ as $\tau_{ext}$};
+
+\draw[sig] (145,-62) -- (158,-62);
+\draw[wire] (182,-62) -- (196,-62);
+%  오른쪽 끝에 붙여 쓰면 20 mm 쯤 왼쪽으로 자라 초록 선체 블록(158 ~ 182) 안에
+%  들어간다. 선 위와 아래로 짧게 두 줄로 쪼갠다 — 테두리가 넓어지지 않는다
+\node[un, anchor=south] at (189,-60.6) {$x$};
+\node[un, anchor=north] at (189,-63.4) {12 states};
+
+% ===========================================================================
+% 되먹임은 꼬리표로 가리킨다. 모델은 상태 벡터 x 하나를 버스로 돌리고 각
+% 서브시스템이 Selector 로 꺼낸다 — 그 도면은 6-3 절의 고리 그림이다
+% ===========================================================================
+\node[tag] (tp)  at (0,-14)  {$p = x(7{:}8)$};
+\draw[fb] (0,-11.0) -- (0,-2.3);
+
+\node[tag] (tps) at (30,-18) {$\psi = x(12)$};
+\draw[fb] (30,-15.0) -- (30,-7);
+
+\node[tag] (tuv) at (0,-64)  {$u, v = x(1{:}2)$};
+\draw[fb] (0,-61.0) -- (0,-52.3);
+
+\node[tag] (th)  at (42,-90) {$\psi$};
+\draw[fb] (42,-87.0) -- (42,-81);
+\node[tag] (tr)  at (70,-90) {$r = x(6)$};
+\draw[fb] (70,-87.0) -- (70,-81);
+
+\node[un, anchor=north west, text width=46mm] at (-34,-88)
+     {Every tag is a branch of the \textbf{one} measurement bus; the bus itself
+      is drawn in the Section 6-3 figure};
+
+% ===========================================================================
+% 이 전략이 공짜로 얻는 것 — 포화가 **도면에 보이는 블록 하나**다
+% ===========================================================================
+\node[font=\scriptsize, errc, anchor=north, text width=58mm, align=left] at (130,-30)
+     {\textbf{The limit is explicit.} $|Y| \le 35.13$ stands one block upstream of
+      the allocation, so the anti-windup term can be formed from exactly what the
+      limit threw away};
+
+% ===========================================================================
+% 이 그림이 모델의 어디인가
+% ===========================================================================
+\node[anchor=north west, font=\scriptsize, soft] at (122,-88)
+     {\begin{tabular}{@{}ll@{}}
+        \multicolumn{2}{@{}l@{}}{\textit{the blocks, under} \texttt{\_tools/}} \\[2pt]
+        outer loop    & \texttt{add\_position\_loop.m} \\
+        \ \ its rotation & the \texttt{to body} function \\
+        inner loop    & \texttt{add\_velocity\_loop.m} \\
+        heading loop  & \texttt{add\_heading\_loop.m} \\
+        allocation    & \texttt{add\_allocation3.m} \\
+        hull          & \texttt{add\_otter\_plant.m} \\
+      \end{tabular}};
+
+\end{tikzpicture}
+\end{document}

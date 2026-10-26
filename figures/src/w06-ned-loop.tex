@@ -1,0 +1,276 @@
+% figures/w06-ned-loop.svg — NED 축에서 도는 위치제어. 회전은 **둘**이다
+%
+%   bash _tools/tikz2svg.sh figures/src/w06-ned-loop.tex figures/w06-ned-loop.svg
+%
+% 캡스톤 assets/src/w06-ned-loop.tex (239 줄) 를 옮긴 것이다.
+% 짝인 w06-bodyfixed-loop.tex 와 **같은 격자**에 올려 두었다 — 두 장을 번갈아
+% 보면 다른 자리가 그 자리에서 보이게 하는 것이 이 짝의 목적이다. 같은 것:
+%   행 A y = 0 의 세 칸  x = 30 / 68 / 106,  합산점 x = 0
+%   되돌아오는 통로      y = -26,  내려오는 세로선 x = -14
+%   행 B y = -50 의 두 칸 x = 34 / 74
+%   배분·선체            al (130,-62) 30x34,  sh (170,-62) 24x34
+%   선수각 띠            hd (56,-72) 60x18 — **두 전략이 글자 하나까지 같다**
+%   파일 표              왼위 기준, x = 122. **y 는 다르다** — 선체고정 판은 -88,
+%                        이 판은 -104 다. 여기에만 ToNED 로 들어가는 가로선이
+%                        y = -100 에 있어서, -88 에 두면 표를 꿰뚫는다
+%
+% 다른 자리 셋. 캡스톤 원본이 적어 둔 그대로다 —
+%   ① 바깥 고리에 **psi 가 들어가지 않는다.** 그래서 x = 30 칸이 **비어 있다.**
+%      선체고정 판에서 그 칸에 서 있던 회전이 여기서는 없다. 빈 네모를 warn
+%      색 점선으로 **남겨 두어** 두 장을 겹쳐 보면 그 자리가 보이게 했다
+%   ② 속도 제한을 축마다가 아니라 **벡터 크기**로 건다. 축마다 0.35 를 걸면
+%      대각선으로 0.35*sqrt(2) = 0.495 m/s 가 나와 한계를 넘는다. 크기로 걸면
+%      방향은 그대로 두고 빠르기만 줄인다
+%   ③ 회전행렬이 **둘**이다 — 지령 쪽 ToBody (행 B 의 둘째 칸), 되먹임 쪽
+%      ToNED (아래 칸). 둘 다 **안쪽** 고리에 있다
+%
+% 바꾼 것 여섯 (선체고정 판과 같다):
+%   ① WAM-V 수치 대신 Otter 수치 — T_max 119.68 / T_min -66.71 / F_B_max 40,
+%      Kp_ned 150 | Ki_ned 120, v_ned_max 0.35, Kp_pos 0.30,
+%      선수각 Kp 300 Kd 100, 한계 X_max 120 / N_max 52.70
+%   ② 조판 글자를 전부 영어로. 한국어는 % 주석에만 남는다 (pdflatex 가 깨진다)
+%   ③ parts/*.m 대신 이 볼트의 _tools/*.m 이름
+%   ④ T^{-1} 이 아니라 B^{-1} 이다. 이 볼트의 추진기 배치 행렬 이름은 B 다
+%   ⑤ **캡스톤은 일곱 블록을 한 줄에 세웠다.** x 가 -62 에서 372 까지 434 mm =
+%      1640 px 이고, 본문 폭 703 px 로 줄면 0.43 배 — \scriptsize 8 pt 가
+%      인쇄본에서 3.4 pt 가 된다 (CLAUDE.md §4-6-0). 두 줄로 접어 **실측 폭을
+%      920 px 아래**로 내렸다
+%   ⑥ **계측 버스를 그리지 않는다.** 되먹임 다섯 줄을 여기 또 그리면 이 그림이
+%      6-3 절의 고리 그림과 같은 그림이 된다. 버스는 그 그림이 가르치는 것이므로
+%      여기서는 **꼬리표 + §번호**로 가리킨다 (CLAUDE.md §9-5).
+%      다만 되먹임 쪽 회전 ToNED 는 **그린다** — 그것이 이 그림의 요점 ③ 이다
+%
+% 캡스톤 그림의 위 두 칸(줄글)과 아래 띠(다섯 줄 비교표)는 강의 .md 본문으로
+% 옮겼다. 그림이 할 일은 도면이고 판단 근거는 글이 할 일이다. 캡스톤의
+% **측정 수치는 가져오지 않는다** — 이 볼트의 수치는 이 볼트의 러너에서 온다
+%
+% 좌표 메모 (mm) — 선은 가로·세로만, `arc (` 가 하나도 없다. 따라서
+% CLAUDE.md §4-6-2 의 회전 방향 점검은 이 그림에 해당하지 않는다
+%   전체 x = -34 .. 198 (232 mm),  y = +16 .. -124
+%   입력 화살 (-32,0) -> s1
+%   선체 출력 (182,-62) -> (196,-62),  거기서 내려와 (196,-100) -> (114,-100)
+%   ToNED 출력 (78,-100) -> (0,-100) -> 위로 (0,-52.3) 에서 s2 의 아래로
+%   되먹임 꼬리표  p (0,-14) · psi (84,-118) · u,v (108,-118) · psi (42,-90) · r (70,-90)
+%   블록 글자 \footnotesize, 단위 꼬리표 \scriptsize. \tiny 는 없다
+
+\documentclass[border=6pt]{standalone}
+\input{gnc-style}
+
+\definecolor{bodyc}{HTML}{1D4ED8}
+\definecolor{plantc}{HTML}{16A34A}
+
+\tikzset{
+  bx/.style  = {draw=ink, line width=0.55pt, fill=white, align=center,
+                font=\footnotesize, inner sep=2pt,
+                minimum width=24mm, minimum height=14mm},
+  tx/.style  = {bx, draw=alng, fill=alng!6},
+  px/.style  = {bx, draw=plantc, fill=plantc!10},
+  hx/.style  = {bx, draw=errc, fill=errc!5},
+  rx/.style  = {bx, draw=accent, fill=accent!8},
+  tag/.style = {draw=soft, line width=0.5pt, fill=black!3, rounded corners=1.5pt,
+                font=\scriptsize, inner sep=2.2pt},
+  io/.style  = {font=\footnotesize, ink, inner sep=1.6pt},
+  un/.style  = {font=\scriptsize, soft, inner sep=1.4pt},
+  sgn/.style = {font=\scriptsize, ink},
+  fb/.style  = {soft, line width=0.6pt, -{Stealth[length=4pt, width=3pt]}},
+  grp/.style = {line width=0.7pt, densely dashed, rounded corners=2pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 행 A — 바깥 고리. 위치 오차를 **돌리지 않고** 북·동에서 그대로 쓴다.
+% 첫 칸(x = 30)이 비어 있다. 선체고정 판에서는 그 칸이 회전이었다
+% ===========================================================================
+%  부호 둘을 왼쪽에 세로로. 오른쪽 아래는 나가는 선의 이름표 자리다
+\node[sum] (s1) at (0,0) {};
+\node[sgn] at (-3.4,2.8)  {$+$};
+\node[sgn] at (-3.4,-3.2) {$-$};
+
+\node[bx, draw=bodyc, fill=bodyc!5] (kp) at (68,0)
+     {position P\\[1pt] $K_{p,\mathrm{pos}} = 0.30$\\[1pt] both axes alike};
+\node[bx, draw=bodyc, fill=bodyc!5, minimum width=28mm] (cp) at (106,0)
+     {speed limit $\times$ gate\\[1pt] by \textbf{magnitude}\\[1pt]
+      $\sqrt{\dot N_d^2 + \dot E_d^2} \le 0.35$};
+
+\draw[sig] (-32,0) -- (s1);
+\node[io, anchor=south] at (-16,1.8) {$p_d = [N_d\ E_d]$};
+\node[un, anchor=north] at (-16,-1.8) {[m] NED};
+
+% ---- 빈 칸을 지나가는 선 하나. 선체고정 판에서는 여기 회전이 서 있었다.
+%  이름표는 점선 네모(15 ~ 45) **왼쪽에** 둔다. 안에 두면 "비어 있다" 가 흐려지고,
+%  가운데에 두면 네모의 양쪽 모서리를 넘는다. 좌표계는 아래 빨간 주석이 말한다
+\draw[sig] (s1) -- (kp);
+\node[io, anchor=south] at (8,1.8) {$p_e$};
+
+%  kp(오른쪽 80) 와 cp(왼쪽 92) 사이가 12 mm 뿐이라 단위 꼬리표가 양쪽 블록을
+%  파고든다. cp 블록이 이미 $\le 0.35$ 로 그것이 속도임을 말한다 — 지운다 (§9-5)
+\draw[sig] (kp) -- (cp);
+\node[io, anchor=south] at (86,1.8) {$\nu_d$};
+
+% ---- 이 그림의 요점 ①. 짝이 되는 선체고정 판은 이 네모 안에 회전이 들어 있다
+\draw[grp, draw=warn] (15,-11) rectangle (45,11);
+\node[font=\footnotesize\bfseries, warn, anchor=south, align=center] at (30,12)
+     {\emph{no rotation here} --- $\psi$ never enters the outer loop};
+\node[un, warn, anchor=north, text width=34mm, align=center] at (30,-12)
+     {$p_e$ stays in \textbf{NED}, in metres north and east. The body-fixed
+      figure puts its one rotation in this slot};
+
+% ===========================================================================
+% 되돌아오는 통로 — 행 A 의 끝을 행 B 의 머리로 가져온다. 되먹임이 아니다
+% ===========================================================================
+\draw[wire] (120,0)   -- (134,0);
+\draw[wire] (134,0)   -- (134,-26);
+\draw[wire] (134,-26) -- (-14,-26);
+\draw[wire] (-14,-26) -- (-14,-50);
+\draw[sig]  (-14,-50) -- (-2.3,-50);
+\node[io, anchor=south] at (60,-24.6) {$\nu_{cmd}$};
+\node[un, anchor=north] at (60,-27.4)
+     {the same signal, carried down one row --- still in \textbf{NED} axes};
+
+% ===========================================================================
+% 행 B — 안쪽 고리. 오차는 북·동에서 재고, 나가는 힘은 **돌려서** 선체축으로
+% 보낸다. 북과 동은 물리적으로 같은 축이므로 게인이 하나뿐이다 (요점 ②)
+% ===========================================================================
+\node[sum] (s2) at (0,-50) {};
+\node[sgn] at (-3.4,-47.2) {$+$};
+\node[sgn] at (-3.4,-54.0) {$-$};
+
+\node[hx, minimum width=28mm, minimum height=16mm] (pi) at (34,-50)
+     {velocity PI\\[1pt] north $150\,|\,120$\\[1pt] east \ $150\,|\,120$};
+\node[rx, minimum width=26mm, minimum height=16mm] (tob) at (74,-50)
+     {rotate $R(\psi)^{\mathsf T}$\\[1pt] ToBody\\[1pt]
+      $F_N, F_E \to X, Y$};
+
+\draw[sig] (s2) -- (pi);
+\node[io, anchor=south] at (10,-48.2) {$\nu_e$};
+\node[un, anchor=north] at (10,-51.8) {[m/s] NED};
+
+%  pi(48) 와 tob(61) 사이가 13 mm 이고 그 안에 점선 네모의 모서리(59)가 선다.
+%  어떤 이름표를 놓아도 모서리를 넘는다. tob 블록이 "$F_N, F_E \to X, Y$" 라고
+%  이미 말하므로 그 칸은 비워 둔다 (§9-5)
+\draw[sig] (pi) -- (tob);
+
+\draw[sig] (87,-50) -- (115,-50);
+\node[io, anchor=south] at (101,-48.4) {$X, Y$};
+\node[un, anchor=north] at (101,-51.6) {[N] body};
+
+% ---- 요점 ③ 의 앞쪽 — 나가는 길의 회전
+\draw[grp, draw=accent] (59,-61) rectangle (89,-39);
+\node[font=\footnotesize\bfseries, accent, anchor=south] at (74,-38)
+     {rotation \#1 --- on the way \textbf{out}};
+
+% ===========================================================================
+% 행 C — 선수각 고리. **두 전략이 글자 하나까지 같다.** 그래서 비교에서 빠진다
+% ===========================================================================
+\node[hx, minimum width=60mm, minimum height=18mm] (hd) at (56,-72)
+     {heading P--D \ \emph{(identical in both strategies)}\\[1pt]
+      $N = K_p\,\mathrm{ssa}(\psi_d - \psi) - K_d\,r$\\[1pt]
+      $K_p\,300$ \ $K_d\,100$ \ \ $|N| \le 52.70$};
+
+\node[tag] (pstag) at (8,-72) {$\psi_d$};
+\draw[sig] (13.4,-72) -- (26,-72);
+
+\draw[sig] (86,-72) -- (115,-72);
+\node[io, anchor=south] at (100,-70.4) {$N$};
+
+% ===========================================================================
+% 배분과 선체 — 힘 셋이 추진기 셋으로. 이 둘도 두 전략이 같다
+% ===========================================================================
+\node[tx, minimum width=30mm, minimum height=34mm] (al) at (130,-62)
+     {thrust\\[2pt] allocation\\[4pt] $\mathbf{u} = B^{-1}\boldsymbol{\tau}$\\[2pt]
+      $[T_L\ T_R\ F_B]^{\mathsf T}$};
+\node[px, minimum width=24mm, minimum height=34mm] (sh) at (170,-62)
+     {Otter hull\\[2pt] 3 DOF\\[4pt] bow unit\\ as $\tau_{ext}$};
+
+\draw[sig] (145,-62) -- (158,-62);
+
+% ===========================================================================
+% 요점 ③ 의 뒤쪽 — 들어오는 길의 회전. 선체가 재는 것은 선체축의 u, v 이고
+% 합산점이 쓰는 것은 북·동의 속도다. 그래서 되먹임도 돌려야 한다
+% ===========================================================================
+\node[rx, minimum width=36mm, minimum height=16mm] (tn) at (96,-100)
+     {rotate $R(\psi)$\\[1pt] ToNED\\[1pt] $u, v \to \dot N, \dot E$};
+
+\draw[wire] (182,-62) -- (196,-62);
+\draw[wire] (196,-62) -- (196,-100);
+\draw[wire] (196,-100) -- (114,-100);
+%  오른쪽 끝에 붙여 쓰면 왼쪽으로 자라 초록 선체 블록(158 ~ 182) 안에 들어간다.
+%  선 위아래로 짧게 두 줄 — 테두리가 넓어지지 않는다
+\node[un, anchor=south] at (189,-60.6) {$x$};
+\node[un, anchor=north] at (189,-63.4) {12 states};
+
+%  화살촉은 **합산점에서** 끝나야 한다. 가로 구간 끝(0,-100)은 모서리일 뿐이다
+\draw[wire] (78,-100) -- (0,-100);
+\draw[sig]  (0,-100) -- (0,-52.3);
+\node[io, anchor=south] at (40,-98.4) {$\dot N, \dot E$};
+\node[un, anchor=north] at (40,-101.6) {[m/s] NED --- measured, then rotated};
+
+%  제목을 네모 **아래**에 두면 psi 와 u,v 꼬리표에서 올라오는 화살표 둘(x = 84,
+%  112)이 그 글자를 꿰뚫는다. 오른쪽 옆으로 보낸다 — y = -95 는 들어오는
+%  가로선(-100) 과 배분 블록 바닥(-79) 사이의 빈 띠다
+\draw[grp, draw=accent] (76,-110) rectangle (116,-90);
+%  `text width` 를 주면 44 mm 에서 접혀 둘째 줄 "in" 이 **들어오는 가로선(-100)
+%  위에** 내려앉는다. 한 줄로 둔다 — 46 mm 쯤이라 x = 118 에서 164 까지이고,
+%  선체 블록의 오른끝(182)과 가로선의 끝(196) 안에 들어간다
+\node[font=\footnotesize\bfseries, accent, anchor=west] at (118,-95)
+     {rotation \#2 --- on the way \textbf{in}};
+
+% ===========================================================================
+% 되먹임은 꼬리표로 가리킨다. 모델은 상태 벡터 x 하나를 버스로 돌리고 각
+% 서브시스템이 Selector 로 꺼낸다 — 그 도면은 6-3 절의 고리 그림이다
+% ===========================================================================
+\node[tag] (tp)  at (0,-14)  {$p = x(7{:}8)$};
+\draw[fb] (0,-11.0) -- (0,-2.3);
+
+\node[tag] (th)  at (42,-90) {$\psi$};
+\draw[fb] (42,-87.0) -- (42,-81);
+\node[tag] (tr)  at (70,-90) {$r = x(6)$};
+\draw[fb] (70,-87.0) -- (70,-81);
+
+\node[tag] (tps) at (84,-118) {$\psi = x(12)$};
+\draw[fb] (84,-115.0) -- (84,-108);
+\node[tag] (tuv) at (112,-118) {$u, v = x(1{:}2)$};
+\draw[fb] (112,-115.0) -- (112,-108);
+
+% ===========================================================================
+% psi 를 쓰는 자리가 **둘**이다. 선체고정 판은 하나였다 — 그것도 비교 항목이다
+% ===========================================================================
+\node[un, anchor=north west, text width=44mm] at (-34,-112)
+     {$\psi$ is read \textbf{twice} here, once by each rotation. The body-fixed
+      strategy reads it once. Every tag is a branch of the \textbf{one}
+      measurement bus, drawn in the Section 6-3 figure};
+
+% ===========================================================================
+% 이 전략이 치르는 값 — 포화가 **도면에 보이지 않는 자리**로 밀려난다
+% ===========================================================================
+%  짝인 선체고정 판의 같은 자리 주석과 **길이를 맞춘다.** 그 판은 160 자 세 줄이고
+%  y = -40 에서 끝나 배분 블록의 윗변(-45)을 비킨다. 원래 이 주석은 230 자였고
+%  다섯 줄이 되어 그 윗변에 닿았다. 느슨한 포화값 2 X_max 와 "never sees" 는
+%  강의 본문이 §6-7 에서 말한다 — 그림은 **두 판의 다른 점 하나**만 말한다 (§9-5)
+\node[font=\scriptsize, errc, anchor=north, text width=58mm, align=left] at (130,-30)
+     {\textbf{The limit is hidden.} $F_B$ is clipped one block \emph{downstream},
+      inside the allocation, so the PI cannot see what the limit threw away};
+
+% ===========================================================================
+% 이 그림이 모델의 어디인가
+% ===========================================================================
+%  표는 아홉 줄이라 29 mm 쯤 자란다. (122,-88) 에 두면 ToNED 로 들어가는
+%  가로선(y = -100, x = 114 ~ 196)이 표의 둘째·셋째 줄을 꿰뚫는다. 그 선 **아래**로
+%  내린다 — 표나 여러 줄 주석을 놓기 전에, 그것이 지나갈 y 를 전부 세어 본다
+\node[anchor=north west, font=\scriptsize, soft] at (122,-104)
+     {\begin{tabular}{@{}ll@{}}
+        \multicolumn{2}{@{}l@{}}{\textit{the blocks, under} \texttt{\_tools/}} \\[2pt]
+        outer loop     & \texttt{add\_position\_loop\_ned.m} \\
+        \ \ no rotation & --- \\
+        inner loop     & \texttt{add\_velocity\_loop\_ned.m} \\
+        \ \ ToBody     & the \texttt{to body} function \\
+        \ \ ToNED      & the \texttt{to ned} function \\
+        heading loop   & \texttt{add\_heading\_loop.m} \\
+        allocation     & \texttt{add\_allocation3.m} \\
+        hull           & \texttt{add\_otter\_plant.m} \\
+      \end{tabular}};
+
+\end{tikzpicture}
+\end{document}
