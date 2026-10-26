@@ -117,6 +117,29 @@ Kp = 300;     Kd = 100;          % 선수각 P-D (4주차) / the heading P-D of 
 %  used here.
 N_max = 2*y_pont*min(T_max, -T_min);      % 52.70 N m
 
+%% ---- 같은 제어기를 NED 에서 돌릴 때 (6-7 절) / the same control, run in NED --
+%  선체고정 제어기는 위치오차를 한 번 돌려 놓고 전진·횡 속도를 요구했다. NED
+%  제어기는 오차를 돌리지 않고 **북·동 속도**를 요구하며, 회전은 안쪽 루프로
+%  내려가 측정 속도와 요구 힘에 **두 번** 걸린다. 블록은 그대로이고 자리만 바뀐다.
+%  The body-fixed controller rotates the position error once and asks for surge
+%  and sway. The NED controller leaves the error in NED and asks for north and
+%  east; the rotation moves into the inner loop and acts TWICE, on the measured
+%  velocity going in and on the demanded force coming out.
+%
+%  축마다 게인을 다르게 둘 수 없다. NED 의 북축이 선체의 어느 축을 밀게 되는지는
+%  선수각에 따라 달라지므로, 전진에 맞춘 게인은 배가 돌아섰을 때 과도해진다.
+%  그래서 **느린 축의 값**(횡) 을 두 축에 함께 쓴다.
+%  The axes cannot have different gains: which hull axis a NED axis pushes
+%  depends on the heading, so gains tuned for surge become excessive once the
+%  vessel has turned. The slower axis's values are used for both.
+Kp_ned = 150;   Ki_ned = 120;    % 북·동이 함께 쓰는 PI / one pair for both axes
+
+%  속도명령 한계도 느린 축의 것이다. 그리고 축마다 자르지 않고 **크기**로 자른다 —
+%  0.35 를 두 축에 따로 걸면 비스듬한 방향에서 0.35*sqrt(2) = 0.495 m/s 가 된다.
+%  The velocity limit is the slow axis's too, and it is applied to the MAGNITUDE:
+%  0.35 on each axis separately gives 0.495 m/s on a diagonal.
+v_ned_max = v_lim;               % 0.35 m/s
+
 %% ---- 접안 (6-7 ~ 6-9 절) / berthing ---------------------------------------
 %  부두는 동쪽 좌표가 일정한 직선이고, 배는 그 동쪽에서 다가온다.
 %  The quay is a line of constant east coordinate; the vessel comes from the east.

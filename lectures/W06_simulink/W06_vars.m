@@ -71,6 +71,13 @@ V.Y_max = min(abs(V.T_min)/(V.l_f/(2*V.y_pont)), V.F_B_max);   % 35.13 N
 V.Kp = 300;     V.Kd = 100;
 V.N_max = 2*cfg.y_pont*min(V.T_max, -V.T_min);    % 52.70 N m
 
+%% ---- NED 좌표에서 도는 같은 제어기 (6-7 절) / the same control, run in NED
+%  축 둘이 게인 하나를 함께 쓴다. NED 의 북축은 선수각에 따라 전진일 수도 횡일
+%  수도 있으므로 **느린 축(횡)** 의 값을 쓴다 / one gain pair for both axes
+V.Kp_ned = 150;   V.Ki_ned = 120;
+%  속도 한계도 느린 축의 것이다. 축마다 자르지 않고 **크기**로 자른다
+V.v_ned_max = V.v_lim;                            % 0.35 m/s
+
 %% ---- 접안 / berthing
 V.quay_E   = 0;
 V.berth_N  = 40;

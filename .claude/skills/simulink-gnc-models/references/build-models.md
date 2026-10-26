@@ -119,3 +119,82 @@ add_measurement(m, P.measurement, 'W01', {'n'}, ...
 `[u v r N E psi | …]` 뒤에 붙이는 순서가 곧 열 번호다. 같은 주차의 모델 둘이
 서로 다른 순서로 붙이면 `WXX_read.m` 이 어느 모델이 만든 로그인지 알아야 하게 된다.
 **W01 은 두 모델 모두 7·8 열을 `n` 으로 맞췄다** — 그래서 리더가 모델을 몰라도 된다.
+
+---
+
+## 캔버스에 수식을 조판한다 (2026-10-27)
+
+사용자 지시: "시뮬링크에 MATHTYPE이나 LATEX로 수식도 넣어줘 해당 부분 강의 자료에
+있는 내용을 참조해서". 학생이 모델을 열면 그 절의 식이 **블록 옆에** 있어야 한다.
+
+### 되는 것과 안 되는 것 — 실험으로 확인했다
+
+`set(a,'Interpreter')` 가 돌려주는 값은 넷뿐이다: `'off'` · `'tex'` · `'rich'` · `'mathml'`.
+
+| 쓰려던 것 | 결과 |
+|---|---|
+| `$$ ... $$` 로 감싼 LaTeX | **글자 그대로 찍힌다.** `TeXMode='on'` 을 켜도 같다 |
+| `Interpreter = 'mathml'` | 본문을 `<math>…</math>` 로 감싼 글자가 그대로 보인다 (진짜 MathML 이 필요하다) |
+| `\begin{bmatrix}` | **지원하지 않는다** |
+| **`Interpreter = 'tex'` + 달러 기호 없는 MATLAB TeX 마크업** | **이것이 된다** |
+
+렌더를 눈으로 확인한 마크업: `\tau \nu \psi \pi`, `^{-1}`, `^T`, `_{p,pos}`,
+`_{B,max}`, `\leftarrow`, `\rightarrow`, `\surd`, `\times`, `\leq`, `\neq`.
+여러 줄은 `strjoin(L, newline)` 으로 만들고 **줄마다 따로** 해석된다.
+
+```matlab
+b = Simulink.Annotation([m '/equations']);
+b.Text = strjoin(E, newline);
+b.Interpreter = 'tex';
+b.FontName = 'Consolas';
+b.FontSize = 13;
+b.HorizontalAlignment = 'left';
+b.Position = [40 1700 1300 1700 + 30 + 22*numel(E)];   % 글자 높이 약 22 px
+b.BackgroundColor = 'lightBlue';
+```
+
+### 행렬은 `|` 로 손으로 그린다 — 그리고 **앞머리가 같아야** 선다
+
+고정폭 글꼴을 줘도 열이 서지 않는다. TeX 해석기가 아래첨자·그리스 글자
+(`y_p`, `l_f`, `T_L`, `F_B`, `\psi`) 를 **고정폭 칸보다 좁게** 짠다.
+
+> [!important] 같은 좁아짐이 **이름표**에도 걸린다
+> `   p_{app} = ` 나 `     R(\psi) = ` 는 같은 길이의 공백보다 좁게 짜인다.
+> 그래서 **이름표를 행렬 첫 줄에 붙이면** 다음 줄이 다른 x 에서 시작해 행렬이 어긋난다.
+> 이름표는 **제 줄에 따로** 두고, 행렬의 모든 줄은 **공백만으로** 들여쓴다.
+
+| 틀린 것 | 옳은 것 |
+|---|---|
+| `'   p_{app} = \| N_b     \|'` + `'             \| E_b + s \|'` | `'   approach  p_{app}'` 다음에 `'     \| N_b     \|'` · `'     \| E_b + s \|'` |
+| 행렬 속을 `\| y_p  -y_p  l_f \|` 로 | 숫자로 — `\| 0.395 -0.395 1.5 \|`, 기호 뜻은 **아래 산문**에 |
+| 행렬 둘째 줄 끝에 `= R(\psi)^T p_e` 를 붙임 | 그 식을 **행렬 위 도입 줄**로 올린다 |
+
+행렬 한 칸의 **글자 수**도 줄마다 같아야 한다 (`\psi` 는 한 글자로 센다).
+
+### 밑줄 있는 평범한 낱말은 먹힌다
+
+`bow_on` 이 "bow" + 아래첨자 `o` + "n" 으로 찍혔다. **`bow\_on` 으로 escape 한다.**
+
+### 산문 메모와 수식 메모는 **주석 블록 둘**이다
+
+`'tex'` 주석은 평범한 글 덩어리를 함께 들 수 없다. `note(m,o)` 가 산문 상자를 만들고
+그 끝에서 `equations(m,o)` 가 수식 상자를 따로 만든다.
+
+### 저장된 모델에서 다시 꺼낼 때
+
+```matlab
+h = find_system(mdl,'FindAll','on','SearchDepth',1,'Type','annotation');
+for k = 1:numel(h)
+    if strcmp(get(h(k),'Interpreter'),'tex'), txt = get(h(k),'Text'); end
+end
+```
+
+`'Name','equations'` 로는 **걸리지 않는다.** `Interpreter` 로 고른다.
+그리고 `strsplit` 은 기본값이 **연속 구분자를 합치므로** 빈 줄이 든 글의 줄 수를
+`numel(strsplit(txt,newline))` 으로 세면 모자라게 나온다 — 빌더에서는 `numel(E)` 를 쓴다.
+
+### 끝내는 법
+
+속성 대입이 성공한 것은 **확인이 아니다.** 임시 모델에 그 글을 붙여
+`print(['-s' sh],'-dpng','-r90', ...)` 로 PNG 를 뽑고 **눈으로 본다.**
+고친 뒤에도 다시 뽑아 본다 (CLAUDE.md §4-6).
