@@ -3,7 +3,12 @@
 %
 %  실행 / to run
 %      W06_0_setup
-%      open_system('W06_F_position')    그리고 Run / then press Run
+%      open_system('W06_1_point')       그리고 Run / then press Run
+%
+%  일곱 모델 중 어느 것을 열어도 된다 — 모두 이 파일의 값을 쓴다.
+%      W06_1_point · W06_2_sway · W06_3_thrust · W06_4_stop
+%      W06_5_dock  · W06_7_front · W06_8_ned
+%  Any of the seven opens the same way; all of them read this file's values.
 %
 %  강의에서의 위치 / place in the lecture
 %      실험 6-0 이다. 학생이 고치는 유일한 파일이다. 블록에는 숫자가 아니라 이
@@ -68,24 +73,27 @@ F_B_max = 40;                 % [N]
 %  otter.m builds it; it is not measured by finite differences.
 [Mmat, Minv] = otter_M(mp, rp);          %#ok<ASGLU>
 
-%% ---- 열린 루프 명령 (6-1 ~ 6-2 절) / the open-loop demand -----------------
-%  배가 세 방향으로 따로 힘을 낼 수 있는지 보는 실험이다. 셋 중 하나만 0 이
-%  아니게 두면 그 방향으로만 움직여야 한다.
-%  The experiment that asks whether the three generalized forces can be
-%  commanded independently: with one of the three non-zero the vessel should
-%  move that way and no other.
-X_cmd = 0;            % 전진력 / surge force       [N]
-Y_cmd = 25;           % 횡력   / sway force        [N]
-N_cmd = 0;            % 요 모멘트 / yaw moment     [N m]
+%% ---- 명령은 여기에 없다 / the commands are not here -----------------------
+%  무엇을 지시하는가는 **모델의 캔버스**에 숫자로 박혀 있다. 단마다 다르기
+%  때문이다 — 3 단은 X = 40 N, Y = 15 N, N = 10 N m 를 직접 주고, 1 단은
+%  (N_d, E_d) = (10, 10) m 를, 4 단은 (12, 25) m 를, 7 단은 psi_berth = -pi/2
+%  를 캔버스에 들고 있다. 블록을 더블클릭하면 그 단이 무엇을 지시하는지가
+%  **그림에 그대로** 보인다. 이 파일에 모아 두면 그림이 말을 하지 않는다.
+%  What is commanded lives on each model's canvas as a number, because it is
+%  what separates one rung from the next. Double-clicking the block shows the
+%  demand in the diagram itself; collecting them here would silence the figure.
+%
+%  여기 있는 것은 **계수**다 — 게인 · 한계 · 선체. 일곱 모델이 함께 쓴다.
+%  What is here are the coefficients -- gains, limits, hull -- shared by all seven.
 
 %% ---- 위치제어 (6-3 절) / position control ---------------------------------
 %  바깥 루프: 위치오차 -> 속도명령 (P). 안쪽 루프: 속도오차 -> 힘 (PI).
 %  선수각은 4주차의 P-D 를 그대로 쓴다. 세 루프의 게인이 전부 여기 있다.
 %  Outer loop: position error to a velocity command, proportional. Inner loop:
 %  velocity error to a force, PI. The heading loop is Week 4's P-D unchanged.
-N_d   = 20;           % 목표 북쪽 좌표 / commanded north   [m]
-E_d   = 10;           % 목표 동쪽 좌표 / commanded east    [m]
 psi_d_cmd = 0;        % 목표 선수각 / commanded heading    [rad]
+                      %  임무가 없는 단(1~4 · 8)이 쓴다. 접안 모델은 단계기가
+                      %  정한다 / used by the rungs without a mission
 
 Kp_pos = 0.30;        % 위치 P 게인 / outer proportional gain     [1/s]
 u_lim  = 0.80;        % 전진 속도명령 한계 / surge command limit  [m/s]
@@ -151,16 +159,18 @@ app_N = berth_N;                       % 접근점 / the approach point
 app_E = berth_E + stand_off;           %   접안점의 법선 위 / on the berth normal
 
 %  접안 전략 / the berthing strategy
-%    0  옆으로 붙인다. 최종 선수각 0 — 뱃머리가 북쪽, 부두와 나란하다
-%    1  뱃머리를 먼저 넣는다. 최종 선수각 -90 도 — 뱃머리가 벽을 향한다
+%    psi_berth = 0      옆으로 붙인다 — 뱃머리가 북쪽, 부두와 나란하다 (5 단)
+%    psi_berth = -pi/2  뱃머리를 먼저 넣는다 — 뱃머리가 벽을 향한다 (7 단)
 %  접근점은 둘이 같다. 다른 것은 최종 선수각 하나뿐이고, 그것이 마지막 7 m 를
 %  횡방향 운동으로 할지 전진 운동으로 할지를 정한다 (6-6 절).
 %    0 sideways: final heading 0, the bow north and the hull parallel to the quay
-%    1 bow first: final heading -90 deg, the bow into the wall
+%    -pi/2 bow first: the bow into the wall
 %  The approach point is the SAME for both. The one difference is the final
 %  heading, and that decides whether the last 7 m are sway or surge.
-bow_on = 0;
-if bow_on, psi_berth = -pi/2; else, psi_berth = 0; end   % 최종 선수각 / final heading [rad]
+%
+%  이 값은 **모델의 캔버스**에 있다. 아래 값은 5 단의 것이고, 7 단은 제
+%  캔버스에 -pi/2 를 들고 있다 / each model carries its own on the canvas
+psi_berth = 0;                % 최종 선수각 / final heading [rad]
 
 R_app   = 1.5;                % 접근점 도착 반경 / arrival radius, approach point [m]
 R_berth = 0.40;               % 접안 판정 반경 / arrival radius, the berth        [m]

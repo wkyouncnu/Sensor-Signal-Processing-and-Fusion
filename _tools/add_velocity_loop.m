@@ -25,7 +25,7 @@ function s = add_velocity_loop(m, pos)
 %   by side, the surge axis of this diagram and Week 3's must be the same
 %   drawing.
 %
-%   W06_F_position 과 W06_H_berth 가 이것을 함께 쓴다 (§15-34).
+%   6 주차 사다리에서 루프를 닫는 여섯 단이 이것을 함께 쓴다 (§15-34).
 %
 %   THE LAW, PER AXIS
 %

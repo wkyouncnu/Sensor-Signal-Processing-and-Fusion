@@ -4,7 +4,7 @@ function W06_fig_ladder(Rs, L, V, here)
 %   W06_fig_ladder(Rs, L, V, here)
 %
 %   Rs    단마다 한 번의 실행 / one run per rung      (W06_read 의 결과, cell)
-%   L     사다리 표 / the ladder table                {단번호, 이름, 모델, 덮어쓴 값, 목표}
+%   L     사다리 표 / the ladder table                {단번호, 이름, 모델, 절, 목표}
 %   V     주차 상수 / the week's constants            W06_vars()
 %   here  그림을 저장할 주차 폴더 / the week's folder
 %

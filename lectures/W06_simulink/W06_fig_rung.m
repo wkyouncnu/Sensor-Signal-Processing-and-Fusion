@@ -3,8 +3,8 @@ function W06_fig_rung(R, row, V, here)
 %
 %   W06_fig_rung(R, row, V, here)
 %
-%   row  = {단번호, 이름, 모델, 덮어쓴 값, 목표}  —  W06_J_ladder 의 L 한 줄
-%          {rung, name, model, overrides, target}, one row of the ladder
+%   row  = {단번호, 이름, 모델, 절, 목표}  —  W06_J_ladder 의 L 한 줄
+%          {rung, name, model, section, target}, one row of the ladder
 %
 %   칸 여섯은 **모든 단이 같다.** 그래야 단과 단을 겹쳐 보지 않고 나란히 놓고
 %   볼 수 있다 — 같은 자리에 같은 양이 있으므로 눈이 옮겨 다니지 않는다.

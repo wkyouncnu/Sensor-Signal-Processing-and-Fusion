@@ -48,7 +48,7 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W03 | [Surge Speed Control](lectures/W03_Surge_Speed_Control.md) | `W03_C_open_loop` · `W03_D_P` · `W03_E_PID` · `W03_F_windup` · `W03_G_tuning` (model-free tuning) |
 | W04 | [Heading Control](lectures/W04_Heading_Control.md) | `W04_C_open_loop` · `W04_D_P` · `W04_E_PD` · `W04_F_PID` · `W04_G_wrap` · `W04_H_tuning` (model-free tuning) |
 | W05 | [Waypoint Following and LOS Guidance](lectures/W05_Waypoint_Following_and_LOS_Guidance.md) | `W05_C_atan2` · `W05_D_LOS` · `W05_E_switching` · `W05_F_ILOS` · `W05_G_tuning` (model-free tuning) |
-| W06 | [The Bow Thruster: Position Control and Berthing](lectures/W06_Bow_Thruster_Position_Control_and_Berthing.md) | `W06_C_actuation` · `W06_F_position` · `W06_H_berth` · `W06_I_position_ned` (실험 하나에 모델 하나) |
+| W06 | [The Bow Thruster: Position Control and Berthing](lectures/W06_Bow_Thruster_Position_Control_and_Berthing.md) | `W06_1_point` · `W06_2_sway` · `W06_3_thrust` · `W06_4_stop` · `W06_5_dock` · `W06_7_front` · `W06_8_ned` (사다리 한 단에 모델 하나, 스크립트 하나) |
 | W07 | [Control Allocation](lectures/W07_Control_Allocation.md) | `W07_C_square` · `W07_D_pseudo` · `W07_E_curve` · `W07_F_limits` (실험 하나에 모델 하나) |
 | W08 | [Environmental Loads and Wave Filtering](lectures/W08_Environmental_Loads_and_Wave_Filtering.md) | `W08_C_wave` · `W08_D_no_filter` · `W08_E_notch` · `W08_G_slow` (실험 하나에 모델 하나) |
 | W09 | [Dynamic Positioning and Mission Integration](lectures/W09_Dynamic_Positioning_and_Mission_Integration.md) | `W09_C_fixed` · `W09_D_weathervane` · `W09_E_cascade` · `W09_F_mission` (실험 하나에 모델 하나) |

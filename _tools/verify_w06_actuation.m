@@ -11,7 +11,7 @@ function ok = verify_w06_actuation()
 %   ② 배분 행렬 B 를 **열 규칙에서 손으로 다시 쓴다.** `otter_B` 를 믿지 않는다.
 %   ③ 6-2 절의 자르기 예측 — Y = Y_max 까지는 누출이 **정확히 0** 이고 그
 %      위에서 0 이 아니라는 것. 대수로 보이고 수치로 확인한다.
-%   ④ 6-1 절이 센 ṙ = -2.588 deg/s² — 축을 갈라 놓는 것은 B 이지 M 이 아니다.
+%   ④ 6-1 절이 센 ṙ = -1.553 deg/s² — 축을 갈라 놓는 것은 B 이지 M 이 아니다.
 %   ⑤ 6-7 절의 두 좌표계가 **같은 속도를 요구한다**는 것, 그리고 두 포화의
 %      모양이 다르다는 것.
 %   ⑥ `W06_read` 와 `W06_plot` 의 **열 순서가 같은가.** 둘은 같은 로그를
@@ -147,13 +147,13 @@ ok = report(ok, '10 ranks 2 (under) / 3 square (fully) / 3 of 8 (over)', ...
                     size(B0), rank(B0), size(B3), rank(B3), size(B8), rank(B8)));
 
 %% 11) 축을 갈라 놓는 것은 B 이지 M 이 아니다 / B separates the axes, M does not
-%  정지 상태에서 Y = 25 N 만 걸면 배분은 N = 0 을 정확히 내는데도 선수각이 돈다.
-%  부가질량 결합 M(2,6) 이 ṙ 을 만든다 — 6-1 절이 -2.588 deg/s² 라고 적은 것
+%  정지 상태에서 3 단 캔버스의 Y = 15 N 만 걸면 배분은 N = 0 을 정확히 내는데도
+%  선수각이 돈다. 부가질량 결합 M(2,6) 이 ṙ 을 만든다 — 6-1 절의 -1.553 deg/s²
 [Mm, ~] = otter_M(V.mp, V.rp);
-acc  = Mm([2 6], [2 6]) \ [25; 0];
+acc  = Mm([2 6], [2 6]) \ [15; 0];
 rdot = acc(2)*180/pi;
-ok = report(ok, '11 M(2,6) = 12.25 gives rdot = -2.588 deg/s^2', ...
-            abs(Mm(2,6) - 12.25) < 1e-9 && abs(rdot + 2.588) < 1e-3, ...
+ok = report(ok, '11 M(2,6) = 12.25 gives rdot = -1.553 deg/s^2', ...
+            abs(Mm(2,6) - 12.25) < 1e-9 && abs(rdot + 1.553) < 1e-3, ...
             sprintf('M(2,2) = %.4f, M(2,6) = %.4f, M(6,6) = %.4f', ...
                     Mm(2,2), Mm(2,6), Mm(6,6)));
 
@@ -255,7 +255,17 @@ end
 
 % ------------------------------------------------------------------------
 function ok = report(ok, name, pass, detail)
-fprintf('    %-52s %-5s %s\n', name, ternary(pass, 'OK', 'FAIL'), detail);
+%  판정은 윗줄에, 그 판정의 근거가 된 수치는 한 칸 들여 아랫줄에 둔다.
+%  둘을 한 줄에 넣으면 100 자를 넘는 항목이 여덟이고, 그 줄들은 **PDF 안에서
+%  접힌다** — 본문이 186 mm 이고 고정폭 9 pt 이라 그보다 넓으면 꺾인다 (§15-66).
+%  나누어도 OK/FAIL 이 한 열에 서는 것은 그대로이고, 뒤에 수치가 길어져도
+%  다시 접히지 않는다.
+%  The verdict on one line, the numbers behind it indented on the next. Both on
+%  one line puts eight of the seventeen checks past 100 characters, where the
+%  PDF wraps them; split, the OK/FAIL column still reads straight down and a
+%  longer detail later cannot push the line over again.
+fprintf('    %-52s %s\n', name, ternary(pass, 'OK', 'FAIL'));
+fprintf('         %s\n', detail);
 ok = ok && pass;
 end
 

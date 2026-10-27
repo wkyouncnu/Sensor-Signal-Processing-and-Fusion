@@ -284,8 +284,8 @@ evalin('base','clearvars'); clear functions
 assert(isempty(which('otter')) && isempty(which('run_alone')));
 %  학생이 하나만 고쳐 놓은 경우까지 함께 본다 — 이것은 덮이면 안 된다
 assignin('base','T_final', 6);  assignin('base','Kp_pos', 0.44);
-load_system(fullfile(here,'W06_F_position.slx'));
-sim('W06_F_position');
+load_system(fullfile(here,'W06_1_point.slx'));
+sim('W06_1_point');
 ```
 
 합격선 다섯 — compile 성공 · `h` 가 채워졌다 · `T_final` 과 `Kp_pos` 가 **그대로** ·

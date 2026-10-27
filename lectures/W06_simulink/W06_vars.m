@@ -4,13 +4,14 @@ function V = W06_vars()
 %
 %   V = W06_vars()
 %
-%   절 스크립트는 이것을 받아 **한 필드만** 바꿔 돌린다. 그래야 표의 한 줄과 다른
-%   줄 사이에 무엇이 달라졌는지가 코드에 그대로 보인다.
+%   단 스크립트는 이것을 **읽기만** 한다 — 로그를 재는 데 쓰는 한계와 게인을
+%   가져오기 위해서다. 무엇을 지시하는가는 여기 없고 모델의 캔버스에 있다.
 %
-%       R = W06_read('W06_F_position', 'Kp_v', 300);
+%       V = W06_vars();
+%       fprintf('peak u %5.3f (limit %4.2f)\n', max(abs(y(:,1))), V.u_lim);
 %
-%   A section script takes this and changes ONE field, so that what differs
-%   between two rows of a table is visible in the code.
+%   A rung script only READS this, to name the limit a measurement is held
+%   against. What is commanded is not here; it is on the model's canvas.
 %
 %   W06_0_setup 과 이 파일은 같은 값을 들고 있어야 한다. 사람이 둘을 맞추지 않고
 %   `verify_w06_actuation` 이 필드마다 대조한다. 다른 것이 허용되는 것은 셋뿐이고
@@ -46,14 +47,9 @@ V.V_c    = 0;
 V.beta_c = pi/2;
 [~, V.Minv] = otter_M(V.mp, V.rp);    % 중첩이 쓰는 역행렬 / used by the superposition
 
-%% ---- 열린 루프 명령 / the open-loop demand
-V.X_cmd = 0;
-V.Y_cmd = 25;
-V.N_cmd = 0;
-
 %% ---- 위치제어 / position control
-V.N_d   = 20;
-V.E_d   = 10;
+%  명령(N_d · E_d · X_cmd · Y_cmd · N_cmd)은 여기 없다. 단마다 다르고,
+%  그 모델의 캔버스에 숫자로 박혀 있다 / the demands live on each canvas
 V.psi_d_cmd = 0;
 
 V.Kp_pos = 0.30;
@@ -85,8 +81,7 @@ V.berth_E  = 1.2;
 V.stand_off = 7;
 V.app_N = V.berth_N;
 V.app_E = V.berth_E + V.stand_off;
-V.bow_on = 0;
-if V.bow_on, V.psi_berth = -pi/2; else, V.psi_berth = 0; end
+V.psi_berth = 0;                 % 5 단의 값. 7 단은 캔버스에 -pi/2 / rung 5's
 V.R_app   = 1.5;
 V.R_berth = 0.40;
 V.psi_tol = deg2rad(5);

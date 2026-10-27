@@ -13,10 +13,11 @@ function s = add_position_loop(m, pos)
 %
 %   WHY A TOOL
 %
-%   W06_F_position 과 W06_H_berth 가 **같은 바깥 루프**를 쓴다. 둘의 차이는 목표점을
-%   누가 주느냐 하나뿐이다 — 앞의 것은 Constant 가, 뒤의 것은 단계 기계가 준다.
+%   6 주차 사다리의 다섯 단 — W06_1_point · W06_2_sway · W06_4_stop · W06_5_dock ·
+%   W06_7_front — 이 **같은 바깥 루프**를 쓴다. 단끼리의 차이는 목표점을 누가
+%   주느냐 하나뿐이다 — 앞의 셋은 Constant 가, 뒤의 둘은 단계 기계가 준다.
 %   한 곳에 두어야 그 차이가 **그 하나뿐**이라는 것이 코드로 보인다.
-%   W06_F_position and W06_H_berth use the same outer loop; the only difference
+%   Five rungs of the Week 6 ladder use the same outer loop; the only difference
 %   between them is who supplies the target. Keeping it in one place is what
 %   makes that the ONLY difference.
 %
