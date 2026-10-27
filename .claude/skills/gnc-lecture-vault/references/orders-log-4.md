@@ -598,6 +598,28 @@ phase tables down the rows, §6-6 reads them across the two attitudes."
 |---|---|
 | 플러그인 | 쓰지 않는 MATLAB 팩 25 개를 `~/.claude/settings.json` 에서 뺐다. 스킬 목록 176 → 38 |
 | 지침 | `standing-orders.md` 를 **색인**으로 바꾸고 본문을 주제별 `orders-*.md` 열둘로 냈다 |
+| 커넥터 | 이 볼트가 쓰지 않는 `Claude Docs` 커넥터를 껐다 — 도구 8 개 |
+| 메모리 | 여섯 중 다섯이 `CLAUDE.md` 가 이미 적은 것이었다. 지웠다 — 10,958 → 1,500 바이트 |
+| `CLAUDE.md` | §2 의 `_tools/` 목록 58 줄을 `references/tools.md` 로 내렸다 — 33,366 → 27,876 바이트 |
+
+그리고 **같은 날 다시 재서 앞의 진단 하나를 고쳤다.** 처음에 MCP 28,805 토큰을
+"`engineering` 플러그인의 로그인 안 된 서버 여덟" 탓으로 적었는데, 틀렸다.
+`session_connectors_status` 가 그 여덟을 `needs_auth` 로 보이고 **`tool_count` 가 없다** —
+로그인하지 않은 서버는 도구를 하나도 내놓지 않으므로 **토큰을 쓰지 않는다.**
+실제로 그 28,805 를 쓰는 것은 붙어 있는 서버들이다: `matlab` 13 · `Claude Docs` 8 ·
+`scheduled-tasks` 6 과 내장 브라우저·`ccd_*`. 그 플러그인이 비싼 곳은 MCP 가 아니라
+**스킬 목록**이다 — 쓰지 않는 스킬 열을 거기에 세운다.
+
+> [!important] 토큰을 어디가 쓰는지는 **짐작하지 말고 `session_connectors_status` 로 본다**
+> `needs_auth` 는 공짜다. 비싼 것은 `status: connected` 에 `tool_count` 가 붙은 줄이고,
+> 그중 이 볼트가 쓰는 것은 `matlab` 하나다. 커넥터는
+> `set_session_connector_enabled` 로 **그 자리에서** 끌 수 있고 다음 턴부터 빠진다.
+> 플러그인이 올리는 스킬 목록은 `settings.json` 으로는 못 끄고 `/plugin` 과 **앱 재시작**이 필요하다.
+
+세션마다 통째로 읽히는 것은 **셋뿐**이다 — `CLAUDE.md` · 메모리 · 스킬 목록.
+그래서 이 셋에는 **목록을 두지 않는다.** 파일이 무엇이 있는지는 `ls` 가 말하고,
+`CLAUDE.md` 가 말할 것은 **무엇이 옳은 모양인가**다. 저장소가 이미 적은 것을
+메모리에 겹쳐 적지 않는다 — 다섯을 지운 이유가 그것이다.
 
 큰 참조 문서를 쪼갤 때 지키는 것 다섯.
 

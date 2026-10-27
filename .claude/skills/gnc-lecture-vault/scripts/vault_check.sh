@@ -450,6 +450,31 @@ check_one_model() {
   return 0
 }
 
+check_always_read() {
+  head2 "19. 세션마다 통째로 읽히는 것의 크기"
+  # standing-orders.md §15-60 (2026-10-27, 사용자 지시 "compact 할 일이 없도록"):
+  #   모든 세션이 첫 글자부터 읽는 것은 `CLAUDE.md` 와 메모리뿐이다. 거기에 목록이
+  #   쌓이면 작업 공간이 그만큼 줄고 compact 이 자주 돈다. 목록은 `ls` 가 말하고
+  #   스킬 참조가 왜 있는지를 말한다 — 이 둘은 **규칙만** 담는다.
+  local n=0 c=0 m=0 lim_c=30000 lim_m=4000
+  c=$(wc -c < CLAUDE.md 2>/dev/null || echo 0)
+  local mdir="$HOME/.claude/projects/C--Users-admin-Dropbox-----------00-GradCourse-2026/memory"
+  [ -d "$mdir" ] && m=$(cat "$mdir"/*.md 2>/dev/null | wc -c) || m=0
+  if [ "$c" -gt "$lim_c" ]; then
+    echo "     [큼] CLAUDE.md  ${c} 바이트  > ${lim_c}"
+    echo "        -> 목록·사례를 references/ 로 내린다 (tools.md 처럼). 규칙만 남긴다"
+    n=$((n+1))
+  fi
+  if [ "$m" -gt "$lim_m" ]; then
+    echo "     [큼] 메모리 합계  ${m} 바이트  > ${lim_m}"
+    echo "        -> CLAUDE.md·standing-orders 가 이미 적은 것은 메모리에 두지 않는다"
+    n=$((n+1))
+  fi
+  note "CLAUDE.md ${c}B · 메모리 ${m}B — 넘은 것" "$n"
+  FAIL=$((FAIL+n))
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
@@ -459,8 +484,9 @@ case "$MODE" in
   --code)  check_code ;;
   --clear) check_clear ;;
   --onemodel) check_one_model ;;
+  --size)  check_always_read ;;
   *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks; check_code
-           check_legend; check_clear; check_one_model ;;
+           check_legend; check_clear; check_one_model; check_always_read ;;
 esac
 
 echo

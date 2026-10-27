@@ -141,6 +141,7 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 | `references/results-and-figures.md` | **수식·블록도·결과 그래프를 넣을 때. 사용자가 못박은 규칙** |
 | `references/standing-orders.md` | **가장 먼저. 상시 지침의 색인 — 어느 § 번호가 어느 `orders-*.md` 에 있는가** |
 | `references/orders-*.md` (열둘) | 상시 지침의 본문. 색인에서 찾은 **그 하나만** 읽는다. 주제별 — `process` · `writing` · `math` · `figures` · `tooling` · `review` · `delivery` · `models` · `log-1`~`log-4` |
+| `references/tools.md` | `_tools/` 의 스크립트가 무엇이고 **왜** 있는지. `CLAUDE.md` 에서 내려온 목록 — 실재 확인은 `ls _tools/` |
 | `references/difficulty.md` | **주차를 설계할 때마다. 난이도·무엇을 부록으로 뺄지** |
 | `references/pdf-and-math.md` | PDF 가 안 나올 때, 템플릿을 고칠 때 |
 | `references/figures-svg.md` | 개념도 SVG 를 그릴 때 |
