@@ -643,4 +643,5 @@ phase tables down the rows, §6-6 reads them across the two attitudes."
   제외 정규식에 `orders-[a-z0-9-]+` 를 더했다. 파일을 쪼개면 **그 파일을 이름으로
   아는 도구를 전부 다시 본다**
 
-기록은 이제 `orders-log-4.md` 의 끝에 붙는다. 다음 번호는 **§15-61** 이다.
+**이 파일은 여기서 닫혔다.** 41,908 바이트로 40 KB 를 넘었으므로 §15-61 부터는
+`orders-log-5.md` 에 붙는다 (2026-10-27).

@@ -78,7 +78,9 @@
 |---|---|
 | 새 주차·절·모델·그림·스크립트 | ① `PLAN.md` ② 이 스킬 ③ `CLAUDE.md` ④ **GitHub 에 push** |
 
-- `PLAN.md` — §2 진행 상황 표의 상태, §3 다음에 할 일, 새로 생긴 산출물
+- `PLAN.md` — §2 진행 상황 표의 상태, §3 다음에 할 일. **`PLAN.md` 는 색인이다** —
+  주차를 끝낸 기록은 `references/plan-log-1.md`, 날짜가 붙는 보완 기록은
+  `plan-log-3.md` 의 **끝에** 붙인다 (어디에 무엇이 있는지는 `PLAN.md` 머리의 표)
 - 스킬 — 새 관용구·함정·규칙이 생겼으면 해당 `references/*.md`, 그리고 §4 누적 대장 한 줄
 - `CLAUDE.md` — 폴더·파일 목록이 바뀌었거나 형식 규칙이 생겼으면
 - **GitHub** — SessionEnd 훅이 `_tools/git_autopush.sh` 로 알아서 올린다.
@@ -139,7 +141,7 @@
 | — | Nomoto 1차·2차 등 **이름 붙은 표준 모델을 빼먹지 않는다** | 이 문서 §3-3 · W04 |
 | — | **Sum 블록은 round, 20×20.** 서브시스템 안쪽 선 겹침까지 확인 | 이 문서 §3-4 · `model-layout.md` |
 | — | 남은 폴더 이름 변경은 SessionStart 훅이 재부팅 후 스스로 처리 | `_tools/pending_folder_rename.sh` |
-| — | **강의 절 하나에 스크립트 하나.** 파일명에 강의 순서, `.m` 과 `.slx` 이름 일치 | `model-layout.md` · `PLAN.md` §8 |
+| — | **강의 절 하나에 스크립트 하나.** 파일명에 강의 순서, `.m` 과 `.slx` 이름 일치 | `model-layout.md` · `plan-labfiles.md` (`PLAN.md` §8) |
 | — | 그림마다 **어떤 `.m`·`.slx` 를 돌리면 나오는지** 강의에 적는다 | `results-and-figures.md` |
 | — | 그래프마다 **읽으면 강의가 되는** 설명 — 의미·경향(수치)·원리·알고리즘별·상황별 | `results-and-figures.md` |
 | 2026-09-05 | **선 겹침은 `check_overlaps` 로 기계 검사. 합격선 0** — `row_feed`·`lane_line`·`port_xy` 로 만든다 | 이 문서 §3-4 · `model-layout.md` |

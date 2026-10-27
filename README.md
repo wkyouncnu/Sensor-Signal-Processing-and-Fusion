@@ -26,11 +26,12 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 
 | 찾는 것 | 어디 |
 |---|---|
-| **계획 — 무엇을 언제 만드는가** | [PLAN.md](PLAN.md) |
+| **계획 — 무엇을 언제 만드는가** | [PLAN.md](PLAN.md) — **색인이다** |
+| 그 계획의 기록과 설계 (다섯) | `.claude/skills/gnc-lecture-vault/references/plan-*.md` |
 | 형식 규칙 — 무엇이 옳은 모양인가 | [CLAUDE.md](CLAUDE.md) |
 | 작업 순서 — 어떤 순서로 실행하는가 | `.claude/skills/gnc-lecture-vault/SKILL.md` |
 | 사용자가 못박은 상시 지침 — 색인 | `.claude/skills/gnc-lecture-vault/references/standing-orders.md` |
-| 그 지침의 본문 (주제별 열둘) | `.claude/skills/gnc-lecture-vault/references/orders-*.md` |
+| 그 지침의 본문 (주제별 열셋) | `.claude/skills/gnc-lecture-vault/references/orders-*.md` |
 | 강의자료 (`.md` + `.pdf`) 와 실습 | `lectures/` |
 | 개념도 SVG | `figures/` |
 | 공용 스크립트 | `_tools/` |

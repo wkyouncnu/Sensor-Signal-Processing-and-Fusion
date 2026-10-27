@@ -34,8 +34,8 @@ function vault_shift_from(first, apply, only_sections)
 %     스킬 문서의 옛 사례 서술("7주차 55%", "10주차에 DP") — 지난 일의 기록이다.
 %
 %   아예 열지 않는 파일 / files not opened at all
-%     `standing-orders.md` 와 그 본문인 `orders-*.md` 열둘 · `lecture-md.md` ·
-%     `week_refs.sh` 는 **날짜가 붙은 일지**다.
+%     `standing-orders.md` 와 그 본문인 `orders-*.md` 열둘 · `PLAN.md` 에서 내려온
+%     `plan-log-*.md` 셋 · `lecture-md.md` · `week_refs.sh` 는 **날짜가 붙은 일지**다.
 %     "2026-09-05 에 W05 와 W06 의 순서를 바꿨다" 를 W07 로 고치면 그날 일어난 일이
 %     아닌 것이 된다. 사용자 발언을 그대로 옮긴 줄까지 고쳐져서("W05주차 모두
 %     동일해" -> "W5주차") 인용이 인용이 아니게 됐다. 지난 일은 그대로 두고
@@ -57,7 +57,7 @@ F = strsplit(strtrim(lsout), newline);
 F = F(~cellfun(@isempty, regexp(F, '\.(md|m|sh|awk|tex|txt)$', 'once')));
 F = F( cellfun(@isempty, regexp(F, ['MSS-master|svgzoom_profile|^_templates/|' ...
                     '_previous_version/|standing-orders\.md|orders-[a-z0-9-]+\.md|' ...
-                    'lecture-md\.md|week_refs\.sh'], 'once')));
+                    'plan-log-[0-9]+\.md|lecture-md\.md|week_refs\.sh'], 'once')));
 F = F(~ismember(F, {'_tools/vault_shift_weeks.m', '_tools/vault_shift_from.m', ...
                     '_tools/vault_shift_files.sh', ...
                     '_tools/vault_rename_tau_u.m', '_tools/vault_unify_ypont.m', ...

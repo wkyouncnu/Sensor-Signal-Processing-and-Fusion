@@ -456,8 +456,12 @@ check_always_read() {
   #   모든 세션이 첫 글자부터 읽는 것은 `CLAUDE.md` 와 메모리뿐이다. 거기에 목록이
   #   쌓이면 작업 공간이 그만큼 줄고 compact 이 자주 돈다. 목록은 `ls` 가 말하고
   #   스킬 참조가 왜 있는지를 말한다 — 이 둘은 **규칙만** 담는다.
-  local n=0 c=0 m=0 lim_c=30000 lim_m=4000
+  #   `PLAN.md` 는 세션마다 자동으로 읽히지는 않지만 강의 작업의 첫 동작이 그것을
+  #   읽는 것이므로 같이 센다. 2026-10-27 에 70 KB 를 색인 + `plan-*.md` 다섯으로
+  #   쪼갰다 — 기록이 다시 쌓이면 여기서 걸린다.
+  local n=0 c=0 m=0 p=0 lim_c=30000 lim_m=4000 lim_p=20000
   c=$(wc -c < CLAUDE.md 2>/dev/null || echo 0)
+  p=$(wc -c < PLAN.md 2>/dev/null || echo 0)
   local mdir="$HOME/.claude/projects/C--Users-admin-Dropbox-----------00-GradCourse-2026/memory"
   [ -d "$mdir" ] && m=$(cat "$mdir"/*.md 2>/dev/null | wc -c) || m=0
   if [ "$c" -gt "$lim_c" ]; then
@@ -470,7 +474,12 @@ check_always_read() {
     echo "        -> CLAUDE.md·standing-orders 가 이미 적은 것은 메모리에 두지 않는다"
     n=$((n+1))
   fi
-  note "CLAUDE.md ${c}B · 메모리 ${m}B — 넘은 것" "$n"
+  if [ "$p" -gt "$lim_p" ]; then
+    echo "     [큼] PLAN.md  ${p} 바이트  > ${lim_p}"
+    echo "        -> 기록은 references/plan-log-*.md 끝에 붙인다. PLAN.md 는 색인이다"
+    n=$((n+1))
+  fi
+  note "CLAUDE.md ${c}B · PLAN.md ${p}B · 메모리 ${m}B — 넘은 것" "$n"
   FAIL=$((FAIL+n))
   return 0
 }

@@ -22,7 +22,7 @@ description: 대학원 USV GNC 강의 볼트(GradCourse)에서 강의자료를 �
 
 > [!important] 사용자가 지침을 주면 묻지 말고 전부 반영한다
 > **`references/standing-orders.md` 를 먼저 읽는다 — 이것은 색인이다.** 지침 본문은
-> 주제별로 `references/orders-*.md` 열둘에 있다. 색인에서 § 번호로 파일을 찾아
+> 주제별로 `references/orders-*.md` 열셋에 있다. 색인에서 § 번호로 파일을 찾아
 > **그 파일만** 읽는다 — 전부 읽지 않는다. 지침을 받으면 순서대로:
 > 1. 지침을 주제가 맞는 `references/orders-*.md` 에 **추가**하고 `standing-orders.md`
 >    색인에 한 줄 더한다. 날짜가 붙는 기록이면 `orders-log-4.md` 끝에 다음 번호로
@@ -140,8 +140,9 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 | `references/lecture-md.md` | 주차 자료를 쓰거나 고칠 때마다. 골격·문체·과제 배점 |
 | `references/results-and-figures.md` | **수식·블록도·결과 그래프를 넣을 때. 사용자가 못박은 규칙** |
 | `references/standing-orders.md` | **가장 먼저. 상시 지침의 색인 — 어느 § 번호가 어느 `orders-*.md` 에 있는가** |
-| `references/orders-*.md` (열둘) | 상시 지침의 본문. 색인에서 찾은 **그 하나만** 읽는다. 주제별 — `process` · `writing` · `math` · `figures` · `tooling` · `review` · `delivery` · `models` · `log-1`~`log-4` |
+| `references/orders-*.md` (열셋) | 상시 지침의 본문. 색인에서 찾은 **그 하나만** 읽는다. 주제별 — `process` · `writing` · `math` · `figures` · `tooling` · `review` · `delivery` · `models` · `log-1`~`log-5` |
 | `references/tools.md` | `_tools/` 의 스크립트가 무엇이고 **왜** 있는지. `CLAUDE.md` 에서 내려온 목록 — 실재 확인은 `ls _tools/` |
+| `references/plan-*.md` (다섯) | `PLAN.md` 에서 내려온 기록과 설계. `plan-log-1` 주차별 완성 기록 · `plan-log-2`·`plan-log-3` 보완 기록 · `plan-design` 플랜트와 환경 · `plan-labfiles` 실습 파일 구조. **`PLAN.md` 가 색인이다** |
 | `references/difficulty.md` | **주차를 설계할 때마다. 난이도·무엇을 부록으로 뺄지** |
 | `references/pdf-and-math.md` | PDF 가 안 나올 때, 템플릿을 고칠 때 |
 | `references/figures-svg.md` | 개념도 SVG 를 그릴 때 |

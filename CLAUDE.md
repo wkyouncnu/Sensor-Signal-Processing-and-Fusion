@@ -46,7 +46,8 @@
 
 ```
 00_GradCourse_2026/
-├── PLAN.md                  계획. 무엇을 언제 만드는가 — 맨 위, 이 이름
+├── PLAN.md                  계획. 무엇을 언제 만드는가 — 맨 위, 이 이름.
+│                            **색인이다** — 기록은 `gnc-lecture-vault/references/plan-*.md`
 ├── README.md                색인. 무엇이 어디에 있는가
 ├── CLAUDE.md                형식 계약 (이 파일)
 │
