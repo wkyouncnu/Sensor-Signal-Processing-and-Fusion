@@ -287,7 +287,10 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
    → `standing-orders.md` §7
 11. **`.md` 안의 LaTeX 은 Edit 도구로만 고친다.** `sed`·`awk`·`perl` 은 역슬래시를 저마다
    다르게 해석해서 수식을 조용히 부순다. 실제로 W01 전체를 한 번 망가뜨렸다
-   → `standing-orders.md` §5-1. `\|` 는 노름 ‖·‖ 이므로 절댓값에는 `\lvert`·`\rvert` 를 쓴다
+   → `standing-orders.md` §5-1. `\|` 는 노름 ‖·‖ 이므로 절댓값에는 `\lvert`·`\rvert` 를 쓴다.
+    **표 줄은 반대다** — 칸 쪼개기가 인라인 파싱보다 먼저라 코드 스팬 안의 `|` 도 칸을
+    가르고 옆 칸의 수식을 삼킨다. 표 줄에서만 `\|` 로 탈출한다 (`vault_check.sh` §20)
+    → `standing-orders.md` §15-63
 
 ---
 

@@ -62,18 +62,65 @@ labdocs() {
 # 규칙을 인용한 예시가 걸리지 않도록 코드블록·인라인 코드를 지운 사본으로 본다
 strip_code() { awk '/^```/{f=!f; next} !f' "$1" | sed 's/`[^`]*`//g'; }
 
+# ── 캐시 — 같은 것을 두 번 만들지 않는다 ──────────────────────────────────
+#  2026-10-27 에 재 보니 전체 점검이 7분 30초였고 그중 sys 가 6분 28초였다.
+#  일이 아니라 **프로세스를 띄우는 값**이다 — Windows 의 fork 는 비싸고,
+#  옛 코드는 항목마다 find·awk·sed·grep·wc 를 새로 띄웠다. 목록·사본·이름을
+#  한 번만 만들어 돌려 쓴다 → standing-orders.md §15-64
+TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
+
+MDS=(); DELIVERED=(); LABDOCS=()
+lists() {
+  [ "${LISTS_DONE:-0}" = 1 ] && return 0
+  mapfile -t MDS       < <(mds)
+  mapfile -t DELIVERED < <(delivered)
+  mapfile -t LABDOCS   < <(labdocs)
+  LISTS_DONE=1
+  return 0
+}
+
+#  코드블록을 벗긴 사본. 같은 파일을 열여섯 번 다시 벗기지 않는다 — §9 가 금지
+#  표현 열여섯 개마다 문서 전부를 다시 벗겨서 4 MB 를 열여섯 번 읽었다.
+#  경로는 전역 STRIPPED 에 둔다. $( ) 로 받으면 그것이 또 포크다.
+STRIPPED=""
+strip_path() {
+  STRIPPED="$TMPD/s_${1//[\/ ]/_}"
+  [ -s "$STRIPPED" ] || strip_code "$1" > "$STRIPPED"
+  return 0
+}
+
+#  lectures · _tools 의 **파일 이름** 색인. §15 는 토큰마다 find 를 돌렸다 —
+#  506 개 토큰 × 최대 여섯 번, 한 번에 0.3 초니 그것만 3 분이다. 트리를 한 번
+#  걷고 이름으로 찾는다. _tools 를 함께 넣었으므로 옛 `_tools -name` 가지도 덮는다.
+#  HAVE_MD 는 볼트 전체의 `.md` 이름이다 — §2 의 wikilink 가 링크마다
+#  `find . -name "<이름>.md"` 를 돌렸다. 여기도 트리를 한 번만 걷는다.
+declare -A HAVE_F HAVE_D HAVE_MD
+names() {
+  [ "${NAMES_DONE:-0}" = 1 ] && return 0
+  local p
+  while IFS= read -r p; do HAVE_F["${p##*/}"]=1; done \
+    < <(find lectures _tools -type f 2>/dev/null | grep -vE "$VENDOR")
+  while IFS= read -r p; do HAVE_D["${p##*/}"]=1; done \
+    < <(find lectures -type d 2>/dev/null | grep -vE "$VENDOR")
+  while IFS= read -r p; do HAVE_MD["${p##*/}"]=1; done \
+    < <(find . -name '*.md' -type f 2>/dev/null)
+  NAMES_DONE=1
+  return 0
+}
+
 # ── 1. MD ↔ PDF 쌍 ────────────────────────────────────────────────────────
 check_pdf() {
   head2 "1. MD - PDF 쌍"
   local miss=0 stale=0 f pdf
-  while IFS= read -r f; do
+  lists
+  for f in "${DELIVERED[@]}"; do
     pdf="${f%.md}.pdf"
     if [ ! -f "$pdf" ]; then
       echo "     [PDF 없음] $f"; miss=$((miss+1))
     elif [ "$f" -nt "$pdf" ]; then
       echo "     [PDF 가 오래됨] $f"; stale=$((stale+1))
     fi
-  done < <(delivered)
+  done
   note "PDF 누락" "$miss"
   note "PDF 가 MD 보다 오래됨" "$stale"
   [ $stale -gt 0 ] && echo "     -> bash _tools/md2pdf.sh <파일.md>"
@@ -85,37 +132,40 @@ check_pdf() {
 check_links() {
   head2 "2. wikilink"
   local bad=0 f raw name
-  while IFS= read -r f; do
+  lists; names
+  for f in "${MDS[@]}"; do
+    strip_path "$f"
     while IFS= read -r raw; do
       name="${raw%%|*}"; name="${name%%#*}"
       [ -z "$name" ] && continue
-      if ! find . -name "$name.md" -type f 2>/dev/null | grep -q .; then
+      if [ -z "${HAVE_MD["$name.md"]:-}" ]; then
         echo "     [깨짐] $f  ->  [[$name]]"; bad=$((bad+1))
       fi
-    done < <(strip_code "$f" | sed 's/!\[\[/@@IMG@@/g' | grep -o '\[\[[^]]*\]\]' \
+    done < <(sed 's/!\[\[/@@IMG@@/g' "$STRIPPED" | grep -o '\[\[[^]]*\]\]' \
              | sed 's/^\[\[//; s/\]\]$//' | sort -u)
-  done < <(mds)
+  done
   note "깨진 wikilink" "$bad"
   FAIL=$((FAIL+bad))
 
   head2 "3. 그림 참조가 실재하는가"
   local img=0 d p
-  while IFS= read -r f; do
-    d="$(dirname "$f")"
+  for f in "${MDS[@]}"; do
+    d="${f%/*}"
     while IFS= read -r p; do
       case "$p" in http*|data:*) continue ;; esac
       [ -f "$d/$p" ] || { echo "     [없음] $f  ->  $p"; img=$((img+1)); }
     done < <(grep -o '](\([^)]*\.\(svg\|png\|jpg\|jpeg\|gif\)\))' "$f" \
              | sed 's/^](//; s/)$//' | sort -u)
-  done < <(mds)
+  done
   note "없는 그림" "$img"
   FAIL=$((FAIL+img))
 
   head2 "4. Obsidian 전용 임베드"
   local emb=0
-  while IFS= read -r f; do
-    if strip_code "$f" | grep -q '!\[\['; then echo "     $f"; emb=$((emb+1)); fi
-  done < <(mds)
+  for f in "${MDS[@]}"; do
+    strip_path "$f"
+    if grep -q '!\[\[' "$STRIPPED"; then echo "     $f"; emb=$((emb+1)); fi
+  done
   note "Obsidian 임베드를 쓴 문서" "$emb"
   FAIL=$((FAIL+emb))
   return 0
@@ -125,7 +175,8 @@ check_links() {
 check_figs() {
   head2 "5. 주차·부록마다 블록도 1장, 결과 그래프 1장"
   local nodiag=0 nores=0 f dir tag nd nr
-  while IFS= read -r f; do
+  lists
+  for f in "${LABDOCS[@]}"; do
     [ -f "$f" ] || continue
     tag="$(basename "$f" | cut -d_ -f1)"          # W01, A1 ...
     dir="$(dirname "$f")/${tag}_simulink"
@@ -143,7 +194,7 @@ check_figs() {
              | sed 's/^](//; s/)$//' | sort -u)
     [ "$nd" -ge 1 ] || { echo "     [블록도 없음] $f"; nodiag=$((nodiag+1)); }
     [ "$nr" -ge 1 ] || { echo "     [결과 그래프 없음] $f"; nores=$((nores+1)); }
-  done < <(labdocs)
+  done
   note "블록도 PNG 가 없는 주차" "$nodiag"
   note "결과 그래프 PNG 가 없는 주차" "$nores"
   FAIL=$((FAIL+nodiag+nores))
@@ -152,7 +203,12 @@ check_figs() {
   #  .slx 와 비교하지 않는다. Simulink 는 모델을 **열기만 해도** .slx 를 다시 써서
   #  mtime 이 올라가고, 한 폴더에 모델이 셋이면 H 절 모델을 연 것 때문에 D 절 그림이
   #  낡았다고 나온다. 실제 의존성은 사람이 고치는 **빌더 스크립트**다.
-  local stale=0 bld png
+  #  강의자료가 싣는 그림 이름을 **한 번에** 모은다. PNG 마다 grep -qr 을 돌리면
+  #  248 번 × lectures/*.md 4 MB 를 다시 읽는다 — 그것이 이 절의 57 초였다.
+  local stale=0 bld png b
+  declare -A SHOWN
+  while IFS= read -r b; do SHOWN["$b"]=1; done \
+    < <(grep -ohE '[A-Za-z0-9_.+-]+\.png' lectures/*.md 2>/dev/null | sort -u)
   while IFS= read -r bld; do
     d="$(dirname "$bld")"
     [ -d "$d/img" ] || continue
@@ -161,9 +217,7 @@ check_figs() {
       #  강의자료가 더 이상 싣지 않는 그림은 건너뛴다. §9-8 로 철회한 그림은
       #  생성기가 돌지 않으므로 **영원히** 낡은 상태이고, 그것을 계속 지적하면
       #  검사기가 늑대 소년이 된다. 파일은 남기고(사용자 절대 지침) 판정에서만 뺀다.
-      if ! grep -qrF "$(basename "$png")" lectures/*.md 2>/dev/null; then
-        continue
-      fi
+      [ -n "${SHOWN["${png##*/}"]:-}" ] || continue
       if [ "$bld" -nt "$png" ]; then
         echo "     [낡음] $png  <  $(basename "$bld")"; stale=$((stale+1))
       fi
@@ -174,29 +228,28 @@ check_figs() {
   FAIL=$((FAIL+stale))
 
   head2 "7. 블록도 PNG 폭"
+  #  폭은 PNG 헤더(IHDR 의 첫 4바이트)에 있다. 그림마다 od 나 identify 를 띄우면
+  #  150 포크이고 그것이 12 초였다 — 한 번에 전부 읽는다 → §15-64
   local wide=0 w
-  if command -v identify >/dev/null 2>&1; then
-    while IFS= read -r png; do
-      w=$(identify -format '%w' "$png" 2>/dev/null || echo 0)
+  local -a PNGS=()
+  mapfile -t PNGS < <(find lectures -path '*/img/*.png' ! -name '*_result*' -type f 2>/dev/null \
+                      | grep -vE "$VENDOR")
+  if [ "${#PNGS[@]}" -gt 0 ]; then
+    while read -r w png; do
       [ "$w" -gt 2000 ] && { echo "     [너무 넓음] $png  ${w}px"; wide=$((wide+1)); }
-    done < <(find lectures -path '*/img/*.png' ! -name '*_result*' -type f 2>/dev/null | grep -vE "$VENDOR")
-  else
-    # ImageMagick 이 없으면 PNG 헤더에서 직접 읽는다 (IHDR 의 첫 4바이트)
-    while IFS= read -r png; do
-      w=$(od -An -tu4 -j16 -N4 --endian=big "$png" 2>/dev/null | tr -d ' ')
-      [ -z "$w" ] && continue
-      [ "$w" -gt 2000 ] && { echo "     [너무 넓음] $png  ${w}px"; wide=$((wide+1)); }
-    done < <(find lectures -path '*/img/*.png' ! -name '*_result*' -type f 2>/dev/null | grep -vE "$VENDOR")
+    done < <(perl -e 'for my $f (@ARGV) { open(my $h, "<", $f) or next; binmode $h;
+                        read($h, my $b, 24); next if length($b) < 24;
+                        print unpack("N", substr($b, 16, 4)), " $f\n"; }' "${PNGS[@]}")
   fi
   note "폭 2000px 초과 블록도" "$wide"
   FAIL=$((FAIL+wide))
 
   head2 "8. 블록 수식 \$\$ 의 짝"
   local odd=0 n
-  while IFS= read -r f; do
+  for f in "${MDS[@]}"; do
     n=$(awk '/^```/{c=!c; next} !c' "$f" | grep -o '\$\$' | wc -l)
     if [ $((n % 2)) -ne 0 ]; then echo "     [짝이 안 맞음] $f  (\$\$ x $n)"; odd=$((odd+1)); fi
-  done < <(mds)
+  done
   note "짝이 맞지 않는 \$\$" "$odd"
   FAIL=$((FAIL+odd))
   return 0
@@ -213,12 +266,23 @@ check_style() {
                '\bwe\b' '\bour\b' '\bours\b' '\bourselves\b' "\bwe'll\b" "\bwe're\b" \
                '\btoday\b' '\blet us\b' "\blet's\b" '\bnowadays\b')
   local w n total=0 f hits
+  lists
+  #  표현 하나마다 **문서 전부를 한 grep 에** 넣는다. 문서마다 따로 띄우면
+  #  16 × 35 = 560 포크이고 그것이 51 초였다. grep 은 인자 순서대로 읽으므로
+  #  출력 순서는 DELIVERED 순서 그대로다 → standing-orders.md §15-64
+  local -a SP=()
+  declare -A S2F
+  for f in "${DELIVERED[@]}"; do
+    strip_path "$f"; SP+=("$STRIPPED"); S2F["$STRIPPED"]="$f"
+  done
+  local sfile
   for w in "${words[@]}"; do
     n=0
-    while IFS= read -r f; do
-      hits=$(strip_code "$f" | grep -oiE -- "$w" | wc -l)
-      if [ "$hits" -gt 0 ]; then n=$((n+hits)); echo "     $f  ($hits x ${w//\\b/})"; fi
-    done < <(delivered)
+    while read -r hits sfile; do
+      [ -z "$hits" ] && continue
+      f="${S2F["$sfile"]}"
+      n=$((n+hits)); echo "     $f  ($hits x ${w//\\b/})"
+    done < <(grep -oiEH -- "$w" "${SP[@]}" 2>/dev/null | cut -d: -f1 | uniq -c)
     [ "$n" -gt 0 ] && printf '  %-44s %s\n' "${w//\\b/}" "$n"
     total=$((total+n))
   done
@@ -227,21 +291,22 @@ check_style() {
 
   head2 "10. 이모지 · 장식 기호"
   local emo=0
-  while IFS= read -r f; do
-    hits=$(strip_code "$f" | grep -oP '[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}]' 2>/dev/null | wc -l)
-    [ -z "$hits" ] && hits=0
-    if [ "$hits" -gt 0 ]; then echo "     $f  ($hits)"; emo=$((emo+hits)); fi
-  done < <(delivered)
+  while read -r hits sfile; do
+    [ -z "$hits" ] && continue
+    echo "     ${S2F["$sfile"]}  ($hits)"; emo=$((emo+hits))
+  done < <(grep -oHP '[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}]' \
+           "${SP[@]}" 2>/dev/null | cut -d: -f1 | uniq -c)
   note "이모지 · 장식 기호" "$emo"
   FAIL=$((FAIL+emo))
 
   head2 "11. 콜아웃 종류"
   local badc=0
-  while IFS= read -r f; do
-    hits=$(grep -oh '> \[![a-z]*\]' "$f" 2>/dev/null \
-           | grep -vcE '\[!(note|tip|important|warning|caution|info)\]')
-    if [ "$hits" -gt 0 ]; then echo "     $f  ($hits)"; badc=$((badc+hits)); fi
-  done < <(mds)
+  while read -r hits sfile; do
+    [ -z "$hits" ] && continue
+    echo "     $sfile  ($hits)"; badc=$((badc+hits))
+  done < <(grep -oH '> \[![a-z]*\]' "${MDS[@]}" 2>/dev/null \
+           | grep -vE '\[!(note|tip|important|warning|caution|info)\]$' \
+           | cut -d: -f1 | uniq -c)
   note "미지원 콜아웃" "$badc"
   FAIL=$((FAIL+badc))
 
@@ -249,18 +314,28 @@ check_style() {
   #  사용자 지시 2026-09-21: "매번 수업 전에 수정된 부분만 다운로드 하는 방법을 첫장에
   #  정리해서 항상 넣어줄래". 주차·부록마다 두 콜아웃이 있고, 순서가 참고자료 → git 이다.
   #  → standing-orders.md §1 · §1-1
-  local miss=0 a b
-  while IFS= read -r f; do
-    #  한글본(_KO.md)은 같은 콜아웃을 한국어 제목으로 단다 (§15-41). 둘 다 인정한다.
-    #  The Korean edition carries the same two callouts under Korean titles.
-    a=$(grep -nE 'Reference material — read this first|참고자료 — 먼저 읽을 것' "$f" | head -1 | cut -d: -f1)
-    b=$(grep -nE 'Getting the course files, and keeping them current \(Windows\)|수업 파일 받기와 최신으로 유지하기 \(Windows\)' "$f" | head -1 | cut -d: -f1)
-    if [ -z "$a" ] || [ -z "$b" ] || [ "$a" -gt "$b" ] \
-       || ! grep -q 'git clone https://github.com/wkyouncnu/Sensor-Signal-Processing-and-Fusion.git' "$f" \
-       || ! grep -q '`git pull`' "$f"; then
+  #  한글본(_KO.md)은 같은 콜아웃을 한국어 제목으로 단다 (§15-41). 둘 다 인정한다.
+  #  The Korean edition carries the same two callouts under Korean titles.
+  #  네 가지를 문서마다 따로 grep 하면 문서 하나에 네댓 번 포크다. awk 한 번으로
+  #  네 값을 함께 내고, 판정은 쉘이 LABDOCS 순서대로 한다 → §15-64
+  local miss=0 a b c p line
+  declare -A HEAD4
+  while read -r line a b c p; do
+    HEAD4["$line"]="$a $b $c $p"
+  done < <(awk '
+    FNR == 1 { n++; name[n] = FILENAME }
+    A[FILENAME] == 0 && /Reference material — read this first|참고자료 — 먼저 읽을 것/ { A[FILENAME] = FNR }
+    B[FILENAME] == 0 && /Getting the course files, and keeping them current \(Windows\)|수업 파일 받기와 최신으로 유지하기 \(Windows\)/ { B[FILENAME] = FNR }
+    index($0, "git clone https://github.com/wkyouncnu/Sensor-Signal-Processing-and-Fusion.git") { C[FILENAME] = 1 }
+    index($0, "`git pull`")                                                                    { P[FILENAME] = 1 }
+    END { for (i = 1; i <= n; i++) { f = name[i]
+            printf "%s %d %d %d %d\n", f, A[f], B[f], C[f], P[f] } }' "${LABDOCS[@]}")
+  for f in "${LABDOCS[@]}"; do
+    read -r a b c p <<< "${HEAD4["$f"]:-0 0 0 0}"
+    if [ "$a" = 0 ] || [ "$b" = 0 ] || [ "$a" -gt "$b" ] || [ "$c" = 0 ] || [ "$p" = 0 ]; then
       echo "     $f"; miss=$((miss+1))
     fi
-  done < <(labdocs)
+  done
   note "첫 장 콜아웃 누락 · 순서 어긋남" "$miss"
   FAIL=$((FAIL+miss))
   return 0
@@ -308,7 +383,8 @@ check_weeks() {
 check_code() {
   head2 "15. 강의자료가 부르는 스크립트가 실재하는가"
   local miss=0 f tag name
-  while IFS= read -r f; do
+  lists; names
+  for f in "${LABDOCS[@]}"; do
     tag="$(basename "$f" | cut -d_ -f1)"           # W01, A1 ...
     # 백틱 안만 보면 ```matlab 블록 안의 이름을 통째로 놓친다 — 실제로 W01 에서
     # 두 개밖에 못 잡았다. 파일 전체에서 그 주차의 접두사를 가진 토큰을 모은다.
@@ -319,12 +395,14 @@ check_code() {
       #  .m 이든 .slx 든 img/ 의 .png 든 폴더든, 무엇으로든 실재하면 통과다.
       #  WXX_P1 처럼 학생이 WXX_P1_start 로 만들어 내는 모델도 통과시킨다 —
       #  저장소에 없는 것이 정상이기 때문이다.
-      if   find lectures -name "${name}.m"       -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
-      elif find lectures -name "${name}.slx"     -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
-      elif find lectures -name "${name}.png"     -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
-      elif find lectures -name "${name}_start.m" -type f 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
-      elif find lectures -name "${name}"         -type d 2>/dev/null | grep -vE "$VENDOR" | grep -q . ; then :
-      elif find _tools   -name "${name}.m"       -type f 2>/dev/null | grep -q . ; then :
+      #  names() 가 만든 이름 색인으로 본다. 옛 코드는 토큰마다 find 를 최대
+      #  여섯 번 돌려 트리를 다시 걸었다 — `_tools` 도 색인에 들어 있으므로
+      #  마지막 가지까지 그대로 덮는다.
+      if   [ -n "${HAVE_F["${name}.m"]:-}" ]       ; then :
+      elif [ -n "${HAVE_F["${name}.slx"]:-}" ]     ; then :
+      elif [ -n "${HAVE_F["${name}.png"]:-}" ]     ; then :
+      elif [ -n "${HAVE_F["${name}_start.m"]:-}" ] ; then :
+      elif [ -n "${HAVE_D["${name}"]:-}" ]         ; then :
       else
         echo "     [없는 스크립트] $(basename "$f")  ->  $name"
         miss=$((miss+1))
@@ -332,7 +410,7 @@ check_code() {
     done < <(sed -E 's/[A-Za-z0-9_]+\.md//g' "$f" \
              | grep -oE "\b${tag}_[A-Za-z0-9_]+\b" \
              | sed 's/\.$//' | sort -u)
-  done < <(labdocs)
+  done
   note "문서가 부르는데 없는 스크립트" "$miss"
   FAIL=$((FAIL+miss))
   return 0
@@ -351,24 +429,33 @@ check_legend() {
   # 인정한다 — "**Reading the figure**", 2026-09-25 부터 쓰는
   # "**Reading the figure against the derivation.**" 처럼 뒷말이 붙은 것,
   # 그리고 개념도가 쓰는 "| In the figure |" (→ standing-orders.md §15-14).
-  local miss=0 f
-  while IFS= read -r f; do
-    while IFS= read -r ln; do
-      local n img
-      n="${ln%%:*}"; img="${ln#*:}"
-      # "In the diagram" 도 인정한다 — 블록도에 붙는 표의 제목으로는 그 쪽이 옳다
-      # (2026-09-29, W05 §5-7 이 제어기 서브시스템 셋을 실으면서).
-      # "On the slide(s)" · "슬라이드에서" 도 인정한다 — 사용자의 옛 강의자료나
-      # 교재에서 가져온 슬라이드를 실을 때 그 쪽이 옳은 제목이다
-      # (2026-10-17, W05 §5-5 가 2025년 PPT 열한 장을 실으면서).
-      if ! sed -n "$((n+1)),$((n+12))p" "$f" \
-           | grep -qE '^\*\*Reading the figure|^\| *In the (figure|diagram|live view) *\||^\| *On the slides? *\||^\*\*그림을 .*읽기|^\| *(실시간 )?(그림에서|다이어그램에서|화면에서|슬라이드에서) *\|'; then
-        printf '     [범례 표 없음] %s:%s  %s\n' "${f#./}" "$n" \
-               "$(printf '%s' "$img" | sed -E 's/.*\]\(([^)]*)\).*/\1/')"
+  # "In the diagram" 도 인정한다 — 블록도에 붙는 표의 제목으로는 그 쪽이 옳다
+  # (2026-09-29, W05 §5-7 이 제어기 서브시스템 셋을 실으면서).
+  # "On the slide(s)" · "슬라이드에서" 도 인정한다 — 사용자의 옛 강의자료나
+  # 교재에서 가져온 슬라이드를 실을 때 그 쪽이 옳은 제목이다
+  # (2026-10-17, W05 §5-5 가 2025년 PPT 열한 장을 실으면서).
+  #
+  # 파일을 한 번만 읽는다. 옛 코드는 그림마다 sed 와 grep 을 띄워서 250 장에
+  # 500 번을 포크했다 (2026-10-27) → standing-orders.md §15-64
+  local miss=0 f n i j ok img
+  local -a L
+  local RE='^\*\*Reading the figure|^\| *In the (figure|diagram|live view) *\||^\| *On the slides? *\||^\*\*그림을 .*읽기|^\| *(실시간 )?(그림에서|다이어그램에서|화면에서|슬라이드에서) *\|'
+  lists
+  for f in "${LABDOCS[@]}"; do
+    mapfile -t L < "$f"
+    for ((i=0; i<${#L[@]}; i++)); do
+      case "${L[i]}" in '!['*) ;; *) continue ;; esac
+      n=$((i+1)); ok=0
+      for ((j=i+1; j<i+13 && j<${#L[@]}; j++)); do
+        if [[ ${L[j]} =~ $RE ]]; then ok=1; break; fi
+      done
+      if [ "$ok" -eq 0 ]; then
+        img="${L[i]##*](}"; img="${img%%)*}"
+        printf '     [범례 표 없음] %s:%s  %s\n' "${f#./}" "$n" "$img"
         miss=$((miss+1))
       fi
-    done < <(grep -n '^!\[' "$f")
-  done < <(labdocs)
+    done
+  done
   note "범례 표가 없는 그림" "$miss"
   FAIL=$((FAIL+miss))
   return 0
@@ -483,6 +570,47 @@ check_always_read() {
   FAIL=$((FAIL+n))
   return 0
 }
+# ── 20. 표 칸 안의 맨 `|` ──────────────────────────────────────────────────
+check_table_pipes() {
+  head2 "20. 표 칸의 인라인 코드 안에 맨 | 가 있는가"
+  # standing-orders.md §15-63 (2026-10-27):
+  #   표 한 줄은 **인라인 파싱보다 먼저** 맨 `|` 로 칸이 쪼개진다. 그래서 코드
+  #   스팬 안의 `|` 도 칸을 가르고, 남은 백틱이 옆 칸까지 <code> 로 삼켜서 그
+  #   안의 $…$ 는 MathJax 가 건너뛴다 — W06 의 $0.353$ 이 그렇게 사라졌다.
+  #   표 줄에서는 코드 스팬 안이라도 `\|` 가 바른 탈출이다(쪼갤 때는 아직 코드
+  #   스팬이 아니기 때문). 다만 **산문**의 코드 스팬에서는 탈출이 처리되지 않아
+  #   `\|` 가 글자 그대로 찍히므로, 표 줄만 고친다.
+  #   판정: 맨 `|` 로 칸을 나눈 뒤 칸마다 백틱을 세어 **홀수**면 깨진 것이다.
+  local n=0
+  lists
+  for f in "${MDS[@]}"; do
+    local hit
+    hit=$(awk '
+      /^[ \t]*>?[ \t]*```/ { fence = 1 - fence; next }
+      fence { next }
+      /^[ \t]*>?[ \t]*\|/ {
+        nb = 0; bad = 0
+        m = split($0, ch, "")
+        for (i = 1; i <= m; i++) {
+          c = ch[i]
+          if (c == "\\" && i < m && ch[i+1] == "|") { i++; continue }
+          if (c == "`") { nb++; continue }
+          if (c == "|") { if (nb % 2) bad = 1; nb = 0 }
+        }
+        if (nb % 2) bad = 1
+        if (bad) printf "%s:%d: %s\n", FILENAME, FNR, substr($0, 1, 90)
+      }' "$f")
+    if [ -n "$hit" ]; then
+      echo "$hit" | sed 's/^/     [쪼개짐] /'
+      n=$((n + $(printf '%s\n' "$hit" | wc -l)))
+    fi
+  done
+  note "코드 스팬이 칸을 가른 표 줄" "$n"
+  [ "$n" -gt 0 ] && echo "        -> 그 줄의 | 를 \| 로 (Edit 도구로. 표 줄만, 펜스·산문은 그대로)"
+  FAIL=$((FAIL+n))
+  return 0
+}
+
 
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
@@ -494,8 +622,9 @@ case "$MODE" in
   --clear) check_clear ;;
   --onemodel) check_one_model ;;
   --size)  check_always_read ;;
+  --pipes) check_table_pipes ;;
   *)       check_pdf; check_links; check_figs; check_style; check_svg; check_weeks; check_code
-           check_legend; check_clear; check_one_model; check_always_read ;;
+           check_legend; check_clear; check_one_model; check_always_read; check_table_pipes ;;
 esac
 
 echo
