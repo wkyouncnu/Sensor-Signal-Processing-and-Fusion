@@ -60,7 +60,7 @@ end
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 9 LABORATORY  -  BUILD THE MISSION, THEN MEASURE THE VESSEL'
+'WEEK 10 LABORATORY  -  BUILD THE MISSION, THEN MEASURE THE VESSEL'
 ''
 'Weeks 2 to 9 are already on the chain. The empty place is the piece that'
 'belongs to none of them: the logic that decides WHERE the vessel is going'

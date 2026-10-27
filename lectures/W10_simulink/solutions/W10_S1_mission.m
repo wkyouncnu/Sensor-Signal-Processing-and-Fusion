@@ -68,7 +68,7 @@ add_line(mdl, 'slog mux/1', 'slog/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/note']);
 a.Text = strjoin({ ...
-'WEEK 9 SOLUTION  -  THE MISSION, AND THE TEST INSIDE IT'
+'WEEK 10 SOLUTION  -  THE MISSION, AND THE TEST INSIDE IT'
 ''
 '   P1  two rules, and a block with memory so that it can have a clock'
 '   P2  the arrival test, which is where the mission was fragile:'

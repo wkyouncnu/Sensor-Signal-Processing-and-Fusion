@@ -59,7 +59,7 @@ end
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 8 LABORATORY  -  BUILD THE POSITION CONTROLLER YOURSELF'
+'WEEK 9 LABORATORY  -  BUILD THE POSITION CONTROLLER YOURSELF'
 ''
 'The mission, the allocation and the hull are given. What decides how much'
 'force is needed, and in which direction, is not.'

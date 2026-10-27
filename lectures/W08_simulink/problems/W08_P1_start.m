@@ -65,7 +65,7 @@ add_line(mdl, 'N placeholder/1', 'N_ctrl out/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 7 LABORATORY  -  BUILD THE MEASUREMENT PATH YOURSELF'
+'WEEK 8 LABORATORY  -  BUILD THE MEASUREMENT PATH YOURSELF'
 ''
 'The sea, the hull and Week 7''s allocation are given. What the controller'
 'SEES is not. Delete the placeholder and build in its place.'

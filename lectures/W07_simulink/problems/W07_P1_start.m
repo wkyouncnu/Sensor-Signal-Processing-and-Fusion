@@ -59,7 +59,7 @@ add_line(mdl, 'n placeholder/1', 'Otter USV/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/brief']);
 a.Text = strjoin({ ...
-'WEEK 6 LABORATORY  -  BUILD THE ALLOCATOR YOURSELF'
+'WEEK 7 LABORATORY  -  BUILD THE ALLOCATOR YOURSELF'
 ''
 'The demand and the hull are given. Only what turns one into the other is'
 'missing. Delete the placeholder and put your own allocator in its place.'

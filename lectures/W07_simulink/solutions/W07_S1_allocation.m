@@ -73,7 +73,7 @@ add_line(mdl, 'alog mux/1', 'alog/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/note']);
 a.Text = strjoin({ ...
-'WEEK 6 SOLUTION  -  ONE BLOCK, THREE PROBLEMS'
+'WEEK 7 SOLUTION  -  ONE BLOCK, THREE PROBLEMS'
 ''
 '   P1  the square rule            T = [X/2 + N/(2y) ;  X/2 - N/(2y)]'
 '   P3  the limit step, first      clip each, or scale both by one s <= 1'

@@ -68,7 +68,7 @@ add_line(mdl, 'dlog mux/1', 'dlog/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/note']);
 a.Text = strjoin({ ...
-'WEEK 8 SOLUTION  -  ONE CONTROLLER, THREE CONDITIONS'
+'WEEK 9 SOLUTION  -  ONE CONTROLLER, THREE CONDITIONS'
 ''
 '   P1  how much force, in NED, and how much of it the bow can deliver'
 '   P2  vane = 1: point the bow along that force, while the force is'

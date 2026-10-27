@@ -109,7 +109,7 @@ add_line(mdl, 'flog mux/1', 'flog/1', 'autorouting','smart');
 
 a = Simulink.Annotation([mdl '/note']);
 a.Text = strjoin({ ...
-'WEEK 7 SOLUTION  -  THE MEASUREMENT PATH'
+'WEEK 8 SOLUTION  -  THE MEASUREMENT PATH'
 ''
 '   measurement   psi_m = psi + psi_w      r_m = r + r_w'
 '   notch x2      H(s) on BOTH channels. The wave carries 11.6 deg/s of yaw'
