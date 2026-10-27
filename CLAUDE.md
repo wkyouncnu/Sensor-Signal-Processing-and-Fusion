@@ -91,6 +91,9 @@
 │                              오른쪽 y_e · u 와 명령 · n_L 과 n_R · 다리 번호. §15-20)
 │                            verify_w02_pid.m                          (W02 PID 입문의 식 8개)
 │                            vault_shift_weeks.m                       (주차 번호 일괄 이동, 2026-09-21)
+│                            vault_shift_files.sh · vault_shift_from.m  (N 주차부터 한 칸 미루기, 2026-10-26.
+│                              .sh 가 파일·폴더를 **git mv** 로 옮기고(내림차순이라 이름이 안 부딪힌다),
+│                              .m 이 파일 **안**의 참조를 고친다 — sed 가 아닌 이유는 §4-11)
 │                            verify_w03_speed.m                        (W03 모델 없는 속도 튜닝의 수치)
 │                            verify_w04_heading.m                      (W04 모델 없는 선수각 튜닝의 식과 수치)
 │                            verify_w05_guidance.m                     (W05 모델 없는 유도 튜닝: LOS=P, ILOS=PI)

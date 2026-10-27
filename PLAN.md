@@ -35,7 +35,7 @@
 | **W04** | Heading Control | **완료** |
 | **A1** | Actuation and the Control Effectiveness Matrix (부록) | **완료** |
 | **W05** | Waypoint Following and LOS Guidance | **완료** |
-| W06 | The Bow Thruster: Actuation Classes, Position Control and Berthing | 작업 중 (2026-10-26 신설) |
+| **W06** | The Bow Thruster: Position Control and Berthing | **완료** (2026-10-27 신설). 실습 문제지·모범답안은 사용자 지시로 만들지 않는다 |
 | **W07** | Control Allocation | **완료** (2026-09-25) |
 | **W08** | Environmental Loads and Wave Filtering | **완료** (2026-09-25) |
 | **W09** | Dynamic Positioning and Mission Integration | **완료** (2026-09-25) |
