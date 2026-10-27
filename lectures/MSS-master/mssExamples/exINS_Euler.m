@@ -1,1 +1,0 @@
-disp('exINS_Euler.m has been replaced by SIMaidedINSeuler')

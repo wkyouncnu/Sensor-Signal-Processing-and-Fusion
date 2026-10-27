@@ -1,1 +1,0 @@
-disp('exINS_AHRS.m has been replaced by SIMaidedINSeuler')
