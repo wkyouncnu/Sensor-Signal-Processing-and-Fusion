@@ -64,7 +64,7 @@ V.Kp_u = 200;   V.Ki_u = 200;
 V.Kp_v = 150;   V.Ki_v = 120;
 V.Kb   = 1;
 V.X_max = 120;
-%  횡력 한계는 선수추진기의 정격이 아니라 선미의 후진 한계가 정한다 (6-4 절)
+%  횡력 한계는 선수추진기의 정격이 아니라 선미의 후진 한계가 정한다 (6-2 절)
 %  the sway limit comes from the stern REVERSE limit, not the bow unit's rating
 V.Y_max = min(abs(V.T_min)/(V.l_f/(2*V.y_pont)), V.F_B_max);   % 35.13 N
 

@@ -23,7 +23,7 @@ function W06_1_build_bow(which)
 %       W06_H_berth             O     O   body    6-5  berthing, phase by phase
 %       W06_I_position_ned      O     -   NED     6-7  the same point, held in NED
 %
-%   마지막 둘이 **같은 과제를 두 좌표계로** 푼다 (7 절). 바깥 고리가 오차를 선체
+%   마지막 둘이 **같은 과제를 두 좌표계로** 푼다 (6-7 절). 바깥 고리가 오차를 선체
 %   고정으로 돌려 놓고 전진·횡 속도를 요구하는가, 아니면 오차를 NED 에 그대로
 %   두고 북·동 속도를 요구하고 **안쪽 고리**가 회전을 두 번 하는가. 배분기와
 %   플랜트와 선수각 제어기는 네 모델이 **한 블록도 다르지 않다.**
@@ -276,10 +276,10 @@ route(m, 'allocation', 2, 'Goto tau_ext', 1, zeros(0,2));
 
 %  선미 한 쌍은 **축 회전수**로, 선수추진기는 **힘**으로 선체에 들어간다.
 %  otter.m 은 축 회전수 둘만 받으므로 세 번째 추진기는 tau_ext 로만 닿는다 —
-%  그 중첩이 왜 근사가 아니고 정확한지는 6-5 절이 센다
+%  그 중첩이 왜 근사가 아니고 정확한지는 6-1 절이 센다
 %  The stern pair enter as SHAFT SPEEDS and the bow unit as a FORCE: otter.m
 %  takes two shaft speeds, so the third thruster reaches the hull only through
-%  tau_ext. Section 6-5 measures why that superposition is exact.
+%  tau_ext. Section 6-1 measures why that superposition is exact.
 from_at(m, 'n',       [2030 313], 'From n');
 from_at(m, 'tau_ext', [2030 367], 'From tau_ext');
 add_otter_plant(m, 'Otter', [2120 259 2240 421], otter_config('bow_thruster'));
@@ -432,10 +432,10 @@ L = { ...
 '%'
 '%  왜 선수각을 **들고 있는가** / why the heading is HELD'
 '%      1 단계의 선수각은 접근점 방위다. 접근점에 가까워지면 그 방위의 분모가'
-'%      0 으로 가므로 2 m 안에서는 **마지막 값을 들고 있는다**. 이것이 6-7 절이'
+'%      0 으로 가므로 2 m 안에서는 **마지막 값을 들고 있는다**. 이것이 이 절이'
 '%      재는 예측 하나를 만든다 — 명령 선수각이 그 시각부터 평평해진다.'
 '%      The bearing is ill-conditioned near the point, so inside 2 m the last'
-'%      value is held. Section 6-7 measures the prediction this makes: the'
+'%      value is held. This section measures the prediction that makes: the'
 '%      commanded heading goes flat from that instant.'
 ''
 'persistent ph psi_hold'
@@ -587,7 +587,7 @@ else
       '   constant demand -> allocation -> Otter', ...
       '', ...
       '   no loop is closed here. tau = [X; Y; N] is set on the canvas and the', ...
-      '   allocation inverts the square B of Section 6-2 by hand, one column', ...
+      '   allocation inverts the square B of Section 6-1 by hand, one column', ...
       '   rule at a time, so that the inverse is read rather than evaluated'}];
 end
 L = [L, {'', '   double-click a block to read its code and comments'}];

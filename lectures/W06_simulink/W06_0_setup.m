@@ -35,7 +35,7 @@ cfg = otter_config('bow_thruster');
 %  otter_M takes these two, so they come first.
 mp     = 25;                  % 적재 질량 / payload mass                    [kg]
 rp     = [0.05 0 -0.35]';     % 적재 위치 / payload position in {b}         [m]
-V_c    = 0;                   % 조류 속도. 실험 6-7 은 0.2 / current speed  [m/s]
+V_c    = 0;                   % 조류 속도. 실험 6-4 는 0.3 / current speed  [m/s]
 beta_c = pi/2;                % 조류가 흘러가는 방향. pi/2 = 동쪽 / flows east
 
 %% ---- 선체와 추진기 / hull and thrusters -----------------------------------
@@ -44,7 +44,7 @@ l_f    = cfg.l_f;        % 선수추진기의 전방 거리 1.5 m / the bow thru
 k_pos  = cfg.k_pos;   k_neg = cfg.k_neg;   % 추력 곡선 계수 / thrust-curve coefficients
 n_max  = cfg.n_max;   n_min = cfg.n_min;   % 축 회전수 한계 / shaft-speed limits [rad/s]
 
-%  제어 유효행렬. otter_B 가 열 규칙 하나에서 유도한다 (6-2 절).
+%  제어 유효행렬. otter_B 가 열 규칙 하나에서 유도한다 (6-1 절).
 %  The control effectiveness matrix, derived by otter_B from the column rule.
 B    = cfg.B;            % [1 1 0; 0 0 1; 0.395 -0.395 1.5]
 Binv = inv(B);           %#ok<MINV>   det B = 0.79, 그래서 역행렬이 있다 / so it exists
@@ -61,14 +61,14 @@ F_B_max = 40;                 % [N]
 
 %% ---- 질량행렬 / the system inertia ----------------------------------------
 %  선수추진기의 힘은 otter.m 안으로 들어갈 자리가 없으므로 중첩으로 더한다
-%  (6-5 절). 그 중첩이 M 의 역행렬을 쓰며, otter_M 이 otter.m 과 같은 줄로
+%  (6-1 절). 그 중첩이 M 의 역행렬을 쓰며, otter_M 이 otter.m 과 같은 줄로
 %  M 을 다시 만든다 — 유한차분으로 재지 않는다.
 %  The bow thruster's force has no argument in otter.m and is added by
 %  superposition, which needs inv(M). otter_M rebuilds M line by line as
 %  otter.m builds it; it is not measured by finite differences.
 [Mmat, Minv] = otter_M(mp, rp);          %#ok<ASGLU>
 
-%% ---- 열린 루프 명령 (6-2 ~ 6-4 절) / the open-loop demand -----------------
+%% ---- 열린 루프 명령 (6-1 ~ 6-2 절) / the open-loop demand -----------------
 %  배가 세 방향으로 따로 힘을 낼 수 있는지 보는 실험이다. 셋 중 하나만 0 이
 %  아니게 두면 그 방향으로만 움직여야 한다.
 %  The experiment that asks whether the three generalized forces can be
@@ -78,7 +78,7 @@ X_cmd = 0;            % 전진력 / surge force       [N]
 Y_cmd = 25;           % 횡력   / sway force        [N]
 N_cmd = 0;            % 요 모멘트 / yaw moment     [N m]
 
-%% ---- 위치제어 (6-6 절) / position control ---------------------------------
+%% ---- 위치제어 (6-3 절) / position control ---------------------------------
 %  바깥 루프: 위치오차 -> 속도명령 (P). 안쪽 루프: 속도오차 -> 힘 (PI).
 %  선수각은 4주차의 P-D 를 그대로 쓴다. 세 루프의 게인이 전부 여기 있다.
 %  Outer loop: position error to a velocity command, proportional. Inner loop:
@@ -90,7 +90,7 @@ psi_d_cmd = 0;        % 목표 선수각 / commanded heading    [rad]
 Kp_pos = 0.30;        % 위치 P 게인 / outer proportional gain     [1/s]
 u_lim  = 0.80;        % 전진 속도명령 한계 / surge command limit  [m/s]
 v_lim  = 0.35;        % 횡방향 속도명령 한계 / sway command limit [m/s]
-                      %  횡방향이 더 작다. 낼 수 있는 횡력이 작기 때문이다 (6-4 절)
+                      %  횡방향이 더 작다. 낼 수 있는 횡력이 작기 때문이다 (6-2 절)
                       %  smaller, because the lateral force available is smaller
 
 Kp_u = 200;   Ki_u = 200;        % 전진 PI. 3주차가 고른 게인 그대로 / as Week 3 chose
@@ -100,7 +100,7 @@ Kb   = 1;                        % back-calculation 게인 / anti-windup gain  [
 X_max = 120;                     % 전진력 한계 / the surge force limit  [N]
 
 %  횡력 한계. 막는 것은 선수추진기의 정격이 아니라 **선미의 후진 한계**다 — 횡력
-%  1 N 을 내려면 선미 한 쌍이 1.8987 N 씩 반대로 일해야 하기 때문이다 (6-4 절).
+%  1 N 을 내려면 선미 한 쌍이 1.8987 N 씩 반대로 일해야 하기 때문이다 (6-2 절).
 %  정격 40 N 보다 35.13 N 이 먼저 걸린다.
 %  The sway-force limit. What binds is not the bow unit's rating but the stern
 %  REVERSE limit, because 1 N of sway costs the stern pair 1.8987 N each in
@@ -110,7 +110,7 @@ Y_max = min(abs(T_min)/(l_f/(2*y_pont)), F_B_max);    % 35.13 N
 Kp = 300;     Kd = 100;          % 선수각 P-D (4주차) / the heading P-D of Week 4
 %  요 모멘트의 한계는 남은 추력이 정한다. 세 추진기가 있으므로 4·5 주차의 N_lim
 %  식을 그대로 쓸 수 없다 — 배분이 셋을 함께 풀기 때문이다. 여기서는 보수적으로
-%  선미 한 쌍이 혼자 낼 수 있는 값을 쓴다 (6-4 절이 그 이유를 센다).
+%  선미 한 쌍이 혼자 낼 수 있는 값을 쓴다 (6-2 절이 그 이유를 센다).
 %  The yaw-moment limit is set by the thrust left over. With three thrusters the
 %  N_lim of Weeks 4 and 5 no longer applies, because the allocation solves for
 %  all three at once; the conservative value the stern pair alone can reach is
@@ -140,7 +140,7 @@ Kp_ned = 150;   Ki_ned = 120;    % 북·동이 함께 쓰는 PI / one pair for b
 %  0.35 on each axis separately gives 0.495 m/s on a diagonal.
 v_ned_max = v_lim;               % 0.35 m/s
 
-%% ---- 접안 (6-7 ~ 6-9 절) / berthing ---------------------------------------
+%% ---- 접안 (6-5 ~ 6-6 절) / berthing ---------------------------------------
 %  부두는 동쪽 좌표가 일정한 직선이고, 배는 그 동쪽에서 다가온다.
 %  The quay is a line of constant east coordinate; the vessel comes from the east.
 quay_E   = 0;                 % 부두 벽 / the wall                         [m]
@@ -154,7 +154,7 @@ app_E = berth_E + stand_off;           %   접안점의 법선 위 / on the bert
 %    0  옆으로 붙인다. 최종 선수각 0 — 뱃머리가 북쪽, 부두와 나란하다
 %    1  뱃머리를 먼저 넣는다. 최종 선수각 -90 도 — 뱃머리가 벽을 향한다
 %  접근점은 둘이 같다. 다른 것은 최종 선수각 하나뿐이고, 그것이 마지막 7 m 를
-%  횡방향 운동으로 할지 전진 운동으로 할지를 정한다 (6-9 절).
+%  횡방향 운동으로 할지 전진 운동으로 할지를 정한다 (6-6 절).
 %    0 sideways: final heading 0, the bow north and the hull parallel to the quay
 %    1 bow first: final heading -90 deg, the bow into the wall
 %  The approach point is the SAME for both. The one difference is the final

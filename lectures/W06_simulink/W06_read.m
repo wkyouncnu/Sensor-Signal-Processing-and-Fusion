@@ -91,8 +91,8 @@ R.d     = y(:,16);  R.phase = y(:,17);
 R.T_L = thrust(R.n_L, V.k_pos, V.k_neg);
 R.T_R = thrust(R.n_R, V.k_pos, V.k_neg);
 
-%  요구가 걸린 자리. 안쪽 루프의 포화는 힘에 걸리므로 힘으로 센다 (6-4 절)
-%  where the demand was clipped: the inner loops saturate on force (6-4)
+%  요구가 걸린 자리. 안쪽 루프의 포화는 힘에 걸리므로 힘으로 센다 (6-2 절)
+%  where the demand was clipped: the inner loops saturate on force (6-2)
 R.X_clip = abs(abs(R.X_dem) - V.X_max) < 1e-6;
 R.Y_clip = abs(abs(R.Y_dem) - V.Y_max) < 1e-6;
 end

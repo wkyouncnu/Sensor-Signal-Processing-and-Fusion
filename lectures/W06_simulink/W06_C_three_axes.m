@@ -28,7 +28,7 @@
 %        M [v̇; ṙ] = [Y; 0] 이고, 부가질량 결합 M(2,6) = 12.25 가
 %        ṙ = -2.588 deg/s² 를 만든다. v̇ 이 잦아들면 r 도 0 으로 돌아가므로
 %        (최대 1.18 deg/s, 끝에서 -1.5e-07) 각도만 남는다. **열린 루프의 한계**이고,
-%        6-6 절의 선수각 루프가 이것을 되돌린다.
+%        6-3 절의 선수각 루프가 이것을 되돌린다.
 %      - The recovered force equals the demand to between 1.8e-15 and 1.4e-14 N:
 %        with nothing clipped, the allocation is exact.
 %      - The sway-only demand gives v = 0.344 m/s: the hull moves SIDEWAYS, which
@@ -42,7 +42,7 @@
 %        zero, M [vdot; rdot] = [Y; 0], and the added-mass coupling M(2,6) =
 %        12.25 returns rdot = -2.588 deg/s^2. The rate peaks at 1.18 deg/s and
 %        comes back to -1.5e-07 deg/s once vdot dies away, leaving the angle
-%        behind. This is the limit of open loop; the heading loop of Section 6-6
+%        behind. This is the limit of open loop; the heading loop of Section 6-3
 %        takes it back.
 %
 %  만드는 것 / produces: img/W06_result_actuation.png

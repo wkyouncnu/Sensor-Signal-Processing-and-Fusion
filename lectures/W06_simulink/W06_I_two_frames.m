@@ -66,6 +66,16 @@
 %      - max |X| 가 같은 이야기를 반대편에서 한다. 선체고정은 두 번 모두 전후력을
 %        120.00 N 에서 포화시키고, NED 는 65.87 N 을 넘지 않는다. 속도 지령이 작아
 %        전후 PI 가 밀릴 일이 없다.
+%      - NED 의 봉우리는 §6-2 의 누출이 **아니다.** 선수각 0 에서 봉우리
+%        (0.363 m/s, t = 3.18 s)는 요구와 실제가 **한 자리까지 같은** 순간에 나고
+%        (초과 +0.00 N), 요구 요모멘트가 N_max 에 붙어 있던 시간은 0.0 % 다. 3.7 %
+%        의 넘침은 안쪽 PI 가 자기 지령을 넘은 것뿐이고, 선체고정의 0.878 대 0.873
+%        과 같은 종류다. 45 도에서는 다르다 — 봉우리(0.468 m/s, t = 1.38 s)가
+%        **처음 선회** 안에 들어 있고, 그때 요구 요모멘트가 정확히
+%        N_max = 52.70 N m 다. 셋을 함께 낼 수 없으므로 배분기가 추진기마다 자르고,
+%        그 결과 전후력이 **요구와 반대 부호로** 나온다 — 요구 -54.27 N 에 실제
+%        +28.94 N, 초과 +83.21 N. 봉우리는 위치고리의 것이 아니라 **선회의 과도**다.
+%        최댓값 대 최댓값으로 재면 이 결론이 나오지 않는다.
 %      - All four stop on the point: d(end) is 0.000 m in every case. Where the
 %        rotation sits does not decide whether the loop closes -- both are correct
 %        controllers. It decides HOW they get there.
@@ -108,6 +118,19 @@
 %      - max |X| tells the same story from the other side. Body-fixed saturates
 %        surge at 120.00 N in both runs; the NED one never passes 65.87 N. Its
 %        velocity command is small enough that the surge PI is never pressed.
+%      - The NED peak is NOT the leak of 6-2. At psi = 0 the peak (0.363 m/s at
+%        t = 3.18 s) happens at an instant where demand and delivery agree to the
+%        cent (excess +0.00 N), and the yaw demand spends 0.0 % of the run on
+%        N_max; the 3.7 % overshoot is the inner PI passing its own command, the
+%        same kind of thing as the body-fixed 0.878 against 0.873. At psi = 45 it
+%        is different: the peak (0.468 m/s at t = 1.38 s) falls inside the OPENING
+%        TURN, where the yaw demand sits at exactly N_max = 52.70 N m. All three
+%        axes cannot be served at once, so the allocation clips per thruster and
+%        the surge force comes out with the demand's OPPOSITE SIGN -- demanded
+%        -54.27 N, delivered +28.94 N, an excess of +83.21 N. The peak belongs to
+%        the turn, not to the position loop. Measuring maximum against maximum
+%        does not reach this conclusion; the comparison must be made at a matched
+%        time index.
 %
 %  만드는 것 / produces: img/W06_result_frames.png
 
@@ -154,6 +177,33 @@ fprintf('    sway the NED PI never saw: %.2f - %.2f = %.2f N\n', ...
 U1 = hypot(Rs{1}.u, Rs{1}.v);
 fprintf('    body-fixed stays above the NED ceiling until t = %.2f s\n', ...
         Rs{1}.t(find(U1 > 1.01*V.v_ned_max, 1, 'last')));
+
+%% 1b) NED 쪽 봉우리를 만든 것 / what makes the NED peak
+%  NED 의 max |U| 는 자기 천장 0.350 보다 높다. 무엇이 그렇게 만드는지는 **같은
+%  시각에서** 재야 한다 — 최댓값 대 최댓값은 서로 다른 순간의 수라, 그렇게 견주면
+%  부호까지 틀린다(실제로 틀렸다). 그래서 요구와 실제를 **|U| 가 봉우리인 그
+%  인덱스에서** 나란히 찍는다. 실제 힘은 로그의 축속도에서 되살리며, 규약은
+%  W06_read 와 같다: X = T_L + T_R,  N = y_pont (T_L - T_R) + l_f F_B
+%  the NED peak runs above its own 0.350 ceiling. What makes it has to be measured
+%  AT ONE INSTANT: the maxima of demand and delivery fall at different times, so
+%  comparing max against max gets even the sign wrong -- it did. Demand and
+%  delivery are therefore printed at the index where |U| peaks. The delivered force
+%  is rebuilt from the logged shaft speeds by the same rule W06_read uses
+fprintf('    what makes the NED peak -- demand against delivery, at one instant\n');
+for i = [2 4]
+    R  = Rs{i};
+    Xa = R.T_L + R.T_R;                                   % 실제 전후력 / delivered surge
+    Na = V.y_pont*(R.T_L - R.T_R) + V.l_f*R.F_B;          % 실제 요모멘트 / delivered yaw
+    [Up, kp] = max(hypot(R.u, R.v));
+    onN = 100*mean(abs(abs(R.N_dem) - V.N_max) < 1e-6);   % 요구 요모멘트가 N_max 에 붙어 있던 비율
+    [xe, ke] = max(Xa - R.X_dem);                         % 같은 시각의 전후 초과분, 최악
+    fprintf('      %-19s peak |U| = %.3f m/s at t = %.2f s   (ceiling %.3f)\n', ...
+            C{i,1}, Up, R.t(kp), V.v_ned_max);
+    fprintf('        there:  u %+.3f  v %+.3f    X dem %+8.2f -> del %+8.2f (excess %+7.2f)    N dem %+8.2f -> del %+8.2f\n', ...
+            R.u(kp), R.v(kp), R.X_dem(kp), Xa(kp), Xa(kp) - R.X_dem(kp), R.N_dem(kp), Na(kp));
+    fprintf('        yaw demand on N_max for %.1f %% of the run;  worst same-instant surge excess %+.2f N at t = %.2f s\n', ...
+            onN, xe, R.t(ke));
+end
 
 %% 2) 궤적 · 거리 · 속력 / the track, the distance and the speed
 f = lab_fig('W06 I  two frames', 1180, 380);

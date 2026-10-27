@@ -25,10 +25,10 @@ function W06_plot()
 %   한계선 / the limit lines
 %
 %   ④ 의 점선은 X_max 와 Y_max 다. Y_max 가 X_max 의 1/3 이 못 되는 것이 그림의
-%   한 자리에서 보여야 한다 — 그것이 6-4 절의 결론이고, 횡방향 적분기가 금방
+%   한 자리에서 보여야 한다 — 그것이 6-2 절의 결론이고, 횡방향 적분기가 금방
 %   쌓이는 이유다.
 %   The dashed lines in panel 4 are X_max and Y_max. That Y_max is under a third
-%   of X_max has to be visible in one place: it is the conclusion of Section 6-4
+%   of X_max has to be visible in one place: it is the conclusion of Section 6-2
 %   and the reason the sway integrator fills so quickly.
 %
 %   범례 / the legends
@@ -155,7 +155,7 @@ for i = 1:6
         case 4
             plot(t, X_dem, 'LineWidth', 1.2, 'DisplayName', 'X  surge force');
             plot(t, Y_dem, 'LineWidth', 1.2, 'DisplayName', 'Y  sway force');
-            %  한계선. 6-4 절이 센 두 값이다 / the limits Section 6-4 measures
+            %  한계선. 6-2 절이 센 두 값이다 / the limits Section 6-2 measures
             for s = [X_max -X_max]
                 yline(s, '--', 'Color', [0 0.45 0.74], 'HandleVisibility','off');
             end
