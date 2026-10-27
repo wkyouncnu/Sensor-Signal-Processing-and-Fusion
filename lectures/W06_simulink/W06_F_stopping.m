@@ -131,27 +131,5 @@ for q = 1:2
             VC(q), R.d(end), R.v(end), max(abs(R.Y_dem)), V.Y_max);
 end
 
-%% 4) 그림 / the figure
-f = lab_fig('W06 F  stopping', 1180, 380);
-for i = 1:numel(G)
-    subplot(1,3,1); hold on; grid on; plot(Rs{i}.d, Rs{i}.u, 'Color', CL(i,:), 'LineWidth', 1.3);
-    plot(0:0.1:12, min(V.u_lim, G(i)*(0:0.1:12)), '--', 'Color', [0.55 0.55 0.55]);
-    subplot(1,3,2); hold on; grid on; plot(Rs{i}.t, Rs{i}.d, 'Color', CL(i,:), 'LineWidth', 1.3);
-end
-subplot(1,3,1); set(gca, 'XDir', 'reverse'); xlim([0 12.5]);
-xlabel('distance left [m]'); ylabel('u [m/s]');
-title('grey dashed: sat(K_{p,pos} d).   coloured: what the hull did');
-subplot(1,3,2); set(gca, 'YScale', 'log'); ylim([1e-2 20]); xlim([0 50]);
-xlabel('time [s]'); ylabel('distance left [m]');
-title('straight on a log axis: the slope is -K_{p,pos}');
-legend(compose('K_{p,pos} = %.2f', G'), 'Location', 'southwest');
-subplot(1,3,3); hold on; grid on;
-plot(Rc{1}.t, Rc{1}.d, 'Color', CL(1,:), 'LineWidth', 1.3);
-plot(Rc{2}.t, Rc{2}.d, 'Color', CL(2,:), 'LineWidth', 1.3);
-yline(V.R_berth, 'k--'); ylim([0 inf]); xlim([0 125]);
-xlabel('time [s]'); ylabel('distance left [m]');
-title('at (10, 10): dashed is R_{berth} = 0.40 m');
-legend({'no current', '0.3 m/s cross-current'}, 'Location', 'northeast');
-
-%% 5) 그림을 저장한다 / save the figure
-exportgraphics(f, fullfile(here, 'img', 'W06_result_stopping.png'), 'Resolution', 150);
+%% 4) 그림 / the figure — 그리는 것은 W06_fig_stopping 이 한다 (45 줄 규칙, §15-15)
+W06_fig_stopping(Rs, Rc, G, CL, V, here);

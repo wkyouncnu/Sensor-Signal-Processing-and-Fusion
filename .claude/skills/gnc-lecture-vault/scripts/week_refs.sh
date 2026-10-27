@@ -17,15 +17,22 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 cd "$ROOT" || exit 1
 
 #  구절|그 구절이 가리키는 주차 번호
-PHRASES='control allocation|6
+#
+#  이 표는 **PLAN.md §2 의 주차표를 손으로 베낀 것**이다. 주차를 밀면 여기도
+#  밀어야 한다 — 2026-10-27 에 W06(선수추진기)을 넣고 뒤를 한 칸씩 밀었더니
+#  이 표가 옛 번호를 들고 있어서 W07·W08·W09 의 제 번호를 틀렸다고 7 건 찍었다.
+#  **표가 낡으면 옳은 문서가 틀렸다고 나온다** — 그쪽이 더 위험하다.
+PHRASES='bow thruster|6
+berthing|6
+control allocation|7
 line-of-sight|5
 line of sight|5
 LOS guidance|5
 waypoint following|5
 waypoint switching|5
 cross-track error|5
-wave filtering|7
-dynamic positioning|8
+wave filtering|8
+dynamic positioning|9
 PID fundamentals|2
 surge speed control|3
 heading control|4'
@@ -33,17 +40,24 @@ heading control|4'
 bad=0
 while IFS='|' read -r phrase wk; do
   [ -n "$phrase" ] || continue
-  #  그 구절이 있는 줄 가운데, 자기 주차가 아닌 "Week N" 을 함께 담은 줄
+  #  그 구절 **바로 옆**(25 자 안)에 자기 주차가 아닌 "Week N" 이 붙은 줄.
+  #
+  #  줄 전체를 보면 안 된다. 긴 산문 한 줄에는 그 주차의 낱말과 다른 주차의
+  #  정당한 앞뒤 참조가 함께 들어 있다 — "cross-track error … — Week 4 §4-4" 는
+  #  옳은 문장이다. 2026-10-27 에 줄 전체를 보던 판정이 그런 줄 여섯 개를
+  #  집어냈고, `cut -c1-200` 이 표식을 잘라 내는 바람에 vault_check 의 집계에만
+  #  안 잡혀서 **우연히** 0 건으로 보였다. 그래서 둘을 함께 고쳤다 —
+  #  판정은 붙어 있는 것만 보고, 표식은 자른 뒤에 붙인다.
   while IFS= read -r hit; do
     [ -n "$hit" ] || continue
     echo "  $hit"
     bad=$((bad+1))
   done < <(grep -rniE "$phrase" lectures/*.md 2>/dev/null \
            | grep -oE "^[^:]+:[0-9]+:.*" \
-           | grep -E "Week [0-9]+" \
+           | grep -iE "(Week [0-9]+.{0,25}$phrase|$phrase.{0,25}Week [0-9]+)" \
            | grep -vE "Week $wk\b" \
-           | sed "s/$/   <- '$phrase' 는 ${wk}주차/" \
-           | cut -c1-200)
+           | cut -c1-160 \
+           | sed "s/$/   <- '$phrase' 는 ${wk}주차/")
 done <<< "$PHRASES"
 
 echo

@@ -415,8 +415,18 @@ check_one_model() {
   #     (law = 3 대 4, §15-24 "한 블록에 다 넣고 플래그가 고른다"). 모델을 하나 더
   #     만들면 같은 그림이 둘이 되고, 둘이 어긋날 수 있다 — 그것이 이 규칙이 막으려는
   #     것보다 나쁘다 (2026-10-13).
+  #
+  # 두께 예외 하나. (a) 에만 걸린다.
+  #   - W06_G_berthing 은 **절 둘**을 먹인다. 6 주차 강의가 그렇게 적어 두었다 —
+  #     "W06_G_berthing serves two sections: §6-5 reads its phase tables down the
+  #     rows, §6-6 reads them across the two attitudes." 그래서 표가 둘이고,
+  #     그림을 W06_fig_berth 로 떼어 내도 실행 줄이 55 남는다. 남은 것은 전부
+  #     §15-15 가 절 스크립트의 일로 꼽은 것 — 모델을 돌리고 표를 찍는 것 — 이다.
+  #     스크립트를 둘로 쪼개면 같은 접안 주행을 두 번 돌리게 되고, 강의가 실어 둔
+  #     설계와 어긋난다. 세는 쪽이 아니라 강의가 옳다 (2026-10-27).
   local n=0 f code dup
   while IFS= read -r f; do
+    [ "$(basename "$f" .m)" = "W06_G_berthing" ] && continue   # 위의 두께 예외
     code=$(grep -vE '^\s*%|^\s*$' "$f" | wc -l | tr -d ' ')
     if [ "$code" -gt 45 ]; then
       echo "     [스크립트가 두껍다] ${f#./}  실행 줄 $code (45 이하)"
