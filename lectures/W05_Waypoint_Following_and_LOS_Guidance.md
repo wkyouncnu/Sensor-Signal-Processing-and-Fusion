@@ -1833,7 +1833,7 @@ Setting `pace = 1` in the workspace runs the model **at wall-clock speed**, so t
 
 ## Progress Check
 
-> [!important] Minimum condition for following Week 7
+> [!important] Minimum condition for following Week 6
 
 ### Theory
 
@@ -1876,7 +1876,7 @@ W05_check(1)                 % run this whenever, as often as needed
 
 ## Assignment 5
 
-- **Due**: before the Week 7 session
+- **Due**: before the Week 6 session
 - **Submit**: the modified `W05_0_setup.m`, the numbers requested below, and two figures
 
 ### ① Requirements
@@ -1936,4 +1936,4 @@ Compare the chosen $\kappa$ with 0.3, and explain from the leg length why it mov
 
 ## Next Week
 
-**Week 7 — Control Allocation.** This week gave the vessel the square allocation of Week 4 and never questioned it. Week 7 asks what happens when there are more actuators than degrees of freedom, when a thruster saturates, and when one fails.
+**Week 6 — The Bow Thruster: Position Control and Berthing.** This week steered the hull along a path with the two stern thrusters, and the one demand it could never make was a sideways one: the crab angle was something to be corrected, never something to be commanded. Week 6 adds a third thruster at the bow. That single extra column of $B$ makes the matrix square and invertible, and with it the vessel can hold a point against a current and come alongside a quay.
