@@ -53,7 +53,8 @@ summary: 추진기 하나가 더 붙으면 Otter 는 완전구동이 되고, B �
 > - 바뀐 것이 없으면 `git pull` 은 `Already up to date.` 를 찍고, 있으면 갱신한 파일을 나열한다.
 > - 저장소는 비공개다. Git 이 물으면 강사가 접근 권한을 준 GitHub 계정으로 로그인한다.
 > - 실험은 복사본에서 한다. 그 주차의 `WXX_simulink` 폴더를 다른 곳에 복사해 두면 pull 이 내 수정과 부딪칠 일이 없다. 이미 부딪쳤다면 `git stash` → `git pull` → `git stash pop` 이 수정을 치워 두고 갱신한 뒤 되돌려 놓는다.
-> - MSS 툴박스는 저장소에 들어 있지 않다. Otter 를 시뮬레이션하는 주차는 clone 한 폴더 안 `Tools\MSS` 에 MSS 가 있어야 한다.
+> - MSS 툴박스는 저장소에 들어 있지 않다. Otter 를 시뮬레이션하는 주차는 clone 한 폴더 안 `Tools\MSS` 에 MSS 가 있어야 하고, `Tools\MSS\VESSELS\otter.m` 이 보이도록 두어야 한다 — `_tools\mss_path.m` 이 그 파일 하나를 찾아 MSS 를 MATLAB 경로에 얹는다. 최신 MSS 릴리스는 `otter.m` 을 `CRAFT\USV\models\` 아래에 두므로 강의 스크립트가 찾지 못한다.
+> - **2026-10-27 이후 처음 pull 할 때 118 MB 폴더 하나가 사라진다.** `lectures\MSS-master` 가 그때까지 MSS 사본을 담고 있었다. 위의 새 구조여서 강의 스크립트가 닿을 수 없었고 clone 만 느리게 했다. 삭제는 정상이며 오류가 아니다. 그 폴더 안에 둔 파일이 있으면 pull 하기 전에 다른 곳으로 옮긴다.
 
 
 - **과목**: USV 유도·항법·제어 (대학원)
