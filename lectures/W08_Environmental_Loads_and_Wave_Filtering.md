@@ -48,7 +48,8 @@ summary: The sea written as one signal from a spectrum, the autopilot that chase
 > - `git pull` prints `Already up to date.` when nothing has changed, and otherwise lists the files it updated.
 > - The repository is private. When Git asks, sign in with the GitHub account the instructor has given access.
 > - Experiment on copies, not on the cloned files: copy a week's `WXX_simulink` folder elsewhere first, and a pull can never collide with local edits. If it already has, `git stash`, then `git pull`, then `git stash pop` sets the edits aside, updates, and puts them back.
-> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder.
+> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder, placed so that `Tools\MSS\VESSELS\otter.m` exists: `_tools\mss_path.m` searches for that one file and puts the toolbox on the MATLAB path once it finds it. The current MSS release keeps `otter.m` under `CRAFT\USV\models\` instead, where the course scripts do not find it.
+> - **A 118 MB folder disappears on the first pull after 2026-10-27.** `lectures\MSS-master` held a copy of MSS until then. That copy used the newer layout above, so no course script could reach it, and it only made cloning slower. Its removal is expected and is not a fault. Any file kept inside that folder must be moved elsewhere before pulling.
 
 
 - **Course**: USV Guidance, Navigation and Control (Graduate)
@@ -599,7 +600,7 @@ Expected output:
 | the left-hand curve | falling from $14.78$ to $7.61$ N·m | line 3: a wider notch removes more of the sea |
 | the right-hand curve | rising from $4.09$ to $42.32\,\%$ | line 3 again, the other side of it |
 | where the two curves cross in usefulness | around $\zeta_d = 0.3$ | line 5: the chosen value of this week |
-| the `|H(j w0)|` column | exactly $\zeta_n/\zeta_d$ in every row | §8-4 line 2, once per row |
+| the `\|H(j w0)\|` column | exactly $\zeta_n/\zeta_d$ in every row | §8-4 line 2, once per row |
 | the `heading std` column | improving with width, like the moment | §8-4 line 6: the two go together in the sea |
 
 **What the figure says**

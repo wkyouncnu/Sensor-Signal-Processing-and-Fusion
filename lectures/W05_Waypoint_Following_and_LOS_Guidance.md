@@ -48,7 +48,8 @@ summary: Guidance in front of the Week 4 autopilot, tuned model-free — atan2 a
 > - `git pull` prints `Already up to date.` when nothing has changed, and otherwise lists the files it updated.
 > - The repository is private. When Git asks, sign in with the GitHub account the instructor has given access.
 > - Experiment on copies, not on the cloned files: copy a week's `WXX_simulink` folder elsewhere first, and a pull can never collide with local edits. If it already has, `git stash`, then `git pull`, then `git stash pop` sets the edits aside, updates, and puts them back.
-> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder.
+> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder, placed so that `Tools\MSS\VESSELS\otter.m` exists: `_tools\mss_path.m` searches for that one file and puts the toolbox on the MATLAB path once it finds it. The current MSS release keeps `otter.m` under `CRAFT\USV\models\` instead, where the course scripts do not find it.
+> - **A 118 MB folder disappears on the first pull after 2026-10-27.** `lectures\MSS-master` held a copy of MSS until then. That copy used the newer layout above, so no course script could reach it, and it only made cloning slower. Its removal is expected and is not a fault. Any file kept inside that folder must be moved elsewhere before pulling.
 
 - **Course**: USV Guidance, Navigation and Control (Graduate)
 - **Department**: Autonomous Vehicle System Engineering, Chungnam National University

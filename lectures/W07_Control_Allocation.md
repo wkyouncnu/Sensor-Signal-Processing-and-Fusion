@@ -48,7 +48,8 @@ summary: The step between a demanded force and two shaft speeds — the square r
 > - `git pull` prints `Already up to date.` when nothing has changed, and otherwise lists the files it updated.
 > - The repository is private. When Git asks, sign in with the GitHub account the instructor has given access.
 > - Experiment on copies, not on the cloned files: copy a week's `WXX_simulink` folder elsewhere first, and a pull can never collide with local edits. If it already has, `git stash`, then `git pull`, then `git stash pop` sets the edits aside, updates, and puts them back.
-> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder.
+> - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder, placed so that `Tools\MSS\VESSELS\otter.m` exists: `_tools\mss_path.m` searches for that one file and puts the toolbox on the MATLAB path once it finds it. The current MSS release keeps `otter.m` under `CRAFT\USV\models\` instead, where the course scripts do not find it.
+> - **A 118 MB folder disappears on the first pull after 2026-10-27.** `lectures\MSS-master` held a copy of MSS until then. That copy used the newer layout above, so no course script could reach it, and it only made cloning slower. Its removal is expected and is not a fault. Any file kept inside that folder must be moved elsewhere before pulling.
 
 
 - **Course**: USV Guidance, Navigation and Control (Graduate)
@@ -391,7 +392,7 @@ Expected output:
 | the `residual` column | $10^{-14}$ in all three rows | line 1: with rank 3 the demand is attainable, and all three solve it |
 | the `f1x` and `f2x` columns | identical in all three rows | line 3: the surge and yaw shares are not free |
 | the `f1y` and `f2y` columns | $15/15$, $0.86/29.14$, $24/6$ | line 2: the family is a line, and these are three points on it |
-| the `|f|` column, first row | the smallest of the three | line 4: that is what the pseudo-inverse optimises |
+| the `\|f\|` column, first row | the smallest of the three | line 4: that is what the pseudo-inverse optimises |
 | the third row against the first | sway moved to the cheap unit, norm up $0.6$ | line 5: the weighting buys a cheaper solution with a larger one |
 
 | What to try | What to watch |
