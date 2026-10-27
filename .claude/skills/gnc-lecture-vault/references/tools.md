@@ -56,6 +56,9 @@
 │                            vault_rename_tau_u.m · vault_unify_ypont.m · w05_beta_fix.m   (기호 통일 변환기)
 │                            git_autopush.sh · hook_matlab_rules.sh  (PostToolUse 훅: 맨 clear 금지)
 │                            svg2png.sh · svgzoom.sh                 (렌더해서 눈으로 보기)
+│                            md_section.sh                           (강의 .md 에서 한 절만.
+│                              `-l` 로 절 목록, 번호로 그 절만, `-n` 으로 줄 범위.
+│                              145 KB 를 통째로 읽지 않는다 → standing-orders.md §15-65)
 │                            tikz2svg.sh                             (그림 조판. 지금 쓰는 것)
 │                            w01_euler_R.m · w05_track_curves.awk     (그림 기하 계산)
 │                            w03_prop_curve.m                        (추력 곡선 F = k n|n| 그림의 좌표)
