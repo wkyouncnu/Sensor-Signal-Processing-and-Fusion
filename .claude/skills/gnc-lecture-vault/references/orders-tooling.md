@@ -72,3 +72,27 @@
 
 ---
 
+### 5-3. MATLAB MCP 로 절 스크립트를 돌리는 꼴
+
+MCP 의 `evaluate_matlab_code` 는 한 줄짜리 호출이라, 절 스크립트를 그 안에서
+`run` 으로 부르면 작업공간과 경로가 엉킨다. **드라이버를 함수로 두고 부른다.**
+
+```matlab
+% <scratch>/run_one.m  — 인자 하나, here 는 박아 둔다
+addpath('<scratch>');  run_one('W06_J_ladder');     % <- run 이 아니라 호출
+```
+
+| | |
+|---|---|
+| 함수여야 한다 | 스크립트로 두면 `evalin('base', …)` 가 제 작업공간을 본다 |
+| **부른다** | `run run_one` 이 아니라 `run_one('이름')`. 인자는 **하나** |
+| `mss_path()` | 드라이버가 **반드시** 부른다. 없으면 Otter 시뮬레이션이 전부 실패한다 |
+| 치우기 | `bdclose('all'); evalin('base','clearvars'); close all force;` 로 충분하다. **`clear classes` 를 쓰지 않는다** |
+| 절대 금지 | `restoredefaultpath` — MCP 함수가 경로에서 사라져 **그 세션의 MATLAB 통신이 끊긴다** |
+| 인자 이름 | `evaluate_matlab_code` 에는 **`description` 매개변수가 없다** — 주면 거절된다 |
+
+출력은 `evalc` 로 받아 한 덩어리로 돌려준다. 그래야 러너가 찍은 표를 그대로
+문서에 붙일 수 있고, 실패했을 때 `ME.stack` 의 줄 번호까지 같은 답에 들어온다.
+
+---
+

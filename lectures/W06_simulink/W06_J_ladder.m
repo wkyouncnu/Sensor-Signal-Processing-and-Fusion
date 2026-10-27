@@ -80,7 +80,7 @@ L = {1 'point'  'W06_1_point'  '6-3', [10 10 0]
 n = size(L,1);  Rs = cell(n,1);  M1 = nan(n,8);  M2 = nan(n,9);  M3 = nan(n,4);
 %  단 이름은 번호와 짧은 이름만 든다. 모델 이름은 바로 위의 표가 이미 짝지어 두었고,
 %  여기에 한 번 더 적으면 줄이 100 자를 넘어 **PDF 안에서 접힌다** — 접히면 열이
-%  맞지 않아 표가 읽히지 않는다 (§15-66).
+%  맞지 않아 표가 읽히지 않는다 (§15-69).
 %  The rung name carries the number and the short name only. The table just above
 %  already pairs each rung with its model, and repeating it here pushes the line
 %  past 100 characters, where the PDF wraps it and the columns stop lining up.
@@ -111,7 +111,7 @@ end
 %% 2) 표 셋 / the three tables
 %  머리글과 숫자 줄이 **같은 폭 목록**을 쓴다. 머리글을 손으로 띄어 쓰면 열이 하나
 %  어긋나고, 그것을 눈으로 잡기 어렵다. 어느 줄도 100 자를 넘지 않아야 한다 —
-%  PDF 본문이 186 mm 이고 고정폭 9 pt 이라 그보다 넓으면 접힌다 (§15-66).
+%  PDF 본문이 186 mm 이고 고정폭 9 pt 이라 그보다 넓으면 접힌다 (§15-69).
 %  The header and the number rows share ONE set of widths: a header spaced by hand
 %  goes one column out of true and the eye does not catch it. No line may exceed
 %  100 characters, because the PDF body is 186 mm at 9 pt monospaced.

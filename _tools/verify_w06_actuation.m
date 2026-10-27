@@ -257,7 +257,7 @@ end
 function ok = report(ok, name, pass, detail)
 %  판정은 윗줄에, 그 판정의 근거가 된 수치는 한 칸 들여 아랫줄에 둔다.
 %  둘을 한 줄에 넣으면 100 자를 넘는 항목이 여덟이고, 그 줄들은 **PDF 안에서
-%  접힌다** — 본문이 186 mm 이고 고정폭 9 pt 이라 그보다 넓으면 꺾인다 (§15-66).
+%  접힌다** — 본문이 186 mm 이고 고정폭 9 pt 이라 그보다 넓으면 꺾인다 (§15-69).
 %  나누어도 OK/FAIL 이 한 열에 서는 것은 그대로이고, 뒤에 수치가 길어져도
 %  다시 접히지 않는다.
 %  The verdict on one line, the numbers behind it indented on the next. Both on
