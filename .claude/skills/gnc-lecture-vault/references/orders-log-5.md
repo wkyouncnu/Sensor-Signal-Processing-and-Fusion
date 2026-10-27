@@ -400,5 +400,55 @@ $ git check-ignore -v lectures/MSS-master/VESSELS/otter.m
 ② 코드가 그것을 **찾는 경로**와 맞는지 ③ 학생이 읽는 문서가 가리키는지. 셋 다
 "아니다" 면 그것은 사본이 아니라 **짐**이다.
 
+## 15-67. `git commit -- <경로>` 는 `git rm --cached` 를 되돌린다 — 2026-10-27
 
-기록은 이제 이 파일의 끝에 붙는다. 다음 번호는 **§15-67** 다.
+§15-66 의 빼내기를 올리면서 **메시지는 맞고 내용은 빈 커밋**을 하나 만들었다.
+이 세션은 다른 세션이 W06 파일 45 개를 index 에 올려 둔 상태였으므로, 그것을
+휩쓸지 않으려고 경로를 한정해 커밋했다.
+
+```
+$ git rm -r --cached lectures/MSS-master        # index 에서 449 개를 뺀다
+$ git commit -F - -- lectures/MSS-master .../orders-log-5.md
+ 1 file changed, 27 insertions(+)               # <- MSS 는 한 줄도 없다
+$ git ls-files lectures/MSS-master | wc -l
+449                                             # <- index 로 돌아왔다
+```
+
+**경로를 붙인 `git commit` 은 index 를 보지 않는다.** 그 경로의 **작업 트리 내용**을
+그대로 커밋하고, index 를 거기에 맞춘다. MSS 파일 449 개는 디스크에 **그대로 있으니**
+git 은 "바뀐 것 없음" 으로 보았고, 그러면서 index 의 삭제 표시를 지워 버렸다.
+`git rm --cached` 로 한 일이 바로 다음 명령에 취소된 것이다.
+
+| 하려는 것 | 경로 한정 커밋 | 맞는 방법 |
+|---|---|---|
+| 파일 **내용** 변경을 올린다 | 된다 — 작업 트리가 곧 올리려는 것이다 | 그대로 |
+| 파일을 **추적에서만** 뺀다 (디스크에 남긴다) | **안 된다 — 되돌려진다** | HEAD 에서 읽은 **임시 index** 로 커밋을 만든다 |
+| 파일을 추적과 디스크에서 다 뺀다 | 된다 (작업 트리에 없으므로) | 그대로 |
+
+가운데 칸이 이번 경우였다. 진짜 index 를 건드리지 않고 커밋 하나를 만드는 법:
+
+```
+$ GIT_INDEX_FILE=$T git read-tree HEAD
+$ GIT_INDEX_FILE=$T git rm -r --cached lectures/MSS-master
+$ TREE=$(GIT_INDEX_FILE=$T git write-tree)
+$ COMMIT=$(git commit-tree $TREE -p HEAD -F msg.txt)
+$ git update-ref refs/heads/main $COMMIT HEAD
+$ git rm -r --cached lectures/MSS-master          # 진짜 index 도 새 HEAD 에 맞춘다
+```
+
+`update-ref` 에 **옛 값(`HEAD`)을 함께 준다** — 그 사이 다른 세션이 커밋했으면 거부된다.
+마지막 줄의 `git rm --cached` 는 경로가 한정되어 있어 남의 45 개를 건드리지 않는다.
+
+**규칙 둘.**
+① **커밋한 뒤 그 커밋이 무엇을 담았는지 센다.** `git show --stat` 한 줄이다.
+메시지가 맞다고 내용이 맞는 것이 아니다 — 이번에는 "118 MB 를 뺐다" 는 커밋이
+27 줄의 글만 담고 있었고, 세지 않았으면 기록만 참인 채로 남았다.
+② **지난 번호의 기록이 거짓이 되면 그 자리에 적지 않고 다음 번호로 적는다.**
+§15-66 은 이미 올라갔다. 고쳐 쓰면 무엇이 왜 틀렸는지가 사라진다.
+
+**아직 남은 것.** 저장소의 `.git` 은 451 MiB 다 — 이력에 MSS blob 이 그대로 있다.
+빼내기는 **앞으로** 커지는 것을 막을 뿐, clone 크기는 줄지 않는다. 줄이려면 이력을
+다시 쓰고(`filter-repo`) 학생 전원이 다시 clone 해야 하므로, 그것은 **학기 중에
+하지 않는다.**
+
+기록은 이제 이 파일의 끝에 붙는다. 다음 번호는 **§15-68** 다.
