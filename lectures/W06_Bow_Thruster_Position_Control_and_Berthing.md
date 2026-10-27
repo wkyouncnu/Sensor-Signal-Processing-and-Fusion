@@ -238,6 +238,26 @@ $$\det B = (-1)^{2+3}\cdot 1 \cdot \det\!\begin{bmatrix} 1 & 1 \\ 0.395 & -0.395
 
 Panel (b) is the whole of the next section in advance. A pure sideways force on this hull costs **three** thrusters working, two of them against each other, and the magnitudes are set by the ratio of the arms.
 
+The third thruster is also, deliberately, the weakest. The stern pair reach $+119.682$ N ahead and $-66.708$ N astern; the bow unit is rated at $\lvert F_B \rvert \le 40$ N, a third of the ahead figure. That ratio is not an arbitrary choice of this course but the ordinary shape of the installation:
+
+| Why the bow unit is small | Consequence on this hull |
+|---|---|
+| a tunnel thruster's thrust grows with the tunnel's cross-section, and the tunnel must fit inside the submerged part of the hull | the bow of a $2$ m Otter is narrow and shallow, so the tunnel is small where the hull is smallest |
+| tunnel thrust falls off as the vessel gains forward speed, the inflow sweeping the jet astern | the unit is useful at the speeds of §6-4 and §6-5 — under $0.8$ m/s — and of little use at transit speed |
+| the stern propellers are sized for transit, which is the duty that sets installed power | surge has the power of the whole propulsion plant behind it; sway has a manoeuvring aid |
+
+The weak member is therefore the one that would be expected to bind first. Section 6-2 measures which one actually does, and the answer is not this one — the ceiling on sway turns out to be set by the **geometry** of the lever $l_f/2y_{pont}$ acting on the stern astern limit, not by the bow unit's rating. That the rating is not the binding constraint is a result, not an assumption, and it is the reason §6-2 is a section rather than a footnote.
+
+Counting the thrusters is enough to place any hull in the three classes, and this course works through them in order:
+
+| Thrusters | $B$ | Rank | Class | What becomes possible | Where in this course |
+|---|---|---|---|---|---|
+| 2 stern propellers | $\mathbb{R}^{3\times 2}$ | 2 | under-actuated | surge and yaw independently; sway only as a by-product of turning | Weeks 1–5 |
+| 2 stern + 1 bow tunnel | $\mathbb{R}^{3\times 3}$ | 3 | fully actuated | all three of surge, sway and yaw at once — a point held at an attitude, and a berth approached sideways | **Week 6** |
+| 4 tilting units | $\mathbb{R}^{3\times 8}$ | 3 | over-actuated | the same three, with a null space to spend on wear, power or a failed unit | Week 7 |
+
+The middle row is the one that changes what can be *asked*. The bottom row changes only what can be *chosen* among the ways of granting a request that was already grantable.
+
 ### Experiment 6-1 · Three axes, commanded one at a time (20 min)
 
 **What it measures.** Whether the algebra of $B$ survives contact with the hull. A square $B$ of rank 3 says the three axes are independent as a matter of linear algebra; it says nothing about whether the hull's inertia agrees.
@@ -1090,6 +1110,11 @@ $$t_{berth} \approx \frac{\texttt{stand\_off}}{v_{cap}} + \frac{1}{K_{p,pos}},
 
 The last row of the figure is the part that is not about control at all. A hull alongside presents its full length to the quay and can take lines fore and aft; a hull bow-first touches at one point and must be held by that point. Which of those is wanted is a seamanship question, and the controller's job is only to make both reachable.
 
+> [!note] Where this structure comes from
+> Carrying **two** berthing strategies and switching between them is the arrangement reported and sea-trialled by Bang et al. (2025), who place a transition logic above the manoeuvre so that one autonomous system can berth a USV either alongside or bow-first. The `bow_on` Constant of this week is the degenerate case of that logic — a selection made once before the run instead of one made on conditions during it. The mission block of §6-5 already carries the machinery a running selection would need: latched phases, and an arrival test that is a conjunction of bounded terms rather than a single distance. What §6-5 does not carry is a rule for *re-entering* an earlier phase, and that omission is deliberate — Week 9 introduces it under a current, where it is needed.
+>
+> The berthing logic of §6-5 and §6-6 has no counterpart to copy in MSS. The copy this course runs against — the one `_tools/mss_path.m` resolves, its files dated 2026-08-31 — holds dynamic-positioning material (`demoDPThrusterModels`, `demoSemisubDPsystem`, `demoCS2passiveObserverDP`) but no berthing demonstration, and no file in it matches *berth* or *dock* by name. The phase machine here was therefore written from the derivation of §6-5 rather than adapted, which is why that section derives it rather than citing it.
+
 ### Experiment 6-6 · The same berth, two attitudes (20 min)
 
 **What it measures.** The predictions of steps 4, 5 and 6 — alignment time, berth-leg time, and which cap binds — from two runs of the same model.
@@ -1323,6 +1348,202 @@ The last four lines of the output are a caution about measurement, not about fra
 > - **Point to**: the two loop figures side by side — one filled cell against two — then `max |Y|`, $35.13$ against $43.68$.
 > - **Ask**: all four runs stop on the point. Name the quantity that the NED controller is wrong about anyway, and say where in the diagram it would have to be measured to fix it.
 > - **Take away**: put the rotation where it leaves the limits in the frame they are constants in. For a hull, that is hull axes.
+
+---
+
+## 6-8. The ladder, rung by rung
+
+**What is observed.** Each of the seven experiments before this one asks a single question and then stops, so what changed between one experiment and the next is never in view. Run back to back into one table, the same seven runs answer a different question: what each rung of the week actually added. Exactly one thing is new on each rung, so the difference between two rows is what that one thing did.
+
+**The result.** Seven runs of four models, measured with every metric defined as the section that introduced it defines it, give three tables and eight figures. Two rows carry the argument of the whole week. Rung 2 translates $13$ m due east with $\lvert u\rvert_{max} = 0.021$ m/s; rung 4 translates $12$ m due north with $\lvert v\rvert_{max} = 0.000$ m/s and $F_B = 0.0$ N. Each is a straight line of exactly its own length. No two-thruster hull can produce both.
+
+The rungs are numbered as the undergraduate capstone course numbers them, so that the two ladders can be read side by side.
+
+| Rung | Model | What is new on this rung | What to check |
+|---|---|---|---|
+| 1 `point` | `W06_F_position` | the three-loop cascade closing on a point | $d(\text{end}) = 0.000$ m, reached in $42.68$ s |
+| 2 `sway` | `W06_F_position`, target due east | the task a stern pair alone cannot do | $\lvert u\rvert_{max} = 0.021$ m/s; path $=$ straight line $= 12.00$ m |
+| 3 `thrust` | `W06_C_actuation` | the loops taken away — the allocation and $T = k\,n\lvert n\rvert$ left exposed | $F_B = 15.0$, $T_L = 4.2$, $T_R = 35.8$ N, each reproducible by hand |
+| 4 `stop` | `W06_F_position`, target due north | pure surge, as the contrast rung 2 needs | $\lvert v\rvert_{max} = 0.000$ m/s, $F_B = 0.0$ N, $T_L = T_R = 60.0$ N |
+| 5 `dock` | `W06_H_berth` | the four latched phases | entered at $0.00$, $53.04$, $55.66$ and $78.66$ s |
+| 7 `front` | `W06_H_berth`, $\psi_{berth} = -90$ deg | the same berth on the other attitude | latches at $70.00$ s with $\lvert v\rvert_{max} = 0.268$ m/s |
+| 8 `ned` | `W06_I_position_ned` | the one rotation moved into the inner loop | $51.00$ s to $0.5$ m, and $F_B$ reaching $40.0$ N |
+
+Four things about the shape of that table are worth saying plainly.
+
+- **Rung 6 is absent, and deliberately so.** In the undergraduate course, rung 6 is rung 5 run against a Gazebo/VRX simulation of the same vessel. This course works in Otter dynamics throughout, so there is no sixth rung to run. The numbering skips it rather than closing the gap, because closing it would make the two ladders disagree about which rung is which.
+- **Rungs 7 and 8 do not stand on rung 6.** Rung 7 is rung 5 with one Constant changed; rung 8 is rung 1 with the rotation moved. Each stands on the last rung that shares its model.
+- **Rung 3 is the one place where the two ladders run in opposite directions.** The capstone *adds* the thrust curve at rung 3, because its earlier rungs command thrust directly. The models of this course carry the allocation and the curve from rung 1 onwards, so rung 3 instead *strips the loops away* and leaves the actuation exposed. Either way the rung measures the same thing: what the actuators do when nothing is closing around them.
+- **A blank entry is an absence, not a failure.** Rung 3 has no target, so it has no distance to one and no arrival; only the two berthing rungs have phases. The tables print those as `NaN`.
+
+**Where each model is drawn.** The four diagrams are not repeated here — each is read in the section that built it, and the ladder only chooses between them.
+
+| Rungs | Model | Its diagram is in |
+|---|---|---|
+| 1, 2, 4 | `W06_F_position` | §6-3, with the position loop and the one rotation |
+| 3 | `W06_C_actuation` | §6-1, with the allocation and no loops at all |
+| 5, 7 | `W06_H_berth` | §6-5, with the `phases` block in front of the position loop |
+| 8 | `W06_I_position_ned` | §6-7, with the rotation moved and drawn twice |
+
+### Experiment 6-8 · The whole ladder, measured in one place (25 min)
+
+**What it measures.** Every rung of the week, with each metric defined exactly as its own section defines it, so that one row may be subtracted from another.
+
+**The models.** `W06_C_actuation.slx`, `W06_F_position.slx`, `W06_H_berth.slx` and `W06_I_position_ned.slx`, in the seven configurations of the ladder table. Each run changes only the fields of `W06_vars` listed in the script's `L`, so what differs between two rows is visible in the code.
+
+**Opening and running.**
+
+```matlab
+W06_J_ladder
+```
+
+Expected output:
+
+```
+  W06 Experiment 6-8  the rungs of the ladder, measured in one place
+
+    table 1, the mission
+    rung                             t to 0.5 m   phase 1   phase 2   phase 3   phase 4   d(end) [m]   psi err [deg]   last 10 s [m]
+    1 point  W06_F_position              42.68       NaN       NaN       NaN       NaN        0.000           -0.00           0.000
+    2 sway  W06_F_position               34.10       NaN       NaN       NaN       NaN        0.000           -0.00           0.000
+    3 thrust  W06_C_actuation              NaN       NaN       NaN       NaN       NaN          NaN             NaN             NaN
+    4 stop  W06_F_position               17.00       NaN       NaN       NaN       NaN        0.000            0.00           0.000
+    5 dock  W06_H_berth                  75.94      0.00     53.04     55.66     78.66        0.186           -0.00           0.186
+    7 front  W06_H_berth                 56.22      0.00     53.04     58.54     70.00        0.347            0.00           0.347
+    8 ned  W06_I_position_ned            51.00       NaN       NaN       NaN       NaN        0.000           -0.00           0.000
+
+    table 2, the actuation
+    rung                               |u|max   |v|max   |r|max      T_L      T_R      F_B    |n|max   path [m]   straight [m]
+    1 point  W06_F_position            0.808    0.356     0.59    119.7     49.1     35.1    103.93      21.09          18.03
+    2 sway  W06_F_position             0.021    0.356     0.65     66.7     66.7     35.1    101.74      12.00          12.00
+    3 thrust  W06_C_actuation          0.556    0.223     5.26      4.2     35.8     15.0     56.86      11.17           9.91
+    4 stop  W06_F_position             0.804    0.000     0.00     60.0     60.0      0.0     73.59      12.00          12.00
+    5 dock  W06_H_berth                0.805    0.353    15.99     92.8     85.0     35.1     97.54      50.16          46.45
+    7 front  W06_H_berth               0.805    0.268    16.34     92.8     85.0     35.1    101.74      49.96          46.36
+    8 ned  W06_I_position_ned          0.195    0.310     1.33     97.5     66.7     40.0    101.74      18.04          18.03
+
+    table 3, the attitude
+    rung                             target N        E      psi      final N        E      psi   samples
+    1 point  W06_F_position           10.000   10.000     0.00       10.000   10.000    -0.00      6001
+    2 sway  W06_F_position             0.000   13.000     0.00       -0.000   13.000    -0.00      6001
+    3 thrust  W06_C_actuation            NaN      NaN      NaN        3.110   34.407    95.62      1001
+    4 stop  W06_F_position            12.000   25.000     0.00       12.000   25.000     0.00      6001
+    5 dock  W06_H_berth               40.000    1.200     0.00       39.999    1.386    -0.00      7501
+    7 front  W06_H_berth              40.000    1.200   -90.00       39.990    1.547   -90.00      7501
+    8 ned  W06_I_position_ned         10.000   10.000     0.00       10.000   10.000    -0.00      6001
+```
+
+The script saves one figure per rung. The six panels are the same on every one — the track, the error closing, the heading, the target at ship scale, the speeds, the three thrusts — so that two rungs are compared by looking at the same place twice rather than by hunting.
+
+| Rung | The run |
+|---|---|
+| 1 `point` | ![rung 1, the point](W06_simulink/img/W06_r1_point.png) |
+| 2 `sway` | ![rung 2, pure sway](W06_simulink/img/W06_r2_sway.png) |
+| 3 `thrust` | ![rung 3, the actuation alone](W06_simulink/img/W06_r3_thrust.png) |
+| 4 `stop` | ![rung 4, pure surge](W06_simulink/img/W06_r4_stop.png) |
+| 5 `dock` | ![rung 5, alongside](W06_simulink/img/W06_r5_dock.png) |
+| 7 `front` | ![rung 7, bow-first](W06_simulink/img/W06_r7_front.png) |
+| 8 `ned` | ![rung 8, the NED frame](W06_simulink/img/W06_r8_ned.png) |
+
+The last figure does the one thing the seven cannot: it lays the rungs on top of each other.
+
+![the ladder on one chart](W06_simulink/img/W06_result_ladder.png)
+
+**Reading the figures against the derivations.**
+
+| Where to look | What is there | Which section predicts it |
+|---|---|---|
+| rung 1, panel (f), $T_L$ | $119.7$ N — $T_{max}$ to the digit | §6-2: a surge demand on its $120$ N cap puts the left unit exactly on its ceiling |
+| rung 2, $\lvert n\rvert_{max}$ in table 2 | $101.74$, which is $\lvert n_{min}\rvert$ | §6-2: a pure sway demand drives both stern units astern, and astern is the weaker direction |
+| rung 2, $F_B$ | $35.1$ N — $Y_{max}$, not the bow unit's $40$ N rating | §6-2 step 5: the sway ceiling comes from the stern reverse limit through the lever $a = 1.8987$ |
+| rung 2 against rung 4, `path` and `straight` | $12.00 = 12.00$ m on both | §6-3: both translations are straight; one is made with the bow unit and one without it |
+| rung 3, $F_B$, $T_L$, $T_R$ | $15.0$, $4.2$, $35.8$ N | §6-2: the four lines of `allocate`, worked by hand below |
+| rungs 5 and 7, `phase 2` | $53.04$ s on both | §6-6: phase 1 does not know $\psi_{berth}$, so the two runs are one simulation until the approach radius |
+| rung 7 against rung 5, `t to 0.5 m` and `d(end)` | $56.22$ against $75.94$ s, but $0.347$ against $0.186$ m | §6-6: bow-first spends longer aligning, less time berthing, and stops further out |
+| rung 7 against rung 5, $\lvert v\rvert_{max}$ | $0.268$ against $0.353$ m/s | §6-6: the bow-first attitude asks less of the axis the hull is weakest in |
+| rung 8, $F_B$ | $40.0$ N — the only rung that reaches the bow unit's own rating | §6-7: the NED loop asks for $43.68$ N, and what stops it is the allocation's Saturation at $F_{B,max}$, not the controller's clip at $Y_{max} = 35.13$ N |
+| rung 8 against rung 1, `t to 0.5 m` | $51.00$ against $42.68$ s for the same target | §6-7: the magnitude cap $v_{ned,max} = 0.350$ m/s binds, and $\lvert u\rvert_{max}$ falls to $0.195$ m/s |
+| the right panel of the ladder chart | only rung 8's $\lvert F_B\rvert$ bar touches the $F_{B,max}$ line | §6-7 again, read without any table at all |
+| every rung, `samples` | $T_{final}/h + 1$ — $6001$, $7501$, $1001$ | §6-0: the fixed step $h = 0.02$ s |
+
+**What the figures say.** Rung 3 is the one rung a student can check with a pencil, because nothing is closing around it. The demand is $X = 40$ N, $Y = 15$ N, $N = 10$ N·m, and the four lines of `allocate` give
+
+$$F_B = Y = 15.000\ \text{N},\qquad
+N_s = N - l_f F_B = 10 - 1.5 \times 15 = -12.5000\ \text{N·m},$$
+
+$$T_L = \tfrac{1}{2}\!\left(40 + \frac{-12.5}{0.395}\right) = 4.1772\ \text{N},\qquad
+T_R = \tfrac{1}{2}\!\left(40 - \frac{-12.5}{0.395}\right) = 35.8228\ \text{N},$$
+
+against $15.0$, $4.2$ and $35.8$ N logged. Nothing is clipped on this rung, so the solve and the measurement agree to the digits the table prints. That arithmetic is the whole of Section 6-2 in three lines, and it is checkable without a simulator.
+
+The pair that defines the week is rung 2 beside rung 4. Both travel a straight line of exactly their own length with the same gains and the same model; rung 2 does it sideways and rung 4 does it ahead. Rung 4 never asks the bow unit for anything — $F_B = 0.0$ N — and its stern pair runs at $T_L = T_R = 60.0$ N, two equal forces summing to the surge demand with no moment between them. Rung 2 holds $\lvert u\rvert_{max} = 0.021$ m/s, pins the bow unit at $Y_{max}$, and drives both stern units to $\lvert T_{min}\rvert = 66.7$ N astern to cancel the moment that the bow unit is making at the same time. A hull with two stern units and nothing forward can run rung 4 and cannot run rung 2. That is the sentence the third thruster was added to make true, and the ladder measures it rather than asserting it.
+
+The berthing pair, rungs 5 and 7, is where the ladder stops rewarding a single number. Bow-first reaches $0.5$ m almost twenty seconds sooner and latches eight seconds sooner, and yet ends $0.16$ m further from the berth. Both are inside $R_{berth} = 0.40$ m, so both are arrivals by the week's own declaration; which is better depends on whether the quay charges for time or for centimetres.
+
+> [!warning] Subtracting two rows is only honest when one thing differs
+> Rows 1 and 8 differ in the frame; rows 5 and 7 in the attitude; rows 2 and 4 in the direction of travel. Each of those three subtractions means something. Rows 1 and 5 differ in the model, the target, the run length and the controller in front of the loops, so the $33$ s between their arrival times measures nothing in particular. The ladder is built one change at a time so that subtraction stays legitimate; a rung added without that discipline makes the table longer and says less.
+
+| What to try | What to watch |
+|---|---|
+| `psi_d_cmd = deg2rad(90)` on rung 2 | the east translation becomes a surge task — $\lvert u\rvert_{max}$ and $\lvert v\rvert_{max}$ exchange places and $F_B$ falls away, which is rung 4 reached from the other side |
+| `F_B_max = 120` in `W06_vars.m`, rung 8 only | $F_B$ passes $40.0$ N, proving that the $40.0$ in table 2 was the allocation's Saturation and not the trajectory |
+| `X_cmd = 0` on rung 3 | the stern pair becomes $\pm$ one number and the hand check above loses a term; the moment is then made entirely by the pair |
+| `stand_off = 12` on rungs 5 and 7 | the berth leg lengthens for both; watch whether the gap between their two `d(end)` values widens or closes |
+| remove rung 3 from `L` and re-run | the tables lose their only `NaN` row, which is a good way to confirm that the blanks were the open-loop rung and not a failure |
+
+> [!tip] In class
+> - **Purpose**: show the week as one ladder rather than as seven separate experiments.
+> - **Point to**: table 2, rung 2 beside rung 4 — $\lvert u\rvert_{max}$ of $0.021$ against $0.804$, $F_B$ of $35.1$ against $0.0$.
+> - **Ask**: both rungs travel $12.00$ m in a straight line with the same gains and the same model. Name the property of $B$ that lets rung 2 exist, and say which column of $B$ carries it.
+> - **Take away**: a rung is worth building only when exactly one thing on it is new; that is what makes the row below it readable.
+
+---
+
+## 6-9. The equations and the code, line against line
+
+**What is observed.** Three blocks in this week are hand-written MATLAB rather than Simulink blocks: the allocation, the rotations, and the mission state machine. Each is listed in full in the section that needs it — §6-2, §6-3 and §6-5 — beside a table that reads the code against its *figure*. What none of those tables does is read the code against its *equation*, and that is the reading a student needs when the derivation is in one hand and the block is open in the other.
+
+**The result.** Four tables. Each row names an equation of the week, the line of code that is that equation, and what the pairing turns on. No listing is repeated here; each stays in its own section, and these tables point at it.
+
+**Table 1 · The allocation.** `allocate`, listed in §6-2, inside the `allocation` subsystem of all four models.
+
+| Equation | The line | What the pairing turns on |
+|---|---|---|
+| $F_B = Y$ | `F_B = Y;` | step 1 — the second row of $B$ has a single non-zero entry, so this is the only demand that does not have to be shared |
+| $N_s = N - l_f F_B$ | `N_s = N - l_f*F_B;` | step 2 — the yaw the bow unit has already made, wanted or not |
+| $T_L = \tfrac{1}{2}\!\left(X + N_s / y_{pont}\right)$ | `T_L = 0.5*(X + N_s/y_pont);` | step 3 — the sum of the pair is the surge |
+| $T_R = \tfrac{1}{2}\!\left(X - N_s / y_{pont}\right)$ | `T_R = 0.5*(X - N_s/y_pont);` | step 3 — their difference, over the lever $y_{pont}$, is the remaining moment |
+| $T_i \leftarrow \operatorname{sat}(T_i)$, $i \in \{L, R, B\}$ | **no line** — a `Saturation` block downstream of the function | step 7 — the clip is outside the solve, and that is where both leaks come from |
+
+> [!important] The last row is the one that is not a line
+> The four lines above are an exact solve, and the clip is a block after them. Two consequences follow from that ordering alone. First, $N_s$ is computed from the **demanded** $F_B$ rather than the delivered one, so when the sway demand exceeds $F_{B,max}$ the stern pair has already been told to cancel a moment the bow unit will not make. Second, the stern pair is clipped afterwards against two different bounds — $T_{max} = 119.68$ N ahead and $T_{min} = -66.71$ N astern — so an antisymmetric pair clipped asymmetrically no longer sums to the surge that was asked for. Both leaks measured in Experiment 6-2 are consequences of where the Saturation sits, not of the algebra above it. Re-solving with the saturated $F_B$ would remove the first; removing the second needs the demand itself to be reshaped, which is Week 7.
+
+**Table 2 · The outer loop's rotation.** `to_body`, listed in §6-3, inside `position loop` of `W06_F_position`.
+
+| Equation | The line | What the pairing turns on |
+|---|---|---|
+| $\mathbf{p}_b = R(\psi)^{\mathsf T}\mathbf{p}_e$ | the two rows assigned to `p_b` | the whole block is one matrix–vector product |
+| $x_e = \cos\psi\,p_{e,N} + \sin\psi\,p_{e,E}$ | `c*p_e(1) + s*p_e(2)` | the first row of $R^{\mathsf T}$, which is the first **column** of $R$ — the commonest sign error in the week |
+| $y_e = -\sin\psi\,p_{e,N} + \cos\psi\,p_{e,E}$ | `-s*p_e(1) + c*p_e(2)` | the second row of $R^{\mathsf T}$ |
+| $R^{-1} = R^{\mathsf T}$ | no `inv`, no `\` anywhere in the file | orthogonality, confirmed by check 13 — an inverse would be arithmetic paid for nothing |
+
+**Table 3 · The two rotations of the NED variant.** `to NED` and `to body`, in `W06_I_position_ned`.
+
+| Equation | Where it sits | What the pairing turns on |
+|---|---|---|
+| $\boldsymbol{\nu}_e = R(\psi)\,\boldsymbol{\nu}_b$ | the `to NED` block, on the **measured velocity**, entering the inner loop | §6-7: the inner loop is now fed a quantity in north and east |
+| $\boldsymbol{\tau}_b = R(\psi)^{\mathsf T}\boldsymbol{\tau}_e$ | the `to body` block, on the **computed force**, leaving it | the allocation only ever accepts hull axes, in every model of the week |
+| the same $R(\psi)$ in both | one `psi = x(12)` signal branching to two blocks | there is still only one rotation in the design; it is drawn twice because it is applied to two different quantities |
+| $\mathbf{v}_{cmd} \leftarrow \mathbf{v}_{cmd}\min\!\big(1,\ v_{ned,max}/\lVert\mathbf{v}_{cmd}\rVert\big)$ | `cap_speed`, in `position loop NED` | §6-7 step 6: a cap on the **magnitude**, which shortens the command without turning it — a per-axis cap would turn it |
+
+**Table 4 · Folding a heading error.** The same $\mathrm{ssa}$, in two spellings.
+
+| Equation | Where it sits | What the pairing turns on |
+|---|---|---|
+| $\mathrm{ssa}(\theta) = \operatorname{atan2}(\sin\theta,\ \cos\theta)$ | the `Fcn` block `atan2(sin(u),cos(u))` in `heading loop`, in all four models | §6-3: the error is a signal the diagram carries, so the fold is a block and is visible on the canvas |
+| the same, written out | `de = atan2(sin(psi - psi_berth), cos(psi - psi_berth));` in `phases` | §6-5: this error is a comparison internal to the state machine and never leaves it, so it is a line |
+
+Both spellings exist for the same reason the week keeps the controllers out of MATLAB Function blocks: a quantity that the diagram carries belongs on the diagram, and a quantity that never leaves a block belongs inside it. Writing the heading loop's fold as a line inside a function would hide the one place in the model where a $350$-degree error becomes a $-10$-degree one, and that is the place a student most needs to find.
 
 ---
 
