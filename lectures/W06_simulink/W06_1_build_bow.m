@@ -193,9 +193,14 @@ else
     konst_goto(m, 'psi_d off', 'NaN',        'psi_set', 220);
     konst_goto(m, 'phase 0',   '0',          'phase',   280);
     konst_goto(m, 'd off',     'NaN',        'd',       340);
+    konst_goto(m, 'nu_c off',  '[NaN; NaN]', 'nu_c',    400);
 end
 
 % ----------------------------------------------------------------- 2) 제어
+%  열 열여덟·열아홉에 들어가는 **몸체** 속도 명령의 태그. NED 단만 이것을
+%  돌려서 따로 만든다 / the tag whose two elements become columns 18 and 19,
+%  always in body axes; only the NED rung has to rotate to produce it
+nuTag = 'nu_c';
 if o.loops
     %  좌표계가 고리 **두 개의 이름만** 바꾼다. 포트는 넷이 같다 — 이름도 수도
     %  순서도 — 그래서 아래의 배선이 두 좌표계에 **글자 하나 다르지 않고** 쓰인다.
@@ -256,10 +261,64 @@ if o.loops
     else
         add_velocity_loop(m, [1120 200 1280 360]);
     end
+    %  nu_d 는 **태그를 거쳐** 안쪽 고리로 간다. 선 하나로 바로 이으면 그
+    %  출력에서 로그로 가지선을 또 내야 하고, 그 가지는 같은 가로 구간을 두 번
+    %  지나므로 `check_overlaps` 가 센다. Goto 하나와 From 하나는 둘 다 자기
+    %  행 위의 짧은 수평선이다 (§15-71)
+    %  the velocity command travels by tag: wiring it straight across and then
+    %  branching it to the log would send two lines down the same horizontal
+    %  run, which is what check_overlaps counts
+    qn = port_xy(m, posName, 'Outport', 1);
+    add_block('simulink/Signal Routing/Goto', [m '/Goto nu_c'], 'GotoTag','nu_c', ...
+              'TagVisibility','local', 'ShowName','off', ...
+              'Position', [940 qn(2)-9 1010 qn(2)+9]);
+    route(m, posName, 1, 'Goto nu_c', 1, zeros(0,2));
+
+    qc = port_xy(m, velName, 'Inport', 1);
+    from_at(m, 'nu_c', [1040 qc(2)], 'From nu_c vel');
+    route(m, 'From nu_c vel', 1, velName, 1, zeros(0,2));
+
     qv = port_xy(m, velName, 'Inport', 2);
     from_at(m, 'x', [1010 qv(2)], 'From x vel');
-    route(m, posName,      1, velName, 1, zeros(0,2));
     route(m, 'From x vel', 1, velName, 2, zeros(0,2));
+
+    if strcmp(o.frame, 'ned')
+        %  이 단에서만 nu_c 가 NED 성분이다. 기록되는 두 열은 **온 주차가
+        %  몸체**라야 한 표를 두 모델로 채울 수 있으므로, 여기서 한 번 돌린다.
+        %  돌리는 것은 같은 벡터를 다른 축에서 보는 것뿐이고 제어에는 닿지
+        %  않는다 — 이 블록의 출력은 로그로만 간다
+        %  on this rung alone nu_c carries NED components. Columns 18 and 19 are
+        %  body axes in every rung, so the same vector is read in body axes here.
+        %  Nothing of the control passes through this block: its output is logged
+        %  and goes nowhere else
+        add_block('simulink/User-Defined Functions/MATLAB Function', ...
+                  [m '/nu_c to body'], 'Position', [760 650 920 730]);
+        set_mlfcn([m '/nu_c to body'], { ...
+          'function nu_b = nu_c_to_body(nu_n, x)'
+          '%#codegen'
+          '%  같은 속도 명령을 몸체 축에서 읽는다 / the same command, in body axes'
+          '%     nu_b = R(psi)'' * nu_n,      R(psi) = [c -s; s c]'
+          '%  기록 전용이다. 7 절의 제어는 NED 성분을 그대로 쓰고, 회전은 속도'
+          '%  고리 **안**에서 두 번 일어난다 / for the log only'
+          'psi  = x(6);'
+          'c    = cos(psi);   s = sin(psi);'
+          'nu_b = [ c  s; -s  c] * nu_n(1:2);'
+          'end'}, 'nu_b', '[2 1]');
+
+        qb = port_xy(m, 'nu_c to body', 'Inport', 1);
+        from_at(m, 'nu_c', [650 qb(2)], 'From nu_c body');
+        route(m, 'From nu_c body', 1, 'nu_c to body', 1, zeros(0,2));
+        qb = port_xy(m, 'nu_c to body', 'Inport', 2);
+        from_at(m, 'x', [650 qb(2)], 'From x body');
+        route(m, 'From x body', 1, 'nu_c to body', 2, zeros(0,2));
+
+        qb = port_xy(m, 'nu_c to body', 'Outport', 1);
+        add_block('simulink/Signal Routing/Goto', [m '/Goto nu_b'], 'GotoTag','nu_b', ...
+                  'TagVisibility','local', 'ShowName','off', ...
+                  'Position', [940 qb(2)-9 1010 qb(2)+9]);
+        route(m, 'nu_c to body', 1, 'Goto nu_b', 1, zeros(0,2));
+        nuTag = 'nu_b';
+    end
 
     %  선수각 제어기는 4주차의 것 그대로다 / the Week 4 autopilot, unchanged
     add_heading_loop(m, [1120 450 1320 612], 'N_max');
@@ -339,9 +398,9 @@ route(m, 'Otter', 1, 'end', 1, zeros(0,2));
 measure(m, 2480);
 
 % --------------------------------------------------- 5) 기록용으로 집어내기
-%  폭 2 · 폭 3 태그에서 스칼라를 뽑아 **같은 17 열**을 채운다. 선택기 이름이
+%  폭 2 · 폭 3 태그에서 스칼라를 뽑아 **같은 19 열**을 채운다. 선택기 이름이
 %  곧 식이므로 (`N_set = p_d(1)`) 그림을 읽는 사람이 열 번호를 세지 않는다
-%  scalars picked off the wide tags to fill the same 17 columns; the selector's
+%  scalars picked off the wide tags to fill the same 19 columns; the selector's
 %  name is the expression, so nobody counts column numbers
 Y0 = 780;  dy = 70;
 pick(m, 'p_d',     1, 2, 'N_set', Y0);
@@ -353,6 +412,12 @@ pick(m, 'tau',     3, 3, 'N_dem', Y0 + 5*dy);
 pick(m, 'n',       1, 2, 'n_L',   Y0 + 6*dy);
 pick(m, 'n',       2, 2, 'n_R',   Y0 + 7*dy);
 pick(m, 'tau_ext', 2, 3, 'F_B',   Y0 + 8*dy);
+%  마지막 두 줄이 **종속 고리의 명령**이다. 이것이 없으면 안쪽 고리가 무엇을
+%  따라가려 했는지 로그에 없고, 그러면 추종 여부를 그림으로 볼 수 없다
+%  the last two rows are the inner loop's own command: without them the log
+%  never says what the velocity loop was asked for, and tracking cannot be read
+pick(m, nuTag,     1, 2, 'u_d',   Y0 + 9*dy);
+pick(m, nuTag,     2, 2, 'v_d',   Y0 + 10*dy);
 
 % ---------------------------------------------------------------- 6) 끝내기
 note(m, o);
@@ -534,12 +599,21 @@ end
 
 % =========================================================================
 function measure(m, X)
-%  앞 여섯 열은 **온 과정이 같다** — [u v r N E psi]. 6주차가 열 열하나를 더한다
-%  the first six columns are the course-wide contract; Week 6 appends eleven
+%  앞 여섯 열은 **온 과정이 같다** — [u v r N E psi]. 6주차가 열 열셋을 더한다
+%  the first six columns are the course-wide contract; Week 6 appends thirteen
+%
+%  .logFeed 가 왜 켜져 있는가 / why the whole log is fed to the live view
+%      6주차의 실시간 화면은 **명령과 실제를 나란히** 그린다. 명령은 로그의
+%      7~9 열과 18~19 열에 이미 있으므로, 그것을 포트 열셋으로 다시 받는 대신
+%      로그 벡터 하나를 그대로 받는다. 통로를 하나도 더 쓰지 않는다 (§15-71)
+%      Week 6 draws command against actual, and the commands are already in the
+%      log. The live view therefore takes the log vector itself rather than
+%      thirteen more ports, and cuts no new lane
 Y = 340;
-extra = {'N_set','E_set','psi_set','X_dem','Y_dem','N_dem','n_L','n_R','F_B','d','phase'};
+extra = {'N_set','E_set','psi_set','X_dem','Y_dem','N_dem','n_L','n_R','F_B', ...
+         'd','phase','u_d','v_d'};
 add_measurement(m, [X Y-351 X+160 Y+351], 'W06', extra, ...
-    struct('dash', true, ...
+    struct('logFeed', true, ...
            'weekName', 'W06  this week:  set points, demands, n_L n_R, F_B, phase'));
 
 %  psi_set 은 **도**로 기록한다. psi 가 도이고 (add_measurement 안의 rad2deg),
@@ -646,7 +720,9 @@ L = [L, {'', '   double-click a block to read its code and comments'}];
 
 a = Simulink.Annotation([m '/note']);
 a.Text = strjoin(L, newline);
-a.Position = [40 1400 1300 1640];
+%  집어내기 사다리가 두 줄 늘어 1480 까지 내려왔으므로 그 아래에서 시작한다
+%  the picking ladder now reaches 1480, so the note starts below it
+a.Position = [40 1560 1300 1800];
 a.HorizontalAlignment = 'left';
 a.BackgroundColor = 'lightBlue';
 
@@ -869,7 +945,7 @@ b.Interpreter = 'tex';
 b.FontName = 'Consolas';           % 고정폭이라야 행렬의 열이 선다
 b.FontSize = 13;
 b.HorizontalAlignment = 'left';
-b.Position = [40 1700 1300 1700 + 30 + 22*numel(E)];
+b.Position = [40 1860 1300 1860 + 30 + 22*numel(E)];
 b.BackgroundColor = 'lightBlue';
 end
 

@@ -176,8 +176,8 @@ Seven models are used — one for each rung of the ladder, and one script for ea
          max difference over 24 headings = 2.001e-16 m/s
     16 per-axis bends the direction, magnitude keeps it    OK
          diagonal 0.8732, two 0.35 caps 0.4950, magnitude 0.3500 m/s
-    17 W06_read and W06_plot read the same 17 columns      OK
-         17 and 17 names, identical
+    17 W06_read and W06_plot read the same 19 columns      OK
+         19 and 19 names, identical
 
   ALL CHECKS PASSED
 ```
@@ -339,6 +339,7 @@ The script runs the model once at the canvas values with the live view on, then 
 | `surge only` row, $n_L = n_R = 42.49$ | the pair run together, and the moment arms cancel | step 4, third row: $a(T_L - T_R) = 0$ when the two are equal |
 | `yaw only` row, $n_L = 33.80$ against $n_R = -44.32$ | the pair oppose, and $F_B$ stays at zero | the bow unit contributes to $Y$ and $N$ together; the stern pair alone can place a pure moment |
 | panel (f) of the figure | the three thrusts flat for the whole run, far below $T_{max}$ | nothing is closing a loop, so nothing changes the demand after $t = 0$ |
+| panels (b) and (c) of the figure | the position carries no target curve, the heading panel is titled "no command on this rung", and no quay wall is drawn | nothing is closing a loop, so there is no $N_{set}$, $E_{set}$ or $\psi_{set}$ to draw and no berth to approach; a dashed curve or a quay here would stand for a command that was never issued |
 
 **What the figure says.** The three axes are independent in force, and the residual line proves it to fifteen decimal places. They are not independent in motion. The `sway only` run commands $N = 0$ exactly, the delivered moment is $0.00$ N·m, and yet the heading ends at $-2.63$ deg after twenty seconds, having passed through a turn rate of $0.814$ deg/s. Nothing in $B$ is wrong; what separates the axes is $B$, and $B$ is not the only matrix in the problem.
 
@@ -764,7 +765,7 @@ Expected output:
 | panel (b) | the distance to the target against time; the curve that reaches the axis is the first case |
 | panel (c) | the heading and the size of its error over the last ten seconds |
 | panel (d) | the target at the scale of the hull, which is where a sub-metre error becomes legible |
-| panel (e) | the three speeds $\lvert u \rvert$, $\lvert v \rvert$, $\lvert r \rvert$ against their caps |
+| panel (e) | the three speeds $\lvert u \rvert$, $\lvert v \rvert$, $\lvert r \rvert$ against their caps. $u$ and $v$ are each drawn twice — solid for the measured speed and dashed for the command the position loop issued, in the same colour — so the panel shows the inner loop following the outer one, and its second title line gives the mean gap after the first second |
 | panel (f) | the three thrusts $T_L$, $T_R$, $F_B$ with their peaks marked |
 
 **Reading the figure against the derivation.**
@@ -836,7 +837,7 @@ $$d(t) = d_{brake}\,e^{-K_{p,pos}(t - t_{brake})},
 
 2. The saturation stops binding when $K_{p,pos}\, x_e = u_{lim}$, which is at $x_e = u_{lim}/K_{p,pos}$. That is the braking distance: $0.80/0.30 = 2.67$ m at the nominal gain.
 
-3. Inside that distance, and **assuming the inner loop tracks its command instantly**, $\dot x_e = -u_d = -K_{p,pos}\, x_e$. The solution is exponential with time constant $1/K_{p,pos} = 3.33$ s. That assumption is the only thing in this section the measurement does not confirm, so the next step writes down what it hides.
+3. Inside that distance, and **assuming the inner loop tracks its command instantly**, $\dot x_e = -u_d = -K_{p,pos}\, x_e$. The solution is exponential with time constant $1/K_{p,pos} = 3.33$ s. That assumption is no longer taken on trust: the log carries the command beside the response, $u_d$ and $v_d$ in columns 18 and 19 against $u$ and $v$ in columns 1 and 2, so the gap between them is a measured quantity. On this rung it peaks at $\lvert u - u_d\rvert = 0.800$ m/s at $t = 0$ — which is the command step itself, taken while the hull is still at rest, and not a tracking lag — falls below $0.02$ m/s at $t = 1.38$ s, and averages $0.0028$ m/s over the rest of the run. The assumption is therefore wrong for the first second and a half and very nearly right afterwards, which is why step 3 predicts the approach closely but not exactly, and why the next step still has to price the lag.
 
 4. The inner loop is not instant. Model it as first order with bandwidth $\omega$, so that $\dot u = \omega\,(u_d - u)$ alongside $\dot x_e = -u$. Eliminating $u$ gives a second-order error equation:
 
@@ -941,7 +942,7 @@ Expected output:
 | panel (b) | the north error, the east error and the distance, against time, with $R_{berth}$ drawn across. The east error is flat at zero on this rung, so the distance and the north error are the same curve — and the two regimes of the derivation are its straight segment and the curve that follows |
 | panel (c) | the commanded heading, the heading, and the error between them, titled with the mean $\lvert$error$\rvert$ over the last ten seconds; all three are flat at zero on a pure-surge run |
 | panel (d) | the target at the scale of the hull: two outlines, the attitude asked for in grey and the attitude reached in orange, with the track through them |
-| panel (e) | $u$ and $v$ on the left axis, $r$ on the right; only $u$ leaves the axis on this rung |
+| panel (e) | $u$ and $v$ on the left axis, $r$ on the right; only $u$ leaves the axis on this rung. The dashed curve in each colour is that axis's command, $u_d$ or $v_d$, so the distance between dashed and solid is the assumption of step 3 made visible. The second title line gives it as a number: $\lvert u - u_d\rvert\ 0.0028$ m/s on average after the first second, against a peak of $0.800$ m/s at $t = 0$ that is the command step itself |
 | panel (f) | the three thrusts $T_L$, $T_R$, $F_B$ against the ceilings of Section 6-2, on the one scale every rung shares |
 
 **Reading the figure against the derivation.**
@@ -1194,7 +1195,7 @@ Each row reports the state at the **last sample of that leg**, and the next leg 
 | panel (b) | the north error, the east error and the distance, against time, with $R_{berth}$ drawn across; the distance is the one the position loop sees, so it steps when the target switches at the $2 \to 3$ boundary |
 | panel (c) | the commanded heading, the heading, and the error between them. The command is a staircase: the bearing to the approach point in phase 1, then $\psi_{berth}$ from phase 2 onwards |
 | panel (d) | the berth at the scale of the hull: the attitude asked for in grey, the attitude reached in orange, with the quay edge and the last of the track between them |
-| panel (e) | $u$ and $v$ on the left axis, $r$ on the right. The peaks are $\lvert u\rvert\ 0.805$, $\lvert v\rvert\ 0.353$ m/s and $\lvert r\rvert\ 15.99$ deg/s, the last of them entirely inside the alignment leg |
+| panel (e) | $u$ and $v$ on the left axis, $r$ on the right. The peaks are $\lvert u\rvert\ 0.805$, $\lvert v\rvert\ 0.353$ m/s and $\lvert r\rvert\ 15.99$ deg/s, the last of them entirely inside the alignment leg. Each of $u$ and $v$ carries its command as a dashed curve of the same colour; the second title line reports $\lvert u - u_d\rvert\ 0.0022$ and $\lvert v - v_d\rvert\ 0.0095$ m/s on average after the first second, which is the cascade working across all four phases |
 | panel (f) | the three thrusts $T_L$, $T_R$, $F_B$ against the ceilings of Section 6-2, peaking at $92.8 / 85.0 / 35.1$ N — on the one scale every rung shares |
 
 **Reading the figure against the derivation.**
@@ -1368,7 +1369,7 @@ The second of these feeds the duration predicted in step 4, $d / v_{cap} + 1/K_{
 | panel (b) | the north error, the east error and the distance, with $R_{berth}$ drawn across; the step at $58.54$ s is the 2→3 handover of the target |
 | panel (c) | the commanded heading, the heading, and the error between them; the $67.58$ degree step at $53.04$ s is the alignment, and it is the one visible difference from the rung-5 panel |
 | panel (d) | the berth at the scale of the hull: the attitude asked for in grey, the attitude reached in orange, the two lying across each other at a right angle to the quay |
-| panel (e) | $u$ and $v$ on the left axis, $r$ on the right; the berth leg is a flat-topped $u$ at the surge cap, with $v$ never leaving the axis |
+| panel (e) | $u$ and $v$ on the left axis, $r$ on the right; the berth leg is a flat-topped $u$ at the surge cap, with $v$ never leaving the axis. The dashed curve of each colour is the command the position loop issued, and the second title line gives the mean gap between command and response after the first second |
 | panel (f) | the three thrusts against the ceilings of Section 6-2, on the one scale every rung shares; $T_L$ and $T_R$ run together and high across the berth leg, where the rung-5 panel has them opposed and small |
 
 **What the output says.** One constant, changed from $0$ to $-\pi/2$, moves a peak demand of $120$ N from one axis to another and shortens the manoeuvre by $11.0$ %. Nothing else in either model is different: same gains, same caps, same allocation, same four phases, same first $53$ seconds to the printed digit.
@@ -1549,7 +1550,7 @@ Three quantities the argument needs are differences of two printed lines rather 
 | (b) errors | north, east and distance against time | distance passes $0.5$ m at $51.00$ s and settles on $0.000$ m |
 | (c) heading | command, measured, error | $\psi$ holds the commanded value throughout; the outer loop never consults it |
 | (d) pose | attitude asked for in grey, attitude reached in colour | the two coincide, so the heading loop is not what the approach is waiting on |
-| (e) speeds | $u$, $v$ on the left axis, $r$ on the right | neither axis reaches its own body-fixed limit; $\lvert U \rvert$ is what is capped |
+| (e) speeds | $u$, $v$ on the left axis, $r$ on the right, each with its command dashed in the same colour | neither axis reaches its own body-fixed limit; $\lvert U \rvert$ is what is capped. The command is rotated into body axes before it is logged, so the dashed and solid curves of a colour are comparable here exactly as on the body-fixed rungs |
 | (f) thrusters | $T_L$, $T_R$, $F_B$ against their limits | $F_B$ reaches the $40$ N rating line, which no body-fixed run in this week does |
 
 The body-fixed panel for the same demand is the one already read in Section 6-3; it is not repeated here.

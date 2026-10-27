@@ -16,20 +16,28 @@ function R = W06_read(model, varargin)
 %
 %   이것은 6주차가 고른 것이 아니라 `add_measurement` 이 모든 주차에 강제하는
 %   계약이다. 그래서 한 주차의 로그를 읽는 코드가 다른 주차의 로그도 읽는다.
-%   여섯 열 **뒤에** 그 주차가 더한 것이 붙고, 6주차가 더한 것이 열 하나다.
+%   여섯 열 **뒤에** 그 주차가 더한 것이 붙고, 6주차가 더한 것이 열 열셋이다.
 %   또 기록되는 작업공간 변수의 이름은 **태그 그대로** `W06` 이다 —
 %   `W06log` 가 아니다.
 %   The first six columns are the same in every week -- [u v r N E psi], with
 %   psi in DEGREES. That is not Week 6's choice but the contract
 %   add_measurement imposes on the whole course, so code that reads one week's
 %   log reads another's. Each week appends its own columns AFTER those six, and
-%   Week 6 appends eleven. The logged workspace variable is named after the tag
-%   itself -- W06, not W06log.
+%   Week 6 appends thirteen. The logged workspace variable is named after the
+%   tag itself -- W06, not W06log.
 %
-%   세 모델이 **같은 17 열**을 쓴다. 없는 신호는 NaN Constant 가 채운다 —
+%   일곱 모델이 **같은 19 열**을 쓴다. 없는 신호는 NaN Constant 가 채운다 —
 %   열 수가 모델마다 다르면 절 스크립트가 모델을 알아야 하고, 그러면 표 하나를
 %   두 모델로 채울 수 없다.
-%   All three models log the SAME 17 columns; a NaN constant fills a signal a
+%
+%   마지막 두 열 `u_d` · `v_d` 는 **바깥 위치 고리가 지시한 속도**이고, 늘
+%   **몸체 축**이다. 7 절의 NED 고리는 NED 성분으로 제어하지만, 기록되는 두
+%   열은 한 번 돌려서 몸체로 맞춘다 — 그래서 `R.u` 와 `R.u_d` 를 바로 견주어
+%   안쪽 고리의 추종을 볼 수 있다.
+%   The last two columns are the velocity the OUTER loop asked for, always in
+%   body axes, so R.u and R.u_d may be compared directly. The NED rung controls
+%   in NED components but rotates once for the log.
+%   All seven models log the SAME 19 columns; a NaN constant fills a signal a
 %   model does not have. Differing widths would force a section script to know
 %   which model it ran, and then one table could not be filled from two of them.
 %
@@ -78,7 +86,7 @@ y = squeeze(L.signals.values);  if size(y,1) < size(y,2), y = y.'; end
 
 %  열 순서는 add_measurement 이 정한다 / the order add_measurement fixes:
 %     1..6   온 과정의 계약 / the course-wide contract, psi in degrees
-%     7..17  6주차가 더한 열 / the eleven Week 6 appends
+%     7..19  6주차가 더한 열 / the thirteen Week 6 appends
 R.t = L.time;  R.V = V;
 R.u     = y(:, 1);  R.v     = y(:, 2);  R.r       = y(:, 3);
 R.N     = y(:, 4);  R.E     = y(:, 5);  R.psi     = y(:, 6);   % [deg]
@@ -86,6 +94,7 @@ R.N_set = y(:, 7);  R.E_set = y(:, 8);  R.psi_set = y(:, 9);   % [deg]
 R.X_dem = y(:,10);  R.Y_dem = y(:,11);  R.N_dem   = y(:,12);
 R.n_L   = y(:,13);  R.n_R   = y(:,14);  R.F_B     = y(:,15);
 R.d     = y(:,16);  R.phase = y(:,17);
+R.u_d   = y(:,18);  R.v_d   = y(:,19);                 % 몸체 / body axes
 
 %  추력으로 되돌린다 / back to thrust, with the Week 3 curve
 R.T_L = thrust(R.n_L, V.k_pos, V.k_neg);

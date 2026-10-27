@@ -28,9 +28,33 @@ function add_measurement(mdl, pos, tag, extra, opts)
 %                         true — it receives (u, v, r, N, E, psi, t, en) and
 %                         draws the track AND the six states in one window,
 %                         through _tools/live_dash.m
+%              .logFeed   false (default). true — the live view receives
+%                         (y, t, en), where y is THE WHOLE LOG VECTOR, and
+%                         unpacks it by column itself. It then sees every
+%                         signal the week logs, commands included, and not
+%                         only the six vessel states.
 %              .weekName  name of the scope carrying the extra signals.
 %                         Default '<tag>  this week'. Give it something the
 %                         reader can act on, e.g. 'input  n  [rad/s]'
+%
+%   WHY .logFeed EXISTS AT ALL
+%
+%   화면이 보여야 하는 것은 상태가 아니라 **명령 대비 상태**다. 그런데 상태는
+%   여섯 개로 끝나지만 명령은 주차마다 다르고, 6주차만 해도 열하나가 더 붙는다.
+%   그것을 포트 열하나로 받으면 선택기와 Animate 블록 사이의 통로에 세로 통로를
+%   열하나 더 내야 하고, 그 통로는 이미 258·265·280·295·360…408 로 차 있다.
+%   그래서 **이미 Mux 로 묶여 있는 로그 벡터 하나**를 그대로 보낸다 — 선 하나,
+%   통로 없음, `check_overlaps` 그대로 0.
+%   What the live view has to show is not the state but the state AGAINST THE
+%   COMMAND. The states stop at six; the commands do not, and Week 6 alone adds
+%   eleven. Eleven more ports would need eleven more vertical lanes in a
+%   corridor already holding 258, 265..295 and 360..408. Sending the log vector
+%   that the Mux has already assembled costs one line and no lane at all.
+%
+%   단위가 .dash 와 **다르다**. 로그의 여섯째 열은 rad2deg 게인을 지난 뒤이므로
+%   psi 가 **도**로 온다 (.dash 는 라디안으로 보낸다). r 은 양쪽 모두 rad/s 다.
+%   The units differ from .dash: column 6 has passed the rad2deg gain, so psi
+%   arrives in DEGREES where .dash sends radians. r is rad/s either way.
 %
 %   WHY .dash IS OPT-IN AND NOT THE DEFAULT
 %
@@ -85,17 +109,30 @@ function add_measurement(mdl, pos, tag, extra, opts)
 if nargin < 4 || isempty(extra), extra = {}; end
 if nargin < 5, opts = struct(); end
 if ~isfield(opts,'dash'),     opts.dash     = false;                    end
+if ~isfield(opts,'logFeed'),  opts.logFeed  = false;                    end
 if ~isfield(opts,'weekName'), opts.weekName = [tag '  this week'];      end
 
 %  The live view's inputs. The dashboard needs the three velocities as well,
 %  so the port list — and therefore the block's height and every lane that
 %  reaches it — is derived from this one cell array rather than written twice.
-if opts.dash
+%  With .logFeed there is no list: one port carries the whole log vector.
+if opts.logFeed
+    anmIn = {};
+    sig   = 'y';
+    unitNote = { ...
+      '% y is the whole log vector, in the column order this subsystem builds:'
+      '% [u v r N E psi] first, psi in DEGREES, then the week''s own signals.'
+      '% The wrapper names the columns; nothing else counts them.'};
+elseif opts.dash
     anmIn = {'u','v','r','N','E','psi'};
+    sig   = strjoin(anmIn, ', ');
+    unitNote = unit_note();
 else
     anmIn = {'N','E','psi'};
+    sig   = strjoin(anmIn, ', ');
+    unitNote = unit_note();
 end
-nAnm = numel(anmIn) + 2;                       % + clock + enable
+nAnm = numel(anmIn) + 2 + double(opts.logFeed);        % + clock + enable
 
 sub = add_subsys(mdl, 'Measurements', pos, [{'x'} extra], {}, gnc_colour('measurement'));
 
@@ -123,7 +160,6 @@ add_block('simulink/Signal Routing/Mux', [sub '/vel'], ...
 yA = 90 + 52*nlog + 80;
 add_block('simulink/User-Defined Functions/MATLAB Function', [sub '/Animate'], ...
           'Position',[420 yA 540 yA+55*nAnm]);
-sig = strjoin(anmIn, ', ');
 set_mlfcn([sub '/Animate'], { ...
 sprintf('function ok = Animate(%s, t, en)', sig)
 '%#codegen'
@@ -133,9 +169,9 @@ sprintf('function ok = Animate(%s, t, en)', sig)
 '% extrinsic: Simulink calls plain MATLAB rather than generating code for it.'
 '% Set animate = 0 in the setup script to switch the live view off.'
 '%'
-'% psi arrives in RADIANS and r in rad/s - the units otter.m works in. The'
-'% wrapper converts them for display, in one place, so no two figures in the'
-'% course can disagree about what a degree is.'
+unitNote{1}
+unitNote{2}
+unitNote{3}
 sprintf('coder.extrinsic(''%s_animate'');', tag)
 'ok = 1;'
 'if en > 0.5'
@@ -166,10 +202,32 @@ add_block('simulink/Math Operations/Gain', [sub '/rad2deg'], ...
 
 %% ---- the log ------------------------------------------------------------
 yo = port_xy(sub, 'log', 'Outport', 1);
-add_block('simulink/Sinks/To Workspace', [sub '/' tag], ...
-          'VariableName', tag, 'SaveFormat','Structure With Time', ...
-          'Position',[490 yo(2)-15 550 yo(2)+15]);
-add_line(sub, 'log/1', [tag '/1']);
+gt = [tag 'log'];                       % logFeed 의 꼬리표 / the logFeed tag
+if opts.logFeed
+    %  Mux 출력을 쓰는 곳이 둘이다 — To Workspace 와 실시간 화면. 선 둘로 이으면
+    %  둘 다 Mux 출력 행에서 출발하므로 **같은 가로 구간을 두 번** 지난다.
+    %  `check_overlaps` 가 세는 것이 바로 그것이다. Goto 하나와 From 둘로 나누면
+    %  모든 선이 제 행 위의 짧은 수평선 하나가 된다.
+    %  The Mux output has two consumers, and two lines out of one port share the
+    %  same horizontal run - exactly what check_overlaps counts. One Goto and two
+    %  Froms make every line a single straight segment on its own row.
+    add_block('simulink/Signal Routing/Goto', [sub '/log out'], ...
+              'GotoTag', gt, 'TagVisibility','local', ...
+              'Position',[470 yo(2)-14 545 yo(2)+14]);
+    add_line(sub, 'log/1', 'log out/1');
+
+    add_block('simulink/Signal Routing/From', [sub '/log in'], ...
+              'GotoTag', gt, 'Position',[600 yo(2)-14 675 yo(2)+14]);
+    add_block('simulink/Sinks/To Workspace', [sub '/' tag], ...
+              'VariableName', tag, 'SaveFormat','Structure With Time', ...
+              'Position',[720 yo(2)-15 780 yo(2)+15]);
+    add_line(sub, 'log in/1', [tag '/1']);
+else
+    add_block('simulink/Sinks/To Workspace', [sub '/' tag], ...
+              'VariableName', tag, 'SaveFormat','Structure With Time', ...
+              'Position',[490 yo(2)-15 550 yo(2)+15]);
+    add_line(sub, 'log/1', [tag '/1']);
+end
 
 L = {'u','v','r','N','E','rad2deg'};
 add_line(sub, 'psi/1', 'rad2deg/1');
@@ -239,6 +297,13 @@ LANE = struct('psi',258, 'N',360, 'E',372, 'u',384, 'v',396, 'r',408);
 for k = 1:numel(anmIn)
     lane_line(sub, anmIn{k}, 1, 'Animate', k, LANE.(anmIn{k}));
 end
+if opts.logFeed
+    %  통로가 없다. From 이 포트 높이에 앉아 있으므로 선 하나가 수평이다
+    %  no lane: the From sits on the port's own row, so the line is horizontal
+    add_block('simulink/Signal Routing/From', [sub '/log view'], ...
+              'GotoTag', gt, 'Position',[290 anmy(1)-14 365 anmy(1)+14]);
+    add_line(sub, 'log view/1', 'Animate/1');
+end
 add_line(sub, 'clock/1',     sprintf('Animate/%d', kClock));
 add_line(sub, 'live view/1', sprintf('Animate/%d', kEnable));
 add_line(sub, 'Animate/1',   'anim end/1');
@@ -247,4 +312,13 @@ add_line(sub, 'Animate/1',   'anim end/1');
 set_param([sub '/vessel  u v r'], 'Open', 'on');
 
 assert(nx == 1 + numel(extra));   % the interface the caller must wire
+end
+
+% =========================================================================
+function c = unit_note()
+%  포트로 받는 두 모드의 단위 주석 / the unit note of the two port-fed modes
+c = { ...
+  '% psi arrives in RADIANS and r in rad/s - the units otter.m works in. The'
+  '% wrapper converts them for display, in one place, so no two figures in the'
+  '% course can disagree about what a degree is.'};
 end
