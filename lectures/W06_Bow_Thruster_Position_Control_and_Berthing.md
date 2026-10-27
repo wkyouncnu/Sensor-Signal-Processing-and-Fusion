@@ -143,39 +143,39 @@ Seven models are used — one for each rung of the ladder, and one script for ea
 ```
   verify_w06_actuation
 
-    1  W06_vars = W06_0_setup                            OK
+    1  W06_vars = W06_0_setup                              OK
          52 fields compared, none differ
-    2  B = the column rule, written by hand              OK
+    2  B = the column rule, written by hand                OK
          max |B - Bhand| = 0.0e+00
-    3  det B = 0.790000, rank B = 3                      OK
+    3  det B = 0.790000, rank B = 3                        OK
          det = 0.790000, rank = 3, size = 3x3
-    4  inv(B) rows, the third one [0 1 0]                OK
+    4  inv(B) rows, the third one [0 1 0]                  OK
          lever a = 1.898734, 1/(2 y_pont) = 1.265823
-    5  the hand-solved law = B \ tau  (200 demands)      OK
+    5  the hand-solved law = B \ tau  (200 demands)        OK
          max error = 3.553e-14 N
-    6  pure sway unit column = [-a; a; 1]                OK
+    6  pure sway unit column = [-a; a; 1]                  OK
          [-1.898734; 1.898734; 1.000000]
-    7  T_max 119.6820, T_min -66.7080, N_max 52.6993     OK
+    7  T_max 119.6820, T_min -66.7080, N_max 52.6993       OK
          119.6820 N, -66.7080 N, 52.6993 N m
     8  sway limits 35.1329 / 63.0325 / 40, the first binds OK
          35.1329 (stern astern) / 63.0325 (stern ahead) / 40.0000 (bow) -> Y_max = 35.1329 N
-    9  the leak is 0 up to Y_max and not above it        OK
+    9  the leak is 0 up to Y_max and not above it          OK
          at Y = 50 N:  X leaks +28.23 N, N leaks -3.85 N m
-    10 ranks 2 (under) / 3 square (fully) / 3 of 8 (over) OK
+    10 ranks 2 (under) / 3 square (fully) / 3 of 8 (over)  OK
          base 3x2 r2, bow 3x3 r3, quad_tilt 3x8 r3
-    11 M(2,6) = 12.25 gives rdot = -1.553 deg/s^2        OK
+    11 M(2,6) = 12.25 gives rdot = -1.553 deg/s^2          OK
          M(2,2) = 162.5000, M(2,6) = 12.2500, M(6,6) = 42.6515
-    12 superposition residual < 1e-12                    OK
+    12 superposition residual < 1e-12                      OK
          0.000e+00
-    13 R' R = I, det R = 1, and the 30 deg example       OK
+    13 R' R = I, det R = 1, and the 30 deg example         OK
          cos 30 = 0.866, sin 30 = 0.500, x_e = 1.866, y_e = 1.232
-    14 app = [berth_N; berth_E + stand_off]              OK
+    14 app = [berth_N; berth_E + stand_off]                OK
          berth (40.0, 1.2) + 7.0 m  ->  (40.0, 8.2)
-    15 body and NED ask the same velocity, before the cap OK
+    15 body and NED ask the same velocity, before the cap  OK
          max difference over 24 headings = 2.001e-16 m/s
-    16 per-axis bends the direction, magnitude keeps it  OK
+    16 per-axis bends the direction, magnitude keeps it    OK
          diagonal 0.8732, two 0.35 caps 0.4950, magnitude 0.3500 m/s
-    17 W06_read and W06_plot read the same 17 columns    OK
+    17 W06_read and W06_plot read the same 17 columns      OK
          17 and 17 names, identical
 
   ALL CHECKS PASSED

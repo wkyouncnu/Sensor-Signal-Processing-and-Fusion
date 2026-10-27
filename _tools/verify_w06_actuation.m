@@ -264,7 +264,12 @@ function ok = report(ok, name, pass, detail)
 %  one line puts eight of the seventeen checks past 100 characters, where the
 %  PDF wraps them; split, the OK/FAIL column still reads straight down and a
 %  longer detail later cannot push the line over again.
-fprintf('    %-52s %s\n', name, ternary(pass, 'OK', 'FAIL'));
+%  폭은 **가장 긴 이름**에 맞춘다. 52 로 두었을 때 이름이 53·54 자인 항목 셋이
+%  OK 를 한두 칸 밀어내 열이 어긋났다 — 그 어긋남은 눈으로 잡기 어렵다.
+%  The width is set by the LONGEST name. At 52 the three checks whose names run
+%  to 53 and 54 characters pushed their OK one or two columns right, and that
+%  kind of drift is what the eye does not catch.
+fprintf('    %-54s %s\n', name, ternary(pass, 'OK', 'FAIL'));
 fprintf('         %s\n', detail);
 ok = ok && pass;
 end
