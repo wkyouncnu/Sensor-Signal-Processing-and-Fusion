@@ -37,10 +37,12 @@ function cfg = otter_config(name)
 %     alpha_max   azimuth limit [rad], NaN for a fixed thruster
 %     alpha_rlim  azimuth rate limit [rad/s], NaN for a fixed thruster
 %     input_mode  'n' for shaft speeds (Week 1), 'f' for the extended thrust
-%                 vector (Week 3 onward)
+%                 vector (Week 3 onward), 'n_alpha' for four shaft speeds and
+%                 four tilt angles (Week 12)
 %     hull_fcn    the motion model this configuration is integrated with:
-%                 'otter' (two shaft speeds, tau(2) identically zero) or
-%                 'otter_bow' (three shaft speeds, sway force built inside)
+%                 'otter' (two shaft speeds, tau(2) identically zero),
+%                 'otter_bow' (three shaft speeds, sway force built inside) or
+%                 'otter_tilt4' (four shaft speeds and four angles, likewise)
 %     ext_force   true when B can produce a sway force that hull_fcn has no
 %                 argument for, so that the plant needs a second inport and
 %                 adds the missing force by superposition
@@ -136,6 +138,8 @@ switch cfg.name
         cfg.dir   = NaN(2,4);
         cfg.alpha_max  = deg2rad([45 45 45 45]);
         cfg.alpha_rlim = deg2rad([90 90 90 90]);
+        cfg.input_mode = 'n_alpha';          % 축회전수 넷 + 틸팅 각 넷
+        cfg.hull_fcn   = 'otter_tilt4';      % 횡력을 운동모델 안에서 만든다
 
     otherwise
         error('otter_config:unknown', ...
@@ -156,8 +160,10 @@ cfg.n_cols = size(cfg.B, 2);
 %    포트를 하나 더 만들어 중첩으로 더해야 한다.
 %
 %    6주차는 더 이상 그러지 않는다 — `otter_bow.m` 이 축회전수 **셋**을 받아
-%    tau 를 안에서 만들므로 중첩 자리가 필요 없다. 기본 구성은 B(2,:) = 0 이라
-%    1~5 주차 모델은 전과 같고, 12주차의 네 틸팅 추진기는 아직 제 운동모델이
-%    없으므로 중첩으로 남는다.
+%    tau 를 안에서 만들므로 중첩 자리가 필요 없다. 12주차도 같다 —
+%    `otter_tilt4.m` 이 축회전수 넷과 각도 넷을 받아 tau 의 1·2·6 행을 안에서
+%    만든다. 기본 구성은 B(2,:) = 0 이라 1~5 주차 모델은 전과 같다.
+%    따라서 지금 이 볼트에서 ext_force 가 참이 되는 구성은 11주차의
+%    `aft_azimuth` 하나뿐이고, 그것은 제 운동모델을 아직 갖지 않았다.
 cfg.ext_force = any(cfg.B(2,:) ~= 0) && strcmp(cfg.hull_fcn, 'otter');
 end

@@ -27,6 +27,8 @@ function add_otter_plant(mdl, name, pos, cfg)
 %
 %     cfg.input_mode = 'n'   Inport  1 : n   shaft speeds, cfg.n_thr x 1
 %     cfg.input_mode = 'f'   Inport  1 : f   extended thrust vector
+%     cfg.input_mode =       Inport  1 : n       four shaft speeds [rad/s]
+%              'n_alpha'     Inport  2 : delta   four tilt angles [rad]
 %     cfg.ext_force = true   Inport  2 : tau_ext  [X; Y; N] that the hull
 %                                        function cannot carry, superposed
 %                            Outport 1 : x   12 states
@@ -45,6 +47,12 @@ function add_otter_plant(mdl, name, pos, cfg)
 %         A three-input motion model that builds tau from three shaft speeds
 %         inside the function. No extra inport, no superposition: the plant
 %         block has exactly one actuation input, as every other week does.
+%
+%     cfg.hull_fcn = 'otter_tilt4'  (Week 12, the same route)
+%         Four shaft speeds and four tilt angles, with tau again built inside.
+%         The plant block has two actuation inports here, because a tilting
+%         thruster is commanded by two numbers rather than one, not because any
+%         force is being superposed.
 %
 %     cfg.ext_force = true        (the superposition route)
 %         Kept for a configuration whose B has a non-zero sway row but which
@@ -91,15 +99,19 @@ if nargin < 4 || isempty(cfg),  cfg  = otter_config('base'); end
 if nargin < 3 || isempty(pos),  pos  = [400 100 620 240];   end
 if nargin < 2 || isempty(name), name = 'Otter plant';       end
 
+tilt = false;
 switch cfg.input_mode
     case 'n', in_name = 'n';
     case 'f', in_name = 'f';
-    otherwise, error('add_otter_plant:mode','cfg.input_mode must be ''n'' or ''f''.');
+    case 'n_alpha', in_name = 'n'; tilt = true;   % 각도 포트가 하나 더 붙는다
+    otherwise, error('add_otter_plant:mode', ...
+                     'cfg.input_mode must be ''n'', ''f'' or ''n_alpha''.');
 end
 
 ext = isfield(cfg, 'ext_force') && cfg.ext_force;
 if isfield(cfg, 'hull_fcn'), hull = cfg.hull_fcn; else, hull = 'otter'; end
-bow = strcmp(hull, 'otter_bow');
+bow   = strcmp(hull, 'otter_bow');
+tilt4 = strcmp(hull, 'otter_tilt4');
 
 sub = [mdl '/' name];
 add_block('built-in/Subsystem', sub, 'Position', pos);
@@ -108,14 +120,18 @@ clear_subsystem(sub);
 %% ---- ports --------------------------------------------------------------
 add_block('simulink/Sources/In1', [sub '/' in_name], 'Position',[ 40 123  70 137]);
 add_block('simulink/Sinks/Out1',  [sub '/x'],        'Position',[700 143 730 157]);
+if tilt
+    add_block('simulink/Sources/In1', [sub '/delta'], 'Position',[40 153 70 167]);
+end
 if ext
     add_block('simulink/Sources/In1', [sub '/tau_ext'], 'Position',[40 163 70 177]);
 end
 
 %% ---- payload and current, read from the base workspace -----------------
 K = {'mp','rp','V_c','beta_c'};
-if bow, K = [K {'bow'}];  end
-if ext, K = [K {'Minv'}]; end
+if bow,   K = [K {'bow'}];  end
+if tilt4, K = [K {'quad'}]; end
+if ext,   K = [K {'Minv'}]; end
 for i = 1:numel(K)
     add_block('simulink/Sources/Constant', [sub '/' K{i}], ...
               'Value', K{i}, 'Position', [40 200+40*i 150 226+40*i]);
@@ -125,7 +141,30 @@ end
 blk = [sub '/Otter hull'];
 add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
           'Position',[330 100 520 340]);
-if bow
+if tilt4
+    code = { ...
+'function xdot = otter_hull(x, n, delta, mp, rp, V_c, beta_c, quad)'
+'% otter_tilt4.m: Fossen''s otter.m with four tilting thrusters, called'
+'% unchanged from _tools. Four shaft speeds and four angles in, tau built'
+'% inside, in the same four marked places as otter_bow.m.'
+'%'
+'%   x      12 states, fed back from the integrator'
+'%   n      shaft speeds [rad/s], fore port / fore stbd / aft port / aft stbd'
+'%   delta  tilt angles [rad], measured from the body x axis, CCW positive'
+'%   quad   3 x 4: the x stations, the y stations and the tilt limits'
+'%'
+'% Rows 1, 2 and 6 of tau all carry the angles, by the column rule'
+'% [e_x; e_y; x e_y - y e_x] with e = [cos delta; sin delta]. Nothing is'
+'% added after the call; there is no superposition and no tau_ext port.'
+'%'
+'% otter_tilt4.m is not written for code generation, so the call is extrinsic'
+'% and xdot has to be pre-sized for Simulink to know the output width.'
+'coder.extrinsic(''otter_tilt4'');'
+''
+'xdot = zeros(12,1);'
+'xdot = otter_tilt4(x, n, delta, mp, rp, V_c, beta_c, quad);'
+'end'};
+elseif bow
     code = { ...
 'function xdot = otter_hull(x, n, mp, rp, V_c, beta_c, bow)'
 '% otter_bow.m: Fossen''s otter.m with a bow tunnel thruster added, called'
@@ -201,6 +240,10 @@ L = @(a,b) add_line(sub, a, b, 'autorouting','smart');
 L('Fr_x/1',        'Otter hull/1');
 L([in_name '/1'],  'Otter hull/2');
 np = 2;
+if tilt
+    L('delta/1',   'Otter hull/3');
+    np = 3;
+end
 if ext
     L('tau_ext/1', 'Otter hull/3');
     np = 3;
