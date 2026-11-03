@@ -1,0 +1,136 @@
+% w12-why-symmetry-yaws.tex
+%   12주차 §12-4. 추진기 넷에 **똑같은** 명령을 주었는데도 배가 도는 이유.
+%   왼쪽 칸은 유닛 넷이 각각 내는 모멘트, 오른쪽 칸은 그것을 한 점으로 모은 것.
+%   같은 것을 두 가지로 보는 그림이므로 칸을 나누고 같은 선체를 두 번 그린다
+%   (사용자 지시 2026-10-17, CLAUDE.md 4-6-4).
+%
+%   축척 / scale
+%       1 m = 24 mm. 평면도 — 화면 위가 x_b, 화면 오른쪽이 y_b.
+%
+%   수치의 출처 / where the numbers come from
+%       W12_V_openloop.m 의 V3 (n = 60 rad/s 넷, delta = +45 deg 넷).
+%       T_i = k_pos * 60^2 = 39.888 N,  f_x = f_y = 39.888 cos45 = 28.205 N.
+%       유닛별 모멘트 x_i f_y - y_i f_x = 28.205 (x_i - y_i) =
+%           1: 28.205 * ( 1.5 + 0.395) = +53.449
+%           2: 28.205 * ( 1.5 - 0.395) = +31.167
+%           3: 28.205 * (-1.0 + 0.395) = -17.064
+%           4: 28.205 * (-1.0 - 0.395) = -39.346   합 +28.205 N m
+%       합력의 작용점 xbar = mean(x_i) = 0.25 m = (l_f - l_a)/2,
+%       그래서 N = Y xbar = 112.820 * 0.25 = 28.205 N m.
+%
+%   회전 방향 / the sense                        (CLAUDE.md 4-6-2)
+%       N > 0 은 선수를 우현으로 — 이 평면도에서 **시계방향**이다.
+%       arc(330:210:r) 은 끝 각이 작으므로 시계다.
+%
+%   유닛의 자리 / where the units are drawn
+%       w12-tilt-geometry.tex 와 같다 — 폰툰의 실제 끝(x = +-1.0 m)에 그리고,
+%       l_f = 1.5 m 는 치수가 아니라 모멘트 팔이다.
+
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm, font=\scriptsize]
+
+\def\YP{9.48}       % y_pont = 0.395 m
+\def\HL{24}         % 선체 반길이 1.0 m
+
+% 선체 하나를 그리는 매크로 / one hull, drawn twice
+\newcommand{\hull}{%
+  \fill[ink, opacity=0.10, rounded corners=2pt] (-12.48,-24) rectangle (-6.48,24);
+  \fill[ink, opacity=0.10, rounded corners=2pt] (  6.48,-24) rectangle (12.48,24);
+  \draw[ink, line width=0.4pt, rounded corners=2pt] (-12.48,-24) rectangle (-6.48,24);
+  \draw[ink, line width=0.4pt, rounded corners=2pt] (  6.48,-24) rectangle (12.48,24);
+  \draw[soft, line width=0.35pt] (-6.48, 24) -- (6.48, 24);
+  \draw[soft, line width=0.35pt] (-6.48,-24) -- (6.48,-24);
+  \fill[ink] (0,0) circle (0.7);
+  \node[ink, anchor=north east, inner sep=1.2pt] at (0,0) {$o_b$};
+}
+
+% =======================================================================
+% (a) 유닛 넷이 각각 내는 모멘트
+% =======================================================================
+\node[ink, anchor=south, font=\scriptsize] at (2,46)
+      {\textbf{(a) four equal forces, four unequal arms}};
+
+\hull
+\draw[ink, line width=0.4pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+      (0,0) -- (0,16) node[anchor=south east, inner sep=1pt] {$x_b$};
+\draw[ink, line width=0.4pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+      (0,0) -- (17,0) node[anchor=north west, inner sep=1pt] {$y_b$};
+
+\foreach \p/\q/\lab in {-\YP/\HL/1, \YP/\HL/2, -\YP/-\HL/3, \YP/-\HL/4}{
+  \node[circle, draw=ink, fill=white, line width=0.4pt,
+        inner sep=0pt, minimum size=5mm] at (\p,\q) {\lab};
+  % 추력 — 넷 모두 delta = +45 deg,  (sin45, cos45) * 16 = (11.31, 11.31)
+  \draw[accent, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}]
+        (\p,\q) -- ++(11.31,11.31);
+}
+
+\node[errc, anchor=east, inner sep=1.5pt] at (-13.5, 24) {$+53.449$};
+\node[errc, anchor=east, inner sep=1.5pt] at (-13.5,-24) {$-17.064$};
+\node[errc, anchor=west, inner sep=1.5pt] at ( 13.5, 17) {$+31.167$};
+\node[errc, anchor=west, inner sep=1.5pt] at ( 13.5,-31) {$-39.346$};
+
+\node[ink, anchor=north, text width=62mm, align=center, inner sep=1.5pt]
+      at (2,-36) {%
+  Every unit is given $n_i = 60$ rad/s and $\delta_i = +45^\circ$, so
+  every unit makes the same force,
+  $f_x = f_y = 28.205$ N.\\[3pt]
+  {\color{errc}$x_i f_y - y_i f_x$} \,[N m] is printed beside each unit.
+  The $f_x$ terms cancel in pairs because $\sum y_i = 0$, and what is
+  left is\\[2pt]
+  $N = f_y \sum x_i = 2\,(l_f - l_a)\,f_y$
+};
+
+% =======================================================================
+% (b) 같은 힘을 한 점으로
+% =======================================================================
+\begin{scope}[shift={(76,0)}]
+
+\node[ink, anchor=south, font=\scriptsize] at (2,46)
+      {\textbf{(b) the same four forces, moved to one point}};
+
+\hull
+\draw[ink, line width=0.4pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+      (0,0) -- (0,16) node[anchor=south east, inner sep=1pt] {$x_b$};
+\draw[ink, line width=0.4pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+      (0,0) -- (17,0) node[anchor=north west, inner sep=1pt] {$y_b$};
+
+%  합력은 네 자리의 무게중심에 선다 / the resultant acts at the centroid
+\fill[accent] (0,6) circle (0.9);
+%  합력 하나 — 성분 둘로 쪼개 그리면 x_b 축과 겹친다 / one arrow, not two
+%  방향 45 deg, 길이 26 mm -> (18.38, 18.38)
+\draw[accent, line width=1.1pt, -{Stealth[length=5pt,width=4pt]}]
+      (0,6) -- (18.38,24.38);
+\node[accent, anchor=west, inner sep=1.5pt, align=left] at (19.5,23)
+      {$X = 112.820$ N\\ $Y = 112.820$ N};
+
+%  xbar 치수 / the offset of that point
+\draw[soft, dotted, line width=0.35pt] (0,0) -- (-19,0);
+\draw[soft, dotted, line width=0.35pt] (0,6) -- (-19,6);
+\draw[alng, line width=0.6pt, |-|] (-19,0) -- (-19,6);
+\node[alng, anchor=east, inner sep=1.5pt, text width=22mm, align=right]
+      at (-20.5,3) {$\bar{x} = 0.25$ m};
+
+%  그 결과의 요 모멘트 — 시계방향 / the yaw it leaves, clockwise
+\draw[warn, line width=0.6pt, -{Stealth[length=4pt,width=3pt]}]
+      (5.20,-3.0) arc (330:210:6);
+\node[warn, anchor=north, inner sep=1.5pt] at (0,-11)
+      {$N = 28.205$ N m};
+
+\node[ink, anchor=north, text width=62mm, align=center, inner sep=1.5pt]
+      at (2,-36) {%
+  Four equal forces are one force at the centroid of the four stations:
+  \\[3pt]
+  $\bar{x} = \tfrac14 \sum x_i = \dfrac{l_f - l_a}{2} = 0.25$ m
+  \\[3pt]
+  That point is not $o_b$, so a sway command given equally to four
+  thrusters pulls 0.25 m ahead of the origin and yaws:\\[2pt]
+  $N = Y\,\bar{x} = 112.820 \times 0.25 = 28.205$ N m
+};
+
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

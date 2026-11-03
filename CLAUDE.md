@@ -116,6 +116,12 @@ lectures/WXX_simulink/
     └── WXX_S*_….m
 ```
 
+> [!important] 절 넷이 **같은 운항**을 읽으면, 배는 한 번만 돈다
+> 그런 주차에서만 `WXX_V_...` 이 순서만 적고 `WXX_cases` · `WXX_tab_...` 이 절 하나씩을
+> 맡는다. 배를 네 번 더 돌리지도, 점검에 두께 예외를 열지도 않는다. 강의 Part 2 의
+> 실행 순서 표가 절마다 **열어 볼 파일**을 화살표로 가리켜야 끝이다
+> → `standing-orders.md` §15-72
+
 > [!important] 실습 문제지·답안지도 **PDF 를 함께 낸다**
 > 학생이 받는 것에는 예외가 없다. 이름이 `README.md` 라도 폴더 색인이 아니라
 > **배포물**이면 `md2pdf.sh` 를 돌린다. `vault_check` 의 `delivered()` 가 강제하며,

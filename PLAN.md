@@ -78,7 +78,7 @@
 | **W09** | Dynamic Positioning and Mission Integration | **완료** (2026-09-25) |
 | **W10** | Integration: One Vessel, One Mission (본과정 마무리) | **완료** (2026-09-25) |
 | W11 | Variant A — Aft Azimuth Thrusters | 미착수 |
-| W12 | Variant C — Four Tilting Thrusters, and a Comparison | 미착수 |
+| W12 | Variant C — Four Tilting Thrusters, and the Open-Loop Check | **1단계 완료** (2026-11-03). 동역학·개루프 검증까지. 배분기·실습·`_KO` 는 사용자 검토 뒤 |
 | 기말 | Final-Project 명세 | 미착수 |
 
 > [!note] 선수추진기 위치제어를 새 W06 으로 넣고 뒤를 한 칸씩 밀었다 (2026-10-26)
