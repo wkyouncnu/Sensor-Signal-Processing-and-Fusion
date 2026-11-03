@@ -59,12 +59,16 @@ if nargin < 4 || isempty(STY), STY = repmat({'-'}, 1, numel(R)); end
 sty = @(i) STY{1+mod(i-1, numel(STY))};
 lw  = @(i) 1.4 + 0.8*strcmp(sty(i), '--');   % 점선은 두껍게 — 실선 위에 얹힌다
 
+%  여덟 줄이다 — 시나리오 여덟이 **서로 다른 색**이어야 겹쳐 그린 그림에서
+%  갈라진다 / eight rows, one per scenario, so the overlay separates
 COL = [0    0.45 0.74
        0.85 0.33 0.10
        0.47 0.67 0.19
        0.49 0.18 0.56
        0.30 0.75 0.93
-       0.64 0.08 0.18];
+       0.64 0.08 0.18
+       0.93 0.69 0.13
+       0.20 0.20 0.20];
 col = @(i) COL(1+mod(i-1, size(COL,1)), :);
 
 f = lab_fig('W12  states and track', 1150, 680);

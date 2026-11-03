@@ -24,9 +24,10 @@ Mm = otter_M(V.mp, V.rp);
 
 fprintf('\n');
 fprintf('  (1) hand formula against the motion model, at rest\n\n');
-fprintf('      tau from the hand formula    X = sum Ti cos di\n');
-fprintf('                                   Y = sum Ti sin di\n');
-fprintf('                                   N = sum (xi sin di - yi cos di) Ti\n');
+fprintf('      tau from the hand formula    X = sum si Ti cos di\n');
+fprintf('                                   Y = sum si Ti sin di\n');
+fprintf('                                   N = sum si (xi sin di - yi cos di) Ti\n');
+fprintf('                                   s = [%+d %+d %+d %+d], the mounting signs\n', cfg.mount);
 fprintf('      tau measured out of otter_tilt4''s acceleration, same state\n\n');
 fprintf('    %-4s  %-25s  %-21s  %-26s  %7s\n', 'case', 'n [rad/s] after clip', ...
         'delta [deg] clipped', '   X [N]    Y [N]  N [N m]', 'resid');
@@ -37,22 +38,11 @@ TAU   = zeros(nc, 3);
 worst = 0;
 
 for c = 1:nc
-    n = min(max(C{c,2}, cfg.n_min), cfg.n_max);
-    d = min(max(deg2rad(C{c,3}), -cfg.alpha_max), cfg.alpha_max);
-
-    T = (cfg.k_pos*(n >= 0) + cfg.k_neg*(n < 0)) .* n .* abs(n);
-
-    %  손 수식 / by hand, term by term
-    X = sum(T .* cos(d));
-    Y = sum(T .* sin(d));
-    N = sum((cfg.pos(1,:) .* sin(d) - cfg.pos(2,:) .* cos(d)) .* T);
-
-    %  열 규칙과 같은지 / the same thing through otter_B's column rule
-    f = zeros(8,1);
-    f(1:2:7) = T .* cos(d);
-    f(2:2:8) = T .* sin(d);
-    assert(max(abs(cfg.B*f - [X; Y; N])) < 1e-12, ...
-           'W12:columnRule', 'the hand formula and otter_B disagree');
+    %  손 수식과 그것이 쓰는 깎인 입력. 수식은 `W12_tau` 한 군데에만 있고
+    %  열 규칙과 맞는지도 거기서 검사한다 / the formula and its clipped inputs
+    %  come from W12_tau, the week's only copy, which checks itself against otter_B
+    [tau_hand, n, d] = W12_tau(C(c,:), cfg);
+    X = tau_hand(1);  Y = tau_hand(2);  N = tau_hand(3);
 
     %  운동모델에서 거꾸로 재기 / measured back out of the motion model
     xd_on  = otter_tilt4(x0, n,         d, V.mp, V.rp, V.V_c, V.beta_c, V.quad);
@@ -67,6 +57,6 @@ for c = 1:nc
             C{c,1}, n, rad2deg(d), X, Y, N, res);
 end
 fprintf('    %s\n', repmat('-', 1, 91));
-fprintf('    worst residual %.1e N or N m over the six cases\n\n', worst);
+fprintf('    worst residual %.1e N or N m over the %d scenarios\n\n', worst, nc);
 
 end

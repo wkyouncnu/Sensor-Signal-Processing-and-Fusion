@@ -55,27 +55,52 @@ function [xdot,U] = otter_tilt4(x,n,delta,mp,rp,V_c,beta_c,quad)
 %             Defaults to this course's values, the same numbers that
 %             otter_config('quad_tilt') carries.
 %
-%   각도의 정의 / what the angle means
-%     delta 는 선체고정 $x_b$ 축에서 **반시계방향**으로 잰다. 따라서 미는 방향의
-%     단위벡터는 e_i = [cos delta_i ; sin delta_i] 이고, delta = 0 은 네 추진기가
-%     모두 앞을 보는 것 — 즉 1~5 주차의 Otter 로 돌아가는 것이다.
-%     delta is measured from the body x axis, counter-clockwise positive, so the
-%     unit vector pushed along is e_i = [cos delta_i ; sin delta_i]. delta = 0
-%     returns the model to the Otter of Weeks 1 to 5.
+%   각도의 정의 — 쌍마다 0 도가 다르다 / what the angle means
+%     선수 둘(1·2)은 **앞**을 보고, 선미 둘(3·4)은 **뒤**를 보고 달려 있다.
+%     그래서 서보 0 도의 뜻이 쌍마다 다르다.
+%     Units 1 and 2 are mounted facing forward and units 3 and 4 facing aft, so
+%     servo zero means a different direction for each pair.
 %
-%   부호 / signs
-%     열 규칙(3주차) 하나에서 나온다. (x,y) 에서 단위벡터 e 로 미는 추진기는
-%     [e_x ; e_y ; x*e_y - y*e_x] 을 낸다. 네 추진기를 더하면
+%       unit  station            delta = 0 pushes   delta = +90 deg pushes
+%       1·2   x = +l_f           +x_b (ahead)       +y_b (to starboard)
+%       3·4   x = -l_a           -x_b (astern)      -y_b (to port)
 %
-%       tau_X = sum T_i cos d_i
-%       tau_Y = sum T_i sin d_i
-%       tau_N = sum ( x_i T_i sin d_i - y_i T_i cos d_i )
+%     즉 미는 방향은 e_i = s_i [cos delta_i ; sin delta_i] 이고
+%     s = [+1 +1 -1 -1] 이 그 거치 부호다. 두 쌍의 0 도가 모두 **배 가운데에서
+%     바깥**을 보므로, 네 각을 같게 주면 힘이 아니라 **모멘트**가 남는다.
+%     So the pushed direction is e_i = s_i [cos delta_i ; sin delta_i] with the
+%     mounting sign s = [+1 +1 -1 -1]. Both zeros point outward from amidships,
+%     so four equal angles leave a moment rather than a force.
 %
-%     이고, d = 0 을 넣으면 tau_N = -sum y_i T_i 로 otter.m 의
-%     -l1*T1 - l2*T2 와 같은 꼴이 된다 (l1 = -y_pont, l2 = +y_pont).
-%     From the column rule of Week 3: a thruster at (x,y) pushing along the unit
-%     vector e contributes [e_x; e_y; x*e_y - y*e_x]. Setting d = 0 recovers the
-%     form of otter.m.
+%   행렬 형태 / matrix form
+%     각 추진기의 추력을 극형식이 아니라 직교 성분으로 쓰면 tau 가 delta 에
+%     대해 **선형**이 된다 (Fossen 2011 §12.3.4, extended thrust vector).
+%     Writing each thrust in Cartesian components rather than polar form makes
+%     tau linear in the commands:
+%
+%       f = [ T_1 cos d_1 ; T_1 sin d_1 ; ... ; T_4 cos d_4 ; T_4 sin d_4 ]
+%       tau_3 = B_thr f,   B_thr = otter_B(cfg),   3 x 8
+%
+%     이 파일 안에서는 그 행렬을 **B_thr** 이라 부른다. otter.m 의 `B` 는 이미
+%     **선폭** 1.08 m 이고, 그 줄을 고치지 않는 것이 이 복사본의 규칙이다.
+%     Inside this file the matrix is called B_thr: `B` is already the beam,
+%     1.08 m, and no line of otter.m is renamed.
+%
+%     B 는 3주차의 열 규칙 하나에서 나온다. (x,y) 에서 단위벡터 e 로 미는
+%     추진기는 [e_x ; e_y ; x e_y - y e_x] 을 내므로, 틸팅 추진기 하나는
+%     e = s_i (1,0) 과 e = s_i (0,1) 두 열을 기여한다.
+%     B comes from the Week 3 column rule: a thruster at (x,y) pushing along the
+%     unit vector e contributes [e_x; e_y; x e_y - y e_x], so one tilting unit
+%     contributes the two columns e = s_i (1,0) and e = s_i (0,1).
+%
+%       B = [  1   0   1   0  -1   0  -1   0
+%              0   1   0   1   0  -1   0  -1
+%              d  l_f -d  l_f -d  l_a  d  l_a ]       d = y_pont
+%
+%     루프를 돌며 더하던 것과 **수치가 같다** — 같은 합을 행렬곱으로 쓴 것이다.
+%     verify_otter_tilt4 가 둘을 대조한다.
+%     This is numerically identical to accumulating the same sum in a loop;
+%     verify_otter_tilt4 compares the two.
 %
 %   후진 추력이 더 약하다 / reverse thrust is weaker
 %     k_neg < k_pos 이므로 같은 크기의 회전수를 앞뒤로 주어도 추력은 상쇄되지
@@ -107,7 +132,8 @@ if (length(delta) ~= 4),error('delta vector must have dimension 4!'); end
 if nargin < 8 || isempty(quad)
     quad = [ 1.5   1.5  -1.0  -1.0              % x 위치 / x stations (m)
             -0.395 0.395 -0.395 0.395           % y 위치 / y stations (m)
-             pi/4  pi/4  pi/4  pi/4 ];          % 틸팅 한계 / tilt limits (rad)
+             pi/4  pi/4  pi/4  pi/4              % 틸팅 한계 / tilt limits (rad)
+              1     1    -1    -1 ];            % 거치 부호 / mounting signs
 end
 % -------------------------------------------------------------------------
 
@@ -173,6 +199,22 @@ n_min = -sqrt((0.5*13.6 * g)/k_neg);    % minimum propeller rev. (rad/s)
 px     = quad(1,:);                     % x stations (m)
 py     = quad(2,:);                     % y stations (m)
 d_max  = quad(3,:);                     % tilt limits, both ways (rad)
+smount = quad(4,:);                     % mounting signs, +1 forward, -1 aft
+
+% 유효행렬을 열 규칙(3주차)으로 **여기서** 만든다. 이름이 B_thr 인 것은
+% otter.m 의 B 가 이미 **선폭**이라서다 — 그 줄은 고치지 않는다.
+% The effectiveness matrix, built here from the Week 3 column rule. It is named
+% B_thr because B is already the beam in otter.m, and that line is not touched.
+B_thr = zeros(3,8);
+for i = 1:1:4
+    for k = 1:1:2                       % k = 1 gives e = s(1,0), k = 2 e = s(0,1)
+        e    = zeros(2,1);
+        e(k) = smount(i);
+        B_thr(:, 2*i-2+k) = [ e(1)
+                              e(2)
+                              px(i)*e(2) - py(i)*e(1) ];
+    end
+end
 % -------------------------------------------------------------------------
 
 % MRB and CRB (Fossen 2021)
@@ -272,28 +314,29 @@ end
 % -------------------------------------------------------------------------
 
 % ---- CHANGED (4 of 4) ---------------------------------------------------
-% Control forces and moments
+% Control forces and moments — written as a matrix product
 % otter.m:  tau = [T1+T2  0  0 0 0  -l1*T1 - l2*T2]'      <- sway is zero
-% here:     every tilting thruster contributes to rows 1, 2 and 6 at once,
-%           by the column rule  [e_x ; e_y ; x e_y - y e_x]  with
-%           e_i = [cos delta_i ; sin delta_i].
-tau_X = 0;
-tau_Y = 0;
-tau_N = 0;
-for i = 1:1:4
-    fx = Thrust(i) * cos(delta(i));     % 선체 x 방향 성분 / along body x
-    fy = Thrust(i) * sin(delta(i));     % 선체 y 방향 성분 / along body y
-    tau_X = tau_X + fx;
-    tau_Y = tau_Y + fy;
-    tau_N = tau_N + px(i)*fy - py(i)*fx;
-end
+% here:     tau_3 = B f.  Each tilting thruster contributes TWO columns of B
+%           and two entries of f, so the 3-by-8 B is constant and the whole
+%           dependence on the commands sits in f.
+%
+%     f = [ T_1 cos d_1 ; T_1 sin d_1 ; ... ; T_4 cos d_4 ; T_4 sin d_4 ]
+%
+% 쌍마다 0 도가 다른 것은 B 안에 있다 — otter_B 가 거치 부호 s = [1 1 -1 -1]
+% 을 열에 실어 두었다. 그래서 여기에는 부호가 하나도 없다.
+% The per-pair zero lives inside B: otter_B has already carried the mounting
+% sign s = [1 1 -1 -1] into the columns, so no sign appears here.
+f = reshape([Thrust(:) .* cos(delta(:)), ...
+             Thrust(:) .* sin(delta(:))].', 8, 1);
 
-tau = [tau_X
-       tau_Y
+tau3 = B_thr * f;                       % [X ; Y ; N]
+
+tau = [tau3(1)
+       tau3(2)
        0
        0
        0
-       tau_N];
+       tau3(3)];
 % -------------------------------------------------------------------------
 
 % Linear damping using relative velocities + nonlinear yaw damping

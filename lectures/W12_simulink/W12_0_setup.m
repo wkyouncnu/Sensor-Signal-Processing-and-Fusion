@@ -42,10 +42,14 @@ V_c    = 0.0;                    % 해류 속력 [m/s] / current speed
 beta_c = pi/2;                   % 해류 방향 [rad] / current direction
 
 %% ---- 추진기 배치와 틸팅 한계 / stations and tilt limits ----------------
-%  운동모델 otter_tilt4 가 이 3x4 하나로 자리와 한계를 모두 받는다. 숫자를 두
-%  군데 적지 않으려고 cfg 에서 그대로 만든다 / built from cfg so the geometry is
-%  written once
-quad = [cfg.pos ; cfg.alpha_max];      % [x 자리 ; y 자리 ; 틸팅 한계]
+%  운동모델 otter_tilt4 가 이 4x4 하나로 자리·한계·거치 방향을 모두 받는다.
+%  숫자를 두 군데 적지 않으려고 cfg 에서 그대로 만든다 / built from cfg so the
+%  geometry is written once
+%
+%  넷째 줄이 **거치 부호**다. 선수 둘(1·2)은 앞을, 선미 둘(3·4)은 뒤를 보고
+%  달려 있어 서보 0 도의 뜻이 쌍마다 다르다 / the fourth row is the mounting
+%  sign: servo zero means +x_b for the bow pair and -x_b for the stern pair
+quad = [cfg.pos ; cfg.alpha_max ; cfg.mount];   % [x ; y ; 한계 ; 거치 부호]
 
 alpha_lim  = cfg.alpha_max(1);         % 서보 각 한계 [rad], 네 서보가 같다
 alpha_rate = cfg.alpha_rlim(1);        % 서보 각속도 한계 [rad/s]

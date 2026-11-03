@@ -4,7 +4,10 @@
 %   실행 / to run
 %       cd lectures/W12_simulink
 %       W12_1_build_openloop        % 한 번만. 모델을 만든다
-%       W12_V_openloop              % 표 셋과 그림 하나
+%       W12_V_openloop              % 여덟 시나리오 전부
+%       W12_V_openloop('S5')        % 하나만 — 그 한 장만 다시 뽑는다
+%       W12_V_openloop({'S5','S6'}) % 둘만 — 비교할 둘을 고른다
+%       W12_V_openloop(1:4)         % 번호로 골라도 된다
 %
 %   1단계의 질문 하나 / the one question of stage 1
 %       추진기 넷에 축회전수와 틸팅 각을 **손으로** 주었을 때, 배가 받는 힘과
@@ -21,18 +24,23 @@
 %       (1) 만 하면 "함수는 맞는데 모델이 다른 것을 쓰고 있다" 를 못 잡고,
 %           (2) 만 하면 "모델과 함수가 똑같이 틀렸다" 를 못 잡는다.
 %
-%   한 번 돌리고 셋이 읽는다 / six runs, read three ways
-%       표 (1) 은 운항이 시작되는 **정지 상태**에서 힘을 재고, 표 (2) 는 여섯
-%       운항을 **전부** 다시 적분하고, 표 (3) 은 그 여섯의 **끝**을 읽는다.
-%       그래서 셋을 쪼개면 같은 궤적 여섯을 얻으려 배를 스물넷 번 돌려야 한다.
-%       블록은 파일로 나뉘어 있다 — `W12_cases` · `W12_tab_formula` ·
-%       `W12_tab_reint` · `W12_tab_track`, 강의 절이 쓰는 순서 그대로다.
+%   한 번 돌리고 셋이 읽는다 / run once, read three ways
+%       표 (1) 은 운항이 시작되는 **정지 상태**에서 힘을 재고, 표 (2) 는 고른
+%       운항을 **전부** 다시 적분하고, 표 (3) 은 그 운항들의 **끝**을 읽는다.
+%       셋을 쪼개면 같은 궤적을 얻으려 배를 네 배로 돌려야 한다.
 %
-%   See also W12_0_SETUP, W12_1_BUILD_OPENLOOP, W12_CASES, W12_TAB_FORMULA,
-%            W12_TAB_REINT, W12_TAB_TRACK, W12_READ, W12_PLOT,
-%            OTTER_TILT4, VERIFY_OTTER_TILT4, OTTER_B.
+%   그림은 시나리오마다 한 장이다 / one figure per scenario
+%       여덟을 한 칸에 겹쳐 그리면 곡선이 서로를 지운다. 그래서
+%       `img/W12_result_S1.png` … `_S8.png` 가 각각 나오고, 겹쳐 그린
+%       `W12_result_openloop.png` 은 **비교용으로만** 남는다.
+%
+%   See also W12_0_SETUP, W12_1_BUILD_OPENLOOP, W12_CASES, W12_PICK,
+%            W12_TAB_FORMULA, W12_TAB_REINT, W12_TAB_TRACK, W12_READ,
+%            W12_PLOT, W12_PLOT_SCENARIO, OTTER_TILT4, VERIFY_OTTER_TILT4.
 
-function W12_V_openloop()
+function W12_V_openloop(pick)
+
+if nargin < 1, pick = 'all'; end
 
 here = fileparts(mfilename('fullpath'));
 root = fileparts(fileparts(here));
@@ -42,25 +50,44 @@ mss_path();
 mdl = 'W12_openloop';
 V   = W12_vars();
 cfg = otter_config('quad_tilt');
-[C, n_cxl] = W12_cases(cfg);
+[S, n_sway] = W12_cases(cfg);
+k   = W12_pick(S, pick);                      % 고른 줄 / the chosen rows
+Sk  = S(k, :);
 
-TAU = W12_tab_formula(C, V, cfg);       % (1) 수식이 맞는가
-R   = W12_tab_reint(mdl, C, V);         % (2) 모델이 그 수식인가 — 여섯 번 돈다
-W12_tab_track(C, R, TAU, cfg, n_cxl);   % (3) 그 힘이 만드는 운동
+TAU = W12_tab_formula(Sk, V, cfg);            % (1) 수식이 맞는가
+R   = W12_tab_reint(mdl, Sk, V);              % (2) 모델이 그 수식인가
+W12_tab_track(S, k, R, TAU, cfg, n_sway);     % (3) 그 힘이 만드는 운동
 
-%  V6 을 점선으로 그린다. V6 은 V3 과 **같은 곡선**이고 (서보가 70 도를 45 도로
-%  깎았으므로), 실선 둘을 겹쳐 그리면 뒤의 것이 앞의 것을 지워 한 곡선만 보인다.
-%  점선이 실선 위에 얹혀야 "둘이 같다" 가 그림에서 읽힌다 / V6 is V3 with the
-%  servo limit doing the work, so it is drawn dashed on top of the solid V3
-STY = {'-', '-', '-', '-', '-', '--'};
-LBL = cellfun(@(a,b) sprintf('%s  %s', a, b), C(:,1)', C(:,4)', ...
-              'UniformOutput', false);
+%  시나리오마다 한 장. 이름에 태그가 들어가 하나만 다시 돌려도 그 장만 바뀐다
+for c = 1:numel(k)
+    f   = W12_plot_scenario(R{c}, Sk(c,:), TAU(c,:), cfg);
+    png = sprintf('W12_result_%s.png', Sk{c,1});
+    exportgraphics(f, fullfile(here, 'img', png), 'Resolution', 150);
+    fprintf('    %-4s %-27s img/%s\n', Sk{c,1}, Sk{c,4}, png);
+end
 
-f = W12_plot(R, LBL, ...
-    'W12 open loop  -  eight numbers given by hand, and the track they produce', STY);
-exportgraphics(f, fullfile(here, 'img', 'W12_result_openloop.png'), ...
-               'Resolution', 150);
+%  겹쳐 그린 한 장은 **비교용**이다. 마지막 줄만 점선으로 — 서보가 깎은 S8 이
+%  S5 와 같은 곡선이므로, 점선이 실선 위에 얹혀야 "둘이 같다" 가 읽힌다
+if numel(k) > 1
+    STY = repmat({'-'}, 1, numel(k));  STY{end} = '--';
+    LBL = cellfun(@(a,b) sprintf('%s  %s', a, b), Sk(:,1)', Sk(:,4)', ...
+                  'UniformOutput', false);
+    f = W12_plot(R, LBL, ...
+        'W12 open loop  -  all scenarios on one axes, for comparison only', STY);
 
-fprintf('  figure written to img/W12_result_openloop.png\n\n');
+    %  몇 개만 골라 돌렸을 때는 **저장하지 않는다.** 강의 `.md` 가 싣는 파일은
+    %  여덟이 다 든 한 장이어야 하고, 부분 실행이 그것을 조용히 덮으면 문서의
+    %  그림과 본문이 어긋난다 / a partial run draws the overlay but does not save
+    %  it: the file the lecture embeds must be the one carrying all eight
+    if numel(k) == size(S,1)
+        exportgraphics(f, fullfile(here, 'img', 'W12_result_openloop.png'), ...
+                       'Resolution', 150);
+        fprintf('    %-4s %-27s img/W12_result_openloop.png\n', '--', 'all of them overlaid');
+    else
+        fprintf('    %-4s %-27s not saved: a partial run\n', '--', 'the overlay');
+    end
+end
+
+fprintf('\n');
 
 end

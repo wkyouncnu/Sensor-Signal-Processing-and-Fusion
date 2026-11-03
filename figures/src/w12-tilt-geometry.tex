@@ -1,156 +1,177 @@
 % w12-tilt-geometry.tex
-%   12주차 §12-1. 추진기 넷의 자리와 틸팅 각 delta 의 정의, 그리고 틸팅 추진기
-%   하나가 B 에 **열 둘**을 내놓는 이유.
+%   12주차 §12-1. 추진기 넷의 **자리**와 거치 부호 s_i, 그리고 틸팅 각 delta_i 가
+%   각 유닛의 **자기 0도**에서 시작한다는 것.
 %
 %   축척 / scale
-%       1 m = 36 mm. 화면 기저는 평면도 — 화면 위가 선체 x_b, 화면 오른쪽이 y_b.
-%       따라서 선체좌표 (x, y) 는 화면 (X, Y) = (36 y, 36 x) 에 놓인다.
+%       1 m = 32 mm. 평면도 — 화면 위가 선체 x_b, 화면 오른쪽이 y_b.
+%       선체좌표 (x, y) 는 화면 (X, Y) = (32 y, 32 x) 에 놓인다.
+%
+%   수치의 출처 / where the numbers come from
+%       `otter_config('quad_tilt')` 를 MATLAB 에서 그대로 찍은 것이다 (2026-11-03):
+%           pos   = [ 1.5  1.5  -1.0  -1.0 ;  -0.395  0.395  -0.395  0.395 ]
+%           mount = [ 1    1    -1    -1   ]        <- s_i
+%           y_pont = 0.395,  l_f = 1.5,  l_a = 1.0,  alpha_max = 45 deg
+%       눈대중으로 PPT 에서 베끼지 않는다.
+%
+%   거치 부호 / the mounting sign                (사용자 지시 2026-11-03)
+%       "앞 뒤의 2개 모터가 바라보는 방향이 달라서 서보 각도의 정의가 달라."
+%       선수 둘은 delta = 0 이 **+x_b**(앞)를 밀고, 선미 둘은 **-x_b**(뒤)를 민다.
+%       그래서 s = [+1 +1 -1 -1] 이고, B 의 열이 그 부호를 들고 있다.
+%       각도의 **부호 방향**은 둘이 같다 — 0 에서 y_b 쪽으로, 곧 이 평면도에서
+%       시계방향이다. 다른 것은 **0 의 자리** 하나다. 자세한 것은
+%       w12-servo-zero.tex 가 칸을 나눠 그린다.
 %
 %   회전 방향 / the sense of rotation            (CLAUDE.md 4-6-2)
 %       z_b 가 아래이므로 +N 은 선수를 우현으로 돌리고, 위에서 내려다본 이 그림
-%       (x_b 위, y_b 오른쪽)에서 그것은 **시계방향**이다. delta 도 같다 — x_b 에서
-%       y_b 로 재므로 화면에서는 "위에서 오른쪽으로", 곧 시계방향이다.
-%       TikZ 의 arc 는 끝 각이 **작을 때** 시계이므로 둘 다 arc(90:55:..) ·
-%       arc(330:210:..) 처럼 **내려가는** 각으로 적었다.
+%       (x_b 위, y_b 오른쪽)에서 그것은 **시계방향**이다. TikZ 의 arc 는 끝 각이
+%       **작을 때** 시계이므로 전부 내려가는 각으로 적었다 —
+%           unit 2:  arc (90:50:9)     0 도(화면 위)에서 우현 쪽으로
+%           unit 4:  arc (270:230:9)   0 도(화면 아래)에서 우현 쪽으로
+%           tau_N:   arc (330:210:7)
+%       화면 기저로 풀어 오른손 법칙을 적용해 확인했다: 선수 위, 우현 오른쪽,
+%       z_b 화면 안쪽 -> +N 은 위에서 오른쪽으로, 시계방향.
 %
-%   l_f 가 선체보다 긴 것 / the forward arm is longer than the hull
-%       otter_config.m 의 l_f = 1.5 m 는 **모멘트 팔**이고 선체는 L = 2.0 m
-%       (x in [-1, +1]) 다. 6주차가 같은 상수를 공유하므로 한쪽만 고칠 수 없다.
-%       사용자 지시(2026-10-13)는 **유닛을 선체 밖에 그리지 말라**는 것이었다 —
-%       그래서 6주차 w06-alloc-geometry.tex 와 **같은 처리**를 한다.
-%       유닛 넷은 폰툰의 실제 끝(x = +-1.0 m)에 그리고, l_f 는 치수선으로만
-%       선수 앞 0.5 m 까지 뻗어 "팔"이라고 밝힌다. 선미는 l_a = 1.0 m 가 실제
-%       자리와 같으므로 어긋나는 것은 선수 하나뿐이다.
-%       6주차와 같은 문구: "Read the arms, not the hull stations."
+%   갑판을 네 자리가 **품도록** 그린 것 / the deck carries the stations
+%       l_f = 1.5 m 는 otter.m 의 선체(L = 2.0 m, x in [-1, +1])보다 앞이다.
+%       사용자 지시(2026-10-13)는 **유닛을 선체 밖에 그리지 말라**는 것이므로,
+%       여기서는 폰툰을 네 자리가 들어가는 길이로 그리고 otter.m 의 선체 끝을
+%       파선 하나로 밝힌다. 실습의 `W12_plot_scenario` 가 그리는 평면도와 **같은
+%       처리**다 (xf = l_f + 0.25, xa = -l_a - 0.25). 6주차는 치수선만 뻗는
+%       다른 처리를 했으나, 12주차는 유닛 **넷의 자리**가 그림의 주제라 자리를
+%       그대로 보이는 쪽을 골랐다.
 
 \documentclass[border=5pt]{standalone}
 \input{gnc-style}
 
+\definecolor{hull}{HTML}{E6F0E6}
+\definecolor{hulle}{HTML}{59735A}
+
+%  폰툰 하나. #1 = 중심의 화면 X / one pontoon, centred on screen X = #1
+\newcommand{\pontoon}[1]{%
+  \filldraw[fill=hull, draw=hulle, line width=0.4pt]
+    (#1-4.64,-40) -- (#1+4.64,-40) -- (#1+4.64,46.4) --
+    (#1,56) -- (#1-4.64,46.4) -- cycle;}
+
+%  선수 유닛. #1 = 화면 X / a bow unit: zero points up (+x_b)
+\newcommand{\unitbow}[1]{%
+  \begin{scope}[shift={(#1,48)}]
+    \fill[accent, opacity=0.09] (0,0) -- (45:13) arc (45:135:13) -- cycle;
+    \draw[accent, opacity=0.55, densely dashed, line width=0.35pt]
+         (45:13) -- (0,0) -- (135:13);
+    \draw[accent, line width=1pt, -{Stealth[length=5pt, width=4pt]}] (0,0) -- (0,15);
+    \node[dot] at (0,0) {};
+  \end{scope}}
+
+%  선미 유닛. #1 = 화면 X / a stern unit: zero points down (-x_b)
+\newcommand{\unitstern}[1]{%
+  \begin{scope}[shift={(#1,-32)}]
+    \fill[accent, opacity=0.09] (0,0) -- (225:13) arc (225:315:13) -- cycle;
+    \draw[accent, opacity=0.55, densely dashed, line width=0.35pt]
+         (225:13) -- (0,0) -- (315:13);
+    \draw[accent, line width=1pt, -{Stealth[length=5pt, width=4pt]}] (0,0) -- (0,-15);
+    \node[dot] at (0,0) {};
+  \end{scope}}
+
+%  치수선 하나 / one dimension line
+\newcommand{\dimline}[4]{%
+  \draw[soft, line width=0.4pt,
+        {Stealth[length=3.5pt, width=2.5pt]}-{Stealth[length=3.5pt, width=2.5pt]}]
+       (#1,#2) -- (#3,#4);}
+
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm, font=\scriptsize]
 
-% ---- 축척 상수 / the scale ----------------------------------------------
-\def\YP{14.22}      % y_pont = 0.395 m
-\def\HL{36}         % 선체 반길이 1.0 m — 유닛이 앉는 실제 자리
-\def\ARM{54}        % 선수 모멘트 팔 l_f = 1.50 m 의 끝 (치수선만)
+% ---------- 선체 / the hull -------------------------------------------------
+\fill[hull, opacity=0.55] (-8,-40) rectangle (8,46.4);
+\pontoon{-12.64}
+\pontoon{12.64}
+\draw[hulle, line width=0.4pt] (-12.64,0) -- (12.64,0);
+\draw[soft, line width=0.3pt, densely dotted] (0,-48) -- (0,74);
 
-% =======================================================================
-% 1. 선체 — 폰툰 둘 / the hull: two pontoons
-% =======================================================================
-\fill[ink, opacity=0.10, rounded corners=3pt] (-18.72,-36) rectangle (-9.72,36);
-\fill[ink, opacity=0.10, rounded corners=3pt] ( 9.72,-36) rectangle (18.72,36);
-\draw[ink, line width=0.5pt, rounded corners=3pt] (-18.72,-36) rectangle (-9.72,36);
-\draw[ink, line width=0.5pt, rounded corners=3pt] ( 9.72,-36) rectangle (18.72,36);
-\draw[soft, line width=0.4pt] (-9.72, 36) -- (9.72, 36);
-\draw[soft, line width=0.4pt] (-9.72,-36) -- (9.72,-36);
-\node[soft, anchor=north, font=\scriptsize] at (0, 34.5) {bow};
+%  otter.m 의 선체 끝. 선미 자리 x = -1.0 m 는 그 끝과 **같고**, 선수 자리
+%  x = +1.5 m 만 앞으로 나간다 / only the forward station reaches past it
+\draw[soft, densely dashed, line width=0.35pt] (-20,32) -- (20,32);
+\node[note, anchor=east] at (-20.5,32) {otter.m hull ends, $x_b=+1$ m};
 
-% =======================================================================
-% 2. 선체좌표계 / the body frame
-% =======================================================================
-\draw[ink, line width=0.5pt, -{Stealth[length=4pt,width=3pt]}]
-      (0,0) -- (0,26) node[anchor=south west, inner sep=1pt] {$x_b$};
-\draw[ink, line width=0.5pt, -{Stealth[length=4pt,width=3pt]}]
-      (0,0) -- (26,0) node[anchor=north west, inner sep=1pt] {$y_b$};
-\fill[ink] (0,0) circle (0.8);
-\node[ink, anchor=north east, inner sep=1.5pt] at (0,0) {$o_b$};
-\draw[soft, dotted, line width=0.4pt] (0,0) -- (0,-48);
+\node[note, anchor=south] at (0,58) {bow};
+\node[note, anchor=north] at (0,-42) {stern};
 
-% +N 은 시계방향 / a positive yaw moment is clockwise on this view
-%   arc(330:210:7) — 끝 각이 작으므로 시계 / decreasing angle, hence clockwise
-\draw[warn, line width=0.6pt, -{Stealth[length=4pt,width=3pt]}]
-      (6.06,-3.5) arc (330:210:7);
-\node[warn, anchor=north, inner sep=1.5pt] at (0,-12) {$\tau_N > 0$};
+% ---------- 네 유닛 / the four units ----------------------------------------
+\unitbow{-12.64}
+\unitbow{12.64}
+\unitstern{-12.64}
+\unitstern{12.64}
 
-% =======================================================================
-% 3. 추진기 넷 / the four units — 폰툰의 실제 끝에 앉는다
-% =======================================================================
-\foreach \p/\q/\lab in {-\YP/\HL/1, \YP/\HL/2, -\YP/-\HL/3, \YP/-\HL/4}{
-  \node[circle, draw=ink, fill=white, line width=0.5pt,
-        inner sep=0pt, minimum size=6mm] at (\p,\q) {\lab};
-}
+\node[ink, font=\scriptsize\bfseries, anchor=north, inner sep=1pt] at (-12.64,44.5) {1};
+\node[ink, font=\scriptsize\bfseries, anchor=north, inner sep=1pt] at ( 12.64,44.5) {2};
+\node[ink, font=\scriptsize\bfseries, anchor=south, inner sep=1pt] at (-12.64,-27.5) {3};
+\node[ink, font=\scriptsize\bfseries, anchor=south, inner sep=1pt] at ( 12.64,-27.5) {4};
 
-% 추력 — 넷 모두 같은 delta = 35 deg / all four at the same delta
-%   방향 = (sin d, cos d) * 20 mm = (11.47, 16.38)
-\foreach \p/\q in {-\YP/\HL, \YP/\HL, -\YP/-\HL, \YP/-\HL}{
-  \draw[accent, line width=0.8pt, -{Stealth[length=5pt,width=4pt]}]
-        (\p,\q) -- ++(11.47,16.38);
-}
+%  각의 부호 방향은 한 쌍에 하나씩만 그린다 — 넷을 다 그리면 읽히지 않는다
+\draw[accent, line width=0.6pt, -{Stealth[length=4pt, width=3pt]}]
+     (12.64,57) arc (90:50:9);
+\node[anote, anchor=south west] at (17.2,57.8) {$\delta_2>0$};
+\draw[accent, line width=0.6pt, -{Stealth[length=4pt, width=3pt]}]
+     (12.64,-41) arc (270:230:9);
+\node[anote, anchor=north west] at (17.2,-41.8) {$\delta_4>0$};
 
-% 1번만 각을 표시한다 / only unit 1 carries the angle annotation
-\draw[soft, dashed, line width=0.4pt] (-\YP,\HL) -- (-\YP,60)
-      node[anchor=south west, inner sep=1.5pt, soft] {$\parallel x_b$};
-\draw[accent, line width=0.5pt] (-14.22,51) arc (90:55:15);
-\node[accent, inner sep=0pt] at (-11.2,45.5) {$\delta_1$};
-\node[accent, anchor=south west, inner sep=1.5pt] at (-2.0,52.4)
-      {$T_1\,\mathbf{e}_1$};
+% ---------- 선체좌표계 / the body frame -------------------------------------
+\draw[axis, -{Stealth[length=4pt, width=3pt]}] (0,0) -- (0,22);
+\draw[axis, -{Stealth[length=4pt, width=3pt]}] (0,0) -- (22,0);
+\node[ink, anchor=west]  at (1.6,20)  {$x_b$};
+\node[ink, anchor=south] at (19,1.2)  {$y_b$};
+\node[circle, draw=ink, fill=white, line width=0.4pt, inner sep=0.8pt] at (0,0) {};
+\node[note, anchor=north east] at (-1.2,-1.2) {CO};
 
-% =======================================================================
-% 4. 모멘트 팔 / the moment arms
-% =======================================================================
-%  선수 팔만 선체보다 길다 — 치수선으로만 뻗고 유닛은 선체 위에 있다
-\draw[soft, dotted, line width=0.4pt] (\YP,39) -- (\YP,\ARM);
-\draw[soft, dotted, line width=0.4pt] (\YP,\ARM) -- (32,\ARM);
-\draw[soft, dotted, line width=0.4pt] ( 1.0,  0 ) -- (32,  0 );
-\draw[soft, dotted, line width=0.4pt] (18.0,-36) -- (32,-36);
-
-\draw[accent, line width=0.6pt, |-|] (32,0) -- (32,\ARM);
-\node[accent, anchor=west, inner sep=1.5pt, text width=26mm] at (33.5,27)
-      {$l_f = 1.50$ m\\ moment arm};
-\draw[accent, line width=0.6pt, |-|] (32,-36) -- (32,0);
-\node[accent, anchor=west, inner sep=1.5pt, text width=26mm] at (33.5,-18)
-      {$l_a = 1.00$ m\\ at the transom};
-
-\draw[soft, dotted, line width=0.4pt] (\YP,-39) -- (\YP,-48);
-\draw[accent, line width=0.6pt, |-|] (0,-48) -- (\YP,-48);
-\node[accent, anchor=north, inner sep=1.5pt] at (7.1,-50)
-      {$y_{\mathrm{pont}} = 0.395$ m};
-
-% =======================================================================
-% 5. 오른쪽 설명 / the panel
-% =======================================================================
-\begin{scope}[shift={(66,0)}]
-
-\node[ink, anchor=north west, text width=84mm, align=left, font=\scriptsize]
-      at (0,58) {%
-  \textbf{Two columns, not one}\\[2pt]
-  A fixed thruster spends its thrust $T_i$ along a direction the hull
-  fixes. A tilting unit chooses the direction as well, so the pair
-  $(T_i, \delta_i)$ carries two independent numbers:
-  \\[3pt]
-  \quad $\mathbf{e}_i = \begin{bmatrix}\cos\delta_i\\ \sin\delta_i\end{bmatrix}$,
-  \qquad
-  $\mathbf{f}_i = T_i\,\mathbf{e}_i
-     = \begin{bmatrix}f_{ix}\\ f_{iy}\end{bmatrix}$
-  \\[4pt]
-  The column rule of Week 3 takes a force $\mathbf{f}$ applied at
-  $(x_i, y_i)$ and returns what it does to the hull:
-  \\[3pt]
-  \quad $\begin{bmatrix} f_x \\ f_y \\ x_i f_y - y_i f_x \end{bmatrix}$
-  \\[4pt]
-  One free component, one column. A tilting unit has two, so it owns
-  \emph{two} columns of $B$, and the unknown of the allocation problem is
-  \\[3pt]
-  \quad $\mathbf{f} = \begin{bmatrix} f_{1x} & f_{1y} & \cdots &
-        f_{4x} & f_{4y}\end{bmatrix}^{\!\top}$,
-  \quad eight numbers,
-  \\[3pt]
-  against which $\boldsymbol{\tau} = B\mathbf{f}$ is three. Stage~1 never
-  solves that system: the eight numbers are given by hand, and the only
-  question is whether $\boldsymbol{\tau}$ comes out as the rule says.
-  \\[4pt]
-  \textbf{Sense.} $\delta_i$ is measured from $x_b$ towards $y_b$. With
-  $z_b$ pointing down, both a positive $\delta$ and a positive $\tau_N$
-  appear \emph{clockwise} on this plan view.
-  \\[4pt]
-  \textbf{Read the arms, not the hull stations.} The four units are drawn
-  where they sit on the pontoons, at $x_b = \pm 1.0$~m. The aft arm
-  $l_a$ is that station; the forward arm $l_f = 1.50$~m reaches 0.5~m
-  past the bow of the $L = 2.0$~m hull, and it is the arm, not a place.
-  Week~6 carries the same constant and the same reading.
-};
-
+\begin{scope}[shift={(-28,-46)}]
+  \draw[warn, line width=0.6pt, -{Stealth[length=4pt, width=3pt]}] (6.06,-3.5) arc (330:210:7);
+  \node[warn, anchor=north, font=\scriptsize] at (0,-9) {$\tau_N>0$};
 \end{scope}
+
+% ---------- d_1 … d_4 -------------------------------------------------------
+\draw[soft, line width=0.3pt, densely dotted] (-12.64,63.5) -- (-12.64,71);
+\draw[soft, line width=0.3pt, densely dotted] ( 12.64,63.5) -- ( 12.64,71);
+\dimline{-12.64}{70}{0}{70}
+\dimline{0}{70}{12.64}{70}
+\draw[soft, line width=0.4pt] (0,67.5) -- (0,72.5);
+\node[note, anchor=south] at (-6.3,70.8) {$d_1$};
+\node[note, anchor=south] at ( 6.3,70.8) {$d_2$};
+
+\draw[soft, line width=0.3pt, densely dotted] (-12.64,-47.5) -- (-12.64,-55);
+\draw[soft, line width=0.3pt, densely dotted] ( 12.64,-47.5) -- ( 12.64,-55);
+\dimline{-12.64}{-54}{0}{-54}
+\dimline{0}{-54}{12.64}{-54}
+\draw[soft, line width=0.4pt] (0,-51.5) -- (0,-56.5);
+\node[note, anchor=north] at (-6.3,-54.8) {$d_3$};
+\node[note, anchor=north] at ( 6.3,-54.8) {$d_4$};
+
+% ---------- l_f, l_a --------------------------------------------------------
+\draw[soft, line width=0.3pt, densely dotted] (17.5,48) -- (29,48);
+\draw[soft, line width=0.3pt, densely dotted] (0,0)    -- (29,0);
+\draw[soft, line width=0.3pt, densely dotted] (17.5,-32) -- (29,-32);
+\dimline{28}{0}{28}{48}
+\dimline{28}{-32}{28}{0}
+\draw[soft, line width=0.4pt] (26.5,48)  -- (29.5,48);
+\draw[soft, line width=0.4pt] (26.5,0)   -- (29.5,0);
+\draw[soft, line width=0.4pt] (26.5,-32) -- (29.5,-32);
+\node[note, anchor=west] at (29.5,24)  {$l_f=1.50$ m};
+\node[note, anchor=west] at (29.5,-16) {$l_a=1.00$ m};
+
+% ---------- 자리 표 / the station table -------------------------------------
+\node[ink, anchor=north west, align=left, font=\scriptsize] at (38,52) {%
+  \begin{tabular}{@{}llrrr@{}}
+    unit & station & $x_i$ [m] & $d_i=y_i$ [m] & $s_i$\\[1.5pt]
+    1 & bow, port    & $+1.50$ & $-0.395$ & $+1$\\
+    2 & bow, stbd    & $+1.50$ & $+0.395$ & $+1$\\
+    3 & stern, port  & $-1.00$ & $-0.395$ & $-1$\\
+    4 & stern, stbd  & $-1.00$ & $+0.395$ & $-1$\\
+  \end{tabular}};
+
+\node[note, anchor=north west, align=left, text width=46mm] at (38,22) {%
+  $\delta_i$ runs from unit $i$'s own zero towards $y_b$, clockwise on this
+  view, in both pairs.\\[2pt]
+  $s_i=+1$: that zero points ahead.\quad $s_i=-1$: it points astern.\\[2pt]
+  Shaded: the servo range $\lvert\delta_i\rvert\le 45^\circ$.};
 
 \end{tikzpicture}
 \end{document}

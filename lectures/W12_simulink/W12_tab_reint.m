@@ -1,5 +1,5 @@
 function R = W12_tab_reint(mdl, C, V)
-%W12_TAB_REINT  표 (2). 모델을 여섯 번 돌리고, 같은 입력으로 **밖에서** 다시 적분한다.
+%W12_TAB_REINT  표 (2). 모델을 여덟 번 돌리고, 같은 입력으로 **밖에서** 다시 적분한다.
 %               Table (2): the Simulink model against the same equations, integrated outside it.
 %
 %   무엇을 판정하는가 / what this decides
@@ -23,8 +23,8 @@ function R = W12_tab_reint(mdl, C, V)
 %       반올림오차뿐이어야 하고, 그것이 "모델의 배선이 이 수식과 같다" 는 뜻이다.
 %
 %   반환 / what comes back
-%       R{c} — 여섯 번의 로그. 표 (3) 과 그림이 **이것을 다시 쓴다.**
-%       그래서 배는 스물넷이 아니라 여섯 번만 돈다.
+%       R{c} — 여덟 번의 로그. 표 (3) 과 그림 여덟 장이 **이것을 다시 쓴다.**
+%       그래서 배는 서른둘이 아니라 여덟 번만 돈다.
 %
 %   See also W12_V_OPENLOOP, W12_CASES, W12_TAB_FORMULA, W12_TAB_TRACK, W12_READ.
 
@@ -70,6 +70,6 @@ for c = 1:nc
             C{c,1}, dN, dE, dpsi, du, r.n_clip, r.d_clip);
 end
 fprintf('    %s\n', repmat('-', 1, 78));
-fprintf('    worst %.1e m or m/s over the six 30 s runs\n\n', worst2);
+fprintf('    worst %.1e m or m/s over the %d 30 s runs\n\n', worst2, nc);
 
 end

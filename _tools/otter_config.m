@@ -131,10 +131,21 @@ switch cfg.name
 
     case 'quad_tilt'
         % Week 12. Four thrusters, each on a servo limited to +-45 deg.
+        %
+        % 거치 방향 / the mounting sign
+        %   선수 둘은 **앞**을 보고, 선미 둘은 **뒤**를 보고 달려 있다. 그래서
+        %   서보 0 도의 뜻이 쌍마다 다르다 — 선수 쌍은 0 도가 +x_b, 선미 쌍은
+        %   0 도가 -x_b 다. 그 차이가 여기 cfg.mount 한 줄에만 있고,
+        %   otter_B 가 그것을 열에 실어 B 로 옮긴다. 다른 곳에 쓰지 않는다.
+        %   The bow pair faces forward and the stern pair faces aft, so servo
+        %   zero points along +x_b for units 1 and 2 and along -x_b for units
+        %   3 and 4. That difference lives in this one line; otter_B carries it
+        %   into the columns of B and nothing else repeats it.
         cfg.n_thr = 4;
         cfg.tilt  = [true true true true];
         cfg.pos   = [  l_f      l_f     -l_a     -l_a  ;
                      -y_pont   y_pont  -y_pont  y_pont ];
+        cfg.mount = [   1        1       -1       -1   ];
         cfg.dir   = NaN(2,4);
         cfg.alpha_max  = deg2rad([45 45 45 45]);
         cfg.alpha_rlim = deg2rad([90 90 90 90]);

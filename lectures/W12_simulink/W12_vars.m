@@ -24,7 +24,7 @@ V.V_c    = 0.0;
 V.beta_c = pi/2;
 
 % --- 추진기 배치와 한계 / stations and limits
-V.quad       = [cfg.pos ; cfg.alpha_max];
+V.quad       = [cfg.pos ; cfg.alpha_max ; cfg.mount];
 V.alpha_lim  = cfg.alpha_max(1);
 V.alpha_rate = cfg.alpha_rlim(1);
 V.n_max      = cfg.n_max;
@@ -32,7 +32,7 @@ V.n_min      = cfg.n_min;
 V.k_pos      = cfg.k_pos;
 V.k_neg      = cfg.k_neg;
 
-% --- 명령 / the command.  절 스크립트가 이 둘만 바꿔 여섯 경우를 만든다
+% --- 명령 / the command.  절 스크립트가 이 둘만 바꿔 여덟 경우를 만든다
 V.n_cmd     = [60 60 60 60]';
 V.d_cmd = deg2rad([45 45 45 45])';
 

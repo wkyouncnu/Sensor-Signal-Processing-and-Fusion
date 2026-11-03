@@ -435,10 +435,19 @@ check_legend() {
   # 교재에서 가져온 슬라이드를 실을 때 그 쪽이 옳은 제목이다
   # (2026-10-17, W05 §5-5 가 2025년 PPT 열한 장을 실으면서).
   #
+  # 2026-11-03 부터 길이 하나가 더 인정된다 — **설명 캡션**이다. 사용자가 W12 를
+  # 보고 "설명들이 다 너무 길어..그림 설명을 표로 한 것은 이번 week 에서 삭제해줘"
+  # 라고 했다. 그래서 개념도의 범례 표(`| In the figure |`)를 없애고, 그 그림이
+  # 무엇인지를 **캡션 자리**(`![...]`)로 옮겼다 → standing-orders.md §15-74.
+  # 검사기가 막아야 하는 것은 2026-09-08 의 그 사고 — **아무 설명도 없는 그림**
+  # 이므로, 캡션이 한 줄 설명이면 통과시킨다. 낱말 **여덟 개**를 선으로 둔다.
+  # W12 의 열넷을 재어 보니 가장 짧은 것이 열 낱말이고("All eight runs on one
+  # axes, with S8 dashed over S5"), "W05 result graph" 꼴의 맨 이름표는 서넛이다.
+  #
   # 파일을 한 번만 읽는다. 옛 코드는 그림마다 sed 와 grep 을 띄워서 250 장에
   # 500 번을 포크했다 (2026-10-27) → standing-orders.md §15-64
-  local miss=0 f n i j ok img
-  local -a L
+  local miss=0 cap=0 f n i j ok img alt
+  local -a L W
   local RE='^\*\*Reading the figure|^\| *In the (figure|diagram|live view) *\||^\| *On the slides? *\||^\*\*그림을 .*읽기|^\| *(실시간 )?(그림에서|다이어그램에서|화면에서|슬라이드에서) *\|'
   lists
   for f in "${LABDOCS[@]}"; do
@@ -450,13 +459,17 @@ check_legend() {
         if [[ ${L[j]} =~ $RE ]]; then ok=1; break; fi
       done
       if [ "$ok" -eq 0 ]; then
+        alt="${L[i]#!\[}"; alt="${alt%%](*}"
+        read -r -a W <<< "$alt"
+        if [ "${#W[@]}" -ge 8 ]; then cap=$((cap+1)); continue; fi
         img="${L[i]##*](}"; img="${img%%)*}"
-        printf '     [범례 표 없음] %s:%s  %s\n' "${f#./}" "$n" "$img"
+        printf '     [설명 없는 그림] %s:%s  %s\n' "${f#./}" "$n" "$img"
         miss=$((miss+1))
       fi
     done
   done
-  note "범례 표가 없는 그림" "$miss"
+  [ "$cap" -gt 0 ] && printf '     범례 표 대신 설명 캡션으로 통과한 그림 %d 장 (§15-74)\n' "$cap"
+  note "설명이 없는 그림" "$miss"
   FAIL=$((FAIL+miss))
   return 0
 }

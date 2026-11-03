@@ -135,89 +135,88 @@ Four lines of that block are the week in miniature. The shaft limits are not sym
 > [!warning] The shaft command is in rad/s, not rpm
 > `n_cmd = [60 60 60 60]` is 60 radians per second, about 573 rpm. `otter.m` has always used rad/s and `otter_tilt4.m` keeps that, because the thrust coefficients $k_{pos}$ and $k_{neg}$ are quoted against it. Entering 600 expecting rpm asks for 5730 rpm, and the model saturates it to 103.931 rad/s.
 
-## 12-1. Four thrusters, and a direction that is no longer given
+## 12-1. Four thrusters, two columns each, and two different zeros
 
 This section answers: what does a tilting thruster change about the allocation matrix, before any allocation is attempted?
 
-**What is observed.** Experiment 12-1 reports that `otter_tilt4` reduces to `otter` when every tilt angle is zero, that its own $\boldsymbol{\tau}$ agrees with $B\mathbf{f}$ to $1.06\times10^{-13}$ over 200 random states, and that $B$ is $3\times 8$ with rank 3.
+**What is observed.** Experiment 12-1 reports that the forward pair at $\delta = 0$ reproduces `otter.m` exactly, that the aft mounting sign flips $\boldsymbol{\tau}$ to $3.55\times10^{-15}$, that $\boldsymbol{\tau}$ agrees with $B\mathbf{f}$ to $7.19\times10^{-14}$ over 200 random states, and that $B$ is $3\times 8$ with rank 3.
 
-- the hull has four thrust stations, two at $x_b = +1.50$ m and two at $x_b = -1.00$ m, each $0.395$ m off centreline
+- four thrust stations: two at $x_b = +1.50$ m, two at $x_b = -1.00$ m, each $0.395$ m off centreline
 - each unit turns through $\pm 45^\circ$ at up to $90^\circ$/s
+- the two pairs are mounted facing **opposite** ways, so $\delta_i = 0$ drives the hull ahead at the bow and astern at the stern
 - eight numbers are commanded; three components of force result
 
-**The result.** A thrust of magnitude $T_i$ applied at $(x_i, y_i)$ along the unit vector $\mathbf{e}_i$ contributes the column
+The mounting comes first, because every column of $B$ carries it.
+
+![The servo zero of each pair, and the one sense both of them share](../figures/w12-servo-zero.svg)
+
+**The result.** Write $s_i = +1$ when unit $i$'s zero points ahead and $s_i = -1$ when it points astern. The thrust direction and the force of unit $i$ are then
 
 $$
-\mathbf{b}_i \;=\; \begin{bmatrix} e_{ix} \\[2pt] e_{iy} \\[2pt] x_i e_{iy} - y_i e_{ix}\end{bmatrix},
+\mathbf{e}_i \;=\; s_i\begin{bmatrix}\cos\delta_i \\[2pt] \sin\delta_i\end{bmatrix},
 \qquad
-\mathbf{e}_i \;=\; \begin{bmatrix}\cos\delta_i \\[2pt] \sin\delta_i\end{bmatrix}
+\mathbf{f}_i \;=\; T_i\begin{bmatrix}\cos\delta_i \\[2pt] \sin\delta_i\end{bmatrix},
+\qquad
+s = \begin{bmatrix}+1 & +1 & -1 & -1\end{bmatrix}
 $$
 
-and because $\delta_i$ is now commanded rather than fixed, the pair $(T_i, \delta_i)$ carries two independent numbers. Writing them in Cartesian form as $\mathbf{f}_i = T_i\mathbf{e}_i = [\,f_{ix}\;\;f_{iy}\,]^{\mathsf T}$ makes the force linear in the unknowns:
+The sign is deliberately kept out of $\mathbf{f}$ and placed in $B$, so that $\mathbf{f}$ holds only what the hardware reports. With the column rule applied to each component separately, the force on the hull is linear in those eight numbers:
 
 $$
 \boldsymbol{\tau} \;=\; \begin{bmatrix} X \\ Y \\ N \end{bmatrix} \;=\; B\,\mathbf{f},
 \qquad
-\mathbf{f} = \begin{bmatrix} f_{1x} & f_{1y} & \cdots & f_{4x} & f_{4y}\end{bmatrix}^{\mathsf T}
+\mathbf{f} = \begin{bmatrix} T_1\cos\delta_1 \\ T_1\sin\delta_1 \\ \vdots \\ T_4\cos\delta_4 \\ T_4\sin\delta_4\end{bmatrix},
+\qquad
+\mathbf{b}^{c}_i = s_i\!\begin{bmatrix} 1 \\ 0 \\ -y_i\end{bmatrix},
+\quad
+\mathbf{b}^{s}_i = s_i\!\begin{bmatrix} 0 \\ 1 \\ x_i\end{bmatrix}
 $$
 
 $$
 B \;=\;
 \begin{bmatrix}
-1 & 0 & 1 & 0 & 1 & 0 & 1 & 0 \\
-0 & 1 & 0 & 1 & 0 & 1 & 0 & 1 \\
-0.395 & 1.5 & -0.395 & 1.5 & 0.395 & -1.0 & -0.395 & -1.0
+1 & 0 & 1 & 0 & -1 & 0 & -1 & 0 \\
+0 & 1 & 0 & 1 & 0 & -1 & 0 & -1 \\
+0.395 & 1.500 & -0.395 & 1.500 & -0.395 & 1.000 & 0.395 & 1.000
 \end{bmatrix}
 $$
 
 | Symbol | Quantity | Value · source |
 |---|---|---|
-| $x_i$ | longitudinal station of unit $i$ | $+1.50, +1.50, -1.00, -1.00$ m — `otter_config.m:71-73` |
-| $y_i$ | transverse station of unit $i$ | $-0.395, +0.395, -0.395, +0.395$ m — same |
-| $\delta_i$ | tilt angle, from $x_b$ towards $y_b$ | commanded, clipped to $\pm 45^\circ$ |
-| $T_i$ | thrust magnitude of unit $i$ | $k_{pos}n_i\lvert n_i\rvert$ or $k_{neg}n_i\lvert n_i\rvert$ |
-| $f_{ix}, f_{iy}$ | body-frame components of that thrust | $T_i\cos\delta_i$, $T_i\sin\delta_i$ |
+| $x_i$ | longitudinal station of unit $i$ | $+1.50, +1.50, -1.00, -1.00$ m — `otter_config.m`, field `pos` |
+| $y_i = d_i$ | transverse station of unit $i$ | $-0.395, +0.395, -0.395, +0.395$ m — same |
+| $s_i$ | mounting sign: which way the zero points | $+1, +1, -1, -1$ — `otter_config.m`, field `mount` |
+| $\delta_i$ | tilt angle, from unit $i$'s own zero towards $y_b$ | commanded, clipped to $\pm 45^\circ$ |
+| $T_i$ | thrust magnitude of unit $i$ | $k_{pos}n_i\lvert n_i\rvert$ for $n_i \ge 0$, $k_{neg}n_i\lvert n_i\rvert$ otherwise |
+| $\mathbf{b}^{c}_i, \mathbf{b}^{s}_i$ | the two columns unit $i$ owns | the $\cos$ column and the $\sin$ column |
 | $B$ | allocation matrix | $3\times 8$, rank 3 — built by `_tools/otter_B.m` from the column rule |
-| $l_f, l_a$ | forward and aft moment arms | $1.50$ m, $1.00$ m — `otter_config.m:72-73` |
+| $l_f, l_a$ | forward and aft moment arms | $1.50$ m, $1.00$ m — `otter_config.m`, fields `l_f`, `l_a` |
+
+![The four stations, the two mounting signs, and the servo range each unit reaches](../figures/w12-tilt-geometry.svg)
 
 **Derivation, one line at a time.**
 
-1. The horizontal force–moment triple produced by a planar force $\mathbf{f} = [\,f_x\;\;f_y\,]^{\mathsf T}$ applied at $(x, y)$ in body axes is $[\,f_x,\;f_y,\;x f_y - y f_x\,]^{\mathsf T}$. This is Week 3's column rule, and it is the only definition of $B$ this course uses.
-2. For a **fixed** thruster, $\mathbf{e}_i$ is a constant of the hull. The single unknown is $T_i$, so the rule returns one column, and four fixed thrusters give $B \in \mathbb{R}^{3\times 4}$.
-3. For a **tilting** thruster, $\mathbf{e}_i = \mathbf{e}_i(\delta_i)$. The map $(T_i, \delta_i) \mapsto (f_{ix}, f_{iy})$ is the polar-to-Cartesian map, invertible wherever $T_i > 0$, so the unit has two independent degrees of freedom.
-4. Applying line 1 to each of $f_{ix}$ and $f_{iy}$ separately gives the two columns $[1, 0, -y_i]^{\mathsf T}$ and $[0, 1, x_i]^{\mathsf T}$. Four units therefore give $B \in \mathbb{R}^{3\times 8}$, as printed above.
-5. $B$ has rank 3: rows 1 and 2 are linearly independent by inspection, and row 3 is not a combination of them because $x_i$ and $y_i$ are not all zero. Its null space has dimension $8 - 3 = 5$.
-6. Five dimensions of null space mean five independent ways to change the eight numbers without changing the force on the hull. That freedom is what an allocator would spend, and spending it is not this week's subject.
-7. Substituting $f_{ix} = T_i\cos\delta_i$ and $f_{iy} = T_i\sin\delta_i$ back into $B\mathbf{f}$ gives the form the motion model actually evaluates:
+1. The force–moment triple produced by a planar force $\mathbf{g} = [\,g_x\;\;g_y\,]^{\mathsf T}$ applied at $(x, y)$ in body axes is $[\,g_x,\;g_y,\;x g_y - y g_x\,]^{\mathsf T}$. This is Week 3's column rule, and it is the only definition of $B$ this course uses.
+2. For a **fixed** thruster, $\mathbf{e}_i$ is a constant of the hull. The single unknown is $T_i$, the rule returns one column, and four fixed thrusters give $B \in \mathbb{R}^{3\times 4}$.
+3. For a **tilting** thruster, $\mathbf{e}_i = \mathbf{e}_i(\delta_i)$. The map $(T_i, \delta_i) \mapsto T_i\mathbf{e}_i$ is polar-to-Cartesian, invertible wherever $T_i > 0$, so the unit carries two independent numbers rather than one.
+4. Applying line 1 to the two components of $s_i T_i [\cos\delta_i\;\;\sin\delta_i]^{\mathsf T}$ separately gives the columns $s_i[1, 0, -y_i]^{\mathsf T}$ and $s_i[0, 1, x_i]^{\mathsf T}$. Four units give $B \in \mathbb{R}^{3\times 8}$, printed numerically above.
+5. $B$ has rank 3: rows 1 and 2 are independent by inspection, and row 3 is not a combination of them because the $x_i$ and $y_i$ are not all zero. Its null space has dimension $8 - 3 = 5$.
+6. Five null-space dimensions are five independent ways to change the eight numbers without changing the force. Choosing among them is allocation — the minimum-norm choice is $\mathbf{f} = B^{\dagger}\boldsymbol{\tau}$ with $B^{\dagger} = B^{\mathsf T}(BB^{\mathsf T})^{-1}$ — and it is next stage's subject, not this one's.
+7. Multiplying out $B\mathbf{f}$ gives the scalar form the motion model evaluates:
 
 $$
-X = \sum_{i=1}^{4} T_i\cos\delta_i,
+X = \sum_{i=1}^{4} s_i T_i\cos\delta_i,
 \qquad
-Y = \sum_{i=1}^{4} T_i\sin\delta_i,
+Y = \sum_{i=1}^{4} s_i T_i\sin\delta_i,
 \qquad
-N = \sum_{i=1}^{4}\bigl(x_i T_i\sin\delta_i - y_i T_i\cos\delta_i\bigr)
+N = \sum_{i=1}^{4} s_i\bigl(x_i T_i\sin\delta_i - y_i T_i\cos\delta_i\bigr)
 $$
 
-8. Setting every $\delta_i = 0$ kills every sine. $Y$ vanishes, and $N$ reduces to $-\sum y_i T_i$ — the differential-thrust yaw of `otter.m`, with the four stations in place of two. The new model must therefore contain the old one as a special case, and Experiment 12-1 checks exactly that.
-
-![The four stations, the tilt angle, and why one tilting unit owns two columns of B](../figures/w12-tilt-geometry.svg)
-
-| In the figure | Meaning |
-|---|---|
-| two shaded rectangles | the two pontoons of the $L = 2.0$ m hull, $y_{pont} = 0.395$ m off centreline |
-| four numbered circles | the four thrust stations, drawn where they sit on the pontoons |
-| four identical arrows | $T_i\mathbf{e}_i$ with all four $\delta_i$ equal; only unit 1 carries the angle annotation |
-| $\delta_1$ arc, clockwise from the dashed $\parallel x_b$ line | the sense of a positive tilt: from $x_b$ towards $y_b$ |
-| $\tau_N > 0$ arc at the origin, clockwise | a positive yaw moment turns the bow to starboard, because $z_b$ points down |
-| $l_f = 1.50$ m dimension reaching past the bow | the **moment arm** of the forward pair, not a place on the hull |
-| $l_a = 1.00$ m dimension | the aft arm, which coincides with the transom |
-
-> [!note] Read the arms, not the hull stations
-> `otter_config.m` carries $l_f = 1.50$ m on a hull $2.0$ m long, so the forward arm reaches $0.5$ m beyond the bow. It is an arm in the moment balance, and the same constant is shared with Week 6's bow thruster, so it cannot be changed on one side alone. The figure therefore draws the units on the pontoons and shows $l_f$ as a dimension line only.
+8. Two consequences follow at $\delta = 0$, and Experiment 12-1 measures both. Every sine dies, so $Y = 0$ and $N = -\sum s_i y_i T_i$: the differential-thrust yaw of `otter.m`, with four stations in place of two. And because $s_3 = s_4 = -1$, the aft pair alone reproduces `otter.m` with $\boldsymbol{\tau}$ reversed.
 
 ### Experiment 12-1 · The new model contains the old one (15 min)
 
-**What it measures.** Lines 1, 7 and 8 of the derivation: that the column rule and the trigonometric form agree, and that $\delta = 0$ returns `otter.m`.
+**What it measures.** Lines 1, 7 and 8 of the derivation: that the column rule and the scalar form agree, and that $\delta = 0$ returns `otter.m` — forward with $\boldsymbol{\tau}$ as it stands, aft with $\boldsymbol{\tau}$ reversed.
 
 **The model.** None. `verify_otter_tilt4` calls `otter_tilt4` and `otter` directly, over 200 random states, so the check is on the equations and not on any wiring.
 
@@ -236,9 +235,9 @@ Expected output:
     tilt limit +-45 deg each
     B          3 x 8, rank 3, null space 5
 
-  (a) aft pair, delta 0  == otter.m       :  0.00e+00
+  (a) aft mounting sign flips tau exactly :  3.55e-15
   (b) fore pair, delta 0 == otter.m       :  0.00e+00
-  (c) tau                == otter_B * f   :  1.06e-13
+  (c) tau                == otter_B * f   :  7.19e-14
   (d) saturation clamps n AND delta       :  0.00e+00
 
   thrust at +-60 rad/s   +39.888 N ahead, -23.202 N astern  (k_neg/k_pos = 0.5817)
@@ -252,24 +251,25 @@ Expected output:
 
 | Where to look | What is there | Which line predicts it |
 |---|---|---|
-| `(a)` and `(b)` | exactly zero, not merely small | line 8 — with $\delta = 0$ the new code evaluates the same arithmetic as `otter.m`, in the same order |
-| `(c)` | $1.06\times10^{-13}$ over 200 random states | line 7 — the trigonometric form and $B\mathbf{f}$ are the same expression, differing only in floating-point order |
+| `(b)` | exactly zero, not merely small | line 8 — at $\delta = 0$ the forward pair evaluates the arithmetic of `otter.m`, in the same order |
+| `(a)` | $3.55\times10^{-15}$, one rounding step | line 8 — $s_3 = s_4 = -1$, so the aft pair gives `otter.m` with every component of $\boldsymbol{\tau}$ reversed |
+| `(c)` | $7.19\times10^{-14}$ over 200 random states | line 7 — the scalar form and $B\mathbf{f}$ are one expression in two floating-point orders |
 | `(d)` | zero | the model clips **both** $n$ and $\delta$, so a command outside the envelope is received at the envelope |
 | `rank 3, null space 5` | printed, not asserted | lines 5 and 6 |
 
 **What the output says**
 
-- The four-unit model is a strict extension: nothing in it can change the behaviour the first eleven weeks measured.
+- The four-unit model is a strict extension: nothing in it changes what the first eleven weeks measured.
 
 | What to try | What to watch |
 |---|---|
-| `verify_otter_tilt4` twice in a row | `(c)` changes in the last digits and `(a)`, `(b)`, `(d)` do not — the random states feed only the $B\mathbf{f}$ comparison |
+| `verify_otter_tilt4` twice in a row | only `(c)` changes, in its last digits — the random states feed the $B\mathbf{f}$ comparison alone |
 
 > [!tip] In class
-> - **Purpose** — fix the idea that a tilting unit is two unknowns, not one with a twist.
-> - **Point to** — the third row of $B$: the first entry of each pair is $-y_i$, the second is $+x_i$, and the sign difference is the whole of the column rule.
+> - **Purpose** — fix two ideas: a tilting unit is two unknowns, and the mounting sign lives in $B$.
+> - **Point to** — the third row of $B$: each pair contributes $s_i(-y_i)$ then $s_i(+x_i)$, and that is the whole of the column rule.
 > - **Ask** — "Eight unknowns and three equations. How many solutions?" Five dimensions of them, which is why an allocator is a choice and not a calculation.
-> - **Take away** — `otter_tilt4` with $\delta = 0$ **is** `otter`, to the last bit.
+> - **Take away** — the forward pair at $\delta = 0$ **is** `otter`, to the last bit; the aft pair is `otter` running backwards.
 
 ## 12-2. What had to change inside the motion model
 
@@ -285,90 +285,85 @@ This section answers: which lines of `otter.m` carry the thruster configuration,
 | | `otter.m` | `otter_tilt4.m` | Why |
 |---|---|---|---|
 | 1 · input check | `length(n) ~= 2` | `length(n) ~= 4` and `length(delta) ~= 4`, plus an eighth argument `quad` | the configuration arrives as data, so the stations and tilt limits are not hard-coded in the plant |
-| 2 · thruster data | $l_1$, $l_2$ | `px`, `py`, `d_max` read out of `quad`; $l_1$ and $l_2$ no longer used | with four stations a pair of signed arms is not enough; the $(x_i, y_i)$ pairs are written out |
+| 2 · thruster data | $l_1$, $l_2$ | `px`, `py`, `d_max`, `smount` read out of `quad`, and $B$ built from them | with four stations a pair of signed arms is not enough, and the mounting sign has to reach the columns |
 | 3 · thrust loop | `for i = 1:1:2`, $n$ saturated | `for i = 1:1:4`, $n$ **and** $\delta$ saturated | derivation line 3 below — the servo is part of the vessel, not of the controller |
-| 4 · the force vector | `tau = [T1+T2  0  0 0 0  -l1*T1-l2*T2]'` | three accumulators filled by the column rule | derivation lines 4 to 6 — rows 1, 2 and 6 all carry every unit |
+| 4 · the force vector | `tau = [T1+T2  0  0 0 0  -l1*T1-l2*T2]'` | `tau3 = B_thr * f` | derivation lines 4 to 6 — one matrix product in place of a literal |
 
 **Derivation, one line at a time.**
 
 1. The propellers are unchanged. $k_{pos} = 0.02216/2$ and $k_{neg} = 0.01289/2$ stay at the values `otter.m` sets, because the same propeller is fitted four times rather than twice.
 2. The shaft limits are therefore also unchanged: $n_{max} = +103.931$ rad/s and $n_{min} = -101.737$ rad/s, derived in `otter.m` from the maximum thrust each way.
 3. The tilt servo belongs inside the plant. A servo that refuses $70^\circ$ refuses it whatever asked, so the clip must be in the motion model; a clip placed only in the controller would let a mis-wired command produce a force the vessel cannot make.
-4. `otter.m` writes its $\boldsymbol{\tau}$ as a literal six-row vector because two fixed thrusters produce only two of the six rows. With four tilting units every unit contributes to rows 1, 2 and 6 at once, so the literal is replaced by three accumulators.
-5. Each pass of the loop evaluates one column of the pair derived in §12-1 line 4, then adds its contribution: $f_x$ into row 1, $f_y$ into row 2, and $x_i f_y - y_i f_x$ into row 6.
+4. `otter.m` writes its $\boldsymbol{\tau}$ as a literal six-row vector because two fixed thrusters reach only two of the six rows. Here every unit reaches rows 1, 2 and 6 at once, so the literal is replaced by the product $\boldsymbol{\tau}_3 = B\mathbf{f}$ of §12-1.
+5. The split is deliberate. $B$ is built once, from geometry and mounting alone, and holds every sign; $\mathbf{f}$ is rebuilt each step and holds only $T_i$ and $\delta_i$. Nothing in the force code can disagree with the figure, because the figure is $B$.
 6. Rows 3, 4 and 5 stay zero. No thruster on this vessel acts in heave, roll or pitch, and the trim moment that does act in pitch is applied elsewhere in the file, exactly as in `otter.m`.
 
-The third change, with the servo clip in it:
+The second change, which is the column rule and the mounting sign written as code:
 
 ```matlab
-% ---- CHANGED (3 of 4) ---------------------------------------------------
-% Control forces and moments - with propeller revolution saturation
-% 루프가 2 회에서 4 회로 늘고, **각도도 함께 포화된다.** 서보가 ±45 도까지만
-% 돌아가므로 그보다 큰 각을 지시해도 모델은 ±45 도로 받는다. 회전수의 포화는
-% otter.m 과 같은 줄이다 — 같은 프로펠러이기 때문이다.
-% The loop runs four times, and the ANGLE saturates too: the servo turns only to
-% +-45 deg, so a larger command is received as +-45 deg. The shaft-speed
-% saturation is the same code as otter.m, because they are the same propellers.
-Thrust = zeros(4,1);
+% ---- CHANGED (2 of 4) ---------------------------------------------------
+px     = quad(1,:);                     % x stations (m)
+py     = quad(2,:);                     % y stations (m)
+d_max  = quad(3,:);                     % tilt limits, both ways (rad)
+smount = quad(4,:);                     % mounting signs, +1 forward, -1 aft
+
+% 유효행렬을 열 규칙(3주차)으로 **여기서** 만든다. 이름이 B_thr 인 것은
+% otter.m 의 B 가 이미 **선폭**이라서다 — 그 줄은 고치지 않는다.
+% The effectiveness matrix, built here from the Week 3 column rule. It is named
+% B_thr because B is already the beam in otter.m, and that line is not touched.
+B_thr = zeros(3,8);
 for i = 1:1:4
-    if n(i) > n_max                     % saturation, physical limits
-        n(i) = n_max;
-    elseif n(i) < n_min
-        n(i) = n_min;
-    end
-
-    if n(i) > 0
-        Thrust(i) = k_pos * n(i)*abs(n(i));   % positive thrust (N)
-    else
-        Thrust(i) = k_neg * n(i)*abs(n(i));   % negative thrust (N)
-    end
-
-    if delta(i) > d_max(i)              % saturation, the tilt servo
-        delta(i) = d_max(i);
-    elseif delta(i) < -d_max(i)
-        delta(i) = -d_max(i);
+    for k = 1:1:2                       % k = 1 gives e = s(1,0), k = 2 e = s(0,1)
+        e    = zeros(2,1);
+        e(k) = smount(i);
+        B_thr(:, 2*i-2+k) = [ e(1)
+                              e(2)
+                              px(i)*e(2) - py(i)*e(1) ];
     end
 end
 % -------------------------------------------------------------------------
 ```
 
-The fourth change, which is the column rule written as code:
+The fourth change, which is the matrix product itself:
 
 ```matlab
 % ---- CHANGED (4 of 4) ---------------------------------------------------
-% Control forces and moments
+% Control forces and moments — written as a matrix product
 % otter.m:  tau = [T1+T2  0  0 0 0  -l1*T1 - l2*T2]'      <- sway is zero
-% here:     every tilting thruster contributes to rows 1, 2 and 6 at once,
-%           by the column rule  [e_x ; e_y ; x e_y - y e_x]  with
-%           e_i = [cos delta_i ; sin delta_i].
-tau_X = 0;
-tau_Y = 0;
-tau_N = 0;
-for i = 1:1:4
-    fx = Thrust(i) * cos(delta(i));     % 선체 x 방향 성분 / along body x
-    fy = Thrust(i) * sin(delta(i));     % 선체 y 방향 성분 / along body y
-    tau_X = tau_X + fx;
-    tau_Y = tau_Y + fy;
-    tau_N = tau_N + px(i)*fy - py(i)*fx;
-end
+% here:     tau_3 = B f.  Each tilting thruster contributes TWO columns of B
+%           and two entries of f, so the 3-by-8 B is constant and the whole
+%           dependence on the commands sits in f.
+%
+%     f = [ T_1 cos d_1 ; T_1 sin d_1 ; ... ; T_4 cos d_4 ; T_4 sin d_4 ]
+%
+% 쌍마다 0 도가 다른 것은 B 안에 있다 — otter_B 가 거치 부호 s = [1 1 -1 -1]
+% 을 열에 실어 두었다. 그래서 여기에는 부호가 하나도 없다.
+% The per-pair zero lives inside B: otter_B has already carried the mounting
+% sign s = [1 1 -1 -1] into the columns, so no sign appears here.
+f = reshape([Thrust(:) .* cos(delta(:)), ...
+             Thrust(:) .* sin(delta(:))].', 8, 1);
 
-tau = [tau_X
-       tau_Y
+tau3 = B_thr * f;                       % [X ; Y ; N]
+
+tau = [tau3(1)
+       tau3(2)
        0
        0
        0
-       tau_N];
+       tau3(3)];
 % -------------------------------------------------------------------------
 ```
 
 | In the code | In the derivation | Note |
 |---|---|---|
-| `Thrust(i) = k_pos * n(i)*abs(n(i))` | $T_i = k_{pos} n_i \lvert n_i \rvert$ | the signed square; line 1, and the same line `otter.m` has |
-| the `if n(i) > 0 … else` branch | $k_{pos}$ ahead, $k_{neg}$ astern | the first of this week's three asymmetries, measured in §12-4 |
-| `delta(i) > d_max(i)` | line 3 | clipped inside the plant, so the model can refuse |
-| `fx`, `fy` | $T_i\cos\delta_i$, $T_i\sin\delta_i$ | §12-1 line 7 |
-| `px(i)*fy - py(i)*fx` | $x_i f_{iy} - y_i f_{ix}$ | §12-1 line 1 — the column rule, third entry |
+| `e(k) = smount(i)` | $\mathbf{e}_i = s_i[\cos\delta_i\;\;\sin\delta_i]^{\mathsf T}$ | the only place the mounting sign is applied |
+| `px(i)*e(2) - py(i)*e(1)` | $x_i e_{iy} - y_i e_{ix}$ | §12-1 line 1 — the column rule, third entry |
+| `B_thr(:, 2*i-2+k)` | the two columns unit $i$ owns | $k = 1$ is $\mathbf{b}^{c}_i$, $k = 2$ is $\mathbf{b}^{s}_i$ |
+| the `reshape(...,8,1)` | $\mathbf{f}$ of §12-1 | the cosine and the sine of each unit, interleaved in that order |
+| `tau3 = B_thr * f` | $\boldsymbol{\tau} = B\mathbf{f}$ | no sign and no station appears here: both are already in $B$ |
 | rows 3, 4, 5 left at zero | line 6 | heave, roll and pitch carry no thruster |
+
+Change 3 is the loop that fills `Thrust` and clips both commands. It keeps `otter.m`'s shaft-speed clip and its $k_{pos}$ / $k_{neg}$ branch unaltered, and adds the servo clip `delta(i) > d_max(i)` — which §12-4 measures as the third asymmetry.
 
 > [!note] The sway row is no longer structurally zero
 > Week 6 made the same point about `otter_bow.m`. A motion model whose $\tau_y$ is identically zero describes an under-actuated vessel, however a sway force is added to it afterwards. The four-unit model earns a non-zero second row from the geometry itself, which is why the eight numbers of §12-3 can be given directly to the plant with no allocator between.
@@ -377,10 +372,10 @@ tau = [tau_X
 
 This section answers: given eight numbers by hand, is the resulting force the one the column rule predicts?
 
-**What is observed.** Experiment 12-3 commands six sets of eight numbers and compares two independent computations of $\boldsymbol{\tau}$: the hand formula of §12-1 line 7, and the force measured back out of `otter_tilt4` from the acceleration it produces. The worst disagreement over the six cases is $2.8\times10^{-14}$ N or N·m.
+**What is observed.** Experiment 12-3 commands eight sets of eight numbers and compares two independent computations of $\boldsymbol{\tau}$: the product $B\mathbf{f}$ of §12-1, and the force measured back out of `otter_tilt4` from the acceleration it produces. The worst disagreement over the eight scenarios is $2.8\times10^{-14}$ N or N·m.
 
-- the six cases are chosen to isolate one effect each, and are reused by §12-4, §12-5 and §12-6
-- V6 asks for $70^\circ$, and the table records what the model received
+- the eight scenarios isolate one effect each, and are reused by §12-4, §12-5 and §12-6
+- S8 asks for $70^\circ$, and the table records what the model received
 
 **The result.** The model is driven open loop: eight constants on the canvas, a saturation stage, the plant, and the log.
 
@@ -405,42 +400,29 @@ $$
 
 ![The open-loop model: eight constants, the saturation stage, the plant, and the log](W12_simulink/img/W12_openloop.png)
 
-| In the figure | Meaning |
-|---|---|
-| eight Constant blocks, `n1`–`n4` and `delta1`–`delta4` | the eight numbers, given by hand; a student edits only `W12_0_setup` |
-| two Mux bars | the four shaft speeds and the four tilt angles gathered into vectors |
-| the tan `servo limits` subsystem | the physical envelope, applied before the plant sees anything |
-| the green `Otter USV` block | `otter_tilt4`, the same hull as Weeks 1 to 11 |
-| the grey `Measurements` block | the log; its first six columns are `[u v r N E psi]`, as in every week |
-| the two branches routed below the blocks | the **post-servo** $(n, \delta)$, tapped for the log |
-
-The saturation stage, opened:
+Eight Constant blocks carry the eight numbers, two Mux bars gather them into vectors, the tan subsystem applies the physical envelope, the green block is `otter_tilt4`, and the grey block logs `[u v r N E psi]` followed by the post-servo $(n, \delta)$ tapped from the branches below.
 
 ![The servo stage: the shaft clip, and the angle clipped before it is rate-limited](W12_simulink/img/W12_openloop_servo.png)
 
-| In the figure | Meaning |
-|---|---|
-| upper lane, `shaft limit` | the asymmetric clip to $[-101.737, +103.931]$ rad/s |
-| lower lane, `servo limit` then `servo rate` | the angle is clipped to $\pm 45^\circ$ **first**, then rate-limited to $90^\circ$/s |
-| the two lanes never meet | shaft speed and tilt angle are independent commands |
+The upper lane clips the shaft speed to $[-101.737, +103.931]$ rad/s. The lower lane clips the angle to $\pm 45^\circ$ and only then rate-limits it to $90^\circ$/s. The two lanes never meet, because shaft speed and tilt angle are independent commands.
 
 > [!important] The angle is clipped before it is rate-limited, not after
 > Rate-limiting first would let the limiter chase a $70^\circ$ target through the legal range and sit at $45^\circ$ only on arrival, so the recorded angle would depend on how long the run lasted. Clipping first makes the target legal, and the rate limiter then describes only how fast the servo gets there.
 
-### Experiment 12-3 · Six commands, and the force each one makes (20 min)
+### Experiment 12-3 · Eight commands, and the force each one makes (20 min)
 
 **What it measures.** Lines 3 and 5: that the force measured out of the plant is the force the column rule predicts, and that the servo clip is visible in the table.
 
 **The model.** `W12_openloop.slx`. Between runs only the eight constants change; the wiring does not.
 
-**Opening and running.**
+**Opening and running.** The runner takes a selection, so one scenario can be re-examined without redrawing the other seven.
 
 ```matlab
 W12_0_setup
 open_system('W12_openloop')    % Run — 궤적과 상태량이 뜬다 / the track appears
-d_deg = [0 0 0 0]';            % Run — 틸팅 없는 오터 / the Otter of Weeks 1 to 5
-d_cmd = deg2rad(d_deg);
-W12_V_openloop                 % 여섯 경우 전부 / all six cases, and the tables
+W12_V_openloop                 % 여덟 전부 / all eight, and the three tables
+W12_V_openloop('S5')           % 하나만 / one of them, its own sheet redrawn
+W12_V_openloop({'S5','S6'})    % 둘을 견준다 / two, to be compared
 ```
 
 Expected output, the first of three tables printed by that script:
@@ -448,21 +430,24 @@ Expected output, the first of three tables printed by that script:
 ```
   (1) hand formula against the motion model, at rest
 
-      tau from the hand formula    X = sum Ti cos di
-                                   Y = sum Ti sin di
-                                   N = sum (xi sin di - yi cos di) Ti
+      tau from the hand formula    X = sum si Ti cos di
+                                   Y = sum si Ti sin di
+                                   N = sum si (xi sin di - yi cos di) Ti
+                                   s = [+1 +1 -1 -1], the mounting signs
       tau measured out of otter_tilt4's acceleration, same state
 
     case  n [rad/s] after clip       delta [deg] clipped       X [N]    Y [N]  N [N m]    resid
     -------------------------------------------------------------------------------------------
-    V1    [ 60.0  60.0  60.0  60.0]  [   0    0    0    0]   159.552    0.000    0.000  0.0e+00
-    V2    [ 60.0 -60.0  60.0 -60.0]  [   0    0    0    0]    33.372    0.000   49.841  7.1e-15
-    V3    [ 60.0  60.0  60.0  60.0]  [  45   45   45   45]   112.820  112.820   28.205  2.8e-14
-    V4    [ 60.0  60.0 -60.0 -60.0]  [  45   45  -45  -45]    23.598   89.223   51.803  7.1e-15
-    V5    [ 60.0  60.0 -78.7 -78.7]  [  45   45  -45  -45]    -0.000  112.820   28.205  1.4e-14
-    V6    [ 60.0  60.0  60.0  60.0]  [  45   45   45   45]   112.820  112.820   28.205  2.8e-14
+    S1    [ 60.0  60.0 -60.0 -60.0]  [   0    0    0    0]   126.180    0.000    0.000  0.0e+00
+    S2    [-60.0 -60.0  60.0  60.0]  [   0    0    0    0]  -126.180   -0.000    0.000  1.4e-14
+    S3    [ 60.0  60.0  60.0  60.0]  [  45   45   45   45]     0.000    0.000  141.025  2.8e-14
+    S4    [ 60.0  60.0  60.0  60.0]  [ -45  -45  -45  -45]     0.000    0.000 -141.025  2.8e-14
+    S5    [ 60.0  60.0  60.0  60.0]  [  45   45  -45  -45]     0.000  112.820   28.205  1.4e-14
+    S6    [ 60.0  60.0  73.5  73.5]  [  45   45  -45  -45]   -28.205  141.025    0.000  2.2e-14
+    S7    [ 60.0  60.0 -60.0 -60.0]  [  45   45    0    0]   102.814   56.410   84.615  2.8e-14
+    S8    [ 60.0  60.0  60.0  60.0]  [  45   45  -45  -45]     0.000  112.820   28.205  1.4e-14
     -------------------------------------------------------------------------------------------
-    worst residual 2.8e-14 N or N m over the six cases
+    worst residual 2.8e-14 N or N m over the 8 scenarios
 ```
 
 **Reading the table against the derivation.**
@@ -470,11 +455,12 @@ Expected output, the first of three tables printed by that script:
 | Where to look | What is there | Which line predicts it |
 |---|---|---|
 | the `resid` column | at most $2.8\times10^{-14}$ | line 3 — the two computations are the same expression, so only rounding separates them |
-| V1, $X = 159.552$ N | $4 \times 39.888$ | §12-1 line 8 with all $\delta_i = 0$: four propellers ahead and nothing else |
-| V1, $N = 0.000$ exactly | $\sum y_i T_i = 0$ when all four thrusts are equal | §12-1 line 8 — the $y$ stations cancel in pairs |
-| V2, $X = 33.372$ N although $+60$ is opposed by $-60$ | $2(39.888 - 23.202)$ | §12-2 line 1 — $k_{pos} \neq k_{neg}$; §12-4 takes it up |
-| V5, the commanded $-78.7$ rad/s | not $-60$ | §12-4 line 4 — the astern speed that actually cancels $+60$ |
-| V6 identical to V3 | the `delta` column reads 45, although 70 was asked | line 5, and §12-2 line 3 |
+| S1, $X = 126.180$ N | $2(39.888 + 23.202)$ | §12-1 line 8 at $\delta = 0$: the bow pair ahead, and the stern pair ahead too, because $s_i = -1$ reverses a negative shaft speed |
+| S2, $X = -126.180$ N | the same magnitude, mirrored | the mounting sign swaps which pair runs astern, so the asymmetric thrust curve cancels out of the total |
+| S3, $X = Y = 0$ with $N = 141.025$ N·m | $2(l_f + l_a)T\sin 45^\circ$ | §12-1 line 7 — the four force vectors sum to zero and only their moments survive |
+| S5, $N = 28.205$ N·m although a pure sway was asked | $2(l_f - l_a)T\sin 45^\circ$ | §12-4 — the stations are not symmetric about CO |
+| S6, the commanded $73.5$ rad/s | $60\sqrt{1.5}$ | §12-4 — the stern speed that cancels that moment, at the price of $-28.205$ N of surge |
+| S8 identical to S5 | the `delta` column reads 45, although 70 was asked | line 5, and §12-2 |
 
 **What the table says**
 
@@ -482,20 +468,20 @@ Expected output, the first of three tables printed by that script:
 
 | What to try | What to watch |
 |---|---|
-| `d_deg = [0 0 0 0]'; d_cmd = deg2rad(d_deg);` then Run | the V1 row: surge only, and the vessel of Weeks 1 to 5 is back |
-| `n_cmd = [60 60 73.48 73.48]';` with `d_deg = [45 45 45 45]'` | $X = Y = 141.015$ N and $N = 0.011$ N·m — the yaw-free crab §12-4 line 8 predicts |
+| `W12_V_openloop('S1')` | the S1 sheet alone: surge only, and the vessel of Weeks 1 to 11 is back |
+| `W12_V_openloop({'S5','S6'})` | two sheets and a two-curve overlay: the leftover moment, and the same crab with that moment cancelled |
 
 > [!tip] In class
 > - **Purpose** — separate "the equations are right" from "the vessel does what was wanted".
-> - **Point to** — the V2 row. Equal and opposite shaft speeds, and $33.372$ N of surge nobody asked for.
-> - **Ask** — "V6 asked for $70^\circ$. Which column shows that it did not get it?" The `delta` column, which prints what the plant received.
+> - **Point to** — the S1 and S2 rows. Both reach $126.180$ N although the thrust curve is far from symmetric, because the mounting sign decides which pair runs astern.
+> - **Ask** — "S8 asked for $70^\circ$. Which column shows that it did not get it?" The `delta` column, which prints what the plant received.
 > - **Take away** — a residual of $10^{-14}$ says the arithmetic is right; it says nothing about whether the force was the right force.
 
 ## 12-4. Three asymmetries that break the symmetric guess
 
 This section answers: why does a command that looks symmetric produce a motion that is not?
 
-**What is observed.** Three separate asymmetries appear in the six rows of table (1), and each one is a property of the vessel rather than of the command.
+**What is observed.** Three asymmetries run through the eight rows of table (1), and each one is a property of the vessel rather than of the command.
 
 - the thrust curve: $+60$ rad/s gives $+39.888$ N, $-60$ rad/s gives only $-23.202$ N
 - the stations: $l_f = 1.50$ m forward against $l_a = 1.00$ m aft
@@ -514,99 +500,92 @@ $$
 | $k_{pos}$ | thrust coefficient, ahead | $0.02216/2 = 0.011080$ — `otter.m`, unchanged |
 | $k_{neg}$ | thrust coefficient, astern | $0.01289/2 = 0.006445$ — same |
 | $k_{neg}/k_{pos}$ | the asymmetry ratio | $0.5817$ — printed by `W12_0_setup` |
-| $n_{rev}$ | astern speed cancelling $+60$ rad/s | $-78.670$ rad/s — measured in table (1), row V5 |
+| $n_{rev}$ | astern speed matching $+60$ rad/s | $-78.670$ rad/s — printed by `verify_otter_tilt4` |
 | $\bar{x}$ | longitudinal centroid of the four stations | $0.25$ m |
-| $N$ | residual yaw of a four-unit symmetric tilt | $+28.205$ N·m — table (1), row V3 |
+| $N$ | residual yaw of a four-unit symmetric crab | $+28.205$ N·m — table (1), row S5 |
 
 **Derivation, one line at a time.**
 
 1. The thrust of one propeller is the signed square $T = k n\lvert n\rvert$, with $k = k_{pos}$ for $n \geq 0$ and $k = k_{neg}$ for $n < 0$. Both coefficients are positive, and $k_{neg} < k_{pos}$ because a propeller designed to push ahead is less efficient in reverse.
-2. Running one unit at $+n$ and another at $-n$ therefore leaves a surge force rather than cancelling: $T(+n) + T(-n) = (k_{pos} - k_{neg})n^2$.
-3. For V2, two units ahead and two astern at $n = 60$ rad/s, this gives $2(k_{pos} - k_{neg})(60)^2 = 2 \times 0.004635 \times 3600 = 33.372$ N, the measured V2 surge. The vessel asked for a pure yaw and got a yaw with a push.
-4. Setting $k_{pos}n^2 + k_{neg}n_{rev}\lvert n_{rev}\rvert = 0$ with $n_{rev} < 0$ gives $n_{rev} = -n\sqrt{k_{pos}/k_{neg}} = -60 \times 1.3112 = -78.670$ rad/s. That is the number V5 commands, and its $X$ column reads $-0.000$.
-5. The second asymmetry needs no thrust curve at all. Give all four units the same thrust $T$ at the same angle $\delta$, so that $f_{ix} = f_x$ and $f_{iy} = f_y$ for every $i$. Then
+2. Running one unit at $+n$ and another at $-n$ therefore does not cancel: $T(+n) + T(-n) = (k_{pos} - k_{neg})n^2$.
+3. Row S1 runs the bow pair at $+60$ rad/s and the stern pair at $-60$. Each stern unit returns $-23.202$ N, which its mounting sign $s_i = -1$ turns into $+23.202$ N of ahead force, so the four push ahead in unequal shares — $39.888$ N forward against $23.202$ N aft, a ratio of $1.72$. Row S2 swaps which pair runs astern, so $\lvert X\rvert$ is the same $126.180$ N in both. The thrust curve does not break the fore–aft symmetry of the total; it breaks **the split between the pairs**, and that split decides each pair's moment as soon as the units tilt.
+4. Setting $k_{pos}n^2 + k_{neg}n_{rev}\lvert n_{rev}\rvert = 0$ with $n_{rev} < 0$ gives the astern speed at which a unit matches a forward one: $n_{rev} = -n\sqrt{k_{pos}/k_{neg}} = -60 \times 1.3112 = -78.670$ rad/s. `verify_otter_tilt4` prints it as `cancelling astern speed`.
+5. The second asymmetry needs no thrust curve at all. Take row S5 — the bow pair at $\delta = +45^\circ$, the stern pair at $-45^\circ$, all four at the same thrust $T$. With the mounting signs every unit makes the **same** sway force $f_y = T\sin 45^\circ = 28.205$ N, while the surge forces alternate: $+f_x$ forward, $-f_x$ aft. Then
 
 $$
-N \;=\; \sum_i \bigl(x_i f_y - y_i f_x\bigr) \;=\; f_y\sum_i x_i \;-\; f_x\sum_i y_i
+N \;=\; \sum_i \bigl(x_i f_y - y_i f_{ix}\bigr) \;=\; f_y\sum_i x_i \;-\; \sum_i y_i f_{ix}
 $$
 
-6. The second sum is zero: the stations are in port–starboard pairs, so $\sum y_i = 0$ and the $f_x$ contributions cancel. The first sum is not zero: $\sum x_i = 2l_f - 2l_a = 1.0$ m, so $N = 2(l_f - l_a)f_y$.
-7. Dividing by $Y = 4f_y$ puts it in the form that explains itself: $N = \bar{x}Y$ with $\bar{x} = \tfrac14\sum x_i = (l_f - l_a)/2 = 0.25$ m. Four equal forces are one force acting at the centroid of the four stations, and that centroid is $0.25$ m ahead of $o_b$. With $Y = 112.820$ N this is $N = 112.820 \times 0.25 = 28.205$ N·m, the V3 and V5 reading.
-8. The condition that removes it follows from the same sum with the bow pair at $T_f$ and the stern pair at $T_a$, all at $\lvert\delta\rvert = 45^\circ$: $\sum x_i T_i = 3.0T_f - 2.0T_a = 0$, hence $T_a = 1.5T_f$. With $T_f = 39.888$ N this needs $T_a = 59.832$ N, that is $n_a = \sqrt{59.832/k_{pos}} = 73.48$ rad/s. Running it leaves $N = 0.011$ N·m and a measured yaw rate of $0.003$ deg/s.
+6. The second sum is zero: inside each pair the two units sit at $\pm y$ with the same $f_{ix}$, so their two contributions cancel. The first sum is not zero: $\sum x_i = 2l_f - 2l_a = 1.0$ m, so $N = 2(l_f - l_a)f_y$.
+7. Dividing by $Y = 4f_y$ puts it in the form that explains itself: $N = \bar{x}Y$ with $\bar{x} = \tfrac14\sum x_i = (l_f - l_a)/2 = 0.25$ m. Four equal sway forces are one sway force acting at the centroid of the four stations, and that centroid is $0.25$ m ahead of $o_b$. With $Y = 112.820$ N this is $N = 112.820 \times 0.25 = 28.205$ N·m, the S5 and S8 reading.
+
+![Cell (a) is lines 5 and 6 — the orange numbers are each unit's own $x_i f_{iy} - y_i f_{ix}$ and sum to $+28.205$ N·m. Cell (b) is line 7 — the same four forces as one sway force $0.25$ m ahead of $o_b$.](../figures/w12-why-symmetry-yaws.svg)
+
+8. The condition that removes it follows from the same sum with the bow pair at $T_f$ and the stern pair at $T_a$, all at $\lvert\delta\rvert = 45^\circ$: $\sum x_i T_i = 3.0T_f - 2.0T_a = 0$, hence $T_a = 1.5T_f$. With $T_f = 39.888$ N this needs $T_a = 59.832$ N, that is $n_a = \sqrt{59.832/k_{pos}} = 60\sqrt{1.5} = 73.485$ rad/s. Row S6 runs it and reads $N = 0.000$ N·m — at the price of $X = 2\cos 45^\circ\,(T_f - T_a) = -28.205$ N. The moment did not vanish; it became a surge of the same number.
 9. The third asymmetry is the servo, and it is not a sign or a ratio but a wall. $\delta$ is clipped before the column rule sees it, so the force is computed from $45^\circ$ whatever was asked. A command of $70^\circ$ and a command of $45^\circ$ are the same command to this vessel.
-10. All three together are the argument for an allocator. Each one means that the eight numbers a person would guess from symmetry are not the eight numbers that produce the wanted force, and solving for them by hand — as line 8 did, for one condition — does not scale to three conditions and a changing state.
+10. All three together are the argument for an allocator. The eight numbers a person would guess from symmetry are not the eight numbers that produce the wanted force, and solving for them by hand — as line 8 did, for one condition — does not scale to three conditions and a changing state.
 
-![Why four equal commands yaw: four unequal arms, and one force off the origin](../figures/w12-why-symmetry-yaws.svg)
-
-| In the figure | Meaning |
-|---|---|
-| cell (a), four numbered units with identical arrows | V3: every unit at $n_i = 60$ rad/s and $\delta_i = +45^\circ$, so $f_x = f_y = 28.205$ N |
-| the four orange numbers beside the units | each unit's own moment $x_i f_y - y_i f_x$, in N·m; they sum to $+28.205$ |
-| cell (a) caption | derivation lines 5 and 6 — the $f_x$ terms cancel, the $f_y$ terms do not |
-| cell (b), one thick arrow from a dot | the same four forces summed: $X = Y = 112.820$ N at the centroid |
-| the $\bar{x} = 0.25$ m dimension | line 7 — the centroid is ahead of $o_b$, which is the whole of the effect |
-| the clockwise arc at the origin, $N = 28.205$ N·m | the yaw that offset leaves |
-
-> [!warning] Four equal commands are not a pure sway
-> This is the week's single most useful number. A symmetric sway command on this hull leaves $28.205$ N·m of yaw, and no amount of care in the command removes it, because the asymmetry is in the geometry. Line 8 gives the thrust ratio that does remove it, at the cost of a surge the command did not ask for either.
+> [!warning] No equal-thrust sway inside $\pm 45^\circ$ is free of yaw
+> A symmetric crab leaves $28.205$ N·m, and no common shaft speed removes it, because the asymmetry is in the geometry, not in the command. Line 8 buys the moment back with a surge of exactly $-28.205$ N. Unequal thrusts can do better — Assignment requirement 2 asks for such a set — but four equal ones never can.
 
 ### Experiment 12-4 · The three asymmetries, measured (20 min)
 
 **What it measures.** Lines 3, 4, 7, 8 and 9, each against a row of table (1).
 
-**The model.** The same `W12_openloop.slx`. `W12_tab_track` prints the three asymmetries below the third table, from the same six runs.
+**The model.** The same `W12_openloop.slx`. `W12_tab_track` prints the three asymmetries below table (3), from the same eight runs.
 
 **Opening and running.**
 
 ```matlab
-W12_V_openloop                 % 표 셋을 전부 찍는다 / all three tables
+W12_V_openloop                 % 여덟 줄 전부 / all eight rows
+W12_V_openloop({'S5','S6'})    % 두 번째 비대칭만 / the second asymmetry alone
 ```
 
 Expected output, the block printed below table (3):
 
 ```
       the three asymmetries this week turns on
-        thrust curve   +60 rad/s gives +39.888 N, -60 rad/s gives -23.202 N
-                       so V2 keeps +33.372 N of surge it did not ask for,
-                       and the astern speed that cancels +60 is -78.670 rad/s
-        the stations   l_f = 1.50 m forward, l_a = 1.00 m aft, so the four
-                       tilted thrusters of V3 leave +28.205 N m of yaw on an
-                       otherwise clean crab
-        the servo      V6 asks for 70 deg and is given 45 deg, so its row
-                       of table (1) is V3's row exactly
+        thrust curve   +60 rad/s gives +39.888 N, -60 rad/s gives -23.202 N, so
+                       the pair running forward carries 1.72 times the pair
+                       running astern -- and yet S1 and S2 reach the SAME
+                       +126.180 N, because the mirrored mounting swaps which
+                       pair is the one running astern
+        the stations   l_f = 1.50 m forward, l_a = 1.00 m aft, so S5 crabs with
+                        +28.205 N m of yaw left over, and S6 cancels that moment
+                       at n = 73.485 rad/s only by letting  -28.205 N of surge
+                       appear: no EQUAL-thrust sway inside +-45 deg is yaw-free
+        the servo      S8 asks for 70 deg and is given 45 deg, so its row of
+                       table (1) is S5's row exactly
 ```
 
 **Reading the output against the derivation.**
 
 | Where to look | What is there | Which line predicts it |
 |---|---|---|
-| `+33.372 N of surge` | the V2 $X$ column | line 3 — $2(k_{pos} - k_{neg})n^2$ |
-| `-78.670 rad/s` | the V5 command | line 4 — $-n\sqrt{k_{pos}/k_{neg}}$ |
-| `+28.205 N m of yaw` | the V3 and V5 $N$ column | line 7 — $\bar{x}Y$ with $\bar{x} = 0.25$ m |
-| `given 45 deg` | the V6 `delta` column | line 9 |
-
-**What the output says**
-
-- Every asymmetry was predicted before it was measured, and each prediction names the constant it comes from.
+| `1.72 times` | the $39.888/23.202$ split inside S1 | line 3 — $k_{pos}/k_{neg}$ |
+| `the SAME +126.180 N` | the S1 and S2 $X$ columns | line 3 — the mounting signs swap which pair runs astern |
+| `+28.205 N m of yaw` | the S5 and S8 $N$ columns | line 7 — $\bar{x}Y$ with $\bar{x} = 0.25$ m |
+| `-28.205 N of surge` | the S6 $X$ column, with $N = 0.000$ | line 8 — the moment traded for a surge |
+| `given 45 deg` | the S8 `delta` column | line 9 |
 
 | What to try | What to watch |
 |---|---|
-| `n_cmd = [60 60 73.48 73.48]'` with `d_deg = [45 45 45 45]'` | $N = 0.011$ N·m and $r = 0.003$ deg/s — line 8's ratio, confirmed |
-| `d_deg = [90 90 90 90]'`, expecting a pure sway | the table returns V3's row. The servo refuses the extra $45^\circ$, so this is line 9 and not a sway |
+| `W12_V_openloop('S6')` alone | $N = 0.000$ N·m against S5's $+28.205$, and $X$ going from $0$ to $-28.205$ N |
+| `d_deg = [90 90 -90 -90]'` in `W12_0_setup`, expecting a pure sway | the table returns S5's row. The servo refuses the extra $45^\circ$ — line 9, not a sway |
 
 > [!tip] In class
 > - **Purpose** — show that the obstacle to commanding this vessel is the vessel, not the arithmetic.
 > - **Point to** — cell (b) of the figure: one arrow, offset $0.25$ m, and the yaw follows from the offset alone.
-> - **Ask** — "Which of the three would disappear if the hull were symmetric fore and aft?" Only the second. The thrust curve and the servo are properties of the hardware.
+> - **Ask** — "Which of the three would disappear if the hull were symmetric fore and aft?" Only the second. The thrust curve and the servo belong to the hardware.
 > - **Take away** — $\bar{x} = (l_f - l_a)/2 = 0.25$ m, and $N = \bar{x}Y$.
 
 ## 12-5. The track those forces produce
 
 This section answers: does the vessel go where eight hand-chosen numbers send it?
 
-**What is observed.** Experiment 12-5 runs each of the six cases for 30 s from rest and reads four quantities at the end. V1 runs straight at $2.057$ m/s; V5 crabs at $74.28^\circ$; V6 lies exactly on V3.
+**What is observed.** Experiment 12-5 runs each of the eight cases for 30 s from rest and reads four quantities at the end. S1 runs straight at $1.627$ m/s; S5 crabs at $74.28^\circ$ while turning; S8 lies exactly on S5.
 
-- the readings are taken at $t = 30$ s, by when all six have settled
+- the readings are taken at $t = 30$ s, by when all eight have settled
 - the crab angle is $\beta = \operatorname{atan2}(v, u)$ and the speed is $U = \sqrt{u^2 + v^2}$
 - turn radius is $U/\lvert r\rvert$, reported as `straight` when $\lvert r\rvert < 10^{-4}$ rad/s
 
@@ -632,85 +611,84 @@ $$
 1. With $(n, \delta)$ held constant, $\boldsymbol{\tau}$ is constant in body axes, so the body-frame equation $M\dot{\boldsymbol{\nu}} + \mathbf{d}(\boldsymbol{\nu}) = \boldsymbol{\tau}$ is autonomous and settles on an equilibrium $\boldsymbol{\nu}^\star$ where damping balances thrust.
 2. That equilibrium is reached in a few seconds for surge and sway, and in rather longer for yaw, because the nonlinear yaw damping $N_h = N_r(1 + 10\lvert r\rvert)r$ stiffens as $r$ grows.
 3. At equilibrium the body-frame velocity is fixed but the heading is not: $\dot\psi = r \neq 0$ rotates the velocity in the Earth frame, which traces a circle of radius $U/\lvert r\rvert$.
-4. The crab angle $\beta$ is a property of that equilibrium, not of the command. V3's force stands at $45^\circ$ in body axes, yet the hull crabs at only $22.15^\circ$, because sway damping on this hull is far larger than surge damping.
-5. A case with $r = 0$ therefore runs straight in the direction $\beta$, and V1 is the only such case: $\beta = 0$, $R$ infinite.
-6. V6 must trace V3's circle exactly, since §12-4 line 9 showed the two commands reach the plant identically. Drawing V6 dashed on top of V3 makes the coincidence visible rather than hidden by overdrawing.
+4. The crab angle $\beta$ is a property of that equilibrium, not of the command. Row S7's force stands at $\operatorname{atan2}(56.410, 102.814) = 28.74^\circ$ in body axes, yet the hull crabs at only $5.89^\circ$, because sway damping on this hull is far larger than surge damping.
+5. A case with $r = 0$ runs straight in the direction $\beta$, and three rows do: S1 at $\beta = 0$, S2 at $180^\circ$, and S6 at $114.0^\circ$ — a heading held while the hull travels sideways and slightly astern.
+6. S8 must trace S5's circle exactly, since §12-4 line 9 showed the two commands reach the plant identically. The overlay draws S8 dashed so the coincidence is visible rather than hidden by overdrawing.
 
-### Experiment 12-5 · Six tracks from six commands (20 min)
+### Experiment 12-5 · Eight tracks from eight commands (20 min)
 
-**What it measures.** Lines 3 to 6: that each command settles, that the settled state is a circle or a straight line, and that V6 and V3 coincide.
+**What it measures.** Lines 3 to 6: that each command settles, that the settled state is a circle or a straight line, and that S8 and S5 coincide.
 
-**The model.** The same `W12_openloop.slx`, run six times at $T_{final} = 30$ s. `W12_plot` draws the figure, and is also the model's `StopFcn`, so the same code produces the figure on screen and the figure printed here.
+**The model.** The same `W12_openloop.slx`, run eight times at $T_{final} = 30$ s. Each run gets **its own sheet** — `img/W12_result_S1.png` … `_S8.png` — because eight curves in one axes erase each other and the question of this section is whether each scenario did what was written down for it.
 
 **Opening and running.**
 
 ```matlab
-W12_V_openloop                 % 여섯 번 돌리고 그림을 저장한다 / six runs, one figure
+W12_V_openloop                 % 여덟 장 전부 / all eight sheets
+W12_V_openloop('S5')           % 한 장만 다시 / that one sheet again
 ```
 
 Expected output, the third table:
 
 ```
-  (3) the motion those forces produce
+  (3) the motion those forces produce, scenario by scenario
 
-      every value is read at t = 30 s, by when all six have settled
+      every value is read at t = 30 s, by when all 8 have settled
 
-    case   U [m/s]  crab [deg]   r [deg/s]  turn radius [m]
-    -----------------------------------------------------------
-    V1       2.057        0.00       0.000         straight
-    V2       0.390      -19.79      15.418             1.45
-    V3       1.766       22.15       7.333            13.80
-    V4       0.834       45.41      12.600             3.79
-    V5       0.747       74.28       7.589             5.64
-    V6       1.766       22.15       7.333            13.80
-    -----------------------------------------------------------
-
-      how each row is read
-        V1   pure surge, the Otter of Weeks 1 to 5
-        V2   turns, but drifts ahead while turning
-        V3   force at 45 deg, hull crabs at 22, and yaws: l_f is not l_a
-        V4   mostly sway, surge not yet cancelled
-        V5   surge cancelled by the shaft speed, yaw still there
-        V6   identical to V3: the servo refused the extra 25 deg
+    case  command                      U [m/s]  crab [deg]  r [deg/s]  radius [m]
+    ----------------------------------------------------------------------------
+    S1    surge ahead                    1.627        0.00      0.000    straight
+    S2    surge astern                   1.627      180.00      0.000    straight
+    S3    yaw to starboard               0.030      -21.14     28.397        0.06
+    S4    yaw to port                    0.030       21.14    -28.397        0.06
+    S5    sway to starboard              0.747       74.28      7.589        5.64
+    S6    sway, moment cancelled         0.895      113.99     -0.000    straight
+    S7    turn while making way          1.464        5.89     20.239        4.15
+    S8    tilt beyond the servo limit    0.747       74.28      7.589        5.64
+    ----------------------------------------------------------------------------
 ```
 
-![Six commands: surge, sway and yaw rate on the left, and the tracks at 1:1 on the right](W12_simulink/img/W12_result_openloop.png)
+Each sheet carries the six states on the left, **the command drawn as four force arrows** at the top right, and the track with hull and heading below it. The arrow panel is what makes a wrong command distinguishable from a wrongly followed one.
 
-**Reading the figure against the derivation.**
+![S1 and S2 — the two surge rows. Both reach $\lvert X\rvert = 126.180$ N and both run straight, which is §12-4 line 3: the mounting signs swap which pair runs astern, so the thrust curve does not favour one direction.](W12_simulink/img/W12_result_S1.png)
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| all four state panels, after about 10 s | flat lines | line 1 — a constant body force has a steady-state body velocity |
-| the $r$ panel, V2 at $15.418$ deg/s | the largest yaw rate of the six, from the smallest speed | line 2 and §12-4 line 3 — V2 is nearly a pure couple |
-| the $\psi$ panel | straight ramps, unwrapped; nothing in this model wraps it | line 3 — constant $r$ |
-| the track panel, V1 | a straight line, hulls evenly spaced | line 5 |
-| the track panel, V5 | a wide arc with the hull visibly across its own path | line 4 — $\beta = 74.28^\circ$, the vessel is almost sideways |
-| V3 solid under V6 dashed | one curve, two labels | line 6 |
-| V3's crab of $22.15^\circ$ against a force at $45^\circ$ | the hull does not follow the force direction | line 4 — sway damping, not the command |
+![S2, the mirror of S1: the same speed at a crab angle of $180^\circ$.](W12_simulink/img/W12_result_S2.png)
 
-**What the figure says**
+![S3 — four arrows of equal sign give $X = Y = 0$ and $N = 141.025$ N·m, so the hull turns on the spot at $28.397$ deg/s and the track collapses to a $0.06$ m circle. The hull glyphs stack on one point.](W12_simulink/img/W12_result_S3.png)
 
-- Eight numbers given by hand produce exactly the motion the column rule and the damping predict, and in no case the motion a symmetric reading of the command would suggest.
+![S4, the mirror of S3: the same spot turn to port.](W12_simulink/img/W12_result_S4.png)
+
+![S5 — the symmetric crab. The arrows are four equal sway forces, the track is a $5.64$ m arc, and the hull sits across its own path at $\beta = 74.28^\circ$ while still yawing at $7.589$ deg/s: §12-4 line 7.](W12_simulink/img/W12_result_S5.png)
+
+![S6 — the stern pair raised to $73.485$ rad/s. The yaw rate is zero and the heading panel is flat, but the crab angle is $113.99^\circ$: the hull travels sideways and slightly astern, which is the $-28.205$ N of §12-4 line 8.](W12_simulink/img/W12_result_S6.png)
+
+![S7 — the bow pair tilted and the stern pair pushing astern at $\delta = 0$. Surge, sway and yaw are all non-zero, giving a $4.15$ m turning circle at $1.464$ m/s: the most ship-like row of the eight.](W12_simulink/img/W12_result_S7.png)
+
+![S8 — $70^\circ$ asked. The arrow panel shows $45^\circ$, and every number equals S5's: §12-4 line 9.](W12_simulink/img/W12_result_S8.png)
+
+The overlay below is kept for comparison only. S8 is drawn dashed over S5, and the two curves coincide.
+
+![All eight runs on one axes, with S8 dashed over S5](W12_simulink/img/W12_result_openloop.png)
 
 | What to try | What to watch |
 |---|---|
-| `T_final = 120; animate = 1;` then Run | the hull drawn along the circle; V3 closes its $13.80$ m circle in about 49 s |
-| `n_cmd = [60 -60 60 -60]'; d_cmd = zeros(4,1);` then Run | V2's $1.45$ m circle — tighter than the vessel is long |
+| `T_final = 120; animate = 1;` then Run | the hull drawn along the circle; S5 closes its $5.64$ m circle in about 47 s |
+| `W12_V_openloop({'S5','S6'})` | two sheets and no overlay file written — a partial run never overwrites the figure this section embeds |
 
 > [!tip] In class
 > - **Purpose** — connect a force in body axes to a track on the water, with nothing in between.
-> - **Point to** — the V5 hull symbols on the track: the bow points well off the direction of travel.
-> - **Ask** — "V3's force is at $45^\circ$. Why does the hull crab at only $22^\circ$?" Because sway is damped far harder than surge; the equilibrium is not the force direction.
+> - **Point to** — the S5 hull symbols on the track: the bow points well off the direction of travel.
+> - **Ask** — "S7's force is at $28.74^\circ$. Why does the hull crab at only $5.89^\circ$?" Because sway is damped far harder than surge; the equilibrium is not the force direction.
 > - **Take away** — an open-loop command gives a repeatable circle, and a circle is not a mission.
 
 ## 12-6. Whether the model is the equations
 
 This section answers: table (1) showed the equations are right — what shows that the Simulink model evaluates those equations?
 
-**What is observed.** Experiment 12-6 re-integrates each of the six 30-s runs outside Simulink, with the same fixed-step `ode4` and the same step, driven at every step by the $(n, \delta)$ the model actually applied. The worst disagreement in position or speed over all six runs is exactly $0.00\mathrm{e}{+}00$.
+**What is observed.** Experiment 12-6 re-integrates each of the eight 30-s runs outside Simulink, with the same fixed-step `ode4` and the same step, driven at every step by the $(n, \delta)$ the model actually applied. The worst disagreement in position or speed over all eight runs is exactly $0.00\mathrm{e}{+}00$.
 
 - the driving signal is the **post-servo** pair read back from the log, not the command
-- the heading column disagrees at $5.09\times10^{-14}$ deg, which is the unwrapping, not the dynamics
+- the heading column disagrees at $1.02\times10^{-13}$ deg at worst, which is the unwrapping, not the dynamics
 
 **The result.** Two different checks, and neither substitutes for the other.
 
@@ -728,13 +706,13 @@ This section answers: table (1) showed the equations are right — what shows th
 5. A single-instant acceleration comparison would not do this job. The log carries 6 of the 12 states — $[u\;v\;r\;N\;E\;\psi]$ — and under sway the missing six, among them $w$, $p$, $q$ and $\phi$, are not zero. An acceleration reconstructed from the logged six would be evaluated at a state the vessel was never in.
 6. Re-integration avoids that trap because it never reads the model's state: it starts from the same $\mathbf{x}_0$, which is known in full, and advances its own twelve states.
 7. Agreement to $0.00\mathrm{e}{+}00$ in position therefore says the two integrations performed bit-identical arithmetic, which is the strongest statement available: same equations, same inputs, same solver, same step.
-8. The heading residual of $5.09\times10^{-14}$ deg is not a dynamics disagreement. The log stores $\psi$ in degrees and the comparison takes the smallest signed angle, so the residual is the cost of two conversions.
+8. The heading residual of $1.02\times10^{-13}$ deg is not a dynamics disagreement. The log stores $\psi$ in degrees and the comparison takes the smallest signed angle, so the residual is the cost of two conversions.
 
 ### Experiment 12-6 · The model against an integrator written by hand (20 min)
 
 **What it measures.** Lines 3, 4 and 7: that the wiring, the solver and the saturation order are what the equations assume.
 
-**The model.** The same six runs. The comparison lives in `W12_tab_reint`, which calls `otter_tilt4` directly inside its own Runge–Kutta loop.
+**The model.** The same eight runs. The comparison lives in `W12_tab_reint`, which calls `otter_tilt4` directly inside its own Runge–Kutta loop.
 
 **Opening and running.**
 
@@ -753,33 +731,31 @@ Expected output, the second table:
 
     case   max |dN| [m]  max |dE| [m]  max |dpsi| [deg]  max |du| [m/s]   clip
     ------------------------------------------------------------------------------
-    V1        0.00e+00      0.00e+00          0.00e+00        0.00e+00   n 0  d 0
-    V2        0.00e+00      0.00e+00          5.09e-14        0.00e+00   n 0  d 0
-    V3        0.00e+00      0.00e+00          2.54e-14        0.00e+00   n 0  d 1
-    V4        0.00e+00      0.00e+00          5.09e-14        0.00e+00   n 0  d 1
-    V5        0.00e+00      0.00e+00          2.54e-14        0.00e+00   n 0  d 1
-    V6        0.00e+00      0.00e+00          2.54e-14        0.00e+00   n 0  d 1
+    S1        0.00e+00      0.00e+00          0.00e+00        0.00e+00   n 0  d 0
+    S2        0.00e+00      0.00e+00          0.00e+00        0.00e+00   n 0  d 0
+    S3        0.00e+00      0.00e+00          1.02e-13        0.00e+00   n 0  d 1
+    S4        0.00e+00      0.00e+00          1.02e-13        0.00e+00   n 0  d 1
+    S5        0.00e+00      0.00e+00          2.54e-14        0.00e+00   n 0  d 1
+    S6        0.00e+00      0.00e+00          0.00e+00        0.00e+00   n 0  d 1
+    S7        0.00e+00      0.00e+00          1.02e-13        0.00e+00   n 0  d 1
+    S8        0.00e+00      0.00e+00          2.54e-14        0.00e+00   n 0  d 1
     ------------------------------------------------------------------------------
-    worst 0.0e+00 m or m/s over the six 30 s runs
+    worst 0.0e+00 m or m/s over the 8 30 s runs
 ```
 
 **Reading the table against the derivation.**
 
 | Where to look | What is there | Which line predicts it |
 |---|---|---|
-| `max dN`, `max dE`, `max du` | exactly zero, all six runs | line 7 — identical equations, inputs, solver and step |
-| `max dpsi` | at most $5.09\times10^{-14}$ deg | line 8 — degree-to-radian conversion, not dynamics |
-| the `clip` column, `d 1` on V3 to V6 | the tilt saturation bound during those runs | line 3 — the input re-integrated is the clipped one |
-| the `clip` column, `n 0` everywhere | the shaft limit never bound | $60 < 103.931$ and $78.670 < 101.737$ |
-
-**What the table says**
-
-- The Simulink model adds nothing to `otter_tilt4` and loses nothing from it, so every number in §12-3 to §12-5 can be read as a statement about the equations.
+| `max dN`, `max dE`, `max du` | exactly zero, all eight runs | line 7 |
+| `max dpsi` | at most $1.02\times10^{-13}$ deg | line 8 — the conversion, not the dynamics |
+| `d 1` on S3 to S8 | the tilt saturation bound during those runs | line 3 — the input re-integrated is the clipped one |
+| `n 0` everywhere | the shaft limit never bound | $60 < 103.931$ and $73.485 < 103.931$ |
 
 | What to try | What to watch |
 |---|---|
 | `h = 0.05;` then `W12_V_openloop` | still zero. The agreement is between two integrators, so a coarser step moves both together |
-| drive the re-integration with `n_cmd` instead of the logged `n` | V3 to V6 stop agreeing, because the command is $70^\circ$ and the plant received $45^\circ$ — line 3 |
+| drive the re-integration with `n_cmd` instead of the logged `n` | S8 stops agreeing, because the command is $70^\circ$ and the plant received $45^\circ$ — line 3 |
 
 > [!tip] In class
 > - **Purpose** — separate a check of the equations from a check of the model, and show that this week has both.
@@ -799,11 +775,13 @@ The experiments of Part 1 are worked through in order; this table is the index o
 | 12-1 | none | `verify_otter_tilt4` | four identities; $\delta = 0$ returns `otter.m` |
 | 12-3 | `W12_openloop` | `W12_V_openloop` → `W12_tab_formula` | table (1) — force against the column rule |
 | 12-4 | `W12_openloop` | `W12_V_openloop` → `W12_tab_track` | the three asymmetries, each against a row |
-| 12-5 | `W12_openloop` | `W12_V_openloop` → `W12_tab_track` | table (3) and the track figure |
+| 12-5 | `W12_openloop` | `W12_V_openloop` → `W12_plot_scenario` | the eight sheets `img/W12_result_S1.png` … `_S8.png` |
 | 12-6 | `W12_openloop` | `W12_V_openloop` → `W12_tab_reint` | table (2) — the model against hand re-integration |
 
+Selecting runs: `W12_V_openloop` for all eight, `W12_V_openloop('S5')` for one, `W12_V_openloop({'S5','S6'})` for a pair, `W12_V_openloop(1:4)` by number. A partial run writes only the sheets it ran and leaves the overlay file alone.
+
 > [!note] One run order, four sections
-> Every other week has one script per section. Sections 12-3 to 12-6 share the **same six 30-s runs**: table (1) measures the force at the start of each, table (2) re-integrates the whole of each, and table (3) reads the end of each. Splitting the runs would send the vessel out twenty-four times to produce six trajectories, and the three tables would then be read against runs that are only nominally the same. The runs therefore happen once, in `W12_V_openloop`, and each section's block is a file of its own — `W12_cases` fixes the six commands, `W12_tab_formula` is §12-3, `W12_tab_reint` is §12-6, and `W12_tab_track` is §12-4 and §12-5. The arrow in the table above names the file to open for that section.
+> Sections 12-3 to 12-6 share the **same eight 30-s runs**: table (1) measures the force at the start of each, table (2) re-integrates the whole of each, table (3) reads the end of each, and `W12_plot_scenario` draws each. Splitting them would send the vessel out thirty-two times for eight trajectories, and the tables would then be read against runs only nominally the same. The runs happen once, in `W12_V_openloop`, and each section's block is a file of its own — `W12_cases` fixes the eight commands, `W12_tab_formula` is §12-3, `W12_tab_track` is §12-4 and §12-5, `W12_tab_reint` is §12-6. The arrow names the file to open for that section.
 
 ---
 
@@ -813,17 +791,17 @@ The experiments of Part 1 are worked through in order; this table is the index o
 
 | Step | What was done | How it was verified |
 |---|---|---|
-| 1 | $B$ built for four tilting units from the Week 3 column rule | `verify_otter_tilt4` prints $3\times 8$, rank 3, null space 5 |
+| 1 | $B$ built for four tilting units from the Week 3 column rule, with the mounting signs | `verify_otter_tilt4` prints $3\times 8$, rank 3, null space 5 |
 | 2 | `otter.m` changed in four marked places into `otter_tilt4.m` | identities (a) and (b) exactly zero: $\delta = 0$ reproduces `otter.m` |
-| 3 | the trigonometric form checked against $B\mathbf{f}$ | identity (c), $1.06\times10^{-13}$ over 200 random states |
+| 3 | the trigonometric form checked against $B\mathbf{f}$ | identity (c), $7.19\times10^{-14}$ over 200 random states |
 | 4 | an open-loop model built, eight hand constants to the plant | `W12_1_build_openloop` prints overlaps 0, diagonals 0 |
-| 5 | the force of six commands measured out of the plant | table (1), worst residual $2.8\times10^{-14}$ N or N·m |
-| 6 | the surge left by opposed shaft speeds predicted and cancelled | $33.372$ N predicted and measured; $n_{rev} = -78.670$ rad/s gives $X = -0.000$ |
-| 7 | the residual yaw of a symmetric sway derived | $N = \bar{x}Y = 28.205$ N·m, matching V3 and V5 exactly |
-| 8 | the thrust ratio that removes that yaw derived and run | $T_a = 1.5T_f$, i.e. $n_a = 73.48$ rad/s: $N = 0.011$ N·m, $r = 0.003$ deg/s |
-| 9 | the servo limit shown to act inside the plant | V6 asks $70^\circ$, table (1) records $45^\circ$, and V6 lies on V3 |
-| 10 | the six tracks read at $t = 30$ s | table (3): speed, crab, yaw rate and radius |
-| 11 | the model checked against an independent integrator | table (2), $0.00\mathrm{e}{+}00$ m and m/s over six 30-s runs |
+| 5 | the force of eight commands measured out of the plant | table (1), worst residual $2.8\times10^{-14}$ N or N·m |
+| 6 | the mirrored mounting shown to make surge symmetric | S1 and S2 both reach $\lvert X\rvert = 126.180$ N despite $k_{pos} \neq k_{neg}$ |
+| 7 | the residual yaw of a symmetric sway derived | $N = \bar{x}Y = 28.205$ N·m, matching S5 and S8 exactly |
+| 8 | the thrust ratio that removes that yaw derived and run | $T_a = 1.5T_f$, i.e. $n_a = 73.485$ rad/s: $N = 0.000$ N·m at $X = -28.205$ N |
+| 9 | the servo limit shown to act inside the plant | S8 asks $70^\circ$, table (1) records $45^\circ$, and S8 lies on S5 |
+| 10 | the eight tracks read at $t = 30$ s, one sheet each | table (3) and `img/W12_result_S1.png` … `_S8.png` |
+| 11 | the model checked against an independent integrator | table (2), $0.00\mathrm{e}{+}00$ m and m/s over eight 30-s runs |
 
 ---
 
@@ -835,8 +813,8 @@ The experiments of Part 1 are worked through in order; this table is the index o
 
 - [ ] Able to state the column rule and apply it to one tilting unit, obtaining both of its columns
 - [ ] Able to say why $B$ is $3\times 8$ and what the five null-space dimensions mean for an allocator
+- [ ] Able to say where the mounting sign $s_i$ sits in $B$, and why the two pairs have different zeros but the same sense
 - [ ] Able to name the four places `otter.m` changes, and say why the damping is not one of them
-- [ ] Able to compute $n_{rev} = -n\sqrt{k_{pos}/k_{neg}}$ and explain which asymmetry it answers
 - [ ] Able to derive $N = \bar{x}Y$ with $\bar{x} = (l_f - l_a)/2$, and predict $28.205$ N·m without the script
 - [ ] Able to say why re-integrating the logged input is a different check from table (1), and why a single-instant acceleration comparison is neither
 
@@ -844,13 +822,14 @@ The experiments of Part 1 are worked through in order; this table is the index o
 
 - [ ] `verify_otter_tilt4` ran and printed `PASS` with identities (a), (b) and (d) exactly zero
 - [ ] `W12_1_build_openloop` ran and printed overlaps 0, diagonals 0
-- [ ] `W12_V_openloop` ran and reproduced all three tables
-- [ ] A seventh case was commanded by hand from `W12_0_setup`, and its $X$, $Y$ and $N$ were predicted before the run
+- [ ] `W12_V_openloop` ran and wrote all three tables and the eight sheets
+- [ ] `W12_V_openloop('S5')` ran alone and rewrote only that one sheet
+- [ ] A ninth case was commanded by hand from `W12_0_setup`, and its $X$, $Y$ and $N$ were predicted before the run
 
 ### Recorded observations
 
 - [ ] The residual yaw measured for a symmetric $45^\circ$ sway command, and the arm it comes from
-- [ ] The crab angle of V3, and why it is not $45^\circ$
+- [ ] The crab angle of S7, and why it is not the $28.74^\circ$ of its own force
 
 ---
 
@@ -863,7 +842,7 @@ The experiments of Part 1 are worked through in order; this table is the index o
 
 Three runs, each one eight numbers given by hand in `W12_0_setup`. No allocator, no controller.
 
-1. **Reproduce the yaw-free crab.** Apply §12-4 line 8 to obtain the stern shaft speed that cancels the residual yaw of a $45^\circ$ four-unit sway command. Derive it rather than copying $73.48$ rad/s: show the step from $\sum x_i T_i = 0$ to $T_a = 1.5T_f$ and the conversion to shaft speed, including which thrust coefficient applies and why.
+1. **Reproduce the yaw-free crab.** Apply §12-4 line 8 to obtain the stern shaft speed that cancels the residual yaw of a $45^\circ$ four-unit sway command. Derive it rather than copying $73.485$ rad/s: show the step from $\sum x_i T_i = 0$ to $T_a = 1.5T_f$ and the conversion to shaft speed, including which thrust coefficient applies and why. Report the surge force the cancellation costs.
 2. **Find a motion that is neither.** Choose eight numbers for which $X = 0$ **and** $N = 0$ while $Y \neq 0$ — a pure sway, with no surge and no yaw. Keep $\delta_i \in \{+45^\circ, -45^\circ\}$ so that only the four shaft speeds are free. State the two linear conditions on $T_1 \ldots T_4$, solve them by hand, convert each $T_i$ to a shaft speed with the correct sign-dependent coefficient, and check every value against the shaft limits before running.
 3. **Break it deliberately.** Take the solution of requirement 2 and change one shaft speed by 10 %. Report what appears in $X$, $Y$ and $N$, and say which of the three asymmetries the change exposed.
 
@@ -903,8 +882,9 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 | Symptom | Cause | Fix |
 |---|---|---|
 | A tilt of $70^\circ$ or $90^\circ$ produces exactly the $45^\circ$ result | the servo clip inside `otter_tilt4`, §12-2 change 3 | expected. Read the `delta` column of table (1), which prints what the plant received |
-| Opposed shaft speeds $\pm 60$ leave a surge force | $k_{neg}/k_{pos} = 0.5817$, §12-4 line 2 | use $n_{rev} = -n\sqrt{k_{pos}/k_{neg}}$, §12-4 line 4 |
-| A symmetric four-unit sway command yaws at $7.3$ deg/s | $\bar{x} = 0.25$ m, §12-4 line 7 | expected. Apply the ratio of §12-4 line 8 to cancel it |
+| Four equal $\delta_i = +45^\circ$ at four equal $n_i$ produce no force at all, only a spot turn | the mounting signs: $s_3 = s_4 = -1$ reverses the stern pair's force, so the four cancel in surge and sway | expected, and it is row S3. A sway needs the two pairs at **opposite** $\delta$, which is S5 |
+| A symmetric four-unit sway command yaws at $7.589$ deg/s | $\bar{x} = 0.25$ m, §12-4 line 7 | expected. Apply the ratio of §12-4 line 8 to cancel it, and accept the surge it costs |
+| `W12_result_openloop.png` does not change after a run | a run of fewer than eight scenarios deliberately does not overwrite it, so the figure §12-5 embeds always carries all eight | run `W12_V_openloop` with no argument |
 | A Constant block shows `-C-` instead of its value | `mss_style` sets Constant width to 55 px, and a longer expression does not fit | keep the Value expression short — the model uses `d_cmd`, not `delta_cmd` |
 | `n_cmd = 600` saturates immediately | the command is rad/s, not rpm | 60 rad/s is about 573 rpm; the limit is 103.931 rad/s |
 | `W12_V_openloop` runs but no figure appears | the script was called before `W12_0_setup` | run `W12_0_setup` first; it defines `animate`, `pace` and `h` |

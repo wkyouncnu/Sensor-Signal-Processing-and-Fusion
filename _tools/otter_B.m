@@ -44,22 +44,41 @@ function B = otter_B(cfg)
 %
 %   with the pair adjacent and in that order.
 %
+%   거치 방향 / which way the unit is mounted
+%       추진기가 선체에 거꾸로 달릴 수 있다. W12 의 Otter 가 그렇다 — 선수 둘은
+%       앞을, 선미 둘은 뒤를 보고 달려 있어서 **서보 0 도의 뜻이 쌍마다 다르다.**
+%       그 차이는 열 규칙을 고치지 않는다. 거치 부호 s_i = +-1 을 두어
+%       e 를 s_i e 로 바꾸면 끝이다 — 열이 s_i 배가 되고, 서보각 delta_i 는
+%       **그 쌍의 0 도에서** 재는 각이 된다.
+%       A unit can be mounted facing aft. On the Otter of Week 12 the two bow
+%       units face forward and the two stern units face aft, so servo zero
+%       means a different direction for each pair. The column rule does not
+%       change: a mounting sign s_i = +-1 replaces e by s_i e, which scales
+%       that column by s_i and makes delta_i an angle measured from that
+%       pair's own zero.
+%
+%       cfg.mount 가 없으면 전부 +1 로 본다 — 1~11 주차의 배치가 그렇다.
+%       With no cfg.mount field every unit is taken as +1, as in Weeks 1 to 11.
+%
 %   No B in this course is transcribed from another file. Every one is
 %   produced here, so a change of geometry propagates by itself.
 
 if ~isstruct(cfg), cfg = otter_config(cfg); end
+
+if isfield(cfg, 'mount'), s = cfg.mount; else, s = ones(1, cfg.n_thr); end
 
 cols = {};
 for i = 1:cfg.n_thr
     x = cfg.pos(1,i);
     y = cfg.pos(2,i);
     if cfg.tilt(i)
-        % two columns: the x component and the y component of this thruster
-        cols{end+1} = colrule(x, y, [1; 0]);   %#ok<AGROW>
-        cols{end+1} = colrule(x, y, [0; 1]);   %#ok<AGROW>
+        % two columns: the x component and the y component of this thruster,
+        % each turned by the mounting sign of that unit
+        cols{end+1} = colrule(x, y, [s(i); 0]);   %#ok<AGROW>
+        cols{end+1} = colrule(x, y, [0; s(i)]);   %#ok<AGROW>
     else
         e = cfg.dir(:,i);
-        e = e / norm(e);                       % a direction must be a unit vector
+        e = s(i) * e / norm(e);                % a direction must be a unit vector
         cols{end+1} = colrule(x, y, e);        %#ok<AGROW>
     end
 end

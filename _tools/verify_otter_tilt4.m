@@ -3,15 +3,18 @@ function verify_otter_tilt4()
 %
 %   다섯 가지를 잰다. 앞의 넷은 반올림오차 수준이어야 한다.
 %
-%     (a) 각도를 0 으로 두고 **선미 둘만** 돌리면 옛 배다
-%         otter_tilt4(x,[0 0 n1 n2],[0 0 0 0],...) == otter(x,[n1 n2],...)
-%         선체·감쇠·복원력을 한 글자도 안 고쳤다는 것을 이것이 증명한다.
+%     (a) 거치 부호가 선미 쌍의 힘을 **정확히 뒤집는다**
+%         선미 둘은 뒤를 보고 달려 있어 delta = 0 이 -x_b 를 민다. 같은 명령을
+%         거치 부호만 +1 로 둔 가상의 배와 견주면 tau 가 정확한 음수여야 한다.
+%         두 가속도의 합이 추력 0 의 가속도의 두 배인지로 잰다.
 %
-%     (b) 각도를 0 으로 두고 **선수 둘만** 돌려도 옛 배다
+%     (b) 각도를 0 으로 두고 **선수 둘만** 돌리면 옛 배다
 %         otter_tilt4(x,[n1 n2 0 0],[0 0 0 0],...) == otter(x,[n1 n2],...)
-%         자리가 l_f = 1.5 m 앞인데도 같다. delta = 0 이면 미는 방향이 x 축과
-%         나란해 x 자리가 모멘트에 들어가지 않기 때문이다 (tau_N = -y T).
-%         x 자리는 **sin delta 를 통해서만** 들어온다 — 이 검사가 그것을 잰다.
+%         선수 쌍은 0 도가 +x_b 여서 otter.m 과 미는 방향이 같다. 자리가
+%         l_f = 1.5 m 앞인데도 같은 것은, delta = 0 이면 x 자리가 모멘트에
+%         들어가지 않기 때문이다 (tau_N = -y T). x 자리는 **sin delta 를
+%         통해서만** 들어온다 — 이 검사가 그것을 잰다. 선체·감쇠·복원력을
+%         한 글자도 안 고쳤다는 것도 이것이 증명한다.
 %
 %     (c) tau 가 otter_B 의 열 규칙과 같다
 %         otter_tilt4 의 가속도에서 거꾸로 tau 를 재어 cfg.B * f 와 견준다.
@@ -37,7 +40,8 @@ function verify_otter_tilt4()
 %   See also OTTER_TILT4, OTTER, OTTER_BOW, OTTER_B, OTTER_M, OTTER_CONFIG.
 
 cfg  = otter_config('quad_tilt');
-quad = [cfg.pos ; cfg.alpha_max];
+quad = [cfg.pos ; cfg.alpha_max ; cfg.mount];
+quad_fwd = quad;  quad_fwd(4,:) = 1;     % 넷이 다 앞을 보는 가상의 배 / all facing forward
 
 mp = 25;  rp = [0.05 0 -0.35]';  V_c = 0.0;  beta_c = pi/2;
 Mmat = otter_M(mp, rp);
@@ -65,9 +69,14 @@ for trial = 1:200
     n1 = 80*(2*rand-1);
     n2 = 80*(2*rand-1);
 
-    % (a) 각도 0, 선미 둘만
-    d_a = otter_tilt4(x, [0 0 n1 n2], z4, mp, rp, V_c, beta_c, quad) ...
-        - otter(      x, [n1 n2],         mp, rp, V_c, beta_c);
+    % (a) 거치 부호가 선미 쌍의 tau 를 정확히 뒤집는다. 같은 회전수를 선미
+    %     둘에만 주고, 거치 부호만 +1 로 바꾼 가상의 배와 견준다. 가속도는
+    %     tau 에 아핀이므로 두 가속도의 **합**이 추력 0 의 가속도의 두 배여야
+    %     한다 — tau 하나가 다른 하나의 정확한 음수라는 뜻이다.
+    xd_aft = otter_tilt4(x, [0 0 n1 n2], z4, mp, rp, V_c, beta_c, quad);
+    xd_fwd = otter_tilt4(x, [0 0 n1 n2], z4, mp, rp, V_c, beta_c, quad_fwd);
+    xd_nil = otter_tilt4(x, z4,          z4, mp, rp, V_c, beta_c, quad);
+    d_a = (xd_aft + xd_fwd) - 2*xd_nil;
     worst_a = max(worst_a, max(abs(d_a)));
 
     % (b) 각도 0, 선수 둘만 — 자리가 앞인데도 같아야 한다
@@ -107,7 +116,7 @@ atlim = otter_tilt4(x0, [cfg.n_max cfg.n_min cfg.n_max cfg.n_min], ...
                         -cfg.alpha_max(3) -cfg.alpha_max(4)], mp,rp,V_c,beta_c,quad);
 d_d = max(abs(over - atlim));
 
-fprintf('  (a) aft pair, delta 0  == otter.m       : %9.2e\n', worst_a);
+fprintf('  (a) aft mounting sign flips tau exactly : %9.2e\n', worst_a);
 fprintf('  (b) fore pair, delta 0 == otter.m       : %9.2e\n', worst_b);
 fprintf('  (c) tau                == otter_B * f   : %9.2e\n', worst_c);
 fprintf('  (d) saturation clamps n AND delta       : %9.2e\n', d_d);
