@@ -52,16 +52,20 @@ function R = W06_read(model, varargin)
 %   THE THRUSTS ARE RECONSTRUCTED, NOT LOGGED
 %
 %   모델이 기록하는 것은 **축 회전수** n 이다 — 추진기에 실제로 보내는 값이다.
-%   추력은 3주차의 곡선 T = k n|n| 으로 되돌린다. 배분기가 추력을 먼저 자른
-%   뒤에 n 을 구하므로 n 은 언제나 [n_min, n_max] 안에 있고, 그 구간에서 이
-%   곡선은 단조이므로 되돌리는 값이 배분기가 실제로 요구한 추력과 **정확히**
-%   같다. k 의 분기(전진 k_pos, 후진 k_neg)는 배분기와 같은 식을 쓴다.
+%   추력은 3주차의 곡선 T = k n|n| 으로 되돌린다. 배분기의 마지막 블록이
+%   `shaft limit` 이므로 기록된 n 은 언제나 [n_min, n_max] 안에 있고, 그 구간에서
+%   이 곡선은 단조이므로 되돌리는 값은 **선체가 실제로 받은** 추력과 정확히
+%   같다 — 요구한 추력이 아니라 전달된 추력이다. 포화했을 때 둘이 다르다는
+%   것이 6-2 절의 요점이고, 이 열은 그 중 전달된 쪽을 보여 준다. k 의 분기
+%   (전진 k_pos, 후진 k_neg)는 배분기와 같은 식을 쓴다.
 %   What the model records is the SHAFT SPEED n, which is what the thruster is
 %   actually given. The thrust is recovered with the Week 3 curve T = k n|n|.
-%   The allocation clips the thrust BEFORE inverting the curve, so n always lies
-%   in [n_min, n_max], where the curve is monotone; the recovered value is
-%   therefore exactly the thrust the allocation asked for. The k branch
-%   (k_pos ahead, k_neg astern) is the one the allocation uses.
+%   The allocation's last block is the `shaft limit` Saturation, so the logged n
+%   always lies in [n_min, n_max], where the curve is monotone; the recovered
+%   value is therefore exactly the thrust THE HULL RECEIVED, which above the
+%   ceiling is not the thrust the allocation asked for. That the two differ in
+%   saturation is the point of Section 6-2, and this column carries the
+%   delivered one. The k branch (k_pos ahead, k_neg astern) is the allocation's.
 %
 %   See also W06_VARS, W06_PLOT, W06_1_BUILD_BOW.
 

@@ -12,11 +12,13 @@
 %
 %  강의에서의 위치 / place in the lecture
 %      실험 6-0 이다. 학생이 고치는 유일한 파일이다. 블록에는 숫자가 아니라 이
-%      파일의 변수 이름이 들어 있다. F_B_max 를 명령창에서 바꾸고 Run 을 누르면
-%      횡방향 권한이 어디서 막히는지 바로 보인다.
-%      The file of Experiment 6-0, and the only one a student edits. Changing
-%      F_B_max in the Command Window and pressing Run shows at once where the
-%      lateral authority runs out.
+%      파일의 변수 이름이 들어 있다. 선수추진기의 한계는 `n_bow_max` 하나이고,
+%      여기서 F_B_max 와 횡력 한계 Y_max 가 차례로 나온다 — 그 줄을 고쳐 이
+%      파일을 다시 돌리면 배분기의 포화와 속도루프의 한계가 함께 따라온다.
+%      The file of Experiment 6-0, and the only one a student edits. The bow
+%      unit has one limit, n_bow_max, from which F_B_max and the lateral limit
+%      Y_max follow in turn: editing that line and running this file again moves
+%      the allocation's saturation and the velocity loop's limit together.
 %
 %  이번 주에 달라지는 것 / what changes this week
 %      선체는 1~5 주차와 **같은 Otter** 다. 달라지는 것은 추진기가 둘에서 셋으로
@@ -58,19 +60,35 @@ Binv = inv(B);           %#ok<MINV>   det B = 0.79, 그래서 역행렬이 있�
 T_max = k_pos*n_max^2;        %  119.68 N   전진 / ahead
 T_min = -k_neg*n_min^2;       % -66.71 N    후진 / astern
 
-%  선수추진기의 정격. 터널 추진기는 양쪽으로 같은 추력을 낸다 — 선미 프로펠러의
-%  전진·후진 비대칭(119.68 대 66.71)이 여기에는 없다.
-%  The bow unit's rating. A tunnel thruster is symmetric, so the fore-and-aft
-%  asymmetry of the stern propellers does not appear here.
-F_B_max = 40;                 % [N]
+%  선수추진기. 터널 추진기는 양쪽으로 같은 추력을 낸다 — 선미 프로펠러의
+%  전진·후진 비대칭(119.68 대 66.71)이 여기에는 없으므로 계수도 한계도 하나씩이다.
+%  정격 40 N 은 이 강의가 정한 값이고, 한계 회전수가 거기서 역산된다 (otter_config).
+%  A tunnel thruster is symmetric, so the fore-and-aft asymmetry of the stern
+%  propellers does not appear here: one coefficient, one limit. The 40 N rating
+%  is this course's choice and the speed limit follows from it.
+k_bow     = cfg.k_bow;        % 추력 곡선 계수, 양쪽 같다 / one coefficient
+n_bow_max = cfg.n_bow_max;    % 60.08 rad/s
+F_B_max   = k_bow*n_bow_max^2;        % 40.00 N — 정의가 하나다 / one definition
+
+%  운동모델이 받는 선수추진기 제원 셋. `otter_bow.m` 이 이것으로 세 번째
+%  추력을 만들고 그 모멘트의 팔을 정한다 (6-1 절).
+%  The three bow-unit numbers the motion model receives: otter_bow.m builds the
+%  third thrust from them and takes its moment arm from the first.
+bow = [l_f, k_bow, n_bow_max];        % [팔 m, 계수, 한계 rad/s]
 
 %% ---- 질량행렬 / the system inertia ----------------------------------------
-%  선수추진기의 힘은 otter.m 안으로 들어갈 자리가 없으므로 중첩으로 더한다
-%  (6-1 절). 그 중첩이 M 의 역행렬을 쓰며, otter_M 이 otter.m 과 같은 줄로
-%  M 을 다시 만든다 — 유한차분으로 재지 않는다.
-%  The bow thruster's force has no argument in otter.m and is added by
-%  superposition, which needs inv(M). otter_M rebuilds M line by line as
-%  otter.m builds it; it is not measured by finite differences.
+%  플랜트는 이제 M 의 역행렬을 쓰지 않는다 — 선수추진기의 힘이 `otter_bow.m`
+%  **안에서** tau 의 둘째·여섯째 성분이 되므로 중첩할 것이 없다 (6-1 절).
+%  여기 남겨 두는 이유는 하나다: 횡 게인을 왜 낮게 잡았는지가 M(1,1) = 85.50 kg
+%  대 M(2,2) = 162.50 kg 에서 나오고(6-2 절), 학생이 그 둘을 작업공간에서 바로
+%  읽을 수 있어야 한다. otter_M 은 otter.m 과 같은 줄로 M 을 다시 만든다 —
+%  유한차분으로 재지 않는다.
+%  The plant no longer needs inv(M): the bow thruster's force is rows 2 and 6 of
+%  the tau that otter_bow.m builds for itself, so there is nothing to superpose.
+%  M is kept here because the sway gains are argued from M(1,1) = 85.50 kg
+%  against M(2,2) = 162.50 kg, and those two should be readable in the
+%  workspace. otter_M rebuilds M line by line as otter.m builds it; it is not
+%  measured by finite differences.
 [Mmat, Minv] = otter_M(mp, rp);          %#ok<ASGLU>
 
 %% ---- 명령은 여기에 없다 / the commands are not here -----------------------
@@ -213,10 +231,12 @@ T_final = 200;        % [s]
 fprintf(['\n  W06_0_setup\n' ...
          '    actuation   3 thrusters, rank B = %d, det B = %.3f  ->  fully actuated\n' ...
          '    thrust      stern %+.2f .. %+.2f N per propeller,  bow +-%.0f N\n' ...
+         '    shaft       stern %+.2f .. %+.2f rad/s,  bow +-%.2f rad/s  (where the limit is applied)\n' ...
          '    lever       l_f/(2 y_pont) = %.4f\n' ...
          '    sway limit  %.2f N from the stern reverse limit, %.2f N from the bow unit\n' ...
          '    berth       (%.1f, %.1f) via (%.1f, %.1f), final heading %+.0f deg\n\n'], ...
         rank(B), det(B), T_min, T_max, F_B_max, ...
+        n_min, n_max, n_bow_max, ...
         l_f/(2*y_pont), ...
         abs(T_min)/(l_f/(2*y_pont)), F_B_max, ...
         berth_N, berth_E, app_N, app_E, rad2deg(psi_berth));

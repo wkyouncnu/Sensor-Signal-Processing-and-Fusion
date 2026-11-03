@@ -4,7 +4,19 @@
 <meta charset="utf-8">
 <title>강의자료</title>
 <style>
-  @page { size: A4; margin: 13mm 12mm 14mm 12mm; }
+  /*  쪽번호. Chrome 의 --print-to-pdf 는 자기 머리글·바닥글을 끄면(--no-pdf-header-footer)
+      아무것도 찍지 않지만, CSS 쪽여백 상자는 지킨다 — 그래서 여기에서 센다.
+      counter(pages) 는 전체 쪽수다 / page numbers: Chrome's --print-to-pdf prints
+      nothing of its own under --no-pdf-header-footer but does honour CSS page
+      margin boxes, so the count is made here.  */
+  @page {
+    size: A4; margin: 13mm 12mm 14mm 12mm;
+    @bottom-center {
+      content: counter(page) " / " counter(pages);
+      font-family: "Segoe UI", Arial, "Malgun Gothic", sans-serif;
+      font-size: 8pt; color: #64748b;
+    }
+  }
 
   html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body {
@@ -70,6 +82,18 @@
   /* ---------- 그림 ---------- */
   img { max-width: 100%; display: block; margin: 9px auto;
         break-inside: avoid; page-break-inside: avoid; }
+
+  /*  가져온 슬라이드 캡처는 4:3 이라 본문 폭을 다 쓰면 쪽 높이의 절반을 넘는다.
+      높이를 묶어 두어야 캡처와 그 수식이 **한 쪽에** 들어간다 (사용자 지시, 2026-11-03).
+      imported 4:3 slide captures are capped in height so that the capture and the
+      equations that re-typeset it land on the same printed page  */
+  img[src*="/refs/"] { max-height: 112mm; width: auto; }
+
+  /*  그림과 바로 뒤에 오는 것(범례 표·수식·콜아웃)을 떼어 놓지 않는다  */
+  p:has(> img) { break-after: avoid; page-break-after: avoid; }
+  p:has(> img) + table,
+  p:has(> img) + p,
+  p:has(> img) + blockquote { break-before: avoid; page-break-before: avoid; }
 
   /* ---------- 콜아웃 ---------- */
   blockquote {

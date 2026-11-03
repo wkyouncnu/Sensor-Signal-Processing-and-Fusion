@@ -11,54 +11,65 @@ function add_otter_plant(mdl, name, pos, cfg)
 %     pos   [x1 y1 x2 y2]
 %
 %   선체는 모든 주차가 같은 것을 쓴다 / every week uses the same hull
-%       otter.m 을 고치지 않고 그대로 호출한다. 주차마다 달라지는 것은 그 앞에
-%       붙는 제어기와 유도법칙뿐이다. 그래야 주차 사이의 차이가 제어의 차이이고
-%       모델의 차이가 아니라고 말할 수 있다.
+%       주차마다 달라지는 것은 그 앞에 붙는 제어기와 유도법칙뿐이다. 그래야
+%       주차 사이의 차이가 제어의 차이이고 모델의 차이가 아니라고 말할 수 있다.
+%       예외는 **추진기를 하나 더 단 주차**다 — 6주차는 선수추진기가 생겨
+%       운동모델 자체가 달라지므로 `otter_bow.m` 을 쓴다. 그 파일은 `otter.m`
+%       의 복사본이고 **추진기 부분 네 군데만** 다르다.
 %
-%       otter.m is called unmodified. What changes from week to week is what is
-%       placed in front of it, so that a difference between weeks can be
-%       attributed to the control and not to the model.
+%       What changes from week to week is what is placed in front of the hull.
+%       The exception is a week that adds a thruster: Week 6 integrates
+%       otter_bow.m, a copy of otter.m differing in four marked places, all of
+%       them in the actuation.
 %     cfg   struct from otter_config; defaults to otter_config('base')
 %
 %   INTERFACE
 %
 %     cfg.input_mode = 'n'   Inport  1 : n   shaft speeds, cfg.n_thr x 1
 %     cfg.input_mode = 'f'   Inport  1 : f   extended thrust vector
-%     cfg.ext_force = true   Inport  2 : tau_ext  [X; Y; N] that otter.m cannot
-%                                        carry, added by superposition
+%     cfg.ext_force = true   Inport  2 : tau_ext  [X; Y; N] that the hull
+%                                        function cannot carry, superposed
 %                            Outport 1 : x   12 states
 %
-%   THE SECOND INPORT (Week 6)
+%   WHICH MOTION MODEL (cfg.hull_fcn)
 %
 %   otter.m accepts two shaft speeds and builds its own generalized force
 %
 %       tau = [ T1 + T2,  0, 0, 0, 0,  y_pont*(T1 - T2) ]'
 %
-%   whose sway component is identically zero. A bow thruster produces a sway
-%   force and a yaw moment, and there is no argument through which to pass
-%   them. They are therefore added outside the call:
+%   whose sway component is identically zero. A vessel with a bow thruster
+%   produces a sway force, and otter.m has no argument through which to pass
+%   it. There are two ways out, and this project has used both.
 %
-%       nu_dot = M \ (tau + tau_damp + tau_crossflow - C nu_r - G eta - g_0)
-%       nu_dot <- nu_dot + M \ tau_ext
+%     cfg.hull_fcn = 'otter_bow'  (Week 6, the current route)
+%         A three-input motion model that builds tau from three shaft speeds
+%         inside the function. No extra inport, no superposition: the plant
+%         block has exactly one actuation input, as every other week does.
 %
-%   The acceleration otter.m returns is AFFINE in tau, so this superposition is
-%   exact rather than approximate: at the same state the damping, Coriolis and
-%   restoring terms are identical and only tau differs. Measured residual over
-%   a non-trivial state is 1.8e-15, which is round-off (otter_M.m).
+%     cfg.ext_force = true        (the superposition route)
+%         Kept for a configuration whose B has a non-zero sway row but which
+%         has no motion model of its own yet. The missing force is added after
+%         the call:
 %
-%   M comes from otter_M(), which rebuilds the inertia line by line as otter.m
-%   builds it. It is NOT measured by finite differences: M is not block
-%   diagonal, so a pure surge force divided by the resulting acceleration
-%   returns 1/[inv(M)]_11 = 76.71 kg instead of M(1,1) = 85.50 kg.
+%             nu_dot <- nu_dot + M \ tau_ext
 %
-%   The port appears only when cfg.ext_force is true, which is true exactly
-%   when the configuration's B has a non-zero sway row. The base configuration
-%   does not, so Weeks 1 to 5 are untouched.
+%         The acceleration otter.m returns is AFFINE in tau, so this is exact
+%         rather than approximate: at the same state the damping, Coriolis and
+%         restoring terms are identical and only tau differs. Measured residual
+%         over a non-trivial state is 1.8e-15, which is round-off (otter_M.m).
+%         M comes from otter_M(), which rebuilds the inertia line by line as
+%         otter.m builds it. It is NOT measured by finite differences: M is not
+%         block diagonal, so a pure surge force divided by the resulting
+%         acceleration returns 1/[inv(M)]_11 = 76.71 kg instead of
+%         M(1,1) = 85.50 kg.
 %
-%   The hull is Fossen's otter.m from Tools/MSS/VESSELS, called UNCHANGED.
-%   It is not written for code generation, so the call is declared extrinsic
-%   and Simulink hands it back to MATLAB. The consequence is that the output
-%   must be pre-sized, which is why the wrapper writes
+%   The base configuration has B(2,:) = 0, so Weeks 1 to 5 take neither route
+%   and are untouched. That the two routes agree is what verify_otter_bow
+%   measures.
+%
+%   Neither hull function is written for code generation, so the call is
+%   declared extrinsic and Simulink hands it back to MATLAB. The consequence is
+%   that the output must be pre-sized, which is why the wrapper writes
 %
 %       xdot = zeros(12,1);
 %       xdot = otter(...);
@@ -87,6 +98,8 @@ switch cfg.input_mode
 end
 
 ext = isfield(cfg, 'ext_force') && cfg.ext_force;
+if isfield(cfg, 'hull_fcn'), hull = cfg.hull_fcn; else, hull = 'otter'; end
+bow = strcmp(hull, 'otter_bow');
 
 sub = [mdl '/' name];
 add_block('built-in/Subsystem', sub, 'Position', pos);
@@ -101,6 +114,7 @@ end
 
 %% ---- payload and current, read from the base workspace -----------------
 K = {'mp','rp','V_c','beta_c'};
+if bow, K = [K {'bow'}];  end
 if ext, K = [K {'Minv'}]; end
 for i = 1:numel(K)
     add_block('simulink/Sources/Constant', [sub '/' K{i}], ...
@@ -111,7 +125,27 @@ end
 blk = [sub '/Otter hull'];
 add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
           'Position',[330 100 520 340]);
-if ext
+if bow
+    code = { ...
+'function xdot = otter_hull(x, n, mp, rp, V_c, beta_c, bow)'
+'% otter_bow.m: Fossen''s otter.m with a bow tunnel thruster added, called'
+'% unchanged from _tools. Three shaft speeds in, tau built inside.'
+'%'
+'%   x     12 states, fed back from the integrator'
+'%   n     shaft speeds [rad/s]: port stern, starboard stern, bow'
+'%   bow   [l3 k3 n3_max], the bow unit''s arm, coefficient and speed limit'
+'%'
+'% The sway force and its moment are now rows 2 and 6 of the tau that the'
+'% motion model builds for itself. Nothing is added after the call.'
+'%'
+'% otter_bow.m is not written for code generation, so the call is extrinsic'
+'% and xdot has to be pre-sized for Simulink to know the output width.'
+'coder.extrinsic(''otter_bow'');'
+''
+'xdot = zeros(12,1);'
+'xdot = otter_bow(x, n, mp, rp, V_c, beta_c, bow);'
+'end'};
+elseif ext
     code = { ...
 'function xdot = otter_hull(x, u_thr, tau_ext, mp, rp, V_c, beta_c, Minv)'
 '% Fossen''s otter.m, called unchanged from Tools/MSS/VESSELS, plus the'
@@ -119,7 +153,7 @@ if ext
 '%'
 '%   x        12 states, fed back from the integrator'
 '%   u_thr    shaft speeds of the two stern propellers [rad/s]'
-'%   tau_ext  [X; Y; N] from the bow thruster [N, N, N m]'
+'%   tau_ext  [X; Y; N] the hull function cannot carry [N, N, N m]'
 '%   Minv     inverse of the 6x6 system inertia, from otter_M()'
 '%'
 '% otter.m is not written for code generation, so the call is extrinsic and'

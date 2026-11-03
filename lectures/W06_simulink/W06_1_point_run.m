@@ -20,15 +20,17 @@
 %      모델을 고치지 않는다. 배분기의 Saturation 은 한계를 **숫자가 아니라
 %      식**으로 담고 있다 (`_tools/add_allocation3.m`) —
 %
-%          UpperLimit = '[ T_max;  T_max;  F_B_max]'
+%          UpperLimit = '[ n_max;  n_max;  n_bow_max]'
 %
-%      컴파일할 때 작업공간에서 `F_B_max` 를 읽으므로, 돌리기 **전에**
-%      `F_B_max = 0` 을 작업공간에 두면 선수추진기의 허용 구간이 [0, 0] 이 되어
-%      힘을 전혀 내지 못한다. 블록 하나 건드리지 않고 완전구동이 **빠진** 배가
-%      된다. 끝나면 정격으로 되돌린다.
+%      한계는 힘이 아니라 **회전수**에 걸린다 — 운동모델이 받는 양이 회전수이고,
+%      각 추진기가 실제로 한계를 갖는 양도 그것이다. 컴파일할 때 작업공간에서
+%      `n_bow_max` 를 읽으므로, 돌리기 **전에** `n_bow_max = 0` 을 작업공간에
+%      두면 선수추진기의 허용 구간이 [0, 0] 이 되어 축이 돌지 못한다. 블록 하나
+%      건드리지 않고 완전구동이 **빠진** 배가 된다. 끝나면 정격으로 되돌린다.
 %      The allocation's Saturation holds its limits as EXPRESSIONS, resolved
-%      from the base workspace at compile time. Setting F_B_max = 0 before the
-%      run collapses the bow unit's allowance to [0, 0] -- the same hull, now
+%      from the base workspace at compile time, and it acts on the three SHAFT
+%      SPEEDS rather than on force. Setting n_bow_max = 0 before the run
+%      collapses the bow unit's allowance to [0, 0] -- the same hull, now
 %      under-actuated -- without editing a single block. It is restored after.
 %
 %  시뮬링크에서 Run 을 눌러도 **똑같다.** 이 파일은 그 Run 을 명령창에서 한 번
@@ -89,7 +91,7 @@ row1 = [t05, dist(end), y(end,6) - y(end,9), max(abs(y(:,2))), max(abs(y(:,11)))
 
 animate  = 0;           %#ok<NASGU>
 W06batch = 1;           %#ok<NASGU>  W06_plot 이 바로 돌아간다 / W06_plot returns at once
-F_B_max  = 0;           %  선수추진기 정지 / the bow unit is held at zero
+n_bow_max = 0;          %  선수추진기 정지 / the bow unit's shaft is held at zero
 sim(mdl);
 
 z    = squeeze(W06.signals.values);  if size(z,1) < size(z,2), z = z.'; end
@@ -116,7 +118,7 @@ fprintf('    F_B peak            with the bow unit %6.2f N,  without it %6.2f N\
 %  The heading Constant holds its own NAME, so a value placed in the workspace
 %  before the run changes it without touching a block. Rung 8's script prints
 %  this same block; Section 6-7 lays the two outputs side by side.
-F_B_max   = V.F_B_max;  %  먼저 정격을 되돌린다 / the rating goes back first
+n_bow_max = V.n_bow_max;  %  먼저 정격을 되돌린다 / the rating goes back first
 psi_d_cmd = deg2rad(45);
 sim(mdl);
 
@@ -140,7 +142,7 @@ fprintf('    at psi_d 0, |U| stays above the NED ceiling %4.2f m/s until t = %5.
         V.v_ned_max, t(find(U > V.v_ned_max, 1, 'last')));
 
 %% 6) 명령과 정격을 되돌린다 / command and rating go back
-psi_d_cmd = 0;          %#ok<NASGU>
-F_B_max   = V.F_B_max;  %#ok<NASGU>
+psi_d_cmd = 0;            %#ok<NASGU>
+n_bow_max = V.n_bow_max;  %#ok<NASGU>
 clear W06batch                      % 다음 Run 은 다시 그림을 그린다 / plots again
 fprintf('\n');

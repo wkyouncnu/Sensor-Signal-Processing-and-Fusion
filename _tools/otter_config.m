@@ -32,12 +32,18 @@ function cfg = otter_config(name)
 %     k_neg       thrust coefficient, reverse
 %     n_max       maximum shaft speed [rad/s]
 %     n_min       minimum shaft speed [rad/s]
+%     k_bow       thrust coefficient of the bow tunnel thruster, both ways
+%     n_bow_max   shaft-speed limit of the bow thruster, both ways [rad/s]
 %     alpha_max   azimuth limit [rad], NaN for a fixed thruster
 %     alpha_rlim  azimuth rate limit [rad/s], NaN for a fixed thruster
 %     input_mode  'n' for shaft speeds (Week 1), 'f' for the extended thrust
 %                 vector (Week 3 onward)
-%     ext_force   true when B can produce a sway force, so that the hull needs
-%                 a second inport for the part otter.m cannot carry (Week 6)
+%     hull_fcn    the motion model this configuration is integrated with:
+%                 'otter' (two shaft speeds, tau(2) identically zero) or
+%                 'otter_bow' (three shaft speeds, sway force built inside)
+%     ext_force   true when B can produce a sway force that hull_fcn has no
+%                 argument for, so that the plant needs a second inport and
+%                 adds the missing force by superposition
 %
 %   THE COLUMN RULE (Week 3). A thruster at (x, y) pushing along the unit
 %   vector e = (e_x, e_y) contributes one column
@@ -70,8 +76,18 @@ cfg.k_neg = 0.01289/2;                        % negative bollard, one propeller
 cfg.n_max =  sqrt((0.5*24.4*9.81)/cfg.k_pos); % [rad/s]
 cfg.n_min = -sqrt((0.5*13.6*9.81)/cfg.k_neg); % [rad/s]
 
+% --- bow tunnel thruster -------------------------------------------------
+%  터널 추진기는 양쪽으로 **같은** 추력을 낸다. 선미 프로펠러의 전진·후진
+%  비대칭(k_pos 대 k_neg)이 여기에는 없으므로 계수도 한계도 하나씩이다.
+%  정격 40 N 은 이 강의가 정한 값이고, 한계 회전수는 거기서 역산한다.
+%  A tunnel thruster is symmetric, so one coefficient and one limit. The
+%  40 N rating is this course's choice; the speed limit follows from it.
+cfg.k_bow     = cfg.k_pos;                       % same hardware as a propeller
+cfg.n_bow_max = sqrt(40 / cfg.k_bow);            % 40 N both ways [rad/s]
+
 cfg.name       = lower(name);
 cfg.input_mode = 'f';
+cfg.hull_fcn   = 'otter';
 
 switch cfg.name
     case 'base'
@@ -108,7 +124,8 @@ switch cfg.name
                         0        0       1  ];
         cfg.alpha_max  = [NaN NaN NaN];
         cfg.alpha_rlim = [NaN NaN NaN];
-        cfg.input_mode = 'n';                % 선미 한 쌍은 축회전수로 들어간다
+        cfg.input_mode = 'n';                % 세 추진기 모두 축회전수로 들어간다
+        cfg.hull_fcn   = 'otter_bow';        % 횡력을 운동모델 안에서 만든다
 
     case 'quad_tilt'
         % Week 12. Four thrusters, each on a servo limited to +-45 deg.
@@ -132,11 +149,15 @@ cfg.l_a    = l_a;
 cfg.B      = otter_B(cfg);
 cfg.n_cols = size(cfg.B, 2);
 
-%  이 구성이 횡력을 낼 수 있는가 / can this configuration produce a sway force
+%  운동모델이 그 횡력을 품는가 / can the hull function carry the sway force
 %    `otter.m` 은 선미 프로펠러 **둘**만 받고 그 안에서 tau 를 만들며, 그 tau 의
-%    둘째 성분은 언제나 0 이다. B 의 둘째 행에 0 이 아닌 것이 있으면 그 힘은
-%    `otter.m` 안으로 들어갈 자리가 없다. 그때 `add_otter_plant` 가 포트를 하나
-%    더 만들어 중첩으로 더한다 (6주차). 기본 구성은 B(2,:) = 0 이므로 1~5 주차
-%    모델은 전혀 바뀌지 않는다.
-cfg.ext_force = any(cfg.B(2,:) ~= 0);
+%    둘째 성분은 언제나 0 이다. B 의 둘째 행에 0 이 아닌 것이 있는데 운동모델이
+%    `otter.m` 이면 그 힘은 함수 안으로 들어갈 자리가 없고, `add_otter_plant` 가
+%    포트를 하나 더 만들어 중첩으로 더해야 한다.
+%
+%    6주차는 더 이상 그러지 않는다 — `otter_bow.m` 이 축회전수 **셋**을 받아
+%    tau 를 안에서 만들므로 중첩 자리가 필요 없다. 기본 구성은 B(2,:) = 0 이라
+%    1~5 주차 모델은 전과 같고, 12주차의 네 틸팅 추진기는 아직 제 운동모델이
+%    없으므로 중첩으로 남는다.
+cfg.ext_force = any(cfg.B(2,:) ~= 0) && strcmp(cfg.hull_fcn, 'otter');
 end

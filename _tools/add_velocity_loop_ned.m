@@ -8,6 +8,23 @@ function s = add_velocity_loop_ned(m, pos)
 %      한 번 돌리고, 내놓는 힘은 추진기가 선체고정에서 받으므로 나갈 때 한 번 돌린다.
 %      회전 두 번이 **이 고리 안에** 있고, 바깥 고리에는 하나도 없다.
 %
+%  축마다 서브시스템 하나 / one subsystem per axis
+%      선체고정 고리와 **같은 모양으로** 접는다 (사용자 지시, 2026-11-03).
+%
+%          velocity loop NED
+%            ├── to NED               회전 1
+%            ├── north speed control  n_d, n_fb -> N
+%            ├── east speed control   e_d, e_fb -> E
+%            └── to body              회전 2
+%
+%      6-7 절은 이 고리를 선체고정 고리와 **나란히 놓고** 무엇이 더 붙었는지를
+%      묻는다. 한쪽만 접어 두면 그 비교가 "블록이 몇 개인가" 가 되어 버린다.
+%      둘을 같은 모양으로 접으면 남는 차이가 **회전 둘**뿐이고, 그것이 이 절이
+%      말하려는 전부다.
+%      Section 6-7 puts this loop beside the body-fixed one and asks what has
+%      been added. Folded the same way, the only remaining difference is the
+%      two rotations, which is the whole point of that section.
+%
 %  법칙 / the law  (축 두 개가 **같은 게인**을 쓴다)
 %      nu_n   = R(psi) nu                     측정 속도를 NED 로      <- 회전 1
 %      e      = nu_d_n - nu_n                 북·동 각각의 오차
@@ -21,13 +38,15 @@ function s = add_velocity_loop_ned(m, pos)
 %      (Kp_u 200 / Kp_v 150, M(1,1) 85.5 대 M(2,2) 162.5). NED 의 북축은
 %      선수각에 따라 전진일 때도 있고 횡일 때도 있다 — 게인을 전진에 맞추면
 %      배가 돌아섰을 때 과도해진다. 그래서 **느린 축의 값**을 두 축에 함께 쓴다.
+%      그래서 두 서브시스템의 Gain 블록 값이 **글자까지 같다** — 더블클릭해
+%      둘을 비교하면 그것이 바로 보인다.
 %
 %  왜 포화 한계가 느슨한가 / why the saturation limits are loose
 %      선체고정 고리의 횡 PI 는 자기 축의 액추에이터 정격을 안다 (Y_max 35.13 N).
 %      NED 의 북 PI 는 그것을 모른다 — 선수각에 따라 전진 추진기 둘이 낼 수도 있고
-%      선수추진기가 낼 수도 있다. 참된 한계는 **배분기가 F_B 를 자를 때** 비로소
-%      드러나므로, 여기서는 2 X_max 로 느슨히 두고 안티와인드업이 그만큼 늦게 걸린다.
-%      이것이 NED 전략이 치르는 **두 번째 값**이다.
+%      선수추진기가 낼 수도 있다. 참된 한계는 **배분기가 세 추진기의 회전수를
+%      자를 때** 비로소 드러나므로, 여기서는 2 X_max 로 느슨히 두고 안티와인드업이
+%      그만큼 늦게 걸린다. 이것이 NED 전략이 치르는 **두 번째 값**이다.
 %
 %  포트 / ports
 %      in   nu_d_n [2x1]  요구 NED 속도 [북; 동]
@@ -48,24 +67,35 @@ if nargin < 2 || isempty(pos), pos = [480 100 640 220]; end
 s = add_subsys(m, 'velocity loop NED', pos, {'nu_d_n','x'}, {'tau_uv'}, ...
                gnc_colour('controller'));
 
-set_param([s '/nu_d_n'], 'Position', [ 60  193  90  207]);
-set_param([s '/x'],      'Position', [ 60  993  90 1007]);
+%% ---- 축마다 서브시스템 하나 / one subsystem per axis ----------------------
+axis_loop_ned(s, 'north speed control', [740 200 920 340], ...
+              'n_d', 'n_fb', 'N', 'e_n', 'I_n', 'N raw', 'north limit', ...
+              'N - N raw', 'Kb_n');
+axis_loop_ned(s, 'east speed control',  [740 560 920 700], ...
+              'e_d', 'e_fb', 'E', 'e_e', 'I_e', 'E raw', 'east limit',  ...
+              'E - E raw', 'Kb_e');
 
-%% 1) 요구값을 축별로 가른다 / split the command into its two axes
-sel(s, 'n_d = nu_d_n(1)', 2, 1, [150 182 260 218]);
-sel(s, 'e_d = nu_d_n(2)', 2, 2, [150 542 260 578]);
+%% ---- 1) 요구값을 축별로 가른다 / split the command into its two axes ------
+%  선택기를 **먹이는 포트의 높이로** 놓는다. 높이는 읽는다, 계산하지 않는다
+q = port_xy(s, 'north speed control', 'Inport', 1);
+sel(s, 'n_d = nu_d_n(1)', 2, 1, [150 q(2)-18 290 q(2)+18]);
+q = port_xy(s, 'east speed control',  'Inport', 1);
+sel(s, 'e_d = nu_d_n(2)', 2, 2, [150 q(2)-18 290 q(2)+18]);
+
+at(s, 'nu_d_n', port_xy(s, 'n_d = nu_d_n(1)', 'Inport', 1));
 route(s, 'nu_d_n', 1, 'n_d = nu_d_n(1)', 1, zeros(0,2));
-route(s, 'nu_d_n', 1, 'e_d = nu_d_n(2)', 1, [115 200; 115 560]);
+riser(s, 'nu_d_n', 1, 'e_d = nu_d_n(2)', 1, 120);
 
-%% 2) 회전 하나 — 측정 속도를 NED 로 / rotation one, the measurement into NED
-sel(s, 'nu = x(1:2)', 12, [1 2], [150  932 260  968]);
-sel(s, 'psi = x(12)', 12,    12, [150 1132 260 1168]);
-route(s, 'x', 1, 'nu = x(1:2)', 1, [120 1000; 120  950]);
-route(s, 'x', 1, 'psi = x(12)', 1, [130 1000; 130 1150]);
+%% ---- 2) 회전 하나 — 측정 속도를 NED 로 / rotation one, into NED ----------
+sel(s, 'nu = x(1:2)', 12, [1 2], [150  932 290  968]);
+sel(s, 'psi = x(12)', 12,    12, [150 1132 290 1168]);
+at(s, 'x', port_xy(s, 'nu = x(1:2)', 'Inport', 1));
+route(s, 'x', 1, 'nu = x(1:2)', 1, zeros(0,2));
+riser(s, 'x', 1, 'psi = x(12)', 1, 135);
 
 blk = [s '/to NED'];
 add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
-          'Position', [330 900 470 1100]);
+          'Position', [340 900 480 1100]);
 set_mlfcn(blk, { ...
 'function nu_n = to_ned(nu, psi)'
 'c = cos(psi);'
@@ -74,29 +104,26 @@ set_mlfcn(blk, { ...
 '         s*nu(1) + c*nu(2) ];     % 동쪽으로 가는 빠르기 / speed to the east'
 'end'}, 'nu_n', '[2 1]');
 route(s, 'nu = x(1:2)', 1, 'to NED', 1, zeros(0,2));
-route(s, 'psi = x(12)', 1, 'to NED', 2, [300 1150; 300 1050]);
+riser(s, 'psi = x(12)', 1, 'to NED', 2, 315);
 
 %  되먹임을 축별로 가른다. 바깥에서 들어오지 않고 **이 고리 안에서** 만든다
-sel(s, 'n_fb = nu_n(1)', 2, 1, [530 282 640 318]);
-sel(s, 'e_fb = nu_n(2)', 2, 2, [530 642 640 678]);
-route(s, 'to NED', 1, 'n_fb = nu_n(1)', 1, [500 1000; 500 300]);
-route(s, 'to NED', 1, 'e_fb = nu_n(2)', 1, [510 1000; 510 660]);
+q = port_xy(s, 'north speed control', 'Inport', 2);
+sel(s, 'n_fb = nu_n(1)', 2, 1, [540 q(2)-18 680 q(2)+18]);
+q = port_xy(s, 'east speed control',  'Inport', 2);
+sel(s, 'e_fb = nu_n(2)', 2, 2, [540 q(2)-18 680 q(2)+18]);
+riser(s, 'to NED', 1, 'n_fb = nu_n(1)', 1, 505);
+riser(s, 'to NED', 1, 'e_fb = nu_n(2)', 1, 520);
 
-%% 3) 축 둘, **같은 게인** / the two axes, with one gain pair
-pi_axis_ned(s, 200, 'n_d = nu_d_n(1)', 'n_fb = nu_n(1)', ...
-            'e_n', 'I_n', 'N raw', 'north limit', 'N - N raw', 'Kb_n');
-pi_axis_ned(s, 560, 'e_d = nu_d_n(2)', 'e_fb = nu_n(2)', ...
-            'e_e', 'I_e', 'E raw', 'east limit',  'E - E raw', 'Kb_e');
+%% ---- 3) 축으로 들어가고 나온다 / into each axis, and out ------------------
+route(s, 'n_d = nu_d_n(1)', 1, 'north speed control', 1, zeros(0,2));
+route(s, 'n_fb = nu_n(1)',  1, 'north speed control', 2, zeros(0,2));
+route(s, 'e_d = nu_d_n(2)', 1, 'east speed control',  1, zeros(0,2));
+route(s, 'e_fb = nu_n(2)',  1, 'east speed control',  2, zeros(0,2));
 
-%% 4) 회전 둘 — 요구 힘을 선체고정으로 / rotation two, the force back into the hull
-add_block('simulink/Signal Routing/Mux', [s '/F_n mux'], 'Inputs','2', ...
-          'Position', [1280 200 1285 500]);
-riser(s, 'north limit', 1, 'F_n mux', 1, 1230);
-riser(s, 'east limit',  1, 'F_n mux', 2, 1240);
-
+%% ---- 4) 회전 둘 — 요구 힘을 선체고정으로 / rotation two, back to the hull -
 blk = [s '/to body'];
 add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
-          'Position', [1340 300 1480 500]);
+          'Position', [1070 330 1210 570]);
 set_mlfcn(blk, { ...
 'function tau_uv = to_body(F_n, psi)'
 'c = cos(psi);'
@@ -104,55 +131,70 @@ set_mlfcn(blk, { ...
 'tau_uv = [  c*F_n(1) + s*F_n(2) ;    % 전진 방향의 힘 / along the bow'
 '           -s*F_n(1) + c*F_n(2) ];   % 우현 방향의 힘 / to starboard'
 'end'}, 'tau_uv', '[2 1]');
-route(s, 'F_n mux',     1, 'to body', 1, zeros(0,2));
-route(s, 'psi = x(12)', 1, 'to body', 2, [1310 1150; 1310 450]);
 
-at(s, 'tau_uv', port_xy(s,'to body','Outport',1) + [105 0]);
+add_block('simulink/Signal Routing/Mux', [s '/F_n mux'], 'Inputs','2', ...
+          'Position', [1000 330 1005 570]);
+riser(s, 'north speed control', 1, 'F_n mux', 1, 960);
+riser(s, 'east speed control',  1, 'F_n mux', 2, 975);
+riser(s, 'F_n mux',     1, 'to body', 1, 1040);
+riser(s, 'psi = x(12)', 1, 'to body', 2, 1300);
+
+at(s, 'tau_uv', port_xy(s, 'to body', 'Outport', 1) + [105 0]);
 route(s, 'to body', 1, 'tau_uv', 1, zeros(0,2));
 end
 
 % =========================================================================
-function pi_axis_ned(s, y0, cmdSel, fbSel, eName, iName, rawName, satName, bckName, kbName)
-%  띠 하나의 모양은 add_velocity_loop 의 pi_axis 와 같다. 다른 것은 둘뿐이다 —
-%  측정값 Selector 를 **이 안에서 만들지 않고** (회전 뒤에 이미 갈라 두었다),
-%  게인 이름이 축마다 다르지 않고 **Kp_ned · Ki_ned 하나**다
-%      y0        명령 · 오차 · Kp · 요구 힘 · 포화          the forward path
-%      y0 + 120  Ki · 적분기                                 the integral path
-%      y0 + 260  안티와인드업이 돌아오는 통로                the return lane
+function axis_loop_ned(parent, name, pos, cmdName, fbName, outName, ...
+                       eName, iName, rawName, satName, bckName, kbName)
+%AXIS_LOOP_NED  NED 한 축의 PI 를 서브시스템 하나로. 안의 모양이 선체고정
+%               고리의 axis_loop 과 **같다**. 다른 것은 둘뿐이다 — 게인 이름이
+%               축마다 다르지 않고 Kp_ned·Ki_ned 하나이고, 포화 한계가 느슨하다.
+%               One NED axis as a subsystem. The shape inside is the body-fixed
+%               loop's, with two differences: one gain pair serves both axes,
+%               and the limit is loose.
 
-add_sum(s, eName, '+-', [730 y0]);
-route(s, cmdSel, 1, eName, 1, zeros(0,2));
-route(s, fbSel,  1, eName, 2, [730 y0+100]);
+s = add_subsys(parent, name, pos, {cmdName, fbName}, {outName}, ...
+               gnc_colour('controller'));
+y0 = 200;
 
-gain(s, ['Kp ' eName], 'Kp_ned', [800 y0- 18 860 y0+ 18]);
-gain(s, ['Ki ' eName], 'Ki_ned', [800 y0+102 860 y0+138]);
-route(s, eName, 1, ['Kp ' eName], 1, zeros(0,2));
-route(s, eName, 1, ['Ki ' eName], 1, [770 y0; 770 y0+120]);
+add_sum(s, eName, '+-', [330 y0]);
+at(s, cmdName, [150 y0]);
+at(s, fbName,  [150 y0+100]);
+route(s, cmdName, 1, eName, 1, zeros(0,2));
+route(s, fbName,  1, eName, 2, [330 y0+100]);
 
-add_sum(s, ['into ' iName], '++', [920 y0+120]);
+gain(s, 'Kp', 'Kp_ned', [400 y0- 18 460 y0+ 18]);
+gain(s, 'Ki', 'Ki_ned', [400 y0+102 460 y0+138]);
+route(s, eName, 1, 'Kp', 1, zeros(0,2));
+route(s, eName, 1, 'Ki', 1, [370 y0; 370 y0+120]);
+
+add_sum(s, ['into ' iName], '++', [520 y0+120]);
 add_block('simulink/Continuous/Integrator', [s '/' iName], ...
-          'InitialCondition','0', 'Position', [980 y0+102 1020 y0+138]);
-route(s, ['Ki ' eName],   1, ['into ' iName], 1, zeros(0,2));
+          'InitialCondition','0', 'Position', [580 y0+102 620 y0+138]);
+route(s, 'Ki',            1, ['into ' iName], 1, zeros(0,2));
 route(s, ['into ' iName], 1, iName,           1, zeros(0,2));
 
-add_sum(s, rawName, '++', [1080 y0]);
-route(s, ['Kp ' eName], 1, rawName, 1, zeros(0,2));
-route(s, iName,         1, rawName, 2, [1080 y0+120]);
+add_sum(s, rawName, '++', [680 y0]);
+route(s, 'Kp',  1, rawName, 1, zeros(0,2));
+route(s, iName, 1, rawName, 2, [680 y0+120]);
 
-%  한계가 느슨하다. 참된 한계는 배분기가 F_B 를 자를 때 드러난다
+%  한계가 느슨하다. 참된 한계는 배분기가 회전수를 자를 때 드러난다
 add_block('simulink/Discontinuities/Saturation', [s '/' satName], ...
           'UpperLimit','2*X_max', 'LowerLimit','-2*X_max', ...
-          'Position', [1130 y0-18 1180 y0+18]);
+          'Position', [730 y0-18 780 y0+18]);
 route(s, rawName, 1, satName, 1, zeros(0,2));
 
-add_sum(s, bckName, '-+', [1060 y0+260]);
+add_sum(s, bckName, '-+', [660 y0+260]);
 set_param([s '/' bckName], 'Orientation','left');
-gain(s, kbName, 'Kb', [940 y0+242 990 y0+278]);
+gain(s, kbName, 'Kb', [540 y0+242 590 y0+278]);
 set_param([s '/' kbName], 'Orientation','left');
-riser(s, rawName, 1, bckName, 1, 1110);
-riser(s, satName, 1, bckName, 2, 1220);
+riser(s, rawName, 1, bckName, 1, 710);
+riser(s, satName, 1, bckName, 2, 820);
 route(s, bckName, 1, kbName, 1, zeros(0,2));
-riser(s, kbName,  1, ['into ' iName], 2, 900);
+riser(s, kbName, 1, ['into ' iName], 2, 500);
+
+at(s, outName, port_xy(s, satName, 'Outport', 1) + [120 0]);
+route(s, satName, 1, outName, 1, zeros(0,2));
 
 for nm = {eName, ['into ' iName], rawName, bckName}
     set_param([s '/' nm{1}], 'NamePlacement','alternate');

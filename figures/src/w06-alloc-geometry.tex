@@ -32,23 +32,27 @@
 %
 %  l_f 에 대하여 — 그림이 드러내는 이상화다.
 %    otter_config.m 63-64 행이 l_f = 1.5 m 로 두는데 선체는 2.0 m 이다. 즉
-%    선수추진기가 **뱃머리보다 0.5 m 앞**에 앉는다. 그래도 그 값으로 그린다.
+%    그 팔을 선체 위의 자리로 읽으면 **뱃머리보다 0.5 m 앞**이 된다.
 %    ① B 에 들어가는 것은 선체 위의 위치가 아니라 **모멘트 팔**이다
 %    ② 6주차의 모든 수치(a = 1.898734, det B = 0.79, N_max = 52.6993,
 %       Y_max = 35.1329)가 그 값에서 나오고 verify_w06_actuation 이 17/17 로
 %       통과한다. 그림이 다른 팔을 말하면 그림만 거짓이 된다
 %    ③ l_f 는 12주차 quad_tilt 와 **공유**한다 — 한쪽만 고칠 수 없다
-%    그래서 아래 띠에 그 이상화를 적어 둔다. 숨기지 않는다.
+%    그래서 **그림만** 고쳤다 (사용자 지시, 2026-11-03): 추진기 원은 선체 안
+%    터널 자리 x_b = +0.85 m 에 앉히고, l_f = 1.5 m 는 거기서 더 나아가는
+%    **치수선**으로 그린다. 둘을 잇는 점선과 팔 끝의 눈금이 그 차이를 보이며,
+%    아래 띠가 말로 적는다. 모델과 수치는 하나도 건드리지 않았다.
 %
 %  y 예산 (mm). 다중행 라벨은 anchor 에서 **위로** 자라므로 먼저 적어 둔다
 %  (교훈 lxxvii). 선체의 화면 높이는 칸마다 같다 — psi = 0 고정이므로
-%  -18 .. +18 이고, 선수추진기 원이 +28.7 까지 올라간다 (교훈 lxxxiii).
+%  -18 .. +18 이고, 그 위로 l_f 팔 끝의 눈금이 +27.0 까지 올라간다.
 %
 %  칸 (a)  — shift 없음
 %     +40.0  제목 (footnotesize, anchor north west at (-59,40))
-%     +31.7  F_B 라벨 위       /  +28.2 anchor (south)
-%     +28.7  선수추진기 원 위  /  +27.0 중심  /  +25.3 원 아래
+%     +27.0  l_f 팔 끝 눈금 (-1.5 .. +1.5)  — 선체 바깥, 치수선이 닿는 곳
+%     +20.0  F_B 라벨 위       /  +16.5 anchor (south)
 %     +18.0  뱃머리            /  +17.4 규약 호 시작 (40 deg, r=27)
+%     +17.0  선수추진기 원 위  /  +15.3 중심 (x_b = +0.85 m)  /  +13.6 원 아래
 %     +11.7  어깨
 %      +9.3  x_b 라벨 위       /   +5.8 anchor  /  +5.0 축 화살촉
 %      +4.5  CO 라벨 위        /   +1.0 anchor (south west)
@@ -63,10 +67,11 @@
 %
 %  칸 (b)  — shift (0,-86).  (a) 의 밑(-30) 과 (b) 의 제목(-46) 이 16 mm 뜬다
 %     +40.0  제목
-%     +32.0  F_B 라벨 위       /  +28.5 anchor (south west)
-%     +28.7  선수추진기 원 위
+%     +27.0  l_f 팔 끝 눈금
 %     +23.7  선수 호 시작 (50 deg, r=31)
+%     +20.3  F_B 라벨 위       /  +16.8 anchor (south west)
 %     +18.0  뱃머리
+%     +17.0  선수추진기 원 위  /  +15.3 중심
 %     +10.6  선수 호 끝 (20 deg)
 %      +4.8  T_R 라벨 위       /   +3.0 anchor (west) 와 화살촉  /  +1.2 아래
 %     -10.6  선미 호 시작 (200 deg, r=31) — 선수 호의 점대칭이다
@@ -90,7 +95,7 @@
 %    -15.7  (a) T_L 라벨 왼쪽 (anchor east at -11)  /  -28.0 (b) T_L 라벨 왼쪽
 %    -10.8  보조선 시작 (y=0 에서 선체 반폭 9.72 보다 1.08 mm 바깥)
 %     -9.72 선체 측면           /  -7.11 좌현 추진기
-%     -3.0  보조선 시작 (y=27 에서 선수추진기 원 r=1.7 보다 1.3 mm 바깥)
+%     -2.5  보조선 시작 (y=27 에서 팔 끝 눈금의 왼쪽 끝 -1.5 보다 1 mm 바깥)
 %      0.0  중심선
 %     +7.11 우현 추진기
 %     +15.0 F_B 화살촉          /  +15.7 (a) T_R 라벨 오른쪽 (anchor west at 11)
@@ -98,6 +103,7 @@
 %     +20.7 (a) 규약 호 시작    /  +26.1 끝  /  +28.0 라벨 anchor (west) -> +59.0
 %     +19.9 (b) 선수 호 시작    /  +29.1 끝  /  +30.5 라벨 anchor (west) -> +52.5
 %     +23.5 (b) F_B 라벨 오른쪽 (anchor south west at 3.5, 원 r=1.7 밖)
+%                 — y=16.8 이라 선체 측면(x_b=0.93 에서 ±1.3 mm) 밖이다
 %     +36.5 (b) T_R 라벨 오른쪽 (anchor west at 11.5)  /  +40.5 X=0 주석 오른쪽
 %
 %  주석만 한국어다. 조판되는 글자에 한글을 넣으면 pdflatex 이 멈춘다.
@@ -141,12 +147,12 @@
     \BP{-1.00}{-0.54} -- \BP{0.65}{-0.54} -- \BP{1.00}{0} --
     \BP{0.65}{0.54}   -- \BP{-1.00}{0.54} -- cycle;
   \draw[bodyc, line width=0.3pt, densely dotted] \BP{-1.00}{0} -- \BP{1.00}{0};
-  %  뱃머리에서 선수추진기까지 — 선체 밖에 앉은 것이 보이게 한다
-  \draw[bodyc, line width=0.3pt, densely dotted] (0,18) -- (0,25.3);
   \node[dot, ink, fill=ink, minimum size=1.1mm] at (0,0) {};
   \node[thrc] at \BP{-0.85}{-0.395} {};
   \node[thrc] at \BP{-0.85}{0.395}  {};
-  \node[thrc] at \BP{1.50}{0}       {};}
+  %  터널 자리. 선미 한 쌍이 선미에서 0.15 m 안쪽에 앉듯, 뱃머리에서 0.15 m
+  %  안쪽이다. 반폭이 0.231 m = 4.17 mm 이므로 반지름 1.7 mm 원이 들어간다.
+  \node[thrc] at \BP{0.85}{0}       {};}
 
 \begin{document}
 %  x=1mm, y=1mm 을 빼면 모든 좌표가 기본 단위로 읽혀 그림이 열 배로 커진다
@@ -170,10 +176,11 @@
 \node[fl, anchor=east] at (-11,-6) {$T_L$};
 \node[fl, anchor=west] at ( 11,-6) {$T_R$};
 
-%  선수추진기는 y_b 를 따라 **우현으로** 민다.
+%  선수추진기는 y_b 를 따라 **우현으로** 민다. 힘은 추진기가 앉은 자리에서
+%  나가므로 화살표도 원의 높이(+15.3)에 둔다.
 %  (a) 의 라벨은 두 자라 중앙정렬해도 원(x = -1.7 .. 1.7) 에 닿지 않는다.
-\draw[farr] (2,27) -- (15,27);
-\node[fl, anchor=south] at (8.5,28.2) {$F_B$};
+\draw[farr] (2,15.3) -- (15,15.3);
+\node[fl, anchor=south] at (8.5,16.5) {$F_B$};
 
 \node[un, anchor=south west, inner sep=1.2pt] at (1.0,1.0) {CO};
 
@@ -185,13 +192,19 @@
 \draw[dimn] (0,-25)    -- (7.11,-25);
 \node[un, anchor=north] at (3.56,-26.2) {$y_{pont} = 0.395$ m};
 
-%  l_f 는 CO 에서 선수추진기까지. 보조선은 y=0 에서 선체 반폭(9.72) 바깥,
-%  y=27 에서 원 반지름(1.7) 바깥에서 시작한다.
+%  l_f 는 CO 에서 **팔 끝**까지다 — 추진기가 앉은 자리(+15.3)가 아니다.
+%  그래서 원에서 팔 끝까지 점선으로 잇고 거기에 눈금을 둔다. 이 둘은 치수가
+%  설명하는 칸 (a) 에만 둔다 — (b) 에 두면 설명 없는 선이 된다 (2026-11-03).
+\draw[bodyc, line width=0.3pt, densely dotted] (0,17.0) -- (0,27);
+\draw[soft, line width=0.4pt] (-1.5,27) -- (1.5,27);
+%  보조선은 y=0 에서 선체 반폭(9.72) 바깥, y=27 에서 눈금(1.5) 바깥에서 시작한다.
 \draw[ext]  (-10.8,0) -- (-18,0);
-\draw[ext]  (-3.0,27) -- (-18,27);
+\draw[ext]  (-2.5,27) -- (-18,27);
 \draw[dimn] (-19,0)   -- (-19,27);
-%  두 줄로 끊는다. 한 줄이면 폭 19 mm 로 자라 삼각축의 y_b 라벨에 닿는다.
-\node[un, anchor=east, align=right] at (-20.2,13.5) {$l_f$\\ $= 1.5$ m};
+%  세 줄로 끊는다. 한 줄이면 폭 19 mm 로 자라 삼각축의 y_b 라벨에 닿는다.
+%  셋째 줄이 이 치수가 **모멘트 팔**이라고 말한다 (사용자 지시, 2026-11-03).
+\node[un, anchor=east, align=right] at (-20.2,13.5)
+  {$l_f$\\ $= 1.5$ m\\ (moment arm)};
 
 %% ---- 양의 N 의 규약 / the sign convention for N ----------------------------
 %  끝 각이 작으므로 시계방향이다 = x_b 가 y_b 쪽으로 = 뱃머리가 우현으로.
@@ -221,8 +234,8 @@
 %  (b) 의 라벨은 열세 자라 중앙정렬하면 왼쪽 끝이 원 위로 간다. 원 오른쪽
 %  (x >= 3.5) 에서 시작하게 anchor 를 바꾼다 — 규칙은 (a) 와 같다, 글자 수가
 %  다를 뿐이다.
-\draw[farr] (2,27) -- (15,27);
-\node[fl, anchor=south west] at (3.5,28.5) {$F_B = +25.0$ N};
+\draw[farr] (2,15.3) -- (15,15.3);
+\node[fl, anchor=south west] at (3.5,16.8) {$F_B = +25.0$ N};
 
 %  선미 한 쌍은 **서로 반대로** 민다. 합은 X 에서 0, N 에서 -37.5 다.
 %  라벨은 선체 측면선(9.72) 밖에서 시작한다 (교훈 xci).
@@ -261,11 +274,13 @@
   {\textbf{Read the arms, not the hull stations.} The lateral pair push along
    $x_b$, so their fore-aft station never enters $B$ --- their only moment arm is
    the offset $y_{pont} = 0.395$ m, and panel (a) draws them at the transom only
-   because that is where they are. The bow thruster enters through its forward
-   arm $l_f = 1.5$ m, the value \texttt{otter\_config} defines; the hull is 2.0 m
-   long, so that arm is drawn where it falls --- ahead of the bow. The arm, not a
-   hull station, is what $B$ is built from, and every Week 6 number follows from
-   it.};
+   because that is where they are. The bow unit is drawn in its tunnel, inside
+   the hull, where such a unit is fitted. The arm it enters $B$ through is longer
+   than that station: \texttt{otter\_config} sets $l_f = 1.5$ m on a hull 2.0 m
+   long, so the dimension runs past the bow to the tick, and the dotted line
+   joins the two. That gap is an idealisation of the model, not a second
+   thruster. The arm, not a hull station, is what $B$ is built from, and every
+   Week 6 number follows from it.};
 
 \gnccaption{118mm}{Sections 6-1 and 6-2. The three thrusters of the
 \texttt{bow\_thruster} configuration, drawn to scale from

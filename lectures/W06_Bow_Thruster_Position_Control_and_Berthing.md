@@ -55,7 +55,7 @@ summary: A third thruster makes the Otter fully actuated, and that one column of
 
 - **Course**: USV Guidance, Navigation and Control (Graduate)
 - **Department**: Autonomous Vehicle System Engineering, Chungnam National University
-- **This week**: ① a third thruster, and the words under-, fully- and over-actuated ② allocation by hand, and the ceiling that binds first ③ three nested loops that hold a point ④ stopping, and who declares arrival ⑤ berthing as four latched phases ⑥ alongside against bow-first ⑦ the same controller written in two frames
+- **This week**: ① a third thruster, and the words under-, fully- and over-actuated ② allocation as one matrix inverse, and the ceiling that binds first ③ three nested loops that hold a point ④ stopping, and who declares arrival ⑤ berthing as four latched phases ⑥ alongside against bow-first ⑦ the same controller written in two frames
 
 > [!important] Before starting
 > - Week 5 must run: the lookahead guidance law produces a heading reference, and the heading autopilot follows it. The vessel can follow a path.
@@ -70,7 +70,7 @@ Upon completion of this week, the learner is able to:
 
 1. State the rank test that separates an under-actuated, a fully actuated and an over-actuated vessel, and apply it to the three Otter configurations defined in `otter_config.m`.
 2. Build the control effectiveness matrix $B$ for a three-thruster Otter from the column rule alone, and confirm the result against `otter_B.m` to machine precision.
-3. Solve $B\mathbf{f} = \boldsymbol{\tau}$ by hand, explain why the third row of $B^{-1}$ is $[0\ \ 1\ \ 0]$, and predict which actuator ceiling binds first for a pure sway demand.
+3. Invert $B$, read its three rows as three statements about the vessel, explain why the third row of $B^{-1}$ is $[0\ \ 1\ \ 0]$, and predict which actuator ceiling binds first for a pure sway demand.
 4. Predict, from the clipped allocation alone, the surge force and yaw moment that leak out when a sway demand exceeds the attainable set, and verify the prediction to two decimal places against simulation.
 5. Explain why a position controller is built as a cascade of a position P loop, a velocity PI loop and a heading P-D loop rather than as one gain from position error to thrust, and name the quantity each loop owns.
 6. Derive the braking distance and the settling time constant of the outer position loop, and state the condition under which the cascade's time-scale separation fails.
@@ -184,11 +184,18 @@ Seven models are used — one for each rung of the ladder, and one script for ea
 
 ---
 
-## 6-1. Two thrusters, three demands
+## 6-1. From two thrusters to three
 
-This section answers: what exactly does a third thruster add, and what are the words for what it adds.
+This section answers: what changes in the equation of motion when a third thruster is fitted at the bow, what changes in the matrix that turns thrust into generalised force, and what are the words for what the third thruster adds.
+
+> [!note] Where this section comes from, and three corrections made on the way
+> The actuator model derived here is the one presented in this course's own 2025 slides on USV controller design, pages 125–136. Those pages are reproduced below as they stand, and every equation on them is re-typeset in $\LaTeX$ so that it can be read against the code that implements it.
+>
+> Three of the transcribed equations are **corrected rather than copied**, and each correction is marked where it occurs: the sign convention on the stern lever arms (derivation step 11), the order of the two inverted matrices (step 13), and a missing absolute value inside a square root (step 14). The slides' own MATLAB listing is correct in the first case; the other two are errors that a student who copies the printed formula will meet as a wrong heading and as a complex shaft speed respectively.
 
 **What is observed.** Week 5 closed a path-following loop on the Otter with two stern propellers and it worked. The same vessel, asked to hold a fixed point, fails: it arrives on the line of its own heading and then stops 14.8 m short, with no gain anywhere in the loop saturated and no disturbance acting. The failure is not one of tuning. It is a property of the actuator set.
+
+Fitting a third thruster changes two things, in two different places, and neither is of any use without the other. The **motion model** gains a non-zero second row in the generalised force it builds for itself, so that a sideways force exists at all. The **allocation** gains a third column, so that a sideways force can be asked for. This section derives both, before any loop is closed around either.
 
 **The result.** The generalised force a vessel can produce is the image of its actuator vector under one matrix,
 
@@ -204,6 +211,21 @@ and the three words that classify a vessel are three statements about that image
 | fully actuated | $\operatorname{rank} B = 3$, $m = 3$ | every $\boldsymbol{\tau}$ is attainable, by exactly one $\mathbf{f}$ | `bow_thruster` — $B \in \mathbb{R}^{3\times 3}$, rank 3, $\det B = 0.79$ |
 | over-actuated | $\operatorname{rank} B = 3$, $m > 3$ | every $\boldsymbol{\tau}$ is attainable, by infinitely many $\mathbf{f}$ | `quad_tilt` — four tilting units, $B \in \mathbb{R}^{3\times 8}$, rank 3 |
 
+The vector $\mathbf{f}$ is not itself a command. What is commanded is a **shaft speed**, and three stages stand between it and the hull:
+
+$$\underbrace{n_i \;\longmapsto\; u_i = n_i\lvert n_i\rvert}_{\text{1. signed square}}
+\qquad
+\underbrace{\mathbf{u} \;\longmapsto\; \mathbf{f} = K\mathbf{u}}_{\text{2. thrust curve}}
+\qquad
+\underbrace{\mathbf{f} \;\longmapsto\; \boldsymbol{\tau} = B\mathbf{f}}_{\text{3. geometry}}$$
+
+$$\mathbf{n} = \begin{bmatrix} n_1 \\ n_2 \\ n_3\end{bmatrix},\qquad
+\mathbf{u} = \begin{bmatrix} n_1\lvert n_1\rvert \\ n_2\lvert n_2\rvert \\ n_3\lvert n_3\rvert\end{bmatrix},\qquad
+K = \begin{bmatrix} k_1 & 0 & 0 \\ 0 & k_2 & 0 \\ 0 & 0 & k_3 \end{bmatrix},\qquad
+\boldsymbol{\tau} = B K \mathbf{u}.$$
+
+Only the third stage is a matter of where the thrusters sit; the first two are a matter of what a propeller does. The slides of this course write the geometry matrix as $T$ and call it the **actuator configuration matrix**; it is the same object as the $B$ of this week, assembled by the same rule, and the correspondence is tabulated in the next sub-section.
+
 | Symbol | Quantity | Value, source |
 |---|---|---|
 | $X$ | surge force, body frame | N |
@@ -214,6 +236,12 @@ and the three words that classify a vessel are three statements about that image
 | $y_{pont}$ | half the pontoon separation | $0.395$ m, `otter.m` line 57 |
 | $l_f$ | bow thruster arm forward of the origin | $1.5$ m, `otter_config.m` |
 | $m$ | number of actuators | 2, 3 or 8 by configuration |
+| $n_i$ | shaft speed of thruster $i$ | rad/s; stern $-101.74 \ldots +103.93$, bow $\pm 60.08$ |
+| $u_i$ | the signed square $n_i\lvert n_i\rvert$ | $(\text{rad/s})^2$ |
+| $K$ | diagonal matrix of thrust coefficients | $\operatorname{diag}(k_1, k_2, k_3)$ |
+| $k_{pos}, k_{neg}$ | stern thrust coefficients, ahead and astern | $0.011080$, $0.006445$ N/(rad/s)², `otter.m` |
+| $k_3$ | bow thrust coefficient, the same in both directions | $0.011080$ N/(rad/s)², `otter_config.m` |
+| $T$ | the slides' name for the actuator configuration matrix | the same object as $B$ |
 
 **Derivation, one line at a time.**
 
@@ -247,6 +275,77 @@ $$\det B = (-1)^{2+3}\cdot 1 \cdot \det\!\begin{bmatrix} 1 & 1 \\ 0.395 & -0.395
 6. The determinant is non-zero, so $B$ is invertible and the Otter with a bow thruster is **fully actuated**: there is exactly one $\mathbf{f}$ for every $\boldsymbol{\tau}$, and no choice to make. Delete the third column and the remaining $3 \times 2$ matrix has rank 2; its image is the plane $Y = 0$, which is why the two-thruster Otter can never produce a pure sideways force. Add more actuators and the rank stays 3 while the null space grows, which is what makes allocation an optimisation problem rather than a solve — the subject of Week 7.
 
 7. Nothing in the derivation used a hull station. What enters $B$ is the **moment arm**, which for the stern pair is the lateral offset $y_{pont}$ and for the bow unit is the longitudinal arm $l_f$. The fore-aft position of the stern propellers never appears, because they push along $x_b$ and a force through a point parallel to $x_b$ has no moment arm except in $y$.
+
+8. A thruster is commanded by shaft speed, not by force. Bollard thrust grows with the **square** of the shaft speed, and the sign must follow the direction of rotation, so the quantity that is linear in thrust is the signed square $u_i = n_i\lvert n_i\rvert$ rather than $n_i^2$. The coefficient is a property of the hardware:
+
+$$f_i = k_i\,u_i = k_i\,n_i\lvert n_i\rvert,
+\qquad
+k_i = \begin{cases} k_{pos} & n_i > 0 \\ k_{neg} & \text{otherwise}\end{cases}
+\quad\text{(screw propeller)},
+\qquad
+k_3 = \text{const}
+\quad\text{(tunnel thruster)}.$$
+
+A screw propeller is asymmetric because its blades are shaped for one direction: $k_{neg}/k_{pos} = 0.58$ on this hull. A tunnel thruster is a duct open at both ends with a symmetric impeller, so one coefficient serves both directions. The three ratings follow from the three shaft-speed limits and nothing else:
+
+| Thruster | Limit | Coefficient | Rating |
+|---|---|---|---|
+| stern, ahead | $n_{max} = +103.93$ rad/s | $k_{pos} = 0.011080$ | $T_{max} = k_{pos}n_{max}^2 = +119.682$ N |
+| stern, astern | $n_{min} = -101.74$ rad/s | $k_{neg} = 0.006445$ | $T_{min} = -k_{neg}n_{min}^2 = -66.708$ N |
+| bow, either way | $\pm n_{3,max} = \pm 60.08$ rad/s | $k_3 = 0.011080$ | $F_{B,max} = k_3 n_{3,max}^2 = 40.000$ N |
+
+9. With two stern propellers only, the generalised force the motion model builds for itself is the one line of `otter.m`,
+
+$$\boldsymbol{\tau}_{\text{two}} = \begin{bmatrix} T_1 + T_2 \\ 0 \\ 0 \\ 0 \\ 0 \\ -l_1 T_1 - l_2 T_2 \end{bmatrix},
+\qquad l_1 = -y_{pont},\quad l_2 = +y_{pont},$$
+
+and the **second row is identically zero**. That zero is the formal statement of under-actuation: it is not that the two-thruster Otter is bad at going sideways, it is that the quantity does not exist in its model. No gain placed anywhere outside this equation can create it.
+
+10. Fitting the bow unit at $(l_3, 0)$ pushing along $+y_b$ puts its thrust into the second row and its moment into the sixth, and changes nothing else:
+
+$$\boldsymbol{\tau}_{\text{three}} = \begin{bmatrix} T_1 + T_2 \\ T_3 \\ 0 \\ 0 \\ 0 \\ -l_1 T_1 - l_2 T_2 + l_3 T_3 \end{bmatrix}
+= \begin{bmatrix} \tau_x \\ \tau_y \\ 0 \\ 0 \\ 0 \\ \tau_N \end{bmatrix},
+\qquad
+\begin{aligned}
+\tau_x &= k_1 u_1 + k_2 u_2, \\
+\tau_y &= k_3 u_3, \\
+\tau_N &= y_{pont}k_1u_1 - y_{pont}k_2u_2 + l_3k_3u_3.
+\end{aligned}$$
+
+Rows 3, 4 and 5 — heave, roll and pitch — stay zero because no thruster on this vessel pushes vertically or about a horizontal axis. They are carried so that the vector matches the six-degree-of-freedom hull it is added to.
+
+11. **Correction 1 — the sign of the stern arms.** The slides write the third row of the configuration matrix as $[\,l_1\;\; -l_2\;\; l_3\,]$ and, separately, $l_1 = -l_2 = -Y_{pont}$. Substituting the second statement into the first gives
+
+$$\tau_N = -y_{pont}T_1 - y_{pont}T_2 + l_3 T_3 \qquad \text{(as printed — and wrong)},$$
+
+in which both stern propellers turn the hull the **same** way: driving the pair equally ahead would spin the vessel, which it does not. The slides' own MATLAB listing on page 135 writes $-l_1T_1 - l_2T_2$, which with the signed arms gives $+y_{pont}T_1 - y_{pont}T_2$ and is correct. The code is right and the printed matrix row is wrong. Writing the arms as **positive distances**, as this course does, removes the ambiguity entirely: the third row is $[\,y_{pont}\;\; -y_{pont}\;\; l_f\,]$, and every sign in it comes from the column rule of step 2 rather than from a separate convention that has to be remembered.
+
+12. Where the result enters. The hull's equation of motion is unchanged in every term but one,
+
+$$M\dot{\boldsymbol{\nu}} + C(\boldsymbol{\nu}_r)\boldsymbol{\nu}_r + D(\boldsymbol{\nu}_r)\boldsymbol{\nu}_r + \mathbf{g}(\boldsymbol{\eta}) = \boldsymbol{\tau},$$
+
+with $M$, $C$, $D$ and $\mathbf{g}$ identical to `otter.m` line for line. Only $\boldsymbol{\tau}$ differs, and only in rows 2 and 6. This is why `otter_bow.m` is a copy of `otter.m` with four marked changes rather than a new model: the hull is the same hull, and the file has to show that.
+
+13. **Correction 2 — the order of the two inverses.** Allocation runs the chain of step 8 backwards. From $\boldsymbol{\tau} = BK\mathbf{u}$,
+
+$$\mathbf{u} = (BK)^{-1}\boldsymbol{\tau} = K^{-1}B^{-1}\boldsymbol{\tau} \qquad\text{(correct)},$$
+
+whereas the slides write $\mathbf{u} = B^{-1}K^{-1}\boldsymbol{\tau}$. The two agree only when $K$ commutes with $B^{-1}$, which for a diagonal $K$ means only when all three coefficients are equal. They are not: the moment one stern propeller is asked to reverse, its coefficient becomes $k_{neg}$. Dimensions settle it before numbers do — $K^{-1}$ divides by a coefficient of N/(rad/s)², so it must act on a vector of **forces**, and $B^{-1}\boldsymbol{\tau}$ is that vector, while $\boldsymbol{\tau}$ itself has a moment in its third entry. On the pure sway demand $\boldsymbol{\tau} = [0,\ 25,\ 0]^{\mathsf T}$ the difference is measurable:
+
+| | port $n_1$ | starboard $n_2$ | bow $n_3$ | delivered $X$ | delivered $Y$ | delivered $N$ |
+|---|---|---|---|---|---|---|
+| $K^{-1}B^{-1}\boldsymbol{\tau}$ | $-85.820$ | $+65.453$ | $+47.501$ | $0.000$ N | $25.000$ N | $0.000$ N·m |
+| $B^{-1}K^{-1}\boldsymbol{\tau}$ | $-65.453$ | $+65.453$ | $+47.501$ | $+19.857$ N | $25.000$ N | $+7.844$ N·m |
+
+The wrong order spins the port propeller symmetrically with the starboard one, which at $k_{neg}$ delivers only $-27.611$ N against the $-47.468$ N required. The sway still comes out; the surge and the yaw that were asked to be zero do not.
+
+14. **Correction 3 — the absolute value.** Inverting the signed square of step 8 gives
+
+$$n_i = \operatorname{sign}(u_i)\sqrt{\lvert u_i\rvert}\,,$$
+
+where the slides write $\operatorname{sign}(u_i)\sqrt{u_i}$. Every astern command has $u_i < 0$: on the demand of step 13, $u_1 = -7365.14$ and $\sqrt{u_1} = 85.820\,i$. The absolute value is not decoration, and in MATLAB its omission does not raise an error — it returns a complex shaft speed, which propagates silently.
+
+15. The derivation makes a prediction that costs one run to check. Commanded a pure sway force of $25$ N from rest, the three shafts must turn at $-85.82$, $+65.45$ and $+47.50$ rad/s, the port propeller faster than the starboard one by the ratio $\sqrt{k_{pos}/k_{neg}} = 1.311$ although the two thrusts are equal and opposite. Experiment 6-1 commands the three axes one at a time and reads the shaft speeds back.
 
 ![where the three thrusters sit](../figures/w06-alloc-geometry.svg)
 
@@ -282,6 +381,305 @@ Counting the thrusters is enough to place any hull in the three classes, and thi
 | 4 tilting units | $\mathbb{R}^{3\times 8}$ | 3 | over-actuated | the same three, with a null space to spend on wear, power or a failed unit | Week 7 |
 
 The middle row is the one that changes what can be *asked*. The bottom row changes only what can be *chosen* among the ways of granting a request that was already grantable.
+
+### The slides this derivation re-typesets
+
+The pages reproduced here are from this course's 2025 slides on USV controller design. They are included as they stand so that a student who has those slides can place each equation of the derivation against the page it came from. The symbols differ in four places, and the correspondence is fixed once here rather than repeated under each figure.
+
+| On the slides | In this course | Note |
+|---|---|---|
+| $T$ | $B$ | the same object: the actuator configuration matrix, one column per thruster |
+| $l_1,\ l_2$ with $l_1 = -l_2 = -Y_{pont}$ | $y_{pont}$, a **positive distance**, with the signs carried in the matrix row | derivation step 11 — the slides' own listing agrees with this, their printed matrix row does not |
+| $l_3$ | $l_f$ | $1.5$ m, the bow unit's arm forward of the CO |
+| $k_1, k_2$ | $k_{pos}$ or $k_{neg}$, selected by the sign of $u_i$ | the slides state the selection separately, on page 135 |
+| $k_3$ | $k_{bow}$ | $0.011080$ N/(rad/s)², the same in both directions |
+| $\tau_x,\ \tau_y,\ \tau_N$ | $X,\ Y,\ N$ | body-frame surge force, sway force and yaw moment |
+| $f_i$ in the configuration sketches | $T_L$, $T_R$, $F_B$ | thrust of one unit, in newtons |
+
+**Seven thruster configurations.** The arrangement of this week is number (3), differential drive with a lateral thrust at the bow.
+
+![seven thruster configurations](../figures/refs/w06-ref-configurations.png)
+
+| On the slide | In this course |
+|---|---|
+| (1) Differential drive (DD) | the Otter of Weeks 1–5: two stern units, $\operatorname{rank}B = 2$ |
+| (2) Triple drive (TD) | three units all pushing along $x_b$ — a third column $[1\ \ 0\ \ 0]^{\mathsf T}$, which adds nothing to the rank |
+| (3) DD with a lateral thrust at the bow (DDB) | **this week**: $\operatorname{rank}B = 3$, square, one exact solution |
+| (4) DD with a lateral thrust at the centre (DDC) | the same rank, but with the lateral unit at $x_t = 0$ its column is $[0\ \ 1\ \ 0]^{\mathsf T}$ and sway costs the stern pair nothing — §6-2's lever $a$ vanishes |
+| (5) Twin azimuth (TA) | two units free to rotate through $\alpha_1, \alpha_2$: rank 3 with a null space, Week 7 |
+| (6) X-type, (7) $+$-type | four fixed units, rank 3, over-actuated — Week 7 again |
+| $L_1$, $L_2$ in the sketches | the moment arms of step 2: $L_1$ the lateral offset of the stern pair, $L_2$ the longitudinal arm of a lateral unit |
+
+**Before the bow unit is fitted.** The page states $\boldsymbol{\tau} = TK\mathbf{u}$ for the two-thruster vessel, and writes the sway row as zero in red.
+
+![the two-thruster configuration matrix](../figures/refs/w06-ref-before.png)
+
+| On the slide | Meaning |
+|---|---|
+| $\tau_y = 0$, boxed in red | derivation step 9 — the row that does not exist, and the whole reason for this week |
+| the two-row $\boldsymbol{\tau}$ beside the three-row one | sway is not a small quantity on this vessel, it is an absent one |
+| $T$: *actuator configuration matrix*, $K$: *diagonal matrix of thrust coefficients* | the header note, and the two names used throughout the slides |
+| $x_b$ forward, $y_b$ down the page | the same body frame as Fossen's, drawn from above with $z_b$ into the page |
+| $u_1$, $u_2$ at the stern with arms $l_1$, $l_2$ | the two main propellers of Weeks 1–5, and the only two columns $T$ has |
+
+$$\mathbf{n} = \begin{bmatrix} n_1 \\ n_2\end{bmatrix},
+\qquad
+\mathbf{u} = \begin{bmatrix} n_1\lvert n_1\rvert \\ n_2\lvert n_2\rvert\end{bmatrix},
+\qquad
+\boldsymbol{\tau} = \begin{bmatrix}\tau_x \\ \tau_N\end{bmatrix}
+= TK\mathbf{u}
+= \begin{bmatrix} 1 & 1 \\ l_1 & -l_2\end{bmatrix}
+\begin{bmatrix} k_1 & 0 \\ 0 & k_2\end{bmatrix}
+\begin{bmatrix} u_1 \\ u_2 \end{bmatrix}$$
+
+$$\tau_x = k_1u_1 + k_2u_2, \qquad \boxed{\tau_y = 0 \quad \text{(no sway force)}}, \qquad \tau_N = l_1k_1u_1 - l_2k_2u_2$$
+
+**After the bow unit is fitted, in NED.** A third column appears in $T$ and a third diagonal entry in $K$.
+
+![the three-thruster configuration matrix, NED](../figures/refs/w06-ref-after-ned.png)
+
+$$\mathbf{n} = \begin{bmatrix} n_1 \\ n_2 \\ n_3\end{bmatrix},
+\qquad
+\boldsymbol{\tau} = \begin{bmatrix}\tau_x \\ \tau_y \\ \tau_N\end{bmatrix}
+= TK\mathbf{u}
+= \begin{bmatrix} 1 & 1 & 0 \\ 0 & 0 & 1 \\ l_1 & -l_2 & l_3\end{bmatrix}
+\begin{bmatrix} k_1 & 0 & 0 \\ 0 & k_2 & 0 \\ 0 & 0 & k_3\end{bmatrix}
+\begin{bmatrix} u_1 \\ u_2 \\ u_3 \end{bmatrix}$$
+
+$$\tau_x = k_1u_1 + k_2u_2, \qquad \boxed{\tau_y = k_3u_3 \quad \text{(sway force)}}, \qquad \tau_N = l_1k_1u_1 - l_2k_2u_2 + l_3k_3u_3$$
+
+| On the slide | Meaning |
+|---|---|
+| the third column $[0\ \ 1\ \ l_3]^{\mathsf T}$ | derivation step 3, read off the geometry of one actuator |
+| $\tau_y = k_3u_3$, boxed in red | the row that was zero on the previous page |
+| $l_3$, the arm from the origin forward to the bow unit | $l_f = 1.5$ m, the longest arm on the vessel |
+| $u_3$ drawn pointing down the page | along $+y_b$, to starboard: positive $F_B$ pushes the bow to starboard |
+| the row read with $l_1 = -l_2 = -Y_{pont}$ | the one place to be careful — derivation step 11 |
+
+**The same vessel in ENU.** The slides also give the form used when the axes are east-north-up rather than north-east-down, and mark the reversed bow column in red.
+
+![the three-thruster configuration matrix, ENU](../figures/refs/w06-ref-after-enu.png)
+
+$$T_{\text{ENU}} = \begin{bmatrix} 1 & 1 & 0 \\ 0 & 0 & -1 \\ l_1 & -l_2 & -l_3\end{bmatrix},
+\qquad
+\tau_y = -k_3u_3,
+\qquad
+\tau_N = l_1k_1u_1 - l_2k_2u_2 - l_3k_3u_3$$
+
+| On the slide | Meaning |
+|---|---|
+| the third column negated, annotated *bow thruster reversed* | $y$ points to port and $z$ points up, so the same impeller rotation produces the opposite sway and the opposite moment |
+| the photograph of the twin-pontoon USV | the vessel the slides' parameters were taken from |
+| everything else unchanged | the stern columns are unaffected because they push along $x$, which both conventions agree on |
+
+> [!warning] This course uses NED throughout
+> Every model, script and figure of this week is north-east-down, so the $T_{\text{ENU}}$ above is included for reading the slides and is used nowhere. Mixing the two silently reverses the sign of every sway command and every yaw moment, which presents as a berthing approach that drifts away from the quay instead of towards it.
+
+**The dynamics page, and the code that implements it.** This is the page the week's motion model is written from.
+
+![the three-thruster dynamics and the saturation loop](../figures/refs/w06-ref-dynamics-code.png)
+
+$$\boldsymbol{\tau} = \begin{bmatrix}\tau_x \\ \tau_y \\ 0 \\ 0 \\ 0 \\ \tau_N\end{bmatrix}
+= \begin{bmatrix}\text{surge force} \\ \text{sway force} \\ \text{heave force} \\ \text{rolling moment} \\ \text{pitching moment} \\ \text{yawing moment}\end{bmatrix},
+\qquad
+l_1 = -l_2 = -Y_{pont},
+\qquad
+k_i = \begin{cases} k_{pos} & \text{if } n_i > 0 \\ k_{neg} & \text{otherwise}\end{cases}$$
+
+| On the slide | In this course |
+|---|---|
+| the six-row $\boldsymbol{\tau}$ with rows 3–5 zero | derivation step 10 — the three-degree-of-freedom force, carried in a six-degree-of-freedom vector |
+| `Thrust = zeros(3,1); for i = 1:1:3` | the loop of `otter_bow.m`, change 3 of 4: two iterations become three |
+| `if n(i) > n_max … elseif n(i) < n_min` | the saturation inside the motion model, which is physical and independent of the one in the allocation |
+| `if n(i) > 0 … Thrust(i) = k_pos * n(i)*abs(n(i))` | the signed square of step 8, with the coefficient chosen by sign |
+| `% Modified 240702` | the two places the original `otter.m` was changed |
+| the `Your code` box over the `tau =` line | the line left as an exercise on the slide; it is printed in full immediately below |
+| $l_1 = -l_2 = -Y_{pont}$ | derivation step 11 — this is the statement that conflicts with the printed matrix row |
+
+**What the slide prints, and what its box hides.** Lines 212–252 of `_tools/otter_bow.m`, exactly as the file has them. The loop is the part the slide shows; the vector after it is the part the `Your code` box covers.
+
+```matlab
+% ---- CHANGED (3 of 4) ---------------------------------------------------
+% Control forces and moments - with propeller revolution saturation
+% 루프가 2 회에서 3 회로 늘고, 셋째 추진기만 제 계수와 제 한계를 쓴다.
+% The loop runs three times; the third unit uses its own coefficient and limit.
+Thrust = zeros(3,1);
+for i = 1:1:3
+    if i < 3                                % 선미 프로펠러 / stern propellers
+        if n(i) > n_max                     % saturation, physical limits
+            n(i) = n_max;
+        elseif n(i) < n_min
+            n(i) = n_min;
+        end
+
+        if n(i) > 0
+            Thrust(i) = k_pos * n(i)*abs(n(i));   % positive thrust (N)
+        else
+            Thrust(i) = k_neg * n(i)*abs(n(i));   % negative thrust (N)
+        end
+    else                                    % 선수추진기 / the bow thruster
+        if n(i) > n3_max
+            n(i) = n3_max;
+        elseif n(i) < -n3_max
+            n(i) = -n3_max;
+        end
+
+        Thrust(i) = k3 * n(i)*abs(n(i));          % symmetric, both ways (N)
+    end
+end
+% -------------------------------------------------------------------------
+
+% ---- CHANGED (4 of 4) ---------------------------------------------------
+% Control forces and moments
+% otter.m:  tau = [T1+T2  0  0 0 0  -l1*T1 - l2*T2]'      <- sway is zero
+% here:     the bow thrust enters row 2, and its moment l3*T3 enters row 6.
+tau = [Thrust(1) + Thrust(2)
+       Thrust(3)
+       0
+       0
+       0
+       -l1 * Thrust(1) - l2 * Thrust(2) + l3 * Thrust(3)];
+% -------------------------------------------------------------------------
+```
+
+| In the code | In the figure | Note |
+|---|---|---|
+| `Thrust = zeros(3,1); for i = 1:1:3` | the `for i = 1:1:2` of the slide's listing, with the bound raised | the only structural change in the loop; the stern branch is the original, character for character |
+| `if i < 3 … else … end` | the branch the slide does not have | the stern pair and the bow unit saturate against different limits and multiply by different coefficients, so one loop body cannot serve both |
+| `n(i) > n_max … n(i) < n_min` | `n_max`, `n_min` on the slide | asymmetric, because a stern propeller pushes harder forward than back: $+103.93$ and $-101.74$ rad/s |
+| `n(i) > n3_max … n(i) < -n3_max` | hidden behind the box | symmetric, because a tunnel thruster is the same impeller running either way |
+| `k_pos` / `k_neg` chosen by `if n(i) > 0` | the two-branch `if` on the slide | derivation step 8 — the signed square $u_i = n_i\lvert n_i\rvert$ with a sign-dependent coefficient |
+| `Thrust(i) = k3 * n(i)*abs(n(i))` | hidden | one coefficient both ways; $k_3 = k_{pos}$ here, from `otter_config` |
+| the `tau = [...]` vector | the whole of the `Your code` box | the six-row $\boldsymbol{\tau}$ of the equation above it, now with rows 2 and 6 carrying the bow unit |
+
+The reading of that vector row by row, and the three checks that verify it, are in *What changed in the motion model* below.
+
+**The allocation page.** Running the chain backwards, from a demanded $\boldsymbol{\tau}$ to three shaft speeds.
+
+![the allocation, as the slides write it](../figures/refs/w06-ref-allocation.png)
+
+| On the slide | In this course |
+|---|---|
+| $\boldsymbol{\tau} = TK\mathbf{u}$, the forward chain restated | derivation steps 8 and 10 |
+| $T^{-1}K^{-1}$ | **corrected** to $K^{-1}B^{-1}$ — the order matters the moment one propeller reverses, derivation step 13 |
+| $\operatorname{sign}(u_i)\sqrt{u_i}$ | **corrected** to $\operatorname{sign}(u_i)\sqrt{\lvert u_i\rvert}$ — derivation step 14 |
+| the inverse taken explicitly, not solved by hand | what the `allocate` block of this week does, listed in §6-2 |
+
+$$\begin{bmatrix} u_1 \\ u_2 \\ u_3\end{bmatrix} = T^{-1}K^{-1}\begin{bmatrix}\tau_x \\ \tau_y \\ \tau_N\end{bmatrix}
+\quad\text{(as printed)},
+\qquad
+\begin{bmatrix} n_1 \\ n_2 \\ n_3\end{bmatrix} = \begin{bmatrix}\operatorname{sign}(u_1)\sqrt{u_1} \\ \operatorname{sign}(u_2)\sqrt{u_2} \\ \operatorname{sign}(u_3)\sqrt{u_3}\end{bmatrix}
+\quad\text{(as printed)}$$
+
+$$\begin{bmatrix} u_1 \\ u_2 \\ u_3\end{bmatrix} = K^{-1}B^{-1}\begin{bmatrix}X \\ Y \\ N\end{bmatrix}
+\quad\text{(corrected, step 13)},
+\qquad
+n_i = \operatorname{sign}(u_i)\sqrt{\lvert u_i\rvert}
+\quad\text{(corrected, step 14)}$$
+
+**The controller architecture.** Three blocks in a row, and one question in red at the bottom.
+
+![controller, allocation and dynamics in a chain](../figures/refs/w06-ref-architecture.png)
+
+| On the slide | In this course |
+|---|---|
+| `Controller` taking $[u_d;\ \psi_d]$, labelled *surge velocity control* and *heading control* | §6-3's three loops, and the two subsystems of `velocity loop` |
+| $\boldsymbol{\tau}_{demand} = [\tau_x\ \ \tau_y\ \ \tau_N]^{\mathsf T}$ | the output of `position loop`, the input of `allocation` |
+| `Control Allocation`, repeating $T^{-1}K^{-1}$ and $\operatorname{sign}(u)\sqrt{u}$ | the `allocate` block, with both corrections applied |
+| $\mathbf{n} = [n_1\ n_2\ n_3]^{\mathsf T}$ | the one signal that crosses from the allocation into the plant — a shaft speed, not a force |
+| `Dynamics`, repeating $\mathbf{u} = n\lvert n\rvert$ then $\boldsymbol{\tau} = TK\mathbf{u}$ | `otter_bow.m` rebuilding $\boldsymbol{\tau}$ for itself, inside the motion model |
+| *Are they the same?* $\boldsymbol{\tau}_{demand} \Longleftrightarrow \boldsymbol{\tau}_{actual}$ | the question §6-2 answers: identical below the ceiling, and not above it |
+
+> [!important] The red question is the subject of §6-2
+> $\boldsymbol{\tau}_{actual} = \boldsymbol{\tau}_{demand}$ exactly, as long as no saturation acts anywhere — the allocation inverts what the dynamics then applies, and the round trip is the identity. The moment one shaft speed is clipped, the forward chain is evaluated at a different $\mathbf{n}$ from the one the inverse produced, and the two differ. §6-2 measures by how much, and shows that what leaks is not the demanded axis but the two that were asked to stay at zero.
+
+### What changed in the motion model
+
+`_tools/otter_bow.m` is MSS `otter.m` copied and changed in four places, each marked in the file with `% ---- CHANGED (i of 4)`. Everything else — the rigid-body and added mass matrices, the Coriolis terms, the restoring forces, the damping, `crossFlowDrag`, the kinematics — is character-for-character identical, because the hull is the same hull and the file has to show that.
+
+| | `otter.m` | `otter_bow.m` | Why |
+|---|---|---|---|
+| 1 · input check | `if (length(n) ~= 2)` | `if (length(n) ~= 3)` | three shaft speeds in, and a seventh argument `bow = [l3 k3 n3_max]` |
+| 2 · thruster data | $l_1$, $l_2$, $k_{pos}$, $k_{neg}$, $n_{max}$, $n_{min}$ | the same, plus `l3`, `k3`, `n3_max` | the bow unit's arm, coefficient and limit; one of each, because a tunnel thruster is symmetric |
+| 3 · thrust loop | `Thrust = zeros(2,1); for i = 1:1:2` | `Thrust = zeros(3,1); for i = 1:1:3`, with the third branch using `k3` and $\pm$`n3_max` | derivation step 8 |
+| 4 · the force vector | `tau = [T1+T2  0 0 0 0  -l1*T1-l2*T2]'` | `tau = [T1+T2;  T3;  0; 0; 0;  -l1*T1-l2*T2 + l3*T3]` | derivation step 10 — rows 2 and 6 |
+
+The fourth change is the one the slide left as `Your code`. Its code is printed in §6-1 beside that slide; read row by row, it says this:
+
+| In the code | In the derivation | Note |
+|---|---|---|
+| `Thrust(1) + Thrust(2)` | $\tau_x = k_1u_1 + k_2u_2$ | the stern pair in surge; the bow unit contributes nothing, its first column entry being zero |
+| `Thrust(3)` | $\tau_y = k_3u_3$ | step 10 — the row that was zero in `otter.m` |
+| `-l1 * Thrust(1) - l2 * Thrust(2)` | $+y_{pont}T_1 - y_{pont}T_2$ | with the signed arms $l_1 = -y_{pont}$, $l_2 = +y_{pont}$ of `otter.m`: step 11, the form the slides' own listing uses |
+| `+ l3 * Thrust(3)` | $+l_fF_B$ | the moment the bow unit makes whether it was wanted or not — §6-2's $N_s$ exists to subtract it |
+| rows 3, 4, 5 left at zero | heave, roll, pitch | no thruster on this vessel acts in them |
+
+Three statements are verified rather than asserted, by `_tools/verify_otter_bow.m`:
+
+| Check | Why it must hold |
+|---|---|
+| with $n_3 = 0$, `otter_bow` equals `otter(x, n(1:2), …)` to rounding | the copy introduced no change outside the four marked ones |
+| with $n_3 \neq 0$, it equals the previous week's superposition $\dot{\mathbf{x}} + M^{-1}[0,\ T_3,\ 0,\ 0,\ 0,\ l_3T_3]^{\mathsf T}$ | acceleration is affine in $\boldsymbol{\tau}$, so adding the force outside the call was exact — the residual is $-8.9\times10^{-16}$ |
+| the saturation inside the model never binds first in normal running | the allocation clips the same quantity at the same value, so the model's own clip is a backstop and not a second controller |
+
+The second check is worth stating plainly, because it is easy to mistake this week's change for a bug fix. The superposition used until now was **not wrong**; it produced the same accelerations to machine precision. What it could not do is describe the vessel honestly. A motion model whose $\tau_y$ is identically zero is a model of an under-actuated vessel, however the sway force is added afterwards, and a student reading it would conclude that the Otter cannot go sideways.
+
+### Beyond three thrusters, in one page
+
+The slides continue past this week's configuration to one that Week 7 takes up: two azimuth units and a bow tunnel thruster, from the CSEI model vessel.
+
+![azimuth thrusters with a bow thruster](../figures/refs/w06-ref-azimuth-bow.png)
+
+| On the slide | Meaning |
+|---|---|
+| the plan view, $\mathrm{VSP}_1$ and $\mathrm{VSP}_2$ aft and a tunnel unit forward | five actuator degrees of freedom against three rows — over-actuated, unlike this week's square $B$ |
+| $L_{y,VSP}$, $L_{x,VSP}$, $L_{x,BT}$ | the moment arms of derivation step 2, now three of them |
+| the photograph | CSEI, the NTNU model vessel the configuration is taken from |
+| $B^{\dagger} = B^{\mathsf T}(BB^{\mathsf T})^{-1}$ | the pseudo-inverse that replaces the inverse once $B$ stops being square — Week 7 |
+| the five-column $B$ with $f_{VSP1,x}$, $f_{VSP1,y}$ paired per unit | an azimuth unit is carried as two orthogonal forces, not as a magnitude and an angle |
+| the citation box, *Gauslaa 2020* | the source of equations (7.44)–(7.47) below |
+
+$$\boldsymbol{\tau} = B\mathbf{f},
+\qquad
+\mathbf{f} = B^{\dagger}\boldsymbol{\tau},
+\qquad
+B^{\dagger} = B^{\mathsf T}\!\left(BB^{\mathsf T}\right)^{-1}$$
+
+$$B = \begin{bmatrix}
+1 & 0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 1 & 1 \\
+L_{y,VSP} & -L_{x,VSP} & -L_{y,VSP} & -L_{x,VSP} & L_{x,BT}
+\end{bmatrix},
+\qquad
+\mathbf{f} = \begin{bmatrix} f_{VSP1,x} \\ f_{VSP1,y} \\ f_{VSP2,x} \\ f_{VSP2,y} \\ f_{BT}\end{bmatrix}$$
+
+| Unit | Contribution |
+|---|---|
+| azimuth unit, magnitude $u$ at angle $\alpha$ | $\tau_x = u f_{max}\cos\alpha$, $\tau_y = u f_{max}\sin\alpha$ |
+| VSP 1 | $\tau_n = \tau_x L_{y,VSP} - \tau_y L_{x,VSP}$ |
+| VSP 2 | $\tau_n = -\tau_x L_{y,VSP} - \tau_y L_{x,VSP}$ |
+| bow tunnel thruster | $\tau_x = 0$, $\tau_y = u f_{max}$, $\tau_n = \tau_y L_{x,BT}$ |
+
+Every column is still read off the geometry by the rule of derivation step 2; there are simply five of them against three rows. The inverse is replaced by the Moore–Penrose pseudo-inverse, which among the infinitely many $\mathbf{f}$ satisfying $B\mathbf{f} = \boldsymbol{\tau}$ returns the one of least Euclidean norm.
+
+That solution is not the end of the problem, and the source the slides draw on says so directly: the pseudo-inverse *does not take into account constraints like thruster saturation and forbidden sectors*. What it produces is a force per axis per unit, which still has to be turned into a command. For an azimuth unit that means a magnitude and an angle, and for a tunnel thruster a magnitude alone:
+
+$$f_{cmd,i} = \sqrt{f_{i,x}^2 + f_{i,y}^2} \tag{7.44}$$
+
+$$\alpha_i = \operatorname{atan2}\!\left(f_{i,y},\ f_{i,x}\right) \tag{7.45}$$
+
+$$f_{cmd,i} = f_i \qquad \text{(tunnel thruster)} \tag{7.46}$$
+
+$$u_i = \frac{f_{cmd,i}}{k_i} \tag{7.47}$$
+
+| Equation | What it is for | Where it reappears |
+|---|---|---|
+| (7.44) | the magnitude an azimuth unit must produce | Week 7, as the quantity that saturates |
+| (7.45) | the angle it must be turned to | Week 7, as the quantity with a rate limit and forbidden sectors |
+| (7.46) | a tunnel thruster has no angle to choose | this week: the bow unit's column is fixed, which is why $B$ is square |
+| (7.47) | force back to a normalised command | derivation step 8, $u_i = f_i / k_i$, identical in form |
+
+The numbering is that of the thesis the slides cite, and the equations are transcribed here rather than reproduced as an image because they are a textbook page rather than a figure. Nothing in this sub-section is used by any model of this week; it is here so that the step from a square $B$ to a wide one is a continuation rather than a new subject.
 
 ### Experiment 6-1 · Three axes, commanded one at a time (20 min)
 
@@ -387,17 +785,33 @@ This section answers: how is $B\mathbf{f} = \boldsymbol{\tau}$ actually solved, 
 
 **What is observed.** The bow thruster is rated at $40$ N. A pure sway demand of $40$ N is therefore inside its rating, and the allocation produces it. Yet at $Y = 40$ N the hull also acquires $9.24$ N of surge force and $3.65$ N·m of yaw moment that nobody asked for, and the heading runs to $+31.25$ deg. At $Y = 35$ N none of that happens. Something binds between the two, and it is not the bow thruster.
 
-**The result.** For this $B$ the solve is done by hand in three lines, and the structure of those lines is what makes the ceiling predictable:
+**The result.** $B$ is square and non-singular, so the solve is one matrix inverse, taken explicitly:
+
+$$B^{-1} = \begin{bmatrix}
+\tfrac12 & -a & \tfrac{1}{2y_{pont}} \\[2pt]
+\tfrac12 & +a & -\tfrac{1}{2y_{pont}} \\[2pt]
+0 & 1 & 0
+\end{bmatrix}
+= \begin{bmatrix}
+0.5 & -1.898734 & 1.265823 \\
+0.5 & 1.898734 & -1.265823 \\
+0 & 1 & 0
+\end{bmatrix},
+\qquad a = \frac{l_f}{2y_{pont}} .$$
+
+Read row by row, that inverse is three statements about the vessel, and those three statements are what makes the ceiling predictable:
 
 $$F_B = Y,\qquad
 N_s = N - l_f F_B,\qquad
 T_L = \tfrac12\!\left(X + \frac{N_s}{y_{pont}}\right),\qquad
 T_R = \tfrac12\!\left(X - \frac{N_s}{y_{pont}}\right).$$
 
+Nothing is solved by hand in the code — the block multiplies by $B^{-1}$ — but the lines above are the same arithmetic written out, and each ceiling in step 5 is read off one of them.
+
 | Symbol | Quantity | Value, source |
 |---|---|---|
 | $N_s$ | the yaw moment left for the stern pair after the bow unit has acted | N·m |
-| $a$ | the arm ratio $l_f / (2 y_{pont})$ | $1.898734$, `verify_w06_actuation` check 4 |
+| $a$ | the arm ratio $l_f / (2 y_{pont})$, the $(1,2)$ entry of $B^{-1}$ | $1.898734$, `verify_w06_actuation` check 4 |
 | $T_{max}$ | maximum ahead thrust, one propeller | $119.682$ N $= k_{pos} n_{max}^2$ |
 | $T_{min}$ | maximum astern thrust, one propeller | $-66.708$ N $= -k_{neg} n_{min}^2$ |
 | $F_{B,max}$ | bow thruster rating | $40$ N, `W06_0_setup` |
@@ -430,20 +844,31 @@ A sideways force of one newton costs the stern pair $1.899$ N each, in opposite 
 
 6. The smallest of the three binds, so $Y_{max} = 35.1329$ N. **The limit on sideways force is not set by the bow thruster.** It is set by how hard one stern propeller can be driven in reverse, because a propeller astern is weaker than the same propeller ahead: $k_{neg} < k_{pos}$ in `otter.m`, and $\lvert T_{min}\rvert$ is only $56$ % of $T_{max}$.
 
-7. Above $Y_{max}$ the Saturation block clips. What is clipped is the **thrust vector**, not the demand, and the hull then receives $B$ times the clipped vector. With $Y = 40$: $F_B$ is within rating at $40$, $T_R = a \times 40 = 75.95$ N is within $T_{max}$, and $T_L = -75.95$ N is clipped to $T_{min} = -66.708$ N. The delivered force follows:
+7. The three ceilings above are stated in newtons, but the quantity that actually saturates is a **shaft speed**, because that is what the allocation hands to the motion model and what each unit physically limits. The two statements are the same constraint in two coordinates: $T = k\,n\lvert n\rvert$ is strictly increasing in $n$, and the ratings are defined as $T_{max} = k_{pos}n_{max}^2$ and $T_{min} = -k_{neg}n_{min}^2$ — one definition, in `W06_vars`. Clipping $n$ at $n_{max}$ and clipping $T$ at $T_{max}$ therefore select the same set of attainable thrusts, and the ceiling on $Y$ is unchanged by which coordinate the Saturation block sits in.
+
+| Demand | Shaft speeds the inverse asks for | After the clip | Which unit bound |
+|---|---|---|---|
+| $Y = 35$ N | $[-101.544,\ +77.446,\ +56.204]$ rad/s | unchanged | none — $35 < Y_{max}$ |
+| $Y = 40$ N | $[-108.555,\ +82.793,\ +60.084]$ | $[-101.737,\ +82.793,\ +60.084]$ | the port shaft, asked for $6.7\ \%$ more than it has |
+| $Y = 50$ N | $[-121.368,\ +92.565,\ +67.176]$ | $[-101.737,\ +92.565,\ +60.084]$ | the port shaft and the bow unit |
+
+8. Past the ceiling the hull receives $B$ times the thrusts the **clipped** shaft speeds produce, which is no longer the demand. With $Y = 40$: the bow unit is exactly at its rating, $T_R = a \times 40 = 75.949$ N is within $T_{max}$, and the port propeller delivers $k_{neg}n_{min}^2 = -66.708$ N instead of the $-75.949$ N asked for. The delivered force follows:
 
 $$X = T_L + T_R = -66.708 + 75.949 = +9.241\ \text{N},$$
 
 $$N = y_{pont}(T_L - T_R) + l_f F_B = 0.395(-142.657) + 1.5 \times 40 = -56.350 + 60 = +3.650\ \text{N}\cdot\text{m}.$$
 
-8. The same arithmetic at $Y = 50$, where both $T_L$ and $F_B$ clip:
+The sway itself still arrives in full: $Y = T_3 = 40.000$ N, because the bow unit was not the unit that bound.
+
+9. The same arithmetic at $Y = 50$, where the bow unit clips as well and the demanded axis can no longer be met either:
 
 $$X = -66.708 + 94.937 = +28.229\ \text{N}, \qquad
+Y = 40.000\ \text{N}, \qquad
 N = 0.395(-161.645) + 60 = -3.850\ \text{N}\cdot\text{m}.$$
 
-9. This is the measurable prediction: **past the ceiling, the sway force still comes out; what breaks is the promise that the other two axes are zero.** Saturation does not reduce the commanded axis gracefully. It converts the excess into the axes that were supposed to stay at zero, which is why an over-demand shows up first as an unexplained heading change.
+10. This is the measurable prediction, and it has two stages. **While the units that bind are the ones serving the demand only indirectly, the commanded axis still comes out in full and the excess appears in the axes that were supposed to stay at zero.** Only when the unit that carries the demanded axis itself clips does the demanded axis fall short. Saturation does not degrade gracefully in either stage, which is why an over-demand in sway shows up first not as a shortfall in sway but as an unexplained heading change.
 
-10. Sweeping $X$ instead of fixing it at zero gives the attainable set at $N = 0$, bounded above and below by
+11. Sweeping $X$ instead of fixing it at zero gives the attainable set at $N = 0$, bounded above and below by
 
 $$Y_{hi}(X) = \min\!\left(\frac{X/2 - T_{min}}{a},\ \frac{T_{max} - X/2}{a},\ F_{B,max}\right),
 \qquad
@@ -451,45 +876,58 @@ Y_{lo}(X) = \max\!\left(\frac{X/2 - T_{max}}{a},\ \frac{T_{min} - X/2}{a},\ -F_{
 
 over $X \in [2T_{min},\ 2T_{max}]$. The set is a hexagon, and $X = 0$ is its **narrowest** place in $Y$. Asking for sway while already making way is cheaper than asking for sway from rest.
 
-The allocation is nine lines of code, and the figure above draws exactly what they encode. The code is reproduced here because it is what a student sees on double-clicking the block.
+The whole allocation is one block, and it runs the actuator chain of §6-1 backwards in the three stages that chain had — geometry, thrust curve, signed square — in the reverse order. The code is reproduced here because it is what a student sees on double-clicking the block.
 
 ```matlab
-function f = allocate(tau, y_pont, l_f)
-% Solve B f = tau for the three thrusts, by hand rather than with inv(B).
+function n = allocate(tau, Binv, k_pos, k_neg, k_bow)
+% Run the actuator model backwards: tau -> f -> u -> n.
 %
-%   B = [    1         1       0  ]      f = [T_L; T_R; F_B]   [N]
-%       [    0         0       1  ]      tau = [X; Y; N]       [N, N, N m]
-%       [ y_pont   -y_pont   l_f ]
-X = tau(1);  Y = tau(2);  N = tau(3);
+%   forward    u_i = n_i|n_i|      f = K u        tau = B f
+%   inverse    f = B^-1 tau        u = K^-1 f     n_i = sign(u_i) sqrt(|u_i|)
+%
+%   B    = [    1         1       0  ]    f   = [T_L; T_R; F_B]  [N]
+%          [    0         0       1  ]    tau = [X; Y; N]        [N, N, N m]
+%          [ y_pont   -y_pont   l_f ]
+%
+% B is square and non-singular (det B = 0.79), so the solution is unique and
+% there is no null space to choose within. Binv comes from the setup script,
+% which inverts the B that otter_B() derives from the column rule.
+f = Binv * tau;
 
-% The second row of B has one non-zero entry, so the sway demand fixes the bow
-% thruster on its own. This is the only line of the allocation that does not
-% have to share a degree of freedom.
-F_B = Y;
+% K is diagonal, so K^-1 is three divisions. Which coefficient applies depends
+% on the sign for a stern propeller, because a propeller pushing astern is
+% less efficient than the same propeller pushing ahead. It does not depend on
+% the sign for the bow unit: a tunnel thruster is symmetric.
+k = [k_pos; k_pos; k_bow];
+if f(1) < 0, k(1) = k_neg; end
+if f(2) < 0, k(2) = k_neg; end
 
-% The bow thruster sits l_f forward of the origin, so meeting the sway demand
-% has already produced a yaw moment l_f*F_B whether that was wanted or not.
-% What the stern pair has to produce is the remainder.
-N_s = N - l_f*F_B;
+u = f ./ k;
 
-% The stern pair: their sum is the surge demand, their difference is the
-% remaining moment divided by the lever y_pont.
-T_L = 0.5*(X + N_s/y_pont);
-T_R = 0.5*(X - N_s/y_pont);
-
-f = [T_L; T_R; F_B];
+% n_i = sign(u_i) sqrt(|u_i|). The absolute value is not decoration: slide 133
+% writes sqrt(u_i), and without the |.| every astern command returns a complex
+% shaft speed.
+n = sign(u) .* sqrt(abs(u));
 end
 ```
 
+| In the code | In the derivation | Note |
+|---|---|---|
+| `f = Binv * tau` | the three lines read off $B^{-1}$ | one multiply replaces them; row 3 of $B^{-1}$ being $[0\ \ 1\ \ 0]$ is `F_B = Y` |
+| `k = [k_pos; k_pos; k_bow]`, then two sign tests | step 5's two different stern ceilings | the asymmetry $k_{neg} < k_{pos}$ is what makes $Y_{max}$ bind on the astern side |
+| `u = f ./ k` | $\mathbf{u} = K^{-1}\mathbf{f}$ | §6-1 step 13 — $K^{-1}$ acts on **forces**, which is why $B^{-1}$ is applied first |
+| `n = sign(u) .* sqrt(abs(u))` | §6-1 step 14 | the inverse of $u_i = n_i\lvert n_i\rvert$, valid for both signs |
+| the output is $\mathbf{n}$, not $\mathbf{f}$ | — | the plant takes shaft speeds, so the allocation ends where the motion model begins and no force crosses the boundary |
+| no `\`, no `pinv` | — | `verify_w06_actuation` check 5 confirms `Binv*tau` equals `B \ tau` to $3.6\times10^{-14}$ N over 200 random demands |
+
 | In the code | In the figure | Note |
 |---|---|---|
-| `F_B = Y` | panel (b), $F_B = +25.0$ N for a $25$ N sway demand | derivation step 1 — the second row of $B$ |
-| `N_s = N - l_f*F_B` | the $+37.5$ N·m label on the bow arm | the moment the bow unit has already made |
-| `T_L`, `T_R` sum and difference | the $\mp 47.5$ N arrows at the transom, and the $-37.5$ N·m label | derivation step 3 |
-| no call to `inv` or `\` | — | written by hand so the ceiling derivation can be read off the lines; check 5 confirms it equals `B \ tau` to $3.6\times10^{-14}$ N over 200 random demands |
+| row 3 of $B^{-1}$ acting on $Y = 25$ N | panel (b), $F_B = +25.0$ N | derivation step 1 — the second row of $B$ has one entry |
+| the $\pm a$ entries acting on the same $Y$ | the $\mp 47.5$ N arrows at the transom | derivation step 4, $aY = 1.8987 \times 25$ |
+| the implied $N_s = N - l_f F_B$ | the $+37.5$ N·m label on the bow arm against the $-37.5$ N·m at the transom | the moment the bow unit has already made, and the moment that cancels it |
 
-> [!warning] A solve is not an allocation
-> `allocate` returns the unique exact solution and the Saturation block downstream clips it. That is adequate here only because $B$ is square: there is nothing to optimise. With more actuators than degrees of freedom the clipped vector is no longer the best attainable approximation of the demand, and the allocation must be posed as a constrained minimisation instead. Week 7 does that, and its first experiment is the measurement of how far the clipped solution falls short.
+> [!warning] An inverse is not an allocation
+> `allocate` returns the unique exact solution, and the Saturation block downstream clips the shaft speeds it produced. That is adequate here only because $B$ is square: there is nothing to optimise, and $B^{-1}$ is the answer rather than a choice of answer. With more actuators than degrees of freedom the inverse does not exist, $B^{\dagger}$ takes its place, and the clipped vector is no longer the best attainable approximation of the demand — the sub-section *Beyond three thrusters* quotes the source on exactly this point. Week 7 poses the allocation as a constrained minimisation instead, and its first experiment measures how far the clipped pseudo-inverse falls short.
 
 ### Experiment 6-2 · Which limit binds first (15 min)
 
@@ -568,7 +1006,7 @@ The leak is the more important half. Below the ceiling, two of three axes hold a
 | What to try | What to watch |
 |---|---|
 | double-click `E_d` in `W06_2_sway.slx`, set it to `30`, and press Run | the hull still arrives, but $Y$ now sits at $35.13$ N for far longer: the ceiling does not change, only how much of the run is spent against it |
-| raise `F_B_max` to `100` in `W06_0_setup` and rerun | $Y_{max}$ does not move: it was never the bow unit that bound |
+| raise `n_bow_max` to `95` in `W06_0_setup` and rerun — the rating it implies is $k_{bow}\,n^2 = 100.0$ N | $Y_{max}$ does not move: it was never the bow unit that bound |
 | set `k_neg = k_pos` in `otter_config` and rerun | the astern ceiling rises to $63.03$ N and the bow rating becomes the binding one at $40$ N |
 | on `W06_3_thrust.slx`, set `X_cmd` to `60` and sweep `Y_cmd` again | the ceiling rises — step 10, $X = 0$ is the narrowest place in the hexagon |
 | on `W06_3_thrust.slx`, set `Y_cmd` to `40` and `N_cmd` to `-3.65` | the heading stays near zero: the leak is a known quantity and can be pre-compensated, though only for one operating point |
@@ -710,16 +1148,16 @@ The anti-windup path is drawn rather than configured. A Simulink `Integrator` ha
 
 **The model.** `W06_1_point.slx`. The demand sits on the canvas as two Constant blocks, `N_d = 10` and `E_d = 10`; the start is $(0, 25)$ m and the commanded heading is $0$ degrees throughout.
 
-The second case changes nothing in the model. It sets `F_B_max = 0` in the workspace before the run. The allocation's Saturation holds its limits as an expression rather than a number — `[ T_max; T_max; F_B_max]` — and that expression is resolved from the workspace when the model compiles, so a zero collapses the bow unit's allowance to $[0, 0]$. Every gain, every cap and every line stays where it was, and the same hull runs under-actuated.
+The second case changes nothing in the model. It sets `n_bow_max = 0` in the workspace before the run. The allocation's `shaft limit` block holds its bounds as expressions rather than numbers — `[ n_max; n_max; n_bow_max]` and `[ n_min; n_min; -n_bow_max]` — and those expressions are resolved from the workspace when the model compiles, so a zero collapses the bow unit's allowance to $[0, 0]$ rad/s. Every gain, every cap and every line stays where it was, and the same hull runs under-actuated.
 
 ![W06_1_point block diagram](W06_simulink/img/W06_1_point.png)
 
 | In the figure | Meaning |
 |---|---|
 | `position loop` | the rotation and the P gain, with the velocity cap on its output |
-| `velocity loop` | the surge and sway PI controllers with the drawn anti-windup |
+| `velocity loop` | two subsystems side by side, `u speed control` and `v speed control`, each a PI controller with the drawn anti-windup |
 | `heading autopilot` | the P-D loop producing $N$ |
-| `allocation` | the nine lines of Section 6-2, with the thrust Saturation after them |
+| `allocation` | the one block of Section 6-2, with the `shaft limit` Saturation after it |
 | the wide signal from `Otter` to the left edge | the measurement bus; the three controllers each select from it |
 
 ![inside the position loop](W06_simulink/img/W06_1_point_position_loop.png)
@@ -736,7 +1174,7 @@ The second case changes nothing in the model. It sets `F_B_max = 0` in the works
 W06_1_point_run
 ```
 
-Pressing **Run** on the canvas does the same thing: the model fills its own workspace, raises the live track window, and draws the panel when it stops. The script adds the comparison table — and only the script can, because the second case needs `F_B_max = 0` in place before the model compiles.
+Pressing **Run** on the canvas does the same thing: the model fills its own workspace, raises the live track window, and draws the panel when it stops. The script adds the comparison table — and only the script can, because the second case needs `n_bow_max = 0` in place before the model compiles.
 
 Expected output:
 
@@ -781,18 +1219,18 @@ Expected output:
 | `three thrusters`, `psi error = -0.00` deg | the heading is held throughout, although the hull moves sideways the whole time | the heading loop is independent of the position loop — they share only the allocation |
 | `bow unit off`, `d(end) = 14.827` m | the vessel stops $14.8$ m from its target | the start is $(0,25)$ and the target $(10,10)$: $10$ m of northing, $15$ m of easting. Heading is held at $0$, so the hull can only move along north — the $10$ m is removed and the $15$ m is not |
 | `bow unit off`, `max \|v\| = 0.047` m/s | essentially no sideways motion | rank 2 — the two-thruster $B$ has image $Y = 0$, so there is no sideways force to produce one |
-| `max \|Y\| = 35.13` N in **both** rows | the sway *demand* is at the $Y_{max}$ cap in both cases | the demand is produced by the controller either way; with `F_B_max = 0` the allocation cannot deliver it, and the column shows the demand, not the delivery |
+| `max \|Y\| = 35.13` N in **both** rows | the sway *demand* is at the $Y_{max}$ cap in both cases | the demand is produced by the controller either way; with `n_bow_max = 0` the allocation cannot deliver it, and the column shows the demand, not the delivery |
 | `F_B peak … without it 0.00 N` | the delivery, as opposed to the demand, is exactly zero | this is the column that confirms the second case actually ran under-actuated; the demand column alone could not say so |
 | `bow unit off`, `t to 0.5 m = NaN` | the $0.5$ m radius is never entered | the target is not in the reachable set of a rank-2 actuator configuration at fixed heading |
 
-**What the figure says.** The two rows differ in one number, `F_B_max`, and the outcome differs by $14.8$ m. That is the clearest available statement of what *fully actuated* buys: not a better response, but the existence of a response at all.
+**What the figure says.** The two rows differ in one number, `n_bow_max`, and the outcome differs by $14.8$ m. That is the clearest available statement of what *fully actuated* buys: not a better response, but the existence of a response at all.
 
 The residual is worth reading closely because it is not a tuning symptom. $14.827$ m against the $15$ m of easting the hull cannot remove is agreement to $1.2$ %, and the remaining $0.17$ m is accounted for by the $10.37$ degrees of heading error at the end — a heading error that itself exists because the sway demand, which the allocation cannot meet, still perturbs the yaw axis through the clipped stern pair. Nothing here is mysterious, and nothing here is fixable by a gain.
 
 | What to try | What to watch |
 |---|---|
 | double-click `N_d` and `E_d` on the canvas of `W06_1_point.slx`, set them to $(10, 0)$ | pure northing: $\lvert v \rvert$ in panel (e) stays near zero and $F_B$ in panel (f) never leaves the axis, because a target dead ahead asks nothing of the third thruster |
-| `F_B_max = 0` in `W06_0_setup`, together with `psi_d_cmd = deg2rad(-56.3)`, pointing the bow at the target | the two-thruster hull now arrives: at a fixed, favourable heading an under-actuated vessel can reach a point — it simply cannot choose the heading and the point independently |
+| `n_bow_max = 0` in `W06_0_setup`, together with `psi_d_cmd = deg2rad(-56.3)`, pointing the bow at the target | the two-thruster hull now arrives: at a fixed, favourable heading an under-actuated vessel can reach a point — it simply cannot choose the heading and the point independently |
 | `Kp_pos = 0.05` in `W06_0_setup` | the approach is slower and still exact; the integral lives in the inner loop, so outer-loop gain does not change the final error |
 | `v_lim = 0.10` in `W06_0_setup` | the easting takes four times as long and the northing is unchanged — the caps are per axis, which is exactly the question Section 6-7 reopens |
 | open the `position loop` subsystem, bypass the `to body` block and wire $\mathbf{p}_e$ straight through | at `psi_d_cmd = 0` nothing changes, because $R(0) = I$; set `psi_d_cmd = deg2rad(90)` and the failure of the opening paragraph appears in full |
@@ -1469,7 +1907,7 @@ $$\text{NED:}\quad
 | the purple cell `to NED`, marked *rotation #1 — on the way in* | $u, v \to \dot N, \dot E$, the measurement entering the loop |
 | the purple cell `to body`, marked *rotation #2 — on the way out* | $F_N, F_E \to X, Y$, the force leaving it |
 | the note that $\psi$ is read **twice** | two rotations need two copies of the heading; the previous figure needs one |
-| the orange note, *the limit is hidden* | $F_B$ is clipped inside the allocation, downstream, where no back-calculation term can be formed — step 8 |
+| the orange note, *the limit is hidden* | the bow unit's own ceiling acts on its shaft speed inside the allocation, downstream, where no back-calculation term can be formed — step 8 |
 
 Both sheets are drawn on the same grid, so holding one over the other shows a single difference: one filled cell in the outer loop against two filled cells in the inner.
 
@@ -1478,8 +1916,8 @@ Both sheets are drawn on the same grid, so holding one over the other shows a si
 | In the figure | Meaning |
 |---|---|
 | `to NED` at the left and `to body` at the right | the two rotations, each a MATLAB Function block, with `psi = x(12)` branching to both |
-| the two identical PI rows, `N` above and `E` below | the same gain names `Kp_ned` and `Ki_ned` appear in all four Gain blocks |
-| the `Saturation` blocks reading `2*X_max` | the loose limit of step 8, written as an expression so the model shows where the number comes from |
+| the two subsystems `north speed control` and `east speed control`, one above the other | the same arrangement as the body-frame model's `u speed control` and `v speed control`, so the two can be opened side by side — and the same gain names `Kp_ned` and `Ki_ned` appear inside both |
+| the `north limit` and `east limit` blocks reading `2*X_max` | the loose limit of step 8, written as an expression so the model shows where the number comes from |
 | the `Kb` path from each saturation back to its integrator | the anti-windup wiring is present and correct — it simply has the wrong limit to work from |
 
 ### Experiment 6-7 · The same point, held in two frames (20 min)
@@ -1707,16 +2145,16 @@ The last figure does the one thing the seven cannot: it lays the rungs on top of
 | rung 2, $\lvert n\rvert_{max}$ in table 2 | $101.74$, which is $\lvert n_{min}\rvert$ | §6-2: a pure sway demand drives both stern units astern, and astern is the weaker direction |
 | rung 2, $F_B$ | $35.1$ N — $Y_{max}$, not the bow unit's $40$ N rating | §6-2 step 5: the sway ceiling comes from the stern reverse limit through the lever $a = 1.8987$ |
 | rung 2 against rung 4, `path` and `straight` | $12.00 = 12.00$ m on both | §6-3: both translations are straight; one is made with the bow unit and one without it |
-| rung 3, $F_B$, $T_L$, $T_R$ | $15.0$, $4.2$, $35.8$ N | §6-2: the four lines of `allocate`, worked by hand below |
+| rung 3, $F_B$, $T_L$, $T_R$ | $15.0$, $4.2$, $35.8$ N | §6-2: the three rows of $B^{-1}$, worked by hand below |
 | rungs 5 and 7, `phase 2` | $53.04$ s on both | §6-6: phase 1 does not know $\psi_{berth}$, so the two runs are one simulation until the approach radius |
 | rung 7 against rung 5, `t to 0.5 m` and `d(end)` | $56.22$ against $75.94$ s, but $0.347$ against $0.186$ m | §6-6: bow-first spends longer aligning, less time berthing, and stops further out |
 | rung 7 against rung 5, $\lvert v\rvert_{max}$ | $0.268$ against $0.353$ m/s | §6-6: the bow-first attitude asks less of the axis the hull is weakest in |
-| rung 8, $F_B$ | $40.0$ N — the only rung that reaches the bow unit's own rating | §6-7: the NED loop asks for $43.68$ N, and what stops it is the allocation's Saturation at $F_{B,max}$, not the controller's clip at $Y_{max} = 35.13$ N |
+| rung 8, $F_B$ | $40.0$ N — the only rung that reaches the bow unit's own rating | §6-7: the NED loop asks for $43.68$ N, and what stops it is the allocation's `shaft limit` at $n_{bow,max} = 60.08$ rad/s, which is $F_{B,max} = 40$ N in the other coordinate, not the controller's clip at $Y_{max} = 35.13$ N |
 | rung 8 against rung 1, `t to 0.5 m` | $51.00$ against $42.68$ s for the same target | §6-7: the magnitude cap $v_{ned,max} = 0.350$ m/s binds, and $\lvert u\rvert_{max}$ falls to $0.195$ m/s |
 | the right panel of the ladder chart | only rung 8's $\lvert F_B\rvert$ bar touches the $F_{B,max}$ line | §6-7 again, read without any table at all |
 | every rung, `samples` | $T_{final}/h + 1$ — $6001$, $7501$, $1001$ | §6-0: the fixed step $h = 0.02$ s |
 
-**What the figures say.** Rung 3 is the one rung a student can check with a pencil, because nothing is closing around it. The demand is $X = 40$ N, $Y = 15$ N, $N = 10$ N·m, and the four lines of `allocate` give
+**What the figures say.** Rung 3 is the one rung a student can check with a pencil, because nothing is closing around it. The demand is $X = 40$ N, $Y = 15$ N, $N = 10$ N·m, and $B^{-1}$ read row by row gives
 
 $$F_B = Y = 15.000\ \text{N},\qquad
 N_s = N - l_f F_B = 10 - 1.5 \times 15 = -12.5000\ \text{N·m},$$
@@ -1739,7 +2177,7 @@ The berthing pair, rungs 5 and 7, is where the ladder stops rewarding a single n
 |---|---|
 | `X_cmd = 0` in `W06_3_thrust` | the stern pair becomes $\pm$ one number and the hand check above loses a term; the moment is then made entirely by the pair |
 | `N_d = 13` and `E_d = 0` in `W06_2_sway` — the same $13$ m, turned due north | the same model and the same gains now run rung 4's physics: $\lvert u\rvert_{max}$ and $\lvert v\rvert_{max}$ exchange places and $F_B$ falls from $35.1$ to $0.0$ N. The ladder's central pair, made on one canvas |
-| `F_B_max = 120`, then run `W06_8_ned_run` alone | $F_B$ passes $40.0$ N, proving that the $40.0$ in table 2 was the allocation's Saturation and not the trajectory |
+| `n_bow_max = 104`, then run `W06_8_ned_run` alone — a rating of $119.8$ N | $F_B$ passes $40.0$ N, proving that the $40.0$ in table 2 was the allocation's `shaft limit` and not the trajectory |
 | `stand_off = 12`, which rungs 5 and 7 read from the workspace at compile time | the berth leg lengthens for both; watch whether the gap between their two `d(end)` values widens or closes |
 | delete the rung 3 line from `L` and re-run | the tables lose their only `NaN` row, which is a good way to confirm that the blanks were the open-loop rung and not a failure |
 
@@ -1753,22 +2191,24 @@ The berthing pair, rungs 5 and 7, is where the ladder stops rewarding a single n
 
 ## 6-9. The equations and the code, line against line
 
-**What is observed.** Three blocks in this week are hand-written MATLAB rather than Simulink blocks: the allocation, the rotations, and the mission state machine. Each is listed in full in the section that needs it — §6-2, §6-3 and §6-5 — beside a table that reads the code against its *figure*. What none of those tables does is read the code against its *equation*, and that is the reading a student needs when the derivation is in one hand and the block is open in the other.
+**What is observed.** Three blocks in this week are hand-written MATLAB rather than Simulink blocks: the allocation, the rotations, and the mission state machine. Each is listed in full in the section that needs it — §6-2, §6-3 and §6-5 — beside a table that reads the code against its *figure*. What none of those tables does is read the code against its *equation*, and that is the reading a student needs when the derivation is in one hand and the block is open in the other. The fourth hand-written file of the week, `_tools/otter_bow.m`, is read against its equations where it is introduced, in §6-1, and is not repeated here.
 
 **The result.** Four tables. Each row names an equation of the week, the line of code that is that equation, and what the pairing turns on. No listing is repeated here; each stays in its own section, and these tables point at it.
 
-**Table 1 · The allocation.** `allocate`, listed in §6-2, inside the `allocation` subsystem of all seven models. It is the one block every rung has, because every rung ends in three thrusters.
+**Table 1 · The allocation.** `allocate`, listed in §6-2, inside the `allocation` subsystem of all seven models. It is the one block every rung has, because every rung ends in three thrusters. Its three lines are the three stages of the actuator model run backwards, in the order the forward model composes them.
 
 | Equation | The line | What the pairing turns on |
 |---|---|---|
-| $F_B = Y$ | `F_B = Y;` | step 1 — the second row of $B$ has a single non-zero entry, so this is the only demand that does not have to be shared |
-| $N_s = N - l_f F_B$ | `N_s = N - l_f*F_B;` | step 2 — the yaw the bow unit has already made, wanted or not |
-| $T_L = \tfrac{1}{2}\!\left(X + N_s / y_{pont}\right)$ | `T_L = 0.5*(X + N_s/y_pont);` | step 3 — the sum of the pair is the surge |
-| $T_R = \tfrac{1}{2}\!\left(X - N_s / y_{pont}\right)$ | `T_R = 0.5*(X - N_s/y_pont);` | step 3 — their difference, over the lever $y_{pont}$, is the remaining moment |
-| $T_i \leftarrow \operatorname{sat}(T_i)$, $i \in \{L, R, B\}$ | **no line** — a `Saturation` block downstream of the function | step 7 — the clip is outside the solve, and that is where both leaks come from |
+| $\mathbf{f} = B^{-1}\boldsymbol{\tau}$ | `f = Binv * tau;` | steps 1 to 3 — one multiply stands for all three, and `Binv` is formed in the setup script from the $B$ the column rule produced, never typed in |
+| $k_i = k_{pos}$ for $f_i \geq 0$, $k_{neg}$ for $f_i < 0$ | `if f(1) < 0, k(1) = k_neg; end` | §6-1 step 13 — the coefficient is chosen on the **sign of the force**, which is the whole reason $B^{-1}$ has to act before $K^{-1}$ and not after |
+| $\mathbf{u} = K^{-1}\mathbf{f}$ | `u = f ./ k;` | §6-1 step 8 inverted — $K$ is diagonal, so its inverse is three divisions and no matrix |
+| $n_i = \operatorname{sign}(u_i)\sqrt{\lvert u_i \rvert}$ | `n = sign(u) .* sqrt(abs(u));` | §6-1 step 14 — the thrust curve inverted one unit at a time; without the $\lvert\cdot\rvert$ every astern command returns a complex shaft speed |
+| $n_i \leftarrow \operatorname{sat}(n_i)$ | **no line** — the `shaft limit` Saturation downstream of the function | step 7 — the clip is outside the solve, and that is where both leaks come from |
 
 > [!important] The last row is the one that is not a line
-> The four lines above are an exact solve, and the clip is a block after them. Two consequences follow from that ordering alone. First, $N_s$ is computed from the **demanded** $F_B$ rather than the delivered one, so when the sway demand exceeds $F_{B,max}$ the stern pair has already been told to cancel a moment the bow unit will not make. Second, the stern pair is clipped afterwards against two different bounds — $T_{max} = 119.68$ N ahead and $T_{min} = -66.71$ N astern — so an antisymmetric pair clipped asymmetrically no longer sums to the surge that was asked for. Both leaks measured in Experiment 6-2 are consequences of where the Saturation sits, not of the algebra above it. Re-solving with the saturated $F_B$ would remove the first; removing the second needs the demand itself to be reshaped, which is Week 7.
+> The three lines above are an exact inverse, and the clip is a block after them. The clip sits on the shaft speeds rather than on the forces for two reasons: that is the quantity each unit is physically rated in, and it is the quantity `otter_bow` receives, so the bound stands at the boundary between controller and plant. It costs nothing in generality — $T = k\,n\lvert n\rvert$ is strictly increasing and the ratings are *defined* as $T_{max} = k_{pos}n_{max}^2$ and $T_{min} = -k_{neg}n_{min}^2$, so clipping $n$ and clipping $T$ select the same attainable set.
+>
+> Two consequences follow from the ordering alone. First, the inverse is taken once, against the demand as issued, and nothing re-solves after a clip: when the sway demand exceeds $F_{B,max}$ the stern pair has already been told to cancel a moment $l_f F_B$ that the bow unit will not make. Second, the stern pair is clipped against two bounds of different size — $n_{max} = 103.93$ rad/s ahead against $n_{min} = -101.74$ rad/s astern, which is $T_{max} = 119.68$ N against $T_{min} = -66.71$ N, because $k_{neg} < k_{pos}$ — so an antisymmetric pair clipped asymmetrically no longer sums to the surge that was asked for. Both leaks measured in Experiment 6-2 are consequences of where the Saturation sits, not of the algebra above it. Re-solving with the clipped $\mathbf{n}$ would remove the first; removing the second needs the demand itself to be reshaped, which is Week 7.
 
 **Table 2 · The outer loop's rotation.** `to_body`, listed in §6-3, inside `position loop` of `W06_1_point` — and, unchanged, of `W06_2_sway`, `W06_4_stop`, `W06_5_dock` and `W06_7_front`.
 

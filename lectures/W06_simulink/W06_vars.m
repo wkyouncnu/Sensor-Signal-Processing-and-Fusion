@@ -38,14 +38,21 @@ V.B      = cfg.B;
 V.Binv   = inv(cfg.B);          %#ok<MINV>
 V.T_max  =  cfg.k_pos*cfg.n_max^2;    %  119.68 N
 V.T_min  = -cfg.k_neg*cfg.n_min^2;    %  -66.71 N
-V.F_B_max = 40;                       % 선수추진기 정격 / the bow unit's rating [N]
+V.k_bow     = cfg.k_bow;              % 터널 추진기는 양쪽이 같다 / symmetric
+V.n_bow_max = cfg.n_bow_max;          % 60.08 rad/s — 한계가 걸리는 자리
+V.F_B_max   = V.k_bow*V.n_bow_max^2;  % 40.00 N — 정의가 하나다 / one definition
+V.bow       = [V.l_f, V.k_bow, V.n_bow_max];   % otter_bow 가 받는 제원 셋
 
 %% ---- 적재 · 조류 · 질량행렬 / payload, current, inertia
 V.mp     = 25;
 V.rp     = [0.05 0 -0.35]';
 V.V_c    = 0;
 V.beta_c = pi/2;
-[~, V.Minv] = otter_M(V.mp, V.rp);    % 중첩이 쓰는 역행렬 / used by the superposition
+%  플랜트는 M 의 역행렬을 쓰지 않는다 — 선수추진기의 힘은 otter_bow.m 안에서
+%  tau 가 된다. 횡 게인의 근거가 되는 두 관성(85.50 / 162.50 kg)을 읽으려고 둔다
+%  The plant does not need inv(M); M is here so the two inertias the sway gains
+%  are argued from can be read (6-2 절)
+[V.Mmat, V.Minv] = otter_M(V.mp, V.rp);
 
 %% ---- 위치제어 / position control
 %  명령(N_d · E_d · X_cmd · Y_cmd · N_cmd)은 여기 없다. 단마다 다르고,
