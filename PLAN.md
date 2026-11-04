@@ -78,7 +78,7 @@
 | **W09** | Dynamic Positioning and Mission Integration | **완료** (2026-09-25) |
 | **W10** | Integration: One Vessel, One Mission (본과정 마무리) | **완료** (2026-09-25) |
 | W11 | Variant A — Aft Azimuth Thrusters | 미착수 |
-| W12 | Variant C — Four Tilting Thrusters, and the Open-Loop Check | **1단계 완료 + 개정** (2026-11-03). 동역학을 $\tau=B\mathbf{f}$ 행렬형으로, 거치 부호 $s=[+1\,+1\,-1\,-1]$ 로 **서보 0도가 쌍마다 다른 것**까지. 시나리오 여덟(S1~S8), 시나리오당 그림 한 장, 개념도 셋. 그림 해설 표는 지웠다 → `orders-log-6.md` §15-74. 배분기·실습·`_KO` 는 사용자 검토 뒤 |
+| W12 | Variant C — Four Tilting Thrusters, and the Open-Loop Check | **1단계 완료 + 개정** (2026-11-03). 동역학을 $\tau=B\mathbf{f}$ 행렬형으로, 거치 부호 $s=[+1\,+1\,-1\,-1]$ 로 **서보 0도가 쌍마다 다른 것**까지. 시나리오 여덟(S1~S8), 시나리오당 그림 한 장, 개념도 셋. 그림 해설 표는 지웠다 → `orders-log-6.md` §15-74. **2단계 배분기 완료** (2026-11-04): §12-7~§12-11 — 입출력 정의와 사슬 개념도, 최소노름(라그랑주), 가중행렬의 한계(값표는 각을 줄이지 못한다), 서보 벽의 직선 둘과 볼록조각 열여섯, 50 Hz 예산. `W12_alloc.m` 법칙 일곱 · `W12_hw.m` · 절 스크립트 넷. RPI 는 사용자 지시로 보류. 실습(`problems/`·`solutions/`)·`_KO` 는 사용자 검토 뒤 |
 | 기말 | Final-Project 명세 | 미착수 |
 
 > [!note] 선수추진기 위치제어를 새 W06 으로 넣고 뒤를 한 칸씩 밀었다 (2026-10-26)

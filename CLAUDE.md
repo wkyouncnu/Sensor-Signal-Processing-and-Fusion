@@ -289,6 +289,12 @@ YAML 프론트매터 (type, week, title, date, tags, status, summary)
    만으로는 부족하다. 논문은 **DOI 까지**. "참고 구현이 없다" 는 **그 릴리스에 대한
    진술**이므로, 쓰기 전에 디스크 전체를 찾고 릴리스 연도를 명시한다
    → `standing-orders.md` §7
+10-2. **최적화 풀이의 수치는 `exitflag` 를 읽고서야 수치다.** `quadprog`·`lsqlin` 은
+   실행 불가능한 마지막 반복값을 그럴듯한 숫자로 돌려준다 — 모든 통계를
+   `exit > 0` 에서만 내고, 그림에서는 해가 없는 구간을 `NaN` 으로 끊는다.
+   그리고 **다른 주차에서 쓴 기호를 다시 쓰기 전에 그 주차를 grep 한다** —
+   W07 의 $\mathbf W$ 는 힘 오차를, W12 의 $\mathbf W$ 는 노력을 가중한다
+   → `standing-orders.md` §15-76
 11. **`.md` 안의 LaTeX 은 Edit 도구로만 고친다.** `sed`·`awk`·`perl` 은 역슬래시를 저마다
    다르게 해석해서 수식을 조용히 부순다. 실제로 W01 전체를 한 번 망가뜨렸다
    → `standing-orders.md` §5-1. `\|` 는 노름 ‖·‖ 이므로 절댓값에는 `\lvert`·`\rvert` 를 쓴다.
