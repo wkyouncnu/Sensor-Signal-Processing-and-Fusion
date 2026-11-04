@@ -79,7 +79,7 @@ function [xdot,U] = otter_tilt4(x,n,delta,mp,rp,V_c,beta_c,quad)
 %     tau linear in the commands:
 %
 %       f = [ T_1 cos d_1 ; T_1 sin d_1 ; ... ; T_4 cos d_4 ; T_4 sin d_4 ]
-%       tau_3 = B_thr f,   B_thr = otter_B(cfg),   3 x 8
+%       tau_3 = B_thr f,   B_thr written out below with its arms named,   3 x 8
 %
 %     이 파일 안에서는 그 행렬을 **B_thr** 이라 부른다. otter.m 의 `B` 는 이미
 %     **선폭** 1.08 m 이고, 그 줄을 고치지 않는 것이 이 복사본의 규칙이다.
@@ -199,22 +199,30 @@ n_min = -sqrt((0.5*13.6 * g)/k_neg);    % minimum propeller rev. (rad/s)
 px     = quad(1,:);                     % x stations (m)
 py     = quad(2,:);                     % y stations (m)
 d_max  = quad(3,:);                     % tilt limits, both ways (rad)
-smount = quad(4,:);                     % mounting signs, +1 forward, -1 aft
+s      = quad(4,:);                     % mounting signs, +1 forward, -1 aft
 
-% 유효행렬을 열 규칙(3주차)으로 **여기서** 만든다. 이름이 B_thr 인 것은
-% otter.m 의 B 가 이미 **선폭**이라서다 — 그 줄은 고치지 않는다.
-% The effectiveness matrix, built here from the Week 3 column rule. It is named
-% B_thr because B is already the beam in otter.m, and that line is not touched.
-B_thr = zeros(3,8);
-for i = 1:1:4
-    for k = 1:1:2                       % k = 1 gives e = s(1,0), k = 2 e = s(0,1)
-        e    = zeros(2,1);
-        e(k) = smount(i);
-        B_thr(:, 2*i-2+k) = [ e(1)
-                              e(2)
-                              px(i)*e(2) - py(i)*e(1) ];
-    end
-end
+% 3 행의 여섯 칸은 전부 **모멘트 팔**이다. 열 규칙(3주차)에 자리와 거치 부호를
+% 넣으면 cos 열은 -s_i y_i, sin 열은 s_i x_i 이므로, 길이에 이름을 붙여 둔다.
+% Row 3 is nothing but moment arms. Putting the station and the mounting sign
+% into the Week 3 column rule gives -s_i y_i for a cos column and s_i x_i for a
+% sin column, so each of those lengths is given a name here.
+l_f = s(1)*px(1);                       % +1.500 m  forward pair, along the hull
+l_a = s(3)*px(3);                       % +1.000 m  aft pair  (s = -1, x = -1 m)
+d1  = -s(1)*py(1);                      % +0.395 m  unit 1, across the beam
+d2  = -s(2)*py(2);                      % -0.395 m  unit 2, the other side
+d3  = -s(3)*py(3);                      % -0.395 m  unit 3
+d4  = -s(4)*py(4);                      % +0.395 m  unit 4
+
+% 유효행렬을 **여기서** 쓴다 — 강의 §12-1 의 행렬 그대로다. 이름이 B_thr 인
+% 것은 otter.m 의 B 가 이미 **선폭**이라서다 — 그 줄은 고치지 않는다.
+% 1·2 행은 거치 부호만, 3 행은 위에서 이름 붙인 팔만 들고 있다.
+% The effectiveness matrix, written out here exactly as the matrix of 12-1. It
+% is named B_thr because B is already the beam in otter.m, and that line is not
+% touched. Rows 1 and 2 hold only the mounting sign; row 3 holds only the arms
+% named above.
+B_thr = [ s(1)   0    s(2)   0    s(3)   0    s(4)   0
+           0    s(1)   0    s(2)   0    s(3)   0    s(4)
+          d1    l_f   d2    l_f   d3    l_a   d4    l_a ];
 % -------------------------------------------------------------------------
 
 % MRB and CRB (Fossen 2021)
@@ -285,32 +293,22 @@ Nr = -M(6,6) / T_yaw;            % specified using the time constant in T_yaw
 
 % ---- CHANGED (3 of 4) ---------------------------------------------------
 % Control forces and moments - with propeller revolution saturation
-% 루프가 2 회에서 4 회로 늘고, **각도도 함께 포화된다.** 서보가 ±45 도까지만
-% 돌아가므로 그보다 큰 각을 지시해도 모델은 ±45 도로 받는다. 회전수의 포화는
-% otter.m 과 같은 줄이다 — 같은 프로펠러이기 때문이다.
-% The loop runs four times, and the ANGLE saturates too: the servo turns only to
-% +-45 deg, so a larger command is received as +-45 deg. The shaft-speed
-% saturation is the same code as otter.m, because they are the same propellers.
-Thrust = zeros(4,1);
-for i = 1:1:4
-    if n(i) > n_max                     % saturation, physical limits
-        n(i) = n_max;
-    elseif n(i) < n_min
-        n(i) = n_min;
-    end
+% 지시가 둘이 되었고, **각도도 함께 포화된다.** 서보가 ±45 도까지만 돌아가므로
+% 그보다 큰 각을 지시해도 모델은 ±45 도로 받는다. 회전수의 한계는 otter.m 과
+% 같은 값이다 — 같은 프로펠러이기 때문이다. 네 단위를 한 줄에서 한꺼번에
+% 자르고, 어느 것이 벽인지가 그 줄에 그대로 쓰여 있다.
+% There are two commands now, and the ANGLE saturates too: the servo turns only
+% to +-45 deg, so a larger command is received as +-45 deg. The shaft-speed
+% limits are the same values as otter.m, because they are the same propellers.
+% All four units are clipped in one line each, with the wall named on the line.
+n     = min(max(n(:),      n_min),      n_max);        % shaft speed (rad/s)
+delta = min(max(delta(:), -d_max(:)),   d_max(:));     % tilt servo  (rad)
 
-    if n(i) > 0
-        Thrust(i) = k_pos * n(i)*abs(n(i));   % positive thrust (N)
-    else
-        Thrust(i) = k_neg * n(i)*abs(n(i));   % negative thrust (N)
-    end
-
-    if delta(i) > d_max(i)              % saturation, the tilt servo
-        delta(i) = d_max(i);
-    elseif delta(i) < -d_max(i)
-        delta(i) = -d_max(i);
-    end
-end
+% 추력은 n|n| 이고, 계수가 전진과 후진에서 다르다 — 부호가 계수를 고른다.
+% The thrust is k n|n|, and k differs ahead and astern, so the sign of n picks
+% which coefficient applies.
+k_thr  = k_pos * (n > 0) + k_neg * (n <= 0);
+Thrust = k_thr .* n .* abs(n);          % 4 x 1, N
 % -------------------------------------------------------------------------
 
 % ---- CHANGED (4 of 4) ---------------------------------------------------
@@ -322,12 +320,20 @@ end
 %
 %     f = [ T_1 cos d_1 ; T_1 sin d_1 ; ... ; T_4 cos d_4 ; T_4 sin d_4 ]
 %
-% 쌍마다 0 도가 다른 것은 B 안에 있다 — otter_B 가 거치 부호 s = [1 1 -1 -1]
-% 을 열에 실어 두었다. 그래서 여기에는 부호가 하나도 없다.
-% The per-pair zero lives inside B: otter_B has already carried the mounting
-% sign s = [1 1 -1 -1] into the columns, so no sign appears here.
-f = reshape([Thrust(:) .* cos(delta(:)), ...
-             Thrust(:) .* sin(delta(:))].', 8, 1);
+% 쌍마다 0 도가 다른 것은 B_thr 안에 있다 — 위에서 거치 부호 s = [1 1 -1 -1]
+% 을 열에 실어 두었다. 그래서 여기에는 부호가 하나도 없다. 한 줄이 한 열에
+% 대응하므로, 어느 줄이 어느 열과 곱해지는지 세지 않고 읽을 수 있다.
+% The per-pair zero lives inside B_thr: the mounting sign s = [1 1 -1 -1] was
+% carried into its columns above, so no sign appears here. One line per column,
+% so which entry meets which column is read off rather than counted.
+f = [ Thrust(1)*cos(delta(1))
+      Thrust(1)*sin(delta(1))
+      Thrust(2)*cos(delta(2))
+      Thrust(2)*sin(delta(2))
+      Thrust(3)*cos(delta(3))
+      Thrust(3)*sin(delta(3))
+      Thrust(4)*cos(delta(4))
+      Thrust(4)*sin(delta(4)) ];
 
 tau3 = B_thr * f;                       % [X ; Y ; N]
 

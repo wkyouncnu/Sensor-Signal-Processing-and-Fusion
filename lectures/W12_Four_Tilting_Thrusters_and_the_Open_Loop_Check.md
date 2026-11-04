@@ -103,12 +103,6 @@ Upon completion of this week, the learner is able to:
 
 Every section states what is observed, says what follows from it, and then runs **the experiment that measures it**, on its own model. The numbers quoted in the text are printed by the run a few lines below it.
 
-| Part of a section | What it holds |
-|---|---|
-| **What is observed** | the effect itself, with the numbers it produces |
-| **What follows from it** | numbered lines, one step each |
-| **Experiment 12-x** | the model, the commands, the output actually obtained, the figure, and a table that reads every feature of the figure back to **the numbered line that predicts it** |
-
 ## 12-0. Setting up (10 min)
 
 ```matlab
@@ -145,8 +139,6 @@ Four lines of that block are the week in miniature. The shaft limits are not sym
 
 ## 12-1. Four thrusters, two columns each, and two different zeros
 
-This section answers: what does a tilting thruster change about the allocation matrix, before any allocation is attempted?
-
 **What is observed.** Experiment 12-1 reports that the forward pair at $\delta = 0$ reproduces `otter.m` exactly, that the aft mounting sign flips $\boldsymbol{\tau}$ to $3.55\times10^{-15}$, that $\boldsymbol{\tau}$ agrees with $B\mathbf{f}$ to $7.19\times10^{-14}$ over 200 random states, and that $B$ is $3\times 8$ with rank 3.
 
 - four thrust stations: two at $x_b = +1.50$ m, two at $x_b = -1.00$ m, each $0.395$ m off centreline
@@ -170,7 +162,7 @@ $$
 
 The sign is deliberately kept out of $\mathbf{f}$ and placed in $B$, so that $\mathbf{f}$ holds only what the hardware reports.
 
-Which direction is called the zero of a servo is a **convention**, not a property of the hull. Calling the other direction zero at all four units gives $s = \begin{bmatrix}-1 & -1 & +1 & +1\end{bmatrix}$ and therefore $-B$, and a source written that way is not wrong — it is a different labelling of the same four thrusters. What is not free is **consistency**: $B$, the servo zeros drawn in the figures, the commanded $\delta_i$ and every measured number of §12-3 must come from one choice. This course fixes that choice once, in the `mount` field of `otter_config.m`, and `_tools/otter_B.m` builds $B$ from that field by the column rule, so the matrix and the convention cannot drift apart.
+Which direction is called the zero of a servo is a **convention**, not a property of the hull. Calling the other direction zero at all four units gives $s = \begin{bmatrix}-1 & -1 & +1 & +1\end{bmatrix}$ and therefore $-B$, and a source written that way is not wrong — it is a different labelling of the same four thrusters. What is not free is **consistency**: $B$, the servo zeros drawn in the figures, the commanded $\delta_i$ and every measured number of §12-3 must come from one choice. This course fixes that choice once, in the `mount` field of `otter_config.m`. The motion model writes $B$ out from that field, `_tools/otter_B.m` builds the same matrix from the column rule, and `verify_otter_tilt4.m` compares the two every time it runs, so the matrix and the convention cannot drift apart.
 
 With the column rule applied to each component separately, the force on the hull is linear in those eight numbers:
 
@@ -189,30 +181,30 @@ B \;=\;
 \begin{bmatrix}
 1 & 0 & 1 & 0 & -1 & 0 & -1 & 0 \\
 0 & 1 & 0 & 1 & 0 & -1 & 0 & -1 \\
-d_1 & l_f & -d_2 & l_f & -d_3 & l_a & d_4 & l_a
+d_1 & l_f & d_2 & l_f & d_3 & l_a & d_4 & l_a
 \end{bmatrix}
 $$
 
-The first two rows carry only the mounting sign, because a force adds to $X$ and $Y$ whatever point it acts at. The third row is where the geometry enters, and **every entry in it is a moment arm**: a length, in metres, and never anything else. Two arms exist on this hull, one for each kind of column.
+![The four stations with both sets of moment arms drawn as dimension lines: $d_1$ to $d_4$ across the beam, $l_f$ and $l_a$ along the centreline, together with the two mounting signs and the servo range each unit reaches](../figures/w12-tilt-geometry.svg)
+
+The first two rows carry only the mounting sign, because a force adds to $X$ and $Y$ whatever point it acts at. The third row is where the geometry enters, and **every entry in it is a moment arm**: a length, in metres, and never anything else. Two arms exist on this hull, one for each kind of column. Each is named once, with its sign already inside the name, so that row 3 of the matrix is six names and nothing else — this is exactly how `otter_tilt4.m` writes it.
 
 | Column of $B$ | It multiplies | Its entry in row 3 | What that length measures |
 |---|---|---|---|
-| $\mathbf{b}^{c}_i$, the $\cos$ column | $T_i\cos\delta_i$, the part of unit $i$'s thrust along $x_b$ | $-s_i y_i = \pm d_i$ | **transverse** arm: centreline to unit $i$'s pontoon, $d_i = 0.395$ m |
-| $\mathbf{b}^{s}_i$, the $\sin$ column | $T_i\sin\delta_i$, the part of the same thrust along $y_b$ | $s_i x_i = l_f$ or $l_a$ | **longitudinal** arm: midships CO to the thrust station, $l_f = 1.50$ m forward, $l_a = 1.00$ m aft |
+| $\mathbf{b}^{c}_i$, the $\cos$ column | $T_i\cos\delta_i$, the part of unit $i$'s thrust along $x_b$ | $d_i \equiv -s_i y_i$ | **transverse** arm: centreline to unit $i$'s pontoon, $\lvert d_i\rvert = 0.395$ m, signed by which way that thrust turns the bow |
+| $\mathbf{b}^{s}_i$, the $\sin$ column | $T_i\sin\delta_i$, the part of the same thrust along $y_b$ | $l_f \equiv s_1 x_1$, $l_a \equiv s_3 x_3$ | **longitudinal** arm: midships CO to the thrust station, $l_f = 1.50$ m forward, $l_a = 1.00$ m aft |
 
 A moment arm is always measured **perpendicular to the force it multiplies**. A thrust along $x_b$ can only turn the hull by acting off the centreline, so its arm is the transverse half-separation $d_i$; a thrust along $y_b$ can only turn the hull by acting away from midships, so its arm is the longitudinal station $l_f$ or $l_a$. This is why the two arms of one unit are different lengths although they belong to the same thruster.
-
-![The four stations with both sets of moment arms drawn as dimension lines: $d_1$ to $d_4$ across the beam, $l_f$ and $l_a$ along the centreline, together with the two mounting signs and the servo range each unit reaches](../figures/w12-tilt-geometry.svg)
 
 Two readings of row 3 follow directly, and both are measured in §12-3.
 
 - the four $\sin$ entries are **all positive** — at the bow $s_i = +1$ and $x_i = +l_f$, at the stern $s_i = -1$ and $x_i = -l_a$, and the two negatives cancel. A positive $\delta$ at any of the four units therefore turns the hull the same way, which is why S3 tilts all four alike and gets a pure yaw
-- the four $\cos$ entries alternate $+d, -d, -d, +d$ across the diagonal of the hull. Port-bow and starboard-stern thrust turn the bow to starboard; the other diagonal turns it to port
+- the four $\cos$ entries alternate in sign across the diagonal of the hull: $d_1 = +d$, $d_2 = -d$, $d_3 = -d$, $d_4 = +d$. Port-bow and starboard-stern thrust turn the bow to starboard; the other diagonal turns it to port
 
-All four pontoons sit at the same half-separation, so $d_1 = d_2 = d_3 = d_4 = d = 0.395$ m, and row 3 becomes the eight numbers the code holds:
+All four pontoons sit at the same half-separation, so the four transverse arms share one magnitude, $d = 0.395$ m, and differ only in sign. Row 3 is then the eight numbers the code holds:
 
 $$
-\begin{bmatrix} d & l_f & -d & l_f & -d & l_a & d & l_a \end{bmatrix}
+\begin{bmatrix} d_1 & l_f & d_2 & l_f & d_3 & l_a & d_4 & l_a \end{bmatrix}
 =
 \begin{bmatrix} 0.395 & 1.500 & -0.395 & 1.500 & -0.395 & 1.000 & 0.395 & 1.000 \end{bmatrix}\ \text{m}
 $$
@@ -220,12 +212,13 @@ $$
 | Symbol | Quantity | Value · source |
 |---|---|---|
 | $x_i$ | longitudinal station of unit $i$ | $+1.50, +1.50, -1.00, -1.00$ m — `otter_config.m`, field `pos` |
-| $y_i = d_i$ | transverse station of unit $i$ | $-0.395, +0.395, -0.395, +0.395$ m — same |
+| $y_i$ | transverse station of unit $i$ | $-0.395, +0.395, -0.395, +0.395$ m — same |
+| $d_i$ | transverse moment arm of unit $i$, $-s_i y_i$ | $+0.395, -0.395, -0.395, +0.395$ m — the signed form of $y_i$ |
 | $s_i$ | mounting sign: which way the zero points | $+1, +1, -1, -1$ — `otter_config.m`, field `mount` |
 | $\delta_i$ | tilt angle, from unit $i$'s own zero towards $y_b$ | commanded, clipped to $\pm 45^\circ$ |
 | $T_i$ | thrust magnitude of unit $i$ | $k_{pos}n_i\lvert n_i\rvert$ for $n_i \ge 0$, $k_{neg}n_i\lvert n_i\rvert$ otherwise |
 | $\mathbf{b}^{c}_i, \mathbf{b}^{s}_i$ | the two columns unit $i$ owns | the $\cos$ column and the $\sin$ column |
-| $B$ | allocation matrix | $3\times 8$, rank 3 — built by `_tools/otter_B.m` from the column rule |
+| $B$ | allocation matrix | $3\times 8$, rank 3 — written out in `otter_tilt4.m` and checked against `_tools/otter_B.m` |
 | $l_f, l_a$ | longitudinal moment arms, CO to the forward and aft stations | $1.50$ m, $1.00$ m — `otter_config.m`, fields `l_f`, `l_a` |
 
 **Derivation, one line at a time.**
@@ -249,11 +242,11 @@ $$
 8. Writing $f_{i,x} = T_i\cos\delta_i$ and $f_{i,y} = T_i\sin\delta_i$ and substituting the four stations turns the moment sum into eight separate terms, each one a force times its own arm:
 
 $$
-N \;=\; \bigl(d_1 f_{1,x} - d_2 f_{2,x} - d_3 f_{3,x} + d_4 f_{4,x}\bigr)
+N \;=\; \bigl(d_1 f_{1,x} + d_2 f_{2,x} + d_3 f_{3,x} + d_4 f_{4,x}\bigr)
 \;+\; l_f\bigl(f_{1,y} + f_{2,y}\bigr) \;+\; l_a\bigl(f_{3,y} + f_{4,y}\bigr)
 $$
 
-   The first bracket collects the transverse arms, the other two the longitudinal ones. This is the form to read when a commanded manoeuvre comes out wrong: each term names one thruster, one component of its thrust, and the one length that turns it into yaw.
+   Every sum is a plain sum, because each $d_i$, $l_f$ and $l_a$ already carries its own sign: the alternation of the diagonal lives in $d_2 = d_3 = -0.395$ m, not in the operators. The first bracket collects the transverse arms, the other two the longitudinal ones. This is the form to read when a commanded manoeuvre comes out wrong: each term names one thruster, one component of its thrust, and the one length that turns it into yaw.
 
 9. Two consequences follow at $\delta = 0$, and Experiment 12-1 measures both. Every sine dies, so $Y = 0$ and $N = -\sum s_i y_i T_i$: the differential-thrust yaw of `otter.m`, with four stations in place of two. And because $s_3 = s_4 = -1$, the aft pair alone reproduces `otter.m` with $\boldsymbol{\tau}$ reversed.
 
@@ -316,8 +309,6 @@ Expected output:
 
 ## 12-2. What had to change inside the motion model
 
-This section answers: which lines of `otter.m` carry the thruster configuration, and which lines carry the hull?
-
 **What is observed.** `_tools/otter_tilt4.m` is MSS `otter.m` copied and changed in four places, each marked in the file with `% ---- CHANGED (i of 4)`. The four marks sit in the same four places as Week 6's `otter_bow.m`.
 
 - the rigid-body and added-mass matrices, the Coriolis terms, the restoring forces, the linear and cross-flow damping, the nonlinear yaw damping $N_h = N_r(1 + 10\lvert r\rvert)r$ and the kinematics are character-for-character identical
@@ -328,8 +319,8 @@ This section answers: which lines of `otter.m` carry the thruster configuration,
 | | `otter.m` | `otter_tilt4.m` | Why |
 |---|---|---|---|
 | 1 · input check | `length(n) ~= 2` | `length(n) ~= 4` and `length(delta) ~= 4`, plus an eighth argument `quad` | the configuration arrives as data, so the stations and tilt limits are not hard-coded in the plant |
-| 2 · thruster data | $l_1$, $l_2$ | `px`, `py`, `d_max`, `smount` read out of `quad`, and $B$ built from them | with four stations a pair of signed arms is not enough, and the mounting sign has to reach the columns |
-| 3 · thrust loop | `for i = 1:1:2`, $n$ saturated | `for i = 1:1:4`, $n$ **and** $\delta$ saturated | derivation line 3 below — the servo is part of the vessel, not of the controller |
+| 2 · thruster data | $l_1$, $l_2$ | `px`, `py`, `d_max`, `s` read out of `quad`, then the six arms named and $B$ written out | with four stations a pair of signed arms is not enough, and the mounting sign has to reach the columns |
+| 3 · thrust | a two-pass loop, $n$ saturated | no loop: $n$ **and** $\delta$ clipped one line each, then $T = k\,n\lvert n\rvert$ | derivation line 3 below — the servo is part of the vessel, not of the controller |
 | 4 · the force vector | `tau = [T1+T2  0  0 0 0  -l1*T1-l2*T2]'` | `tau3 = B_thr * f` | derivation lines 4 to 6 — one matrix product in place of a literal |
 
 **Derivation, one line at a time.**
@@ -348,22 +339,45 @@ The second change, which is the column rule and the mounting sign written as cod
 px     = quad(1,:);                     % x stations (m)
 py     = quad(2,:);                     % y stations (m)
 d_max  = quad(3,:);                     % tilt limits, both ways (rad)
-smount = quad(4,:);                     % mounting signs, +1 forward, -1 aft
+s      = quad(4,:);                     % mounting signs, +1 forward, -1 aft
 
-% 유효행렬을 열 규칙(3주차)으로 **여기서** 만든다. 이름이 B_thr 인 것은
-% otter.m 의 B 가 이미 **선폭**이라서다 — 그 줄은 고치지 않는다.
-% The effectiveness matrix, built here from the Week 3 column rule. It is named
-% B_thr because B is already the beam in otter.m, and that line is not touched.
-B_thr = zeros(3,8);
-for i = 1:1:4
-    for k = 1:1:2                       % k = 1 gives e = s(1,0), k = 2 e = s(0,1)
-        e    = zeros(2,1);
-        e(k) = smount(i);
-        B_thr(:, 2*i-2+k) = [ e(1)
-                              e(2)
-                              px(i)*e(2) - py(i)*e(1) ];
-    end
-end
+% 3 행의 여섯 칸은 전부 **모멘트 팔**이다. 열 규칙(3주차)에 자리와 거치 부호를
+% 넣으면 cos 열은 -s_i y_i, sin 열은 s_i x_i 이므로, 길이에 이름을 붙여 둔다.
+% Row 3 is nothing but moment arms. Putting the station and the mounting sign
+% into the Week 3 column rule gives -s_i y_i for a cos column and s_i x_i for a
+% sin column, so each of those lengths is given a name here.
+l_f = s(1)*px(1);                       % +1.500 m  forward pair, along the hull
+l_a = s(3)*px(3);                       % +1.000 m  aft pair  (s = -1, x = -1 m)
+d1  = -s(1)*py(1);                      % +0.395 m  unit 1, across the beam
+d2  = -s(2)*py(2);                      % -0.395 m  unit 2, the other side
+d3  = -s(3)*py(3);                      % -0.395 m  unit 3
+d4  = -s(4)*py(4);                      % +0.395 m  unit 4
+
+% 유효행렬을 **여기서** 쓴다 — 강의 §12-1 의 행렬 그대로다. 이름이 B_thr 인
+% 것은 otter.m 의 B 가 이미 **선폭**이라서다 — 그 줄은 고치지 않는다.
+% 1·2 행은 거치 부호만, 3 행은 위에서 이름 붙인 팔만 들고 있다.
+% The effectiveness matrix, written out here exactly as the matrix of 12-1. It
+% is named B_thr because B is already the beam in otter.m, and that line is not
+% touched. Rows 1 and 2 hold only the mounting sign; row 3 holds only the arms
+% named above.
+B_thr = [ s(1)   0    s(2)   0    s(3)   0    s(4)   0
+           0    s(1)   0    s(2)   0    s(3)   0    s(4)
+          d1    l_f   d2    l_f   d3    l_a   d4    l_a ];
+% -------------------------------------------------------------------------
+```
+
+The third change, which puts both walls of the hardware in front of the thrust law:
+
+```matlab
+% ---- CHANGED (3 of 4) ---------------------------------------------------
+n     = min(max(n(:),      n_min),      n_max);        % shaft speed (rad/s)
+delta = min(max(delta(:), -d_max(:)),   d_max(:));     % tilt servo  (rad)
+
+% 추력은 n|n| 이고, 계수가 전진과 후진에서 다르다 — 부호가 계수를 고른다.
+% The thrust is k n|n|, and k differs ahead and astern, so the sign of n picks
+% which coefficient applies.
+k_thr  = k_pos * (n > 0) + k_neg * (n <= 0);
+Thrust = k_thr .* n .* abs(n);          % 4 x 1, N
 % -------------------------------------------------------------------------
 ```
 
@@ -379,12 +393,20 @@ The fourth change, which is the matrix product itself:
 %
 %     f = [ T_1 cos d_1 ; T_1 sin d_1 ; ... ; T_4 cos d_4 ; T_4 sin d_4 ]
 %
-% 쌍마다 0 도가 다른 것은 B 안에 있다 — otter_B 가 거치 부호 s = [1 1 -1 -1]
-% 을 열에 실어 두었다. 그래서 여기에는 부호가 하나도 없다.
-% The per-pair zero lives inside B: otter_B has already carried the mounting
-% sign s = [1 1 -1 -1] into the columns, so no sign appears here.
-f = reshape([Thrust(:) .* cos(delta(:)), ...
-             Thrust(:) .* sin(delta(:))].', 8, 1);
+% 쌍마다 0 도가 다른 것은 B_thr 안에 있다 — 위에서 거치 부호 s = [1 1 -1 -1]
+% 을 열에 실어 두었다. 그래서 여기에는 부호가 하나도 없다. 한 줄이 한 열에
+% 대응하므로, 어느 줄이 어느 열과 곱해지는지 세지 않고 읽을 수 있다.
+% The per-pair zero lives inside B_thr: the mounting sign s = [1 1 -1 -1] was
+% carried into its columns above, so no sign appears here. One line per column,
+% so which entry meets which column is read off rather than counted.
+f = [ Thrust(1)*cos(delta(1))
+      Thrust(1)*sin(delta(1))
+      Thrust(2)*cos(delta(2))
+      Thrust(2)*sin(delta(2))
+      Thrust(3)*cos(delta(3))
+      Thrust(3)*sin(delta(3))
+      Thrust(4)*cos(delta(4))
+      Thrust(4)*sin(delta(4)) ];
 
 tau3 = B_thr * f;                       % [X ; Y ; N]
 
@@ -399,21 +421,20 @@ tau = [tau3(1)
 
 | In the code | In the derivation | Note |
 |---|---|---|
-| `e(k) = smount(i)` | $\mathbf{e}_i = s_i[\cos\delta_i\;\;\sin\delta_i]^{\mathsf T}$ | the only place the mounting sign is applied |
-| `px(i)*e(2) - py(i)*e(1)` | $x_i e_{iy} - y_i e_{ix}$ | §12-1 line 1 — the column rule, third entry |
-| `B_thr(:, 2*i-2+k)` | the two columns unit $i$ owns | $k = 1$ is $\mathbf{b}^{c}_i$, $k = 2$ is $\mathbf{b}^{s}_i$ |
-| the `reshape(...,8,1)` | $\mathbf{f}$ of §12-1 | the cosine and the sine of each unit, interleaved in that order |
+| `d1 = -s(1)*py(1)` and its three mates | $d_i = -s_i y_i$ | the transverse arm of §12-1, sign included |
+| `l_f = s(1)*px(1)`, `l_a = s(3)*px(3)` | $l_f = s_1 x_1$, $l_a = s_3 x_3$ | the longitudinal arms — one name each, both positive |
+| rows 1 and 2 of `B_thr`, holding only `s(i)` | $\mathbf{b}^{c}_i$ and $\mathbf{b}^{s}_i$, first two entries | the only place the mounting sign acts on a force |
+| row 3 of `B_thr`, holding only the six names | row 3 of the matrix of §12-1 | the two column kinds alternate: arm, station, arm, station |
+| the eight lines of `f` | $\mathbf{f}$ of §12-1 | the cosine and the sine of each unit, interleaved in that order |
 | `tau3 = B_thr * f` | $\boldsymbol{\tau} = B\mathbf{f}$ | no sign and no station appears here: both are already in $B$ |
 | rows 3, 4, 5 left at zero | line 6 | heave, roll and pitch carry no thruster |
 
-Change 3 is the loop that fills `Thrust` and clips both commands. It keeps `otter.m`'s shaft-speed clip and its $k_{pos}$ / $k_{neg}$ branch unaltered, and adds the servo clip `delta(i) > d_max(i)` — which §12-4 measures as the third asymmetry.
+Change 3 keeps `otter.m`'s shaft-speed wall and its $k_{pos}$ / $k_{neg}$ split, and adds the servo wall — which §12-4 measures as the third asymmetry. The branch that `otter.m` writes as an `if` inside a loop is written here as the mask `k_pos*(n > 0) + k_neg*(n <= 0)`, which is the same two coefficients chosen by the same test.
 
 > [!note] The sway row is no longer structurally zero
 > Week 6 made the same point about `otter_bow.m`. A motion model whose $\tau_y$ is identically zero describes an under-actuated vessel, however a sway force is added to it afterwards. The four-unit model earns a non-zero second row from the geometry itself, which is why the eight numbers of §12-3 can be given directly to the plant with no allocator between.
 
 ## 12-3. The force eight numbers make
-
-This section answers: given eight numbers by hand, is the resulting force the one the column rule predicts?
 
 **What is observed.** Experiment 12-3 commands eight sets of eight numbers and compares two independent computations of $\boldsymbol{\tau}$: the product $B\mathbf{f}$ of §12-1, and the force measured back out of `otter_tilt4` from the acceleration it produces. The worst disagreement over the eight scenarios is $2.8\times10^{-14}$ N or N·m.
 
@@ -522,8 +543,6 @@ Expected output, the first of three tables printed by that script:
 
 ## 12-4. Three asymmetries that break the symmetric guess
 
-This section answers: why does a command that looks symmetric produce a motion that is not?
-
 **What is observed.** Three asymmetries run through the eight rows of table (1), and each one is a property of the vessel rather than of the command.
 
 - the thrust curve: $+60$ rad/s gives $+39.888$ N, $-60$ rad/s gives only $-23.202$ N
@@ -624,8 +643,6 @@ Expected output, the block printed below table (3):
 
 ## 12-5. The track those forces produce
 
-This section answers: does the vessel go where eight hand-chosen numbers send it?
-
 **What is observed.** Experiment 12-5 runs each of the eight cases for 30 s from rest and reads four quantities at the end. S1 runs straight at $1.627$ m/s; S5 crabs at $74.28^\circ$ while turning; S8 lies exactly on S5.
 
 - the readings are taken at $t = 30$ s, by when all eight have settled
@@ -725,8 +742,6 @@ The overlay below is kept for comparison only. S8 is drawn dashed over S5, and t
 > - **Take away** — an open-loop command gives a repeatable circle, and a circle is not a mission.
 
 ## 12-6. Whether the model is the equations
-
-This section answers: table (1) showed the equations are right — what shows that the Simulink model evaluates those equations?
 
 **What is observed.** Experiment 12-6 re-integrates each of the eight 30-s runs outside Simulink, with the same fixed-step `ode4` and the same step, driven at every step by the $(n, \delta)$ the model actually applied. The worst disagreement in position or speed over all eight runs is exactly $0.00\mathrm{e}{+}00$.
 
@@ -1668,7 +1683,7 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 |---|---|---|
 | A tilt of $70^\circ$ or $90^\circ$ produces exactly the $45^\circ$ result | the servo clip inside `otter_tilt4`, §12-2 change 3 | expected. Read the `delta` column of table (1), which prints what the plant received |
 | Four equal $\delta_i = +45^\circ$ at four equal $n_i$ produce no force at all, only a spot turn | the mounting signs: $s_3 = s_4 = -1$ reverses the stern pair's force, so the four cancel in surge and sway | expected, and it is row S3. A sway needs the two pairs at **opposite** $\delta$, which is S5 |
-| A $B$ copied from another drawing or script has **every** sign reversed from the one in §12-1 | the convention is not in the matrix but in $s_i$: a source that lets the bow zero push astern, $s = [-1, -1, +1, +1]$, produces exactly $-B$, and its third row reads $[-d_1, -l_f, +d_2, -l_f, \ldots]$ | neither labelling is wrong, but the two cannot be mixed. Rebuild $B$ from the column rule rather than importing it: the course, `_tools/otter_B.m` and every measured number of §12-3 use $s = [+1, +1, -1, -1]$, and taking $B$ from one convention while commanding $\delta$ in the other reverses every manoeuvre |
+| A $B$ copied from another drawing or script has **every** sign reversed from the one in §12-1 | the convention is not in the matrix but in $s_i$: a source that lets the bow zero push astern, $s = [-1, -1, +1, +1]$, produces exactly $-B$, and its third row reads $[-d_1, -l_f, -d_2, -l_f, \ldots]$ — every arm of row 3 changes sign, because each one carries an $s_i$ | neither labelling is wrong, but the two cannot be mixed. Rebuild $B$ from the column rule rather than importing it: the course, `_tools/otter_B.m` and every measured number of §12-3 use $s = [+1, +1, -1, -1]$, and taking $B$ from one convention while commanding $\delta$ in the other reverses every manoeuvre |
 | A symmetric four-unit sway command yaws at $7.589$ deg/s | $\bar{x} = 0.25$ m, §12-4 line 7 | expected. Apply the ratio of §12-4 line 8 to cancel it, and accept the surge it costs |
 | `W12_result_openloop.png` does not change after a run | a run of fewer than eight scenarios deliberately does not overwrite it, so the figure §12-5 embeds always carries all eight | run `W12_V_openloop` with no argument |
 | A Constant block shows `-C-` instead of its value | `mss_style` sets Constant width to 55 px, and a longer expression does not fit | keep the Value expression short — the model uses `d_cmd`, not `delta_cmd` |

@@ -457,3 +457,75 @@ $\boldsymbol\tau_{\mathrm{act}} = \mathbf M(\dot{\boldsymbol\nu}_{\mathrm{on}}
 31.452 N). 이것은 버그가 아니라 **유도가 낳은 측정 가능한 예측**이고
 (`CLAUDE.md` §4-9-1), Troubleshooting 에 "똑같이 나오는 것이 맞다" 로 적는다.
 자르는 일 자체가 값을 버는 것이 아니라, **잘린 한계가 최적화 안에 있을 때** 번다.
+
+---
+
+## §15-79. 수식과 그 그림을 **같은 쪽에** 두려면 상자 하나로 묶는다 (2026-11-05)
+
+> "W06_Bow_Thruster_Position_Control_and_Berthing 도 수식과 기하 그림을 같은 page에
+> 해줘", 그리고 그 앞의 "8 페이지 그림과 7페이지 수식은 같은 페이지에 잇도록"
+
+### 1. 원인 — Chrome 인쇄는 `break-inside: avoid` **하나만** 지킨다
+
+`pdf-template.html` 에는 `h1..h4 { break-after: avoid }`, `p:has(> img) { break-after:
+avoid }`, `p:has(> img) + table { break-before: avoid }` 가 오래 들어 있었다. **이 셋은
+Chrome 헤드리스 인쇄에서 아무 일도 하지 않는다.** Chrome 의 쪽 나누기는 `break-before`
+와 `break-after` 의 `avoid` 를 구현하지 않았고, `break-inside: avoid` 만 구현했다.
+그래서 "떨어지지 말라" 고 쓴 규칙은 전부 장식이었고, W06 의 $B$ 행렬은 7쪽 밑에,
+그 행렬의 길이를 그린 그림은 8쪽 위에 남았다.
+
+판정법: 규칙을 추가했는데 쪽 나누기가 **한 줄도** 달라지지 않으면 그 규칙은
+Chrome 이 무시한 것이다. CSS 를 더 쓰지 말고 **DOM 모양**을 바꾼다.
+
+### 2. 고치는 방법 — 둘을 **하나의 블록**으로 만든다
+
+떨어뜨리지 말라고 **부탁**하는 대신, 쪼갤 수 없는 상자 하나로 **만든다.**
+`pdf-template.html` 이 `marked` 가 낸 HTML 에서 "수식 문단 바로 뒤의 그림 문단" 을
+찾아 `div.keep` 하나로 감싼다 — 조판 **전**, 문자열 단계에서.
+
+```js
+html = html.replace(
+  /<p>(\$\$[\s\S]*?\$\$)<\/p>\s*<p>(<img\b[^>]*>)<\/p>/g,
+  function (_, eq, img) {
+    return '<div class="keep"><p>' + eq + '</p><p>' + img + '</p></div>';
+  });
+```
+
+```css
+.keep { break-inside: avoid; page-break-inside: avoid; }
+.keep p { margin-top: 0; }
+```
+
+- **문자열 단계에서 한다.** 처음에는 MathJax 조판이 끝난 뒤 DOM 을 고치려 했고
+  (`#out p > mjx-container[display="true"]` 를 찾아 감싸는 함수), **PDF 가 한 바이트도
+  달라지지 않았다.** 조판 뒤의 DOM 모양에 기대지 않는 쪽이 짧고 확실하다
+- **상자는 한 쪽에 들어가야 한다.** 쪽의 본문 높이는 270 mm = 765 pt 다. 수식 ~70 pt
+  에 그림을 더해 그보다 크면 Chrome 은 `avoid` 를 포기하고 그냥 쪼갠다. 이 볼트에서
+  수식 바로 뒤에 오는 그림은 넷뿐이고 (`w03-why-T` 290 pt · `w05-ref-heading-form`
+  CSS 로 112 mm 로 눌림 · `w06-alloc-geometry` 593 pt · `w12-tilt-geometry` 375 pt)
+  모두 들어간다. 새 그림을 수식 뒤에 둘 때 **높이를 먼저 센다**
+
+### 3. 확인하는 방법 — 이 컴퓨터에는 `pdftoppm` 이 없다
+
+`Read` 로 PDF 쪽을 그림으로 볼 수 없다 (`pdftoppm`·Ghostscript·`pypdf` 전부 없음).
+`pdftotext` 는 xpdf 4.06 이라 `-bbox` 도 없다. 그래서 **빈 줄의 길이로** 재고,
+수식(MathJax SVG)과 그림(SVG path)은 글자를 내놓지 않는다는 것을 이용한다.
+
+```bash
+pdftotext -lineprinter -linespacing 12 -f 7 -l 9 lectures/W06_*.pdf - \
+  | awk 'BEGIN{p=7;n=0} /\f/{p++;n=0;next} {n++; if($0~/[^ \t]/) printf "p%d L%02d: %s\n",p,n,substr($0,1,60)}'
+```
+
+- 수식과 그림이 **한 쪽 안의 연속된 빈 줄 하나**로 나타나고, 그 위아래가 **같은 쪽의
+  글자**면 붙어 있는 것이다. W06: 8쪽 L15 "4. Assembling the three columns" 다음
+  L16~L69 가 비고 (≈ 648 pt = 수식 70 + 그림 593), 범례 표는 9쪽에서 시작한다.
+  W12: 7쪽 L18 다음 L19~L63 이 비고 (≈ 540 pt), L64 에서 본문이 이어진다
+- 고치기 **전**에도 쪽 나누기를 같은 방법으로 재 둔다. 안 그러면 "달라졌다" 를
+  판정할 기준이 없다 — 실제로 바이트 크기만 보고 "같다" 를 두 번 잘못 읽었다
+
+### 4. HTML 템플릿도 `Edit` 로 고친다
+
+`.md` 의 LaTeX 에 `sed` 를 쓰지 않는 이유(§5-1)가 `pdf-template.html` 에도 그대로
+걸린다 — 안에 든 것이 CSS 와 JS 의 정규식이고, 역슬래시가 들어 있다. 그리고 CSS
+주석을 고칠 때 `*/` 를 중간에 남겨 주석이 두 번 닫힌 적이 있다. **고친 뒤 템플릿
+한 조각을 다시 읽어 주석이 한 번만 닫혔는지 본다.**

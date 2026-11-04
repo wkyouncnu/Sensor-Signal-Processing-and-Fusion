@@ -95,6 +95,22 @@
   p:has(> img) + p,
   p:has(> img) + blockquote { break-before: avoid; page-break-before: avoid; }
 
+  /*  수식 바로 아래의 그림은 그 수식과 **같은 쪽에** 있어야 한다 — 행렬을 쓰고
+      그 행렬의 길이를 그린 그림이 다음 쪽으로 넘어가면 둘을 함께 읽을 수 없다
+      (사용자 지시, 2026-11-04). 그림을 수식 바로 뒤에 둔 자리에만 걸린다.
+      A figure placed directly under a display equation stays on the equation's
+      page: write the matrix on one page and draw its lengths on the next and the
+      two cannot be read together.
+      Chrome 은 인쇄에서 break-after/before:avoid 를 지키지 않으므로, 실제로 둘을
+      붙여 두는 것은 아래 `.keep` 상자다 — 조판이 끝난 뒤 스크립트가 수식과 그림을
+      그 상자 하나에 넣는다. 아래 두 규칙은 avoid 를 지키는 다른 브라우저용이다. */
+  p:has(> mjx-container[display="true"]) { break-after: avoid; page-break-after: avoid; }
+  p:has(> mjx-container[display="true"]) + p:has(> img) {
+    break-before: avoid; page-break-before: avoid;
+  }
+  .keep { break-inside: avoid; page-break-inside: avoid; }
+  .keep p { margin-top: 0; }
+
   /* ---------- 콜아웃 ---------- */
   blockquote {
     margin: 9px 0; padding: 7px 12px; border-left: 4px solid #94a3b8;
@@ -192,6 +208,20 @@ window.MathJax = {
   html = html.replace(/@M(\d+)@/g, function (_, i) {
     return mathStore[+i].replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   });
+
+  // 수식 바로 아래의 그림을 그 수식과 **한 상자**에 묶는다.
+  // Chrome 은 인쇄에서 break-before/after:avoid 를 무시하고 break-inside:avoid
+  // 만 지킨다 — 그래서 CSS 로 "떨어지지 말라" 고 해도 행렬과 그 길이를 그린
+  // 그림이 갈라졌다. 상자 하나로 만들면 Chrome 이 통째로 다음 쪽에 보낸다
+  // (사용자 지시, 2026-11-04 · standing-orders §15-79).
+  // A display equation and the figure placed directly under it become one
+  // unbreakable block: Chrome's print layout honours break-inside:avoid only,
+  // so the pair must be a single box, not two boxes asking to stay together.
+  html = html.replace(
+    /<p>(\$\$[\s\S]*?\$\$)<\/p>\s*<p>(<img\b[^>]*>)<\/p>/g,
+    function (_, eq, img) {
+      return '<div class="keep"><p>' + eq + '</p><p>' + img + '</p></div>';
+    });
 
   // [[위키링크]] -> 일반 텍스트 강조
   html = html.replace(/\[\[([^\]|#]+)(\|[^\]]+)?\]\]/g, function (_, a, b) {

@@ -187,6 +187,8 @@
 | Simulink 블록 치수를 MSS 에 맞춤 (`add_sum` · `mss_style`) | 완료 |
 | W03 §3-1 · W04 §4-1 유도 추가, Nomoto 1·2차 추가 | 완료 |
 | 계수 검증 `verify_constants.m` — 16개 전부 `otter.m` 과 일치 | 완료 |
+| W12 코드에서 `for`·`reshape` 제거, $\mathbf B$ 의 팔을 이름으로 — 숫자 불변 | 완료 (2026-11-04) |
+| 수식과 그 기하 그림을 **같은 쪽**에 — `pdf-template.html` 의 `div.keep` | **완료** (2026-11-05, W06 §6-1 · W12 §12-1) |
 
 > [!note] 상위 폴더 이름 변경은 둘 다 끝났다 — 잠긴 폴더에서 배운 것
 > 파일은 하나도 잃지 않았다(1361개·88개 그대로). `_tools/rename_top_folders.ps1` 이

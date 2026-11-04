@@ -564,6 +564,22 @@ bash _tools/svgzoom.sh figures/w01-euler.svg $Z out.png
   인쇄본에서 읽히지 않았다. `\scriptsize` 로 올려 5.8 pt 가 되었다.
 - 폭 703 px 안에 들어오면 1:1 로 인쇄되니, 새 그림은 되도록 그 안에서 잡는다.
 
+### 2-10. 수식을 그린 그림은 **그 수식과 같은 쪽**에 둔다
+
+행렬을 7쪽에 쓰고 그 행렬의 길이를 그린 그림을 8쪽에 두면 둘을 함께 읽을 수 없다
+(사용자 지시, 2026-11-05). `.md` 에서 그림을 그 수식 **바로 뒤**(빈 줄 하나)에 두면
+`pdf-template.html` 이 둘을 `div.keep` 하나로 묶어 쪽을 넘기지 않는다.
+
+- **CSS 의 `break-after: avoid` 를 더 쓰지 않는다.** Chrome 인쇄는 그것을 무시하고
+  `break-inside: avoid` 만 지킨다 — 템플릿의 `h1..h4 { break-after: avoid }` 류는
+  전부 장식이다. 묶는 일은 템플릿의 문자열 치환이 한다 → `standing-orders.md` §15-79
+- **상자가 한 쪽에 들어가야 효력이 있다.** 본문 높이는 270 mm = **765 pt** 이므로
+  수식(~70 pt)을 더해 그보다 큰 그림은 그냥 쪼개진다. 수식 뒤에 새 그림을 둘 때
+  `height=` 를 재서 `(765 − 수식 높이) pt` 안인지 본다 (1 px = 0.75 pt)
+- 확인은 `pdftotext -lineprinter -linespacing 12 -f A -l B` 의 **빈 줄 길이**로 한다.
+  수식(MathJax SVG)도 그림(SVG path)도 글자를 내놓지 않으므로, **한 쪽 안의 연속된
+  빈 줄 하나**가 둘이고 그 위아래 글자가 같은 쪽에 있으면 붙은 것이다
+
 ### 3차원 그림의 기하는 MATLAB 이 계산하고 TikZ 가 사영한다
 
 `w01-euler` 가 지금의 본보기다.

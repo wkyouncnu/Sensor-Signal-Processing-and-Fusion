@@ -267,6 +267,21 @@ y_{pont} & -y_{pont} & l_f
 0.395 & -0.395 & 1.5
 \end{bmatrix}.$$
 
+![The three stations that the three columns of $B$ were read off: panel (a) the two stern propellers at $\pm y_{pont}$ and the bow unit at $l_f$, panel (b) the same geometry carrying a pure sway demand](../figures/w06-alloc-geometry.svg)
+
+| In the figure | Meaning |
+|---|---|
+| panel (a), two arrows at the transom | the stern pair, each pushing along $+x_b$; their arms are the lateral offsets $\pm y_{pont} = \pm 0.395$ m |
+| panel (a), one arrow ahead of the bow | the bow thruster, pushing along $y_b$ at the arm $l_f = 1.5$ m |
+| the arc labelled *positive $N$ turns the bow to starboard* | the sign convention: $z_b$ points down, so a positive moment about it is clockwise seen from above |
+| `CO` | the body-frame origin $B$ is written about — not the centre of gravity |
+| panel (b), $F_B = +25.0$ N | the bow force needed for a pure sway demand $Y = 25$ N: exactly $Y$, by the second row of $B$ |
+| panel (b), $T_L = -47.5$, $T_R = +47.5$ N | the stern pair **opposing** each other, to cancel the bow unit's moment |
+| the two moment labels $\pm 37.5$ N·m | $l_f F_B = 1.5 \times 25 = 37.5$ N·m produced by the bow unit, and the equal and opposite $2 y_{pont} \times 47.5 = 37.5$ N·m from the stern pair |
+| the caption *the stern pair cancel in surge* | $X = T_L + T_R = 0$: the hull is pushed sideways and not forward |
+
+Panel (a) is the matrix above, drawn. Panel (b) is §6-2 in advance: a pure sideways force on this hull costs **three** thrusters working, two of them against each other, and the magnitudes are set by the ratio of the arms.
+
 5. Expanding the determinant along the second row, whose only non-zero entry is $B_{23} = 1$,
 
 $$\det B = (-1)^{2+3}\cdot 1 \cdot \det\!\begin{bmatrix} 1 & 1 \\ 0.395 & -0.395 \end{bmatrix}
@@ -347,22 +362,7 @@ where the slides write $\operatorname{sign}(u_i)\sqrt{u_i}$. Every astern comman
 
 15. The derivation makes a prediction that costs one run to check. Commanded a pure sway force of $25$ N from rest, the three shafts must turn at $-85.82$, $+65.45$ and $+47.50$ rad/s, the port propeller faster than the starboard one by the ratio $\sqrt{k_{pos}/k_{neg}} = 1.311$ although the two thrusts are equal and opposite. Experiment 6-1 commands the three axes one at a time and reads the shaft speeds back.
 
-![where the three thrusters sit](../figures/w06-alloc-geometry.svg)
-
-| In the figure | Meaning |
-|---|---|
-| panel (a), two arrows at the transom | the stern pair, each pushing along $+x_b$; their arms are the lateral offsets $\pm y_{pont} = \pm 0.395$ m |
-| panel (a), one arrow ahead of the bow | the bow thruster, pushing along $y_b$ at the arm $l_f = 1.5$ m |
-| the arc labelled *positive $N$ turns the bow to starboard* | the sign convention: $z_b$ points down, so a positive moment about it is clockwise seen from above |
-| `CO` | the body-frame origin $B$ is written about — not the centre of gravity |
-| panel (b), $F_B = +25.0$ N | the bow force needed for a pure sway demand $Y = 25$ N: exactly $Y$, by the second row of $B^{-1}$ |
-| panel (b), $T_L = -47.5$, $T_R = +47.5$ N | the stern pair **opposing** each other, to cancel the bow unit's moment |
-| the two moment labels $\pm 37.5$ N·m | $l_f F_B = 1.5 \times 25 = 37.5$ N·m produced by the bow unit, and the equal and opposite $2 y_{pont} \times 47.5 = 37.5$ N·m from the stern pair |
-| the caption *the stern pair cancel in surge* | $X = T_L + T_R = 0$: the hull is pushed sideways and not forward |
-
-Panel (b) is the whole of the next section in advance. A pure sideways force on this hull costs **three** thrusters working, two of them against each other, and the magnitudes are set by the ratio of the arms.
-
-The third thruster is also, deliberately, the weakest. The stern pair reach $+119.682$ N ahead and $-66.708$ N astern; the bow unit is rated at $\lvert F_B \rvert \le 40$ N, a third of the ahead figure. That ratio is not an arbitrary choice of this course but the ordinary shape of the installation:
+The bow thruster is, deliberately, the weakest of the three. The stern pair reach $+119.682$ N ahead and $-66.708$ N astern; the bow unit is rated at $\lvert F_B \rvert \le 40$ N, a third of the ahead figure. That ratio is not an arbitrary choice of this course but the ordinary shape of the installation:
 
 | Why the bow unit is small | Consequence on this hull |
 |---|---|
