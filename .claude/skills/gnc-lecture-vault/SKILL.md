@@ -103,9 +103,12 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 - 바뀌는 것은 `B`, 추진기 개수, 틸팅 여부, 방위각 한계뿐이다
 
 > [!warning] 부호 규약 함정
-> 이 프로젝트에는 **정확히 부호가 반대인 `B` 가 둘** 산다 —
-> `Lecture/_tools/otter4_B.m` 과 `otter_params.m` 41행.
-> 둘 중 어느 것도 가져오지 않는다. **W03 의 열 규칙이 유일한 정의**이며,
+> 이 프로젝트에는 **정확히 부호가 반대인 `B` 가 셋** 산다 —
+> `Lecture/_tools/otter4_B.m`, `otter_params.m` 41행, 그리고 **참조 PPT 슬라이드**
+> (2026-11-04 확인: 사용자의 "4 Tilt Props Configuration" 슬라이드는 같은 코드셋의
+> `MILS/otter_model_tilt4_Control_Scripts_r2.m` 와 전 성분 부호가 반대다).
+> 셋 중 어느 것도 가져오지 않는다. 밖에서 온 `B` 는 **그림이 아니라 돌아가는 코드**와
+> 대조한다 → `references/orders-log-6.md` §15-75. **W03 의 열 규칙이 유일한 정의**이며,
 > 모든 `B` 를 `_tools/otter_B.m` 이 거기서 유도한다.
 >
 > ```
