@@ -107,9 +107,12 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 > `Lecture/_tools/otter4_B.m`, `otter_params.m` 41행, 그리고 **참조 PPT 슬라이드**
 > (2026-11-04 확인: 사용자의 "4 Tilt Props Configuration" 슬라이드는 같은 코드셋의
 > `MILS/otter_model_tilt4_Control_Scripts_r2.m` 와 전 성분 부호가 반대다).
-> 셋 중 어느 것도 가져오지 않는다. 밖에서 온 `B` 는 **그림이 아니라 돌아가는 코드**와
-> 대조한다 → `references/orders-log-6.md` §15-75. **W03 의 열 규칙이 유일한 정의**이며,
-> 모든 `B` 를 `_tools/otter_B.m` 이 거기서 유도한다.
+> **어느 것도 틀리지 않았다** — 서보 영점을 반대로 붙인 다른 표기일 뿐이고,
+> 사용자가 못박은 요건은 하나다: **"부호는 일관되기만 하면 되어…"**(2026-11-04).
+> 그래서 셋 중 어느 것도 **가져오지 않는다.** 밖에서 온 `B` 는 **그림이 아니라
+> 돌아가는 코드**와 대조한다 → `references/orders-log-6.md` §15-75.
+> **W03 의 열 규칙이 유일한 정의**이며, 모든 `B` 를 `_tools/otter_B.m` 이
+> `otter_config.m` 의 `mount` 필드 하나에서 유도한다.
 >
 > ```
 > (x, y) 에 있고 방향이 e 인 추진기의 열 =  [ e_x ; e_y ; x·e_y − y·e_x ]

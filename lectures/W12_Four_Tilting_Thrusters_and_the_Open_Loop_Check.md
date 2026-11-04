@@ -160,7 +160,11 @@ $$
 s = \begin{bmatrix}+1 & +1 & -1 & -1\end{bmatrix}
 $$
 
-The sign is deliberately kept out of $\mathbf{f}$ and placed in $B$, so that $\mathbf{f}$ holds only what the hardware reports. With the column rule applied to each component separately, the force on the hull is linear in those eight numbers:
+The sign is deliberately kept out of $\mathbf{f}$ and placed in $B$, so that $\mathbf{f}$ holds only what the hardware reports.
+
+Which direction is called the zero of a servo is a **convention**, not a property of the hull. Calling the other direction zero at all four units gives $s = \begin{bmatrix}-1 & -1 & +1 & +1\end{bmatrix}$ and therefore $-B$, and a source written that way is not wrong — it is a different labelling of the same four thrusters. What is not free is **consistency**: $B$, the servo zeros drawn in the figures, the commanded $\delta_i$ and every measured number of §12-3 must come from one choice. This course fixes that choice once, in the `mount` field of `otter_config.m`, and `_tools/otter_B.m` builds $B$ from that field by the column rule, so the matrix and the convention cannot drift apart.
+
+With the column rule applied to each component separately, the force on the hull is linear in those eight numbers:
 
 $$
 \boldsymbol{\tau} \;=\; \begin{bmatrix} X \\ Y \\ N \end{bmatrix} \;=\; B\,\mathbf{f},
@@ -914,7 +918,7 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 |---|---|---|
 | A tilt of $70^\circ$ or $90^\circ$ produces exactly the $45^\circ$ result | the servo clip inside `otter_tilt4`, §12-2 change 3 | expected. Read the `delta` column of table (1), which prints what the plant received |
 | Four equal $\delta_i = +45^\circ$ at four equal $n_i$ produce no force at all, only a spot turn | the mounting signs: $s_3 = s_4 = -1$ reverses the stern pair's force, so the four cancel in surge and sway | expected, and it is row S3. A sway needs the two pairs at **opposite** $\delta$, which is S5 |
-| A $B$ copied from another drawing or script has **every** sign reversed from the one in §12-1 | the convention is not in the matrix but in $s_i$: a source that lets the bow zero push astern, $s = [-1, -1, +1, +1]$, produces exactly $-B$, and its third row reads $[-d_1, -l_f, +d_2, -l_f, \ldots]$ | rebuild it from the column rule rather than importing it. The course, `_tools/otter_B.m` and every measured number of §12-3 use $s = [+1, +1, -1, -1]$, and mixing the two reverses each commanded manoeuvre |
+| A $B$ copied from another drawing or script has **every** sign reversed from the one in §12-1 | the convention is not in the matrix but in $s_i$: a source that lets the bow zero push astern, $s = [-1, -1, +1, +1]$, produces exactly $-B$, and its third row reads $[-d_1, -l_f, +d_2, -l_f, \ldots]$ | neither labelling is wrong, but the two cannot be mixed. Rebuild $B$ from the column rule rather than importing it: the course, `_tools/otter_B.m` and every measured number of §12-3 use $s = [+1, +1, -1, -1]$, and taking $B$ from one convention while commanding $\delta$ in the other reverses every manoeuvre |
 | A symmetric four-unit sway command yaws at $7.589$ deg/s | $\bar{x} = 0.25$ m, §12-4 line 7 | expected. Apply the ratio of §12-4 line 8 to cancel it, and accept the surge it costs |
 | `W12_result_openloop.png` does not change after a run | a run of fewer than eight scenarios deliberately does not overwrite it, so the figure §12-5 embeds always carries all eight | run `W12_V_openloop` with no argument |
 | A Constant block shows `-C-` instead of its value | `mss_style` sets Constant width to 55 px, and a longer expression does not fit | keep the Value expression short — the model uses `d_cmd`, not `delta_cmd` |
