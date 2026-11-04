@@ -78,7 +78,9 @@ Upon completion of this week, the learner is able to:
 8. Derive the minimum-norm allocation $\mathbf{f} = \mathbf{B}^\top(\mathbf{B}\mathbf{B}^\top)^{-1}\boldsymbol{\tau}_d$ from a Lagrange multiplier, invert the thrust curve to $n_i$ and $\delta_i$, and say why the thrust cap needs one scalar after the solve while the servo limit does not.
 9. State what a weight matrix changes and what it cannot change on this geometry, explain why only the ratios of its entries matter, and tune it to move load between units rather than to reduce tilt.
 10. Turn $\lvert\delta_i\rvert \le \alpha_{\max}$ into two linear inequalities once the thrust sign is fixed, say why four units give sixteen convex pieces and what a single guessed piece risks, and read a measured solve time against the $20\,000$ µs budget of a 50 Hz loop.
-11. State what this week deliberately leaves out, and why a controller is not needed to study allocation.
+11. Show that the shaft-speed limit $\lvert n_i\rvert \le n_{\max}$ is the thrust cap $\lvert T_i\rvert \le k_i n_{\max}^2$ seen through the thrust curve, replace the resulting circular arc by inscribed chords, and state why the polygon can never violate the cap.
+12. Measure the force the motion model actually produced rather than the force the allocator reported, and explain why a law that clips inside the allocator and a law that leaves the clipping to the hardware deliver the same force.
+13. State what this week deliberately leaves out, and why a controller is not needed to study allocation.
 
 ## Prerequisites and Setup
 
@@ -92,8 +94,8 @@ Upon completion of this week, the learner is able to:
 | Configuration | `otter_config('quad_tilt')` |
 | Model | `W12_openloop.slx`, written by `W12_1_build_openloop.m` |
 | Solver | fixed-step `ode4`, $h = 0.02$ s |
-| Allocation scripts | `W12_alloc.m` (seven laws behind one flag), `W12_hw.m` (thrust-curve inverse) — no model required |
-| Scope of this week | §12-0 to §12-6 are **open loop only** — eight numbers given by hand. §12-7 to §12-11 add the **allocation** that produces those eight numbers from three. **No controller and no guidance in either half** |
+| Allocation scripts | `W12_alloc.m` (eight laws behind one flag), `W12_hw.m` (thrust-curve inverse) — no model required |
+| Scope of this week | §12-0 to §12-6 are **open loop only** — eight numbers given by hand. §12-7 to §12-12 add the **allocation** that produces those eight numbers from three. **No controller and no guidance in either half** |
 
 ---
 
@@ -936,31 +938,31 @@ W12_G_allocation
 ```
 
 ```
-=== §12-7  배분 문제 ===
-B 는 3x8,  rank 3,  영공간 차원 5
+=== 12-7  the allocation problem ===
+B is 3x8,  rank 3,  null space dimension 5
 
-요구  tau_d = [80 N, 30 N, 20 Nm]
+demand  tau_d = [80 N, 30 N, 20 N m]
 
-(1) 같은 tau 를 내는 해 둘
-    최소노름  ||f|| =   42.99 N   ||B f - tau|| = 0.00e+00
-    영공간 더한 것      58.72 N                7.94e-15
-    -> 같은 힘을 내면서 추진기는 37 % 더 쓴다
+(1) two solutions that give the same tau
+    minimum norm      ||f|| =   42.99 N   ||B f - tau|| = 0.00e+00
+    null space added          58.72 N                7.94e-15
+    -> the same force costs the thrusters 37 % more
 
-(2) 최소노름 해  f = B^T (B B^T)^{-1} tau
+(2) minimum norm  f = B^T (B B^T)^{-1} tau
     unit      f_x [N]   f_y [N]
      1         20.718     9.773
      2         19.282     9.773
      3        -20.718    -5.227
      4        -19.282    -5.227
 
-(3) 하드웨어 명령
+(3) hardware command
     unit     T [N]   delta [deg]    n [rad/s]   |delta|<=45?
      1      22.908       25.25        45.47        true
      2      21.617       26.88        44.17        true
      3     -21.367       14.16       -57.58        true
      4     -19.978       15.17       -55.68        true
-    rho = 1.0000   (1 이면 추력 한계에 걸리지 않았다)
-    실제 tau = [80.000 30.000 20.000]   요구와의 차이 0.00e+00
+    rho = 1.0000   (1 means the thrust limit was not reached)
+    tau achieved = [80.000 30.000 20.000]   distance from the demand 0.00e+00
 ```
 
 ![The minimum-norm allocation of a demand of 80 N surge, 30 N sway and 20 N·m yaw: the four thrust vectors at their stations, the per-unit components, and the shaft speed and servo angle each unit receives](W12_simulink/img/W12_alloc_pinv.png)
@@ -1048,9 +1050,9 @@ W12_H_weights
 ```
 
 ```
-=== §12-9  가중행렬 W ===
-요구 tau_d = [80 N, 30 N, 20 Nm],  W = diag([1 w 1 w 1 w 1 w])
-Y 는 f_y 열만이 낸다 (B 둘째 줄 = [0 1 0 1 0 -1 0 -1]) -> sum|f_y| 는 묶여 있다
+=== 12-9  the weight matrix W ===
+demand tau_d = [80 N, 30 N, 20 N m],  W = diag([1 w 1 w 1 w 1 w])
+Y comes from the f_y columns alone (row 2 of B = [0 1 0 1 0 -1 0 -1]) -> sum|f_y| is pinned
 
        w   sum|f_y| [N]   f_x spread [N]   max|delta| [deg]   ||f|| [N]   ||B f - tau||
        1         30.00             1.44              26.88        42.99         0.0e+00
@@ -1061,14 +1063,14 @@ Y 는 f_y 열만이 낸다 (B 둘째 줄 = [0 1 0 1 0 -1 0 -1]) -> sum|f_y| 는 
      300         30.00            15.31              31.55        45.38         0.0e+00
     1000         30.00            15.67              31.73        45.50         3.6e-15
 
-W 와 1000*W 의 해 차이 : 2.81e-15 N   (비율만이 뜻을 가진다)
+distance between the W and 1000*W solutions : 2.81e-15 N   (only ratios matter)
 
-값표가 바꿀 수 있는 것 — 몫의 배분
-  앞뒤 같은 값   : |T| = [ 25.50  18.28  24.75  17.22] N   뒤 두 대 몫 48.9 %
-  뒤를 5배 비싸게: |T| = [ 27.44  43.39   6.02   9.02] N   뒤 두 대 몫 17.5 %
+what the price list can change: who carries the share
+  same price fore and aft : |T| = [ 25.50  18.28  24.75  17.22] N   aft pair 48.9 %
+  aft priced 5x dearer    : |T| = [ 27.44  43.39   6.02   9.02] N   aft pair 17.5 %
 
-값표가 바꿀 수 없는 것 — 요구가 정한 것
-  sum|f_y| : 30.00 N 과 30.00 N  (Y = 30 N 이 정한다)
+what the price list cannot change: what the demand has already fixed
+  sum|f_y| : 30.00 N and 30.00 N  (Y = 30 N fixes it)
 ```
 
 ![Left: sweeping the price of the sideways component over three decades leaves the total sideways thrust at 30 N, spreads the forward components from 1.44 N to 15.67 N, and raises the worst servo angle from 26.88 to 31.73 degrees. Right: pricing the aft pair five times dearer moves its share of the thrust from 48.9 to 17.5 per cent](W12_simulink/img/W12_alloc_weights.png)
@@ -1180,9 +1182,9 @@ W12_I_limits
 ```
 
 ```
-=== §12-10  서보 벽 ===
-벽을 넘기는 요구  tau = [15 N, 70 N, 10 Nm]
-  (옆으로 미는 힘이 앞으로 가는 힘보다 크다 -> 각이 커진다)
+=== 12-10  the servo wall ===
+a demand that breaks it,  tau = [15 N, 70 N, 10 N m]
+  (the sideways force is larger than the forward one -> the angle grows)
 
   method       max|delta| [deg]   ||B f - tau|| [N]   ||f|| [N]   QPs   exit
   wpinv              85.68              0.000        36.14      0      1
@@ -1191,14 +1193,15 @@ W12_I_limits
   wls                45.00             38.891        30.05      1      1
   wls16              45.00              0.020        53.17     16      1
 
-짐작한 조각  sigma = [ 1  1 -1 -1]  -> quadprog exit -2
-열여섯 중 최선 sigma = [-1 -1 -1 -1]  -> 비용 1.3950
-  -> 이 요구는 **풀 수 있다.** 다만 가중 최소노름이 가리킨 조각에서는 아니다
+the guessed piece  sigma = [ 1  1 -1 -1]  -> quadprog exit -2
+the best of sixteen  sigma = [-1 -1 -1 -1]  -> cost 1.3950
+  -> this demand CAN be met, only not on the piece the weighted
+     minimum norm pointed at
 
-궤적  tau = [100 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, 201 점
+the demand  tau = [100 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, 201 points
 
   method     solved   wall broken   max|delta|   mean |tau err|   max |tau err|   rho<1
-           [% of k]      [% of k]       [deg]             [N]             [N]   [% of k]
+           [% of pts]    [% of pts]       [deg]             [N]             [N] [% of pts]
   pinv         100.0          43.8        89.61           0.000           0.000        0.0
   wpinv        100.0          50.7        89.38           0.000           0.000        0.0
   clip         100.0           0.0        45.00           5.570          33.158        0.0
@@ -1206,7 +1209,8 @@ W12_I_limits
   wls          100.0           0.0        45.00           2.135          31.688        0.0
   wls16        100.0           0.0        45.00           0.010           0.018        0.0
 
-  (벽·오차 통계는 **해가 나온 점에서만** 냈다 — qp 는 그러지 못한 점이 있다)
+  (the wall and error statistics are taken only where a solution was
+   found -- qp fails to find one at some of the points)
 ```
 
 ![Upper panel: the servo angle of unit 1 along a twenty-second force trajectory, with the two closed-form laws running far outside the 45 degree wall and the constrained laws held against it, the red squares marking the instants where the single guessed quadratic program returned no solution. Lower panel: the force error each law pays for staying inside the wall](W12_simulink/img/W12_alloc_limits.png)
@@ -1273,34 +1277,35 @@ W12_J_timing
 ```
 
 ```
-=== §12-11  한 번 푸는 데 걸리는 시간 ===
-101 개 요구를 차례로 배분.  50 Hz 예산 = 20000 us
+=== 12-11  the time one solve takes ===
+101 demands allocated one after another.  the 50 Hz budget is 20000 us
 
   method       QPs   mean [us]   max [us]   x pinv   budget used [%]
-  pinv           0        11.2      264.6        1              0.06
-  wpinv          0         8.0       15.1        1              0.04
-  clip           0         9.7       21.8        1              0.05
-  qp             1       345.2      676.8       31              1.73
-  wls            1       206.3      504.1       18              1.03
-  wls16         16      2760.6     4333.3      247             13.80
-  fmincon        1      5147.7    20056.3      460             25.74
+  pinv           0        26.8     1304.9        1              0.13
+  wpinv          0         8.3       50.7        0              0.04
+  clip           0         8.1       24.1        0              0.04
+  qp             1       615.6     2774.6       23              3.08
+  wls            1       271.2     1444.4       10              1.36
+  wls16         16      3682.0     5689.9      137             18.41
+  fmincon        1      6930.7    70447.1      259             34.65
 
-  미리 만든 8x3 행렬 하나로 : 0.52 us  (곱셈 24 번)
-  Kw*tau 와 wpinv 의 차이    : 5.62e-15 N
+  with one 8x3 matrix prepared in advance : 1.29 us  (24 multiplies)
+  distance between Kw*tau and wpinv       : 5.62e-15 N
 ```
 
 | Where to look | What is there | Which line predicts it |
 |---|---|---|
-| `wpinv` at $8.0$ µs mean | a closed form, with the inverse still formed inside the call | §12-9 line 2 |
-| the precomputed matrix at $0.52$ µs | fifteen times faster again, for the same answer | line 2 — 24 multiplications and nothing else |
+| `wpinv` at $8.3$ µs mean | a closed form, with the inverse still formed inside the call | §12-9 line 2 |
+| the precomputed matrix at $1.29$ µs | six times faster again, for the same answer | line 2 — 24 multiplications and nothing else |
 | the difference $5.62\text{e}{-}15$ N | precomputing changes the cost, not the result | line 1 — the grouping is algebraic |
-| `qp` and `wls`, mean against max | $345.2 \to 676.8$ µs and $206.3 \to 504.1$ µs | line 3 — the active set is demand-dependent |
-| `wls16` at $13.80\%$ of the budget | sixteen pieces fit, with room for the rest of the loop | line 4 — affordable, and measured to be so |
-| `fmincon` worst case $20\,056$ µs | **past** the $20\,000$ µs deadline on its own | line 5 — finite differences on an $\operatorname{atan2}$ |
-| the `x pinv` column | $1$, $31$, $247$, $460$ | the three orders of magnitude between a formula and a solver |
+| `qp` and `wls`, mean against max | $615.6 \to 2774.6$ µs and $271.2 \to 1444.4$ µs | line 3 — the active set is demand-dependent |
+| `wls16` at $18.41\%$ of the budget | sixteen pieces fit, with room for the rest of the loop | line 4 — affordable, and measured to be so |
+| `fmincon` worst case $70\,447$ µs | **three and a half times** the $20\,000$ µs deadline, on its own | line 5 — finite differences on an $\operatorname{atan2}$ |
+| the `x pinv` column | $1$, $0$, $0$, $23$, $10$, $137$, $259$ | the three orders of magnitude between a formula and a solver; the zeros are the two closed forms, which are faster than `pinv` itself |
+| `pinv` at $26.8$ µs mean but $1304.9$ µs max | the first call of any method pays for the library being loaded | the `max` column is a tail, not a typical cost |
 
 > [!warning] A timing is a measurement of one machine
-> These figures were taken on the laboratory machine with MATLAB R2024b and nothing else running, and they move by tens of per cent between runs. What does **not** move is the ordering and the orders of magnitude: a closed form is microseconds, one quadratic program is hundreds of microseconds, sixteen are milliseconds, and a nonlinear solver on the same problem is at the edge of a 50 Hz budget. A deployed allocator must be timed on its own target, under load, and judged on its worst case.
+> These figures were taken on the laboratory machine with MATLAB R2024b and nothing else running, and they move by tens of per cent between runs. What does **not** move is the ordering and the orders of magnitude: a closed form is microseconds, one quadratic program is hundreds of microseconds, sixteen are milliseconds, and a nonlinear solver on the same problem overruns a 50 Hz budget. A deployed allocator must be timed on its own target, under load, and judged on its worst case.
 
 | What to try | What to watch |
 |---|---|
@@ -1310,9 +1315,188 @@ W12_J_timing
 
 > [!tip] In class
 > - **Purpose** — make real-time feasibility a measured quantity rather than an assertion.
-> - **Point to** — the two numbers $0.52$ µs and $20\,056$ µs. Both solve a version of the same problem.
+> - **Point to** — the two numbers $1.29$ µs and $70\,447$ µs. Both solve a version of the same problem.
 > - **Ask** — "Which column matters for a 50 Hz loop, mean or max?" The max, every time; a deadline missed once is a deadline missed.
 > - **Take away** — the fastest allocator and the most correct allocator are not the same one, and the choice is now a numbered table rather than a preference.
+
+## 12-12. The second wall, and what the hull actually receives
+
+**What is observed.** Section 12-10 solved the servo wall and left the thrust cap to a single scalar $\rho$ applied after the solve. Section 12-11 timed every law. Neither checked the answer against the hull. When the 201-point demand of §12-10 is allocated by `wls16` — which honours the $45^\circ$ wall at every instant — and the eight components are turned into four shaft speeds, unit 3 is asked for $-115$ rad/s against a limit of $-101.74$ rad/s. The motion model clips it, at $41.8\%$ of the sweep, and the force the hull receives is then not the force the allocator reported.
+
+**The result.** The shaft-speed limit is not a second kind of constraint. It is the thrust cap seen through the thrust curve, and in each unit's own axes the two limits together bound a circular **sector**: the angle is the servo wall, the radius is the shaft speed. Replacing the arc of that sector by $M$ inscribed chords adds $M$ linear rows per unit to the sixteen pieces of §12-10 and makes the feasible set exact in both walls. Measured out of the motion model, the mean force error over the same sweep falls from $7.353$ N to $0.012$ N, for $19.44\%$ of the $50$ Hz budget instead of $13.50\%$.
+
+**Derivation.**
+
+1. Write the whole chain once, because each section so far has looked at a single link of it:
+
+$$\boldsymbol{\tau}_d
+\ \xrightarrow{\ \text{allocation}\ }\ \mathbf{f}\in\mathbb{R}^8
+\ \xrightarrow{\ \text{per unit}\ }\ (T_i,\ \delta_i)
+\ \xrightarrow{\ \text{thrust curve}\ }\ (n_i,\ \delta_i)
+\ \xrightarrow{\ \text{hardware}\ }\ \boldsymbol{\tau}_{\text{act}}$$
+
+2. The two middle arrows are §12-8 lines 1 to 4, repeated here because this section inverts them:
+
+$$T_i = \sigma_i\sqrt{f_{x,i}^2 + f_{y,i}^2},\qquad
+\delta_i = \operatorname{atan2}\!\left(\sigma_i f_{y,i},\ \sigma_i f_{x,i}\right),\qquad
+n_i = \operatorname{sign}(T_i)\sqrt{\frac{\lvert T_i\rvert}{k_i}}$$
+
+   with $k_i = k_{\mathrm{pos}}$ when $T_i \ge 0$ and $k_i = k_{\mathrm{neg}}$ otherwise.
+
+3. Impose the shaft-speed limit on the last of those. The square root is monotone, so the limit passes straight through it:
+
+$$\lvert n_i\rvert \le n_{\max}
+\quad\Longleftrightarrow\quad
+\lvert T_i\rvert \le k_i\,n_{\max}^2$$
+
+   The rpm saturation **is** a thrust cap. It is not an extra wall to be enforced separately; it is the same wall seen through the curve of line 2.
+
+4. The two caps are not equal, because the propeller is not symmetric. Astern uses a different coefficient from ahead:
+
+$$T^{+} = k_{\mathrm{pos}}\,n_{\max}^{2} = 0.011080 \times 103.93^{2} = 119.682\ \text{N},
+\qquad
+T^{-} = k_{\mathrm{neg}}\,n_{\min}^{2} = 0.006445 \times 101.74^{2} = 66.708\ \text{N}$$
+
+   The astern cap is $56\%$ of the ahead cap. For a pure surge demand, units 3 and 4 push astern against the smaller of the two, so **the reverse cap is the wall that binds** even though the ahead cap is the number usually quoted. At $\delta_i = 0$ the whole hull can therefore produce at most $X = 2(119.68) + 2(66.71) = 372.78$ N.
+
+5. Put both walls in the same picture. In the unit axes $x_i' = \sigma_i f_{x,i}$ and $y_i' = \sigma_i f_{y,i}$ of §12-10 line 2, the servo limit and the thrust cap read
+
+$$\lvert y_i'\rvert \le \tan(\alpha_{\max})\,x_i'
+\qquad\text{and}\qquad
+x_i'^{\,2} + y_i'^{\,2} \le R_i^{2},
+\qquad R_i = \begin{cases} T^{+} & \sigma_i = +1\\ T^{-} & \sigma_i = -1\end{cases}$$
+
+   Two straight lines and one arc: the feasible set of a single unit is a circular **sector**.
+
+![In each unit's own axes the servo limit gives two straight lines and the shaft-speed cap gives one arc, so the feasible set is a circular sector; the quadratic program cannot accept the arc, so it is replaced by three inscribed chords whose vertices lie exactly on the circle](../figures/w12-sector-chords.svg)
+
+6. A quadratic program accepts linear rows only, and the arc is quadratic. Cut it with $M$ chords, the angle divided evenly:
+
+$$\cos\theta_j\,x_i' + \sin\theta_j\,y_i' \le R_i\cos\!\left(\frac{\alpha_{\max}}{M}\right),
+\qquad
+\theta_j = -\alpha_{\max} + \left(j - \tfrac{1}{2}\right)\frac{2\alpha_{\max}}{M},
+\qquad j = 1,\dots,M$$
+
+   For $\alpha_{\max} = 45^\circ$ and $M = 3$ the normals stand at $-30^\circ$, $0^\circ$ and $+30^\circ$, and the right-hand side is $R_i\cos 15^\circ = 0.9659\,R_i$.
+
+7. **The polygon is inscribed, so it can never break the cap.** Two neighbouring chords are $2\alpha_{\max}/M = 30^\circ$ apart and each stands off by $R\cos 15^\circ$, so they meet at $R\cos 15^\circ / \cos 15^\circ = R$ — exactly on the circle. Only the chord midpoints sit at $0.9659\,R$, which is $3.41\%$ short. The approximation is therefore conservative everywhere and worst at three isolated angles, and raising $M$ shrinks that figure as $1 - \cos(\alpha_{\max}/M)$ at the cost of $M$ rows per unit.
+
+8. Assembling line 5 and line 6 for all four units gives $4(2 + M) = 20$ rows for $M = 3$, against the $8$ rows of §12-10. The sixteen pieces are unchanged — the sign pattern $\boldsymbol{\sigma}$ still decides which half-cone and, now, which of the two cap heights applies.
+
+9. **Why the scalar $\rho$ of §12-10 line 11 is not enough.** It multiplies the whole of $\mathbf{f}$ by one number, so $\mathbf{B}(\rho\mathbf{f}) = \rho\boldsymbol{\tau}$: the direction of the demand survives and its magnitude does not, including in the components no unit was straining. One saturated unit therefore drags all three others down with it. The chord rows do the opposite — they tell the solver which unit is at its cap, and the optimum moves load onto the units that are not. Table (1) measures the difference on a demand of $300$ N: $16.584$ N of error with $\rho$, $0.009$ N with the chords.
+
+10. **The error must be measured out of the motion model, not out of the allocator.** `otter_tilt4` applies its own limits to $n$ and $\delta$ before computing anything, so an out-of-limit command produces a different hull force and nothing in the allocator's own bookkeeping records it. The actual force is recovered by calling the model twice in the same state, once with the thrusters commanded and once with $n = \mathbf{0}$, exactly as §12-2 did:
+
+$$\boldsymbol{\tau}_{\text{act}} = \mathbf{M}\left(\dot{\boldsymbol{\nu}}_{\text{on}} - \dot{\boldsymbol{\nu}}_{\text{off}}\right)\Big|_{\text{rows } 1,2,6}$$
+
+11. Line 10 makes a prediction that can be checked: **clipping inside the allocator and clipping inside the hardware are the same operation.** A law that ignores the servo wall entirely and a law that enforces it by clipping must therefore deliver the *same* force, differing only in whether the allocator knows what it produced. Table (2) measures $9.049$ N mean and $31.452$ N maximum for `wpinv` and for `clip` alike — identical to three decimals. The value of enforcing a limit inside the allocation is not that it changes the clipping; it is that it lets the remaining freedom be spent before the clipping happens.
+
+| Symbol | Quantity | Value or source |
+|---|---|---|
+| $k_{\mathrm{pos}}$, $k_{\mathrm{neg}}$ | thrust coefficients, ahead and astern | $0.011080$, $0.006445$, `otter_config` |
+| $n_{\max}$, $n_{\min}$ | shaft-speed limits | $+103.93$, $-101.74$ rad/s |
+| $T^{+}$, $T^{-}$ | the two thrust caps of line 4 | $119.682$ N, $66.708$ N, `P.T_pos` and `P.T_neg` |
+| $R_i$ | cap height for unit $i$ in its own axes | $T^{+}$ or $T^{-}$ by $\sigma_i$ |
+| $M$ | chords replacing the arc | $3$, `P.n_chord` |
+| $\theta_j$ | normal direction of chord $j$ | $-30^\circ$, $0^\circ$, $+30^\circ$ at $M = 3$ |
+| $\boldsymbol{\tau}_{\text{act}}$ | force the motion model produced | line 10, `W12_chain` |
+
+> [!note] Choosing $M$
+> $M = 1$ is a single flat cut across the sector and gives up $29\%$ of the radius at the corners; $M = 3$ gives up $3.41\%$; $M = 6$ gives up $0.86\%$. Each step adds four rows to a problem already solved sixteen times, and §12-11's measurement says what that costs. $M = 3$ is used here because the thrust cap is itself a fitted quantity — $k_{\mathrm{pos}}$ and $k_{\mathrm{neg}}$ are regression coefficients, not exact numbers — and an approximation three times finer than the data it approximates buys nothing.
+
+### Experiment 12-12 · Following one demand all the way to the hull (25 min)
+
+```matlab
+W12_K_hardware
+```
+
+```
+=== 12-12  two walls: the servo angle and the shaft speed ===
+
+  the shaft speed limits are n_max =  +103.93 and n_min =  -101.74 rad/s
+  through T = k n|n| those become the thrust caps
+      ahead   T <= k_pos n_max^2 = 0.011 * 103.93^2 =  119.682 N
+      astern  T <= k_neg n_min^2 = 0.006 * 101.74^2 =   66.708 N
+  the astern cap is 56% of the ahead cap, and that is what binds
+  at delta = 0 the hull can therefore make at most
+      X = 2 * 119.68 + 2 * 66.71 = 372.78 N
+
+  (1) one demand followed through the chain,  tau = [300 N, 0 N, 0 N m]
+
+      pure surge, so units 1-2 push forward and units 3-4 must push astern
+      the astern cap is the smaller one, and that is what binds
+
+    law           T fwd  T astern    worst n  n clip  d clip    |tau err|
+                    [N]       [N]    [rad/s] [units] [units]          [N]
+    ----------------------------------------------------------------------
+    wpinv         75.00    -75.00     -107.9       2       0       16.584
+    clip          75.00    -75.00     -107.9       2       0       16.584
+    wls16         75.00    -75.00     -107.9       2       0       16.588
+    wls16cap      85.56    -64.43     -100.0       0       0        0.009
+    ----------------------------------------------------------------------
+    the caps are +119.68 N ahead and  -66.71 N astern
+
+  (2) tau = [320 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, 201 points
+
+    law          max|d| servo wall   rpm wall   mean |err|    max |err|
+                  [deg]   [% of t]   [% of t]          [N]          [N]
+    -------------------------------------------------------------------
+    wpinv         89.76       15.9       41.8        9.049       31.452
+    clip          45.00        0.0       41.8        9.049       31.452
+    wls16         45.00        0.0       41.8        7.353       28.361
+    wls16cap      45.00        0.0        0.0        0.012        0.018
+    -------------------------------------------------------------------
+    the error is measured out of the motion model, not out of the allocator
+
+  (3) allocation time over the same 201 demands,  50 Hz budget = 20000 us
+
+    law           QPs   mean [us]    max [us]  budget used [%]
+    ----------------------------------------------------------
+    wpinv           0         6.5       138.4             0.03
+    clip            0         6.3        45.5             0.03
+    wls16          16      2699.5      5278.4            13.50
+    wls16cap       16      3888.4      7391.1            19.44
+    ----------------------------------------------------------
+    the cap adds 3 rows per unit, so wls16cap is wls16 plus that
+```
+
+Table (1) is the whole of lines 1 to 9 on one demand. The first three laws split $300$ N into $\pm 75$ N per unit and are correct to the column rule, yet two of the four units are driven past the shaft-speed limit, because $75$ N astern exceeds the $66.708$ N of line 4. Only `wls16cap` knows this before the command leaves the allocator: it shifts $10.56$ N of the load from the astern pair onto the ahead pair, where the cap is nearly twice as high, and the demand is then met to $0.009$ N.
+
+![Demanded and achieved surge, sway and yaw over the 201-point sweep, with the demand drawn as a black dashed line and each law's achieved force measured out of the motion model; only the law that enforces both walls stays on the demand throughout](W12_simulink/img/W12_chain_tau.png)
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| the purple `wls16cap` trace, all three panels | lies on the dashed demand everywhere | lines 6 to 8 — the feasible set is now exact in both walls |
+| the orange `clip` trace around $t = 12$ s | departs from the demand in $X$, $Y$ and $N$ at once | line 9 — $\rho$ scales the whole vector, so one saturated unit moves all three components |
+| the blue halo under the orange trace | `wpinv` and `clip` coincide to the width of the line | line 11 — the plant clips where `clip` clips |
+| the yellow `wls16` trace, $8 < t < 11$ s | inside the orange but still off the dashed line | line 3 — the servo wall is solved, the thrust cap is not |
+| all four laws near $t = 0$ and $t = 20$ s | the largest departures, in $N$ especially | line 4 — the demand turns through the astern cap there |
+
+![Shaft speed and servo angle commanded of unit 3 against their two limits, drawn as dashed lines; the laws that ignore the thrust cap drive the shaft past the reverse limit while the law that includes it rides along the wall](W12_simulink/img/W12_chain_sat.png)
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| upper panel, $2 < t < 4.5$ s | three laws reach $-115$ rad/s, below the $-101.74$ dashed line | line 3 — the rpm wall is the astern thrust cap, and it binds first |
+| upper panel, the purple trace in the same window | flat along $-101.74$, never below | line 7 — the chords are inscribed, so the cap cannot be broken |
+| upper panel, $8 < t < 10$ s | no law reaches $n_{\max} = 103.9$ | line 4 — the ahead cap is $1.79$ times the astern one |
+| lower panel, the blue spikes at $\pm 90^\circ$ | `wpinv` commands twice the servo travel that exists | §12-10 line 1 — the closed form has no wall |
+| lower panel, the other three traces | clipped flat at $\pm 45^\circ$ | line 11 — allocator clipping and hardware clipping meet at the same value |
+| lower panel, where blue leaves the wall | the same instants at which $X$ departs in the previous figure | line 9 — the direction error becomes a force error |
+
+Table (3) re-times the laws because `wls16cap` did not exist when §12-11 ran. The cap adds three rows per unit to a problem already solved sixteen times, and the measured cost of that is $2699.5 \to 3888.4$ µs in the mean: $44\%$ more, for an error $600$ times smaller. The worst case of $7391.1$ µs is still under $37\%$ of the $20\,000$ µs budget, so the exact answer is affordable at $50$ Hz on this machine.
+
+| What to try | What to watch |
+|---|---|
+| set `P.n_chord = 1` and run again | the rpm wall is still respected, but the error rises: one flat cut gives up $29\%$ of the radius |
+| set `P.T_neg = P.T_pos` and run again | the `n clip` column of table (1) empties, which identifies the asymmetry of line 4 as the cause |
+| raise the demand in `W12_tab_chain` from $320$ N to $400$ N | `wls16cap` begins to miss as well, because $400$ N is past the $372.78$ N of line 4 |
+| print `info.sigma` for `wls16` and `wls16cap` at the same instant | the two laws choose different sign patterns once the cap is in the problem |
+
+> [!tip] In class
+> - **Purpose** — close the loop between the allocator's arithmetic and the force the hull receives.
+> - **Point to** — the `rpm wall` column of table (2): $41.8\%$ for three laws and $0.0\%$ for one.
+> - **Ask** — "`wpinv` and `clip` have exactly the same error. What did clipping buy?" Nothing, until the clipped limit is inside the optimisation.
+> - **Take away** — a limit enforced after the solve costs force in every component; the same limit enforced inside the solve costs milliseconds.
 
 > [!note] What this week does not do
 > Three things are deliberately left out, and each has a reason.
@@ -1338,10 +1522,13 @@ The experiments of Part 1 are worked through in order; this table is the index o
 | 12-9 | none | `W12_H_weights` | the price sweep: what $\mathbf{W}$ moves and what it cannot |
 | 12-10 | none | `W12_I_limits` | five laws at the $45^\circ$ wall, and the sixteen pieces |
 | 12-11 | none | `W12_J_timing` | the 50 Hz budget, measured for every law |
+| 12-12 | none | `W12_K_hardware` | both walls, and the force the motion model produced |
 
 Selecting runs: `W12_V_openloop` for all eight, `W12_V_openloop('S5')` for one, `W12_V_openloop({'S5','S6'})` for a pair, `W12_V_openloop(1:4)` by number. A partial run writes only the sheets it ran and leaves the overlay file alone.
 
-The four allocation scripts need no model. Each calls `W12_alloc` — the seven laws of §12-8 to §12-10 behind one `method` flag — and `W12_hw`, which turns eight components into four shaft speeds and four servo angles by §12-8 lines 1 to 4. They run in any order and in isolation, because the demand $\boldsymbol{\tau}_d$ is supplied by the script rather than by a controller. Each keeps only its measurement and its printed table: the figures are drawn by `W12_plot_alloc`, `W12_plot_weights` and `W12_plot_limits`, the 201-point sweep of §12-10 is run by `W12_sweep_laws`, and all three figures are written to `img/` by the one `W12_save_fig`.
+The five allocation scripts need no model file. Each calls `W12_alloc` — the eight laws of §12-8 to §12-12 behind one `method` flag — and `W12_hw`, which turns eight components into four shaft speeds and four servo angles by §12-8 lines 1 to 4. They run in any order and in isolation, because the demand $\boldsymbol{\tau}_d$ is supplied by the script rather than by a controller. Each keeps only its measurement and its printed table: the figures are drawn by `W12_plot_alloc`, `W12_plot_weights`, `W12_plot_limits` and `W12_plot_chain`, the 201-point sweep of §12-10 is run by `W12_sweep_laws`, and every figure is written to `img/` by the one `W12_save_fig`.
+
+Section 12-12 is the exception to "no model file": `W12_chain` calls `otter_tilt4` to recover the force the hull actually received, by §12-12 line 10, and its two tables are printed by `W12_tab_chain`. The three files split what a single section script could not hold under the forty-five-line rule, and `W12_K_hardware` is the file to open for that section.
 
 > [!note] One run order, four sections
 > Sections 12-3 to 12-6 share the **same eight 30-s runs**: table (1) measures the force at the start of each, table (2) re-integrates the whole of each, table (3) reads the end of each, and `W12_plot_scenario` draws each. Splitting them would send the vessel out thirty-two times for eight trajectories, and the tables would then be read against runs only nominally the same. The runs happen once, in `W12_V_openloop`, and each section's block is a file of its own — `W12_cases` fixes the eight commands, `W12_tab_formula` is §12-3, `W12_tab_track` is §12-4 and §12-5, `W12_tab_reint` is §12-6. The arrow names the file to open for that section.
@@ -1369,7 +1556,9 @@ The four allocation scripts need no model. Each calls `W12_alloc` — the seven 
 | 13 | the minimum-norm solution derived and inverted to hardware | residual $0.00\mathrm{e}{+}00$, $\rho = 1$, worst angle $26.88^\circ$ |
 | 14 | the weight matrix measured over three decades | $\Sigma\lvert f_y\rvert$ fixed at $30.00$ N; the worst angle **rises** $26.88^\circ \to 31.73^\circ$ |
 | 15 | the servo limit shown to be two straight lines per sign | five laws compared: `wls16` meets a demand at $0.020$ N where one-guess `qp` returns nothing |
-| 16 | every law timed against the 50 Hz budget | $0.52$ µs precomputed against `fmincon`'s worst case $20\,056$ µs |
+| 16 | every law timed against the 50 Hz budget | $1.29$ µs precomputed against `fmincon`'s worst case $70\,447$ µs |
+| 17 | the shaft-speed limit shown to be the thrust cap | $119.682$ N ahead and $66.708$ N astern, the astern cap $56\%$ of the ahead one |
+| 18 | both walls put inside the solve, the force measured out of the hull | mean error $7.353 \to 0.012$ N over 201 demands, for $13.50 \to 19.44\%$ of the budget |
 
 ---
 
@@ -1392,6 +1581,9 @@ The four allocation scripts need no model. Each calls `W12_alloc` — the seven 
 - [ ] Able to turn $\lvert\delta_i\rvert \le \alpha_{\max}$ into two linear inequalities, and state what has to be fixed first
 - [ ] Able to say why there are sixteen convex pieces, and what a single guessed piece risks
 - [ ] Able to say why the force demand belongs in the cost while the servo limit belongs in the constraints
+- [ ] Able to show that $\lvert n_i\rvert \le n_{\max}$ and $\lvert T_i\rvert \le k_i n_{\max}^2$ are the same constraint, and give both cap values
+- [ ] Able to say why the chord polygon of §12-12 can never break the cap, and where its worst $3.41\%$ sits
+- [ ] Able to say why a scalar $\rho$ after the solve costs force in components no unit was straining
 
 ### Laboratory
 
@@ -1404,6 +1596,7 @@ The four allocation scripts need no model. Each calls `W12_alloc` — the seven 
 - [ ] `W12_H_weights` ran and printed the seven-row price sweep and the two share figures
 - [ ] `W12_I_limits` ran and printed both the single hard demand and the 201-point trajectory
 - [ ] `W12_J_timing` ran and printed the microseconds each law costs against the $20\,000$ µs budget
+- [ ] `W12_K_hardware` ran and printed all three tables, with the `rpm wall` column $0.0\%$ for `wls16cap` alone
 
 ### Recorded observations
 
@@ -1413,6 +1606,8 @@ The four allocation scripts need no model. Each calls `W12_alloc` — the seven 
 - [ ] The value of $\sum_i\lvert f_{y,i}\rvert$ at $w = 1$ and at $w = 1000$, and why the two are equal
 - [ ] The sign pattern a weighted minimum norm pointed at for $\boldsymbol{\tau} = [15;\,70;\,10]$, and the one that is actually feasible
 - [ ] The worst-case time `fmincon` took, and whether it fits inside one 50 Hz step
+- [ ] The two thrust caps of §12-12 line 4, and which of the two bound the pure-surge demand of table (1)
+- [ ] The mean force error of `clip` and of `wls16cap` on the same sweep, measured out of the motion model
 
 ---
 
@@ -1423,12 +1618,13 @@ The four allocation scripts need no model. Each calls `W12_alloc` — the seven 
 
 ### ① Requirements
 
-Requirements 1 to 3 are three runs, each one eight numbers given by hand in `W12_0_setup`: no allocator and no controller. Requirement 4 reverses the direction of the arithmetic and lets the allocator of §12-8 to §12-10 choose the eight numbers instead.
+Requirements 1 to 3 are three runs, each one eight numbers given by hand in `W12_0_setup`: no allocator and no controller. Requirement 4 reverses the direction of the arithmetic and lets the allocator of §12-8 to §12-10 choose the eight numbers instead, and requirement 5 follows the chosen numbers through the hardware limits to the force the hull actually received.
 
 1. **Reproduce the yaw-free crab.** Apply §12-4 line 8 to obtain the stern shaft speed that cancels the residual yaw of a $45^\circ$ four-unit sway command. Derive it rather than copying $73.485$ rad/s: show the step from $\sum x_i T_i = 0$ to $T_a = 1.5T_f$ and the conversion to shaft speed, including which thrust coefficient applies and why. Report the surge force the cancellation costs.
 2. **Find a motion that is neither.** Choose eight numbers for which $X = 0$ **and** $N = 0$ while $Y \neq 0$ — a pure sway, with no surge and no yaw. Keep $\delta_i \in \{+45^\circ, -45^\circ\}$ so that only the four shaft speeds are free. State the two linear conditions on $T_1 \ldots T_4$, solve them by hand, convert each $T_i$ to a shaft speed with the correct sign-dependent coefficient, and check every value against the shaft limits before running.
 3. **Break it deliberately.** Take the solution of requirement 2 and change one shaft speed by 10 %. Report what appears in $X$, $Y$ and $N$, and say which of the three asymmetries the change exposed.
 4. **Let the allocator choose, and audit it.** Take the pure-sway demand solved by hand in requirement 2 as $\boldsymbol{\tau}_d$, scale its sway component until the servo wall is broken, and allocate that demand with `W12_alloc` under `'wpinv'`, `'clip'`, `'wls'` and `'wls16'` in turn, with $\mathbf{W} = \operatorname{diag}([1\ 10\ 1\ 10\ 1\ 10\ 1\ 10])$. For each law report $\max_i\lvert\delta_i\rvert$, $\lVert\mathbf{B}\mathbf{f}-\boldsymbol{\tau}_d\rVert$ and the exit flag returned in `info.exit`, then feed the eight numbers of the law with the smallest force error into `W12_hw` and command the resulting $n_i$ and $\delta_i$ to the plant. State whether the measured $X$, $Y$ and $N$ match $\mathbf{B}\mathbf{f}$ and, where a law broke the wall, say what the plant did with the command it could not execute.
+5. **Find the second wall, and measure past it.** Derive both thrust caps from `otter_config('quad_tilt')` by §12-12 line 3 — not by copying $119.682$ N and $66.708$ N — and state which of the two binds a pure surge demand and why. Then raise a pure surge demand $\boldsymbol{\tau}_d = [X_d\ 0\ 0]^\top$ from $X_d = 100$ N in steps until `'wls16'` first asks for a shaft speed outside the limits, report that $X_d$ against the envelope corner of §12-12 line 4, and allocate the same demand with `'wls16cap'`. For both laws report the four $T_i$, the worst $n_i$, the two clip counts and the force error **measured out of the motion model** by §12-12 line 10, using `W12_chain`. Explain the direction in which `'wls16cap'` moved the load between the two pairs, and why the scalar $\rho$ of §12-8 line 4 could not have done the same.
 
 ### ② Verification — mandatory
 
@@ -1443,12 +1639,15 @@ Requirements 1 to 3 are three runs, each one eight numbers given by hand in `W12
 | the clip flags | whether the shaft or the servo limit bound during the run |
 | for requirement 4, one row per law | $\max_i\lvert\delta_i\rvert$, $\lVert\mathbf{B}\mathbf{f}-\boldsymbol{\tau}_d\rVert$, `info.exit` and the number of quadratic programs solved |
 | the achieved force of the chosen law | $\mathbf{B}\mathbf{f}$ computed from the eight components, against the plant's measured $X$, $Y$, $N$ |
+| for requirement 5, the two thrust caps | each one as $k_i n_{\lim}^2$ with the coefficient named, and their ratio |
+| for requirement 5, one row per law | the four $T_i$, the worst $n_i$, the shaft and servo clip counts, and $\lVert\boldsymbol{\tau}_{\mathrm{act}} - \boldsymbol{\tau}_d\rVert$ |
+| for requirement 5, the measurement itself | the two calls to the motion model of §12-12 line 10 shown in the submitted code, not the allocator's own residual |
 
 A run whose predicted and measured forces disagree by more than rounding is a mistake in the prediction, not in the model. Find it before reporting. A law reporting a non-positive `info.exit` has returned no solution, and its angle and error figures are not results: report the flag rather than the numbers beside it.
 
 ### ③ Analysis (5–10 lines)
 
-Requirement 2 asked for a pure sway and the vessel can produce one, while requirement 1's command cannot. Explain which freedom made the difference, counting it against the five null-space dimensions of §12-1. Then compare requirement 4 against requirements 1 to 3: state which of the two directions of arithmetic has a unique answer and which does not, name what `'wls16'` searched that `'wls'` did not, and say what the hand solution would have to be redone for if the demanded force changed every 20 ms.
+Requirement 2 asked for a pure sway and the vessel can produce one, while requirement 1's command cannot. Explain which freedom made the difference, counting it against the five null-space dimensions of §12-1. Then compare requirement 4 against requirements 1 to 3: state which of the two directions of arithmetic has a unique answer and which does not, name what `'wls16'` searched that `'wls'` did not, and say what the hand solution would have to be redone for if the demanded force changed every 20 ms. Close with requirement 5: state which of the two walls a law can satisfy without knowing the other, and why a residual reported by the allocator is not a statement about the hull.
 
 ### Grading
 
@@ -1480,6 +1679,9 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 | Raising the price of the sideways components does not reduce the tilt | row 2 of $\mathbf{B}$ is $[0\ 1\ 0\ 1\ 0\ {-1}\ 0\ {-1}]$, so $\sum_i\lvert f_{y,i}\rvert$ is pinned by the demanded $Y$ and the price can only move the yaw onto the short $f_x$ arms | a hard limit is not a price. Put $\alpha_{\max}$ in the constraints, as §12-10 does, and use $\mathbf{W}$ for what it can do — moving load between units |
 | Two timing runs of `W12_J_timing` disagree by tens of per cent | the solver timings include allocation, interpreter and operating-system load | expected. The ordering of the laws and the orders of magnitude between them are reproducible; a single figure is not. Report the run, not a remembered number |
 | A script named `W12_H_weights` appears to do nothing | a `.slx` of the same name takes precedence and MATLAB opens the model instead | never let a `.m` and a `.slx` share a name; the builders append `_run` where a collision is possible |
+| A law that keeps every $\delta_i$ inside $45^\circ$ still drives a shaft past $n_{\min}$ | the servo wall and the thrust cap are two different walls, and §12-10 put only the first inside the solve | use `'wls16cap'`, which adds the chord rows of §12-12 line 6. The `rpm wall` column of Experiment 12-12 is the check |
+| An allocation reports a residual of $0$ while the hull produces a visibly different force | the residual was computed as $\lVert\mathbf{B}\mathbf{f} - \boldsymbol{\tau}_d\rVert$ inside the allocator, where the hardware limits have not yet been applied | measure out of the motion model by §12-12 line 10. `W12_chain` does this, and `W12_hw` alone does not |
+| `wpinv` and `clip` report **identical** errors, which makes the clipping look pointless | the plant clips at the same value the allocator clips to, so the two produce the same force | expected, and it is §12-12 line 11. Clipping earns nothing on its own; it earns something only when the clipped limit is inside the optimisation |
 
 ---
 
@@ -1493,6 +1695,8 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 - Johansen, T. A. and Fossen, T. I. "Control allocation — A survey", *Automatica* **49**(5):1087–1103, 2013. DOI [10.1016/j.automatica.2013.01.035](https://doi.org/10.1016/j.automatica.2013.01.035) — the source for the classification §12-8 to §12-10 follows: unconstrained closed form, weighted pseudo-inverse, and constrained quadratic programming
 - Härkegård, O. "Efficient active set algorithms for solving constrained least squares problems in aircraft control allocation", *41st IEEE Conference on Decision and Control*, 2002, pp. 1295–1300. DOI [10.1109/CDC.2002.1184694](https://doi.org/10.1109/CDC.2002.1184694) — the weighted least squares formulation of §12-10, with the force demand in the cost and the limits in the constraints
 - Härkegård, O. *Backstepping and Control Allocation with Applications to Flight Control*, PhD thesis, Linköping University, 2003 — the longer treatment of the same formulation, including why an active-set method is preferred to a general-purpose solver when the problem is solved every step
+- Härkegård, O. *QCAT — Quadratic Programming Control Allocation Toolbox*, MATLAB toolbox accompanying the thesis above. Its `wls_alloc` is the active-set implementation of the §12-10 cost, and its `vview` draws the attainable moment set that §12-12 line 4 computes one corner of. The laws of this week are written out from the equations above rather than called from the toolbox, so that each row of $\mathbf{A}$ can be traced to a sentence
+- Johansen, T. A., Fossen, T. I. and Berge, S. P. "Constrained nonlinear control allocation with singularity avoidance using sequential quadratic programming", *IEEE Transactions on Control Systems Technology* **12**(1):211–216, 2004. DOI [10.1109/TCST.2003.821952](https://doi.org/10.1109/TCST.2003.821952) — the marine form of the sector constraint of §12-12 line 5, and the rate and singularity terms listed as left out above
 
 ### Optimization Toolbox documentation
 
@@ -1508,7 +1712,7 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 ### In this course
 
 - Week 3 — the column rule, and the only definition of $B$ this course uses
-- **Week 7 — allocation for the base hull**: the square rule, least squares when $\mathbf{B}$ has fewer columns than demands, the propeller-curve inversion, clipping against scaling, and the error-weighted quadratic program of §7-7. Week 7 closes by promising that an optimiser earns its place once there is a null space to spend; §12-7 to §12-11 are that case
+- **Week 7 — allocation for the base hull**: the square rule, least squares when $\mathbf{B}$ has fewer columns than demands, the propeller-curve inversion, clipping against scaling, and the error-weighted quadratic program of §7-7. Week 7 closes by promising that an optimiser earns its place once there is a null space to spend; §12-7 to §12-12 are that case
 - Week 5 — saturation, and what a limit does to a command
 - Week 6 — `otter_bow.m`: changing the motion model rather than adding to its input
 - `_tools/otter_tilt4.m` — the four changes, each marked `% ---- CHANGED (i of 4)`
@@ -1520,7 +1724,7 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 
 ## Next Week
 
-- **The closed loop, and what the allocator owes it.** §12-7 to §12-11 assumed the three demanded numbers arrived from outside. Closing the loop puts a controller in front of the allocator, and two of this week's measurements then become the controller's problem: the force error a constrained law pays (§12-10) is a disturbance the controller did not ask for, and the worst-case solve time (§12-11) is dead time inside the loop
+- **The closed loop, and what the allocator owes it.** §12-7 to §12-12 assumed the three demanded numbers arrived from outside. Closing the loop puts a controller in front of the allocator, and three of this week's measurements then become the controller's problem: the force error a constrained law pays (§12-10) is a disturbance the controller did not ask for, the worst-case solve time (§12-11) is dead time inside the loop, and the gap between the force the allocator reported and the force the hull received (§12-12) is a model error the controller must reject without ever being told of it
 - The five null-space dimensions counted in §12-1 are now spent three ways — minimum norm, a price list, and sixteen convex pieces — and none of the three asked what the hull was trying to do
 - What must be prepared: the three asymmetries of §12-4 stated from memory with the numbers $0.5817$, $0.25$ m and $45^\circ$ attached to the right one, and the four allocation laws of §12-10 ranked by what each one gives up
 - What is deliberately left open: servo rate limits, singularity-free azimuth handling, and solving the sixteen pieces offline rather than every step

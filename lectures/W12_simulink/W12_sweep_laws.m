@@ -3,11 +3,21 @@ function S = W12_sweep_laws(B, cfg, P)
 %  모두 걸어 보고 표를 찍는다. 절 스크립트(`W12_I_limits`)를 얇게 두기 위해
 %  여기로 뺐다 (`vault_check.sh` §18, 실행 줄 45 이하).
 %
+%  The trajectory sweep of 12-10: six laws are put not to one demand but to
+%  201 of them, and the table is printed here. It sits in its own function to
+%  keep the section script thin (vault_check.sh 18, at most 45 executable
+%  lines).
+%
 %  통계는 **해가 나온 점에서만** 낸다. `quadprog`·`lsqlin` 은 실행 불가능한
 %  마지막 반복값을 그럴듯한 숫자로 돌려주므로, `exit > 0` 으로 걸러야 수치다
 %  (`standing-orders.md` §15-76).
 %
-%  돌려주는 것: S.t · S.mth · S.MD · S.ER · S.D1 · S.RHO · S.EF.
+%  The statistics are taken ONLY at the points where a solution was found.
+%  `quadprog` and `lsqlin` return the last infeasible iterate as a plausible
+%  looking number, so nothing is a measurement until `exit > 0` has filtered
+%  it.
+%
+%  돌려주는 것 / what is returned: S.t · S.mth · S.MD · S.ER · S.D1 · S.RHO · S.EF
 
 amax  = rad2deg(P.alpha_max);
 S.t   = linspace(0, 20, 201);
@@ -30,10 +40,10 @@ for a = 1:nm
     end
 end
 
-fprintf('\n궤적  tau = [100 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, %d 점\n\n', ...
+fprintf('\nthe demand  tau = [100 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, %d points\n\n', ...
         numel(S.t));
 fprintf('  method     solved   wall broken   max|delta|   mean |tau err|   max |tau err|   rho<1\n');
-fprintf('           [%% of k]      [%% of k]       [deg]             [N]             [N]   [%% of k]\n');
+fprintf('           [%% of pts]    [%% of pts]       [deg]             [N]             [N] [%% of pts]\n');
 for a = 1:nm
     ok = S.EF(a,:) > 0;
     fprintf('  %-9s %8.1f %13.1f %12.2f %15.3f %15.3f %10.1f\n', S.mth(a), ...
@@ -41,5 +51,6 @@ for a = 1:nm
         100*mean(S.MD(a,ok) > amax + 1e-6), max(S.MD(a,ok)), ...
         mean(S.ER(a,ok)), max(S.ER(a,ok)), 100*mean(S.RHO(a,ok) < 1-1e-9));
 end
-fprintf('\n  (벽·오차 통계는 **해가 나온 점에서만** 냈다 — qp 는 그러지 못한 점이 있다)\n');
+fprintf('\n  (the wall and error statistics are taken only where a solution was\n');
+fprintf('   found -- qp fails to find one at some of the points)\n');
 end

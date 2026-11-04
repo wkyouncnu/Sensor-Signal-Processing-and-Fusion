@@ -4,21 +4,31 @@ function W12_plot_alloc(cfg, H, tau_d, outdir)
 %  (`vault_check.sh` §18, 실행 줄 45 이하). 그리는 규칙은 §12-8 과 같다 —
 %  추력은 빨강이고 축척이 하나, 요구한 힘은 파랑이고 **단위가 다르므로**
 %  축척이 따로다. 둘을 한 축척으로 그리면 N 과 N·m 이 섞인다.
+%
+%  The figure of 12-8: the four thrust arrows seen from above, together with
+%  the force that was demanded. It sits in its own function to keep the section
+%  script thin (vault_check.sh 18, at most 45 executable lines). The drawing
+%  rule is the one 12-8 states: the thrusts are red and share one scale, the
+%  demand is blue and has a scale of its own because its UNITS ARE DIFFERENT.
+%  Drawn on one scale, N and N m would be mixed.
 
 x = cfg.pos(1,:);  y = cfg.pos(2,:);  s = cfg.mount;
 fig = figure('Color','w','Position',[80 80 520 640]);
 hold on; axis equal; grid on
 
 % 선체 외곽 — 두 폰툰. 가로축이 y_b 이므로 폭이 0.32, 길이가 3.35 다
+% the hull outline, two pontoons. the horizontal axis is y_b, so the width is
+% 0.32 m and the length 3.35 m
 for sy = [-1 1]
     rectangle('Position',[sy*0.395-0.16, -1.45, 0.32, 3.35], ...
               'Curvature',0.35,'EdgeColor',[.65 .65 .65],'FaceColor',[.95 .95 .95]);
 end
 
-sc  = 0.70/max(abs(H.T));                 % 추력 화살표 축척 [m/N]
-sct = 0.70/norm(tau_d(1:2));              % tau 화살표는 따로 — 단위가 다르다
+sc  = 0.70/max(abs(H.T));    % 추력 화살표 축척 / thrust arrow scale [m/N]
+sct = 0.70/norm(tau_d(1:2)); % tau 는 따로 / tau has its own: other units
 for i = 1:4
     % 추력 벡터를 선체축으로: s_i*[T cos d ; T sin d]
+    % the thrust vector in hull axes
     vx = s(i)*H.T(i)*cos(H.delta(i));  vy = s(i)*H.T(i)*sin(H.delta(i));
     plot(y(i), x(i), 'ko','MarkerFaceColor','k','MarkerSize',6);
     quiver(y(i), x(i), sc*vy, sc*vx, 0, 'LineWidth',2,'Color',[.85 .2 .2], ...

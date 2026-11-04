@@ -5,6 +5,12 @@ function W12_plot_weights(cfg, wlist, sf, sp, md, H1, H2, shr1, shr2, outdir)
 %
 %  왼쪽 축에는 힘 둘(N), 오른쪽 축에는 각 하나(deg). 단위가 다른 것을
 %  한 축에 올리면 30 N 과 30 deg 가 포개져 같은 곡선으로 보인다 — 나누어 그린다.
+%
+%  The figure of 12-9: what the price list cannot do (left) and what it can
+%  (right). It sits in its own function to keep the section script thin
+%  (vault_check.sh 18, at most 45 executable lines). Two forces (N) go on the
+%  left axis and one angle (deg) on the right: put on one axis, 30 N and
+%  30 deg would lie on top of each other and read as the same curve.
 
 fig = figure('Color','w','Position',[80 80 920 340]);
 
