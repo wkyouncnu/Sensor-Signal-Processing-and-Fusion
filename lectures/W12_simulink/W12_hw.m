@@ -19,12 +19,12 @@ function H = W12_hw(B, f, cfg)
 %                (1 means nothing was reduced)
 %  H.tau    3x1  **실제로 나오는** tau = B * (rho*f)
 %                the tau that is actually produced
-%  H.hit    1x4  그 단위가 서보 벽에 닿았는가 / did that unit reach the wall
+%  H.hit    1x4  그 단위가 각 한계에 닿았는가 / did that unit reach the limit
 %
 %  두 한계가 서로 다르게 작용한다 — 강의 §12-10.
 %  The two limits act differently, which is the point of 12-10.
-%    서보 벽  |delta| <= alpha_max 는 **방향**을 바꾼다. 그래서 배분 안에서 푼다
-%      the servo wall changes the DIRECTION, so it has to be solved inside the
+%    각 한계  |delta| <= alpha_max 는 **방향**을 바꾼다. 그래서 배분 안에서 푼다
+%      the angle limit changes the DIRECTION, so it has to be solved inside the
 %      allocation itself
 %    추력 한계 |T| <= k n_max^2 는 **크기**만 바꾼다. f 를 한 번 곱해 끝낸다
 %      (B 가 선형이므로 rho*f 는 rho*tau 를 낸다 — tau 의 방향이 보존된다)

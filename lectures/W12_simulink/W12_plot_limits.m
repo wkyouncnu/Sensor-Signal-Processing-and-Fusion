@@ -1,16 +1,14 @@
 function W12_plot_limits(S, amax, outdir)
-%W12_PLOT_LIMITS  §12-10 의 그림 — 벽과 그 대가. `W12_sweep_laws` 의 결과를 받는다.
-%  절 스크립트(`W12_I_limits`)를 얇게 두기 위해 그림만 여기로 뺐다
-%  (`vault_check.sh` §18, 실행 줄 45 이하).
+%W12_PLOT_LIMITS  §12-10 의 그림 — 각 한계가 요구를 얼마나 깎는가.
+%  `W12_sweep_laws` 의 결과를 받아 `W12_CA(10)` 이 부른다.
 %
 %  해가 없는 구간은 `NaN` 으로 끊는다 — 실행 불가능한 반복값을 선으로 이으면
 %  풀린 것처럼 보인다 (`standing-orders.md` §15-76).
 %
-%  The figure of 12-10: the wall, and what it costs. It takes the result of
-%  W12_sweep_laws, and sits in its own function to keep the section script
-%  thin (vault_check.sh 18, at most 45 executable lines). Stretches with no
-%  solution are broken with NaN: joining infeasible iterates with a line makes
-%  them look solved (standing-orders.md 15-76).
+%  The figure of 12-10: how much of the demand the angle limit removes. It
+%  takes the result of W12_sweep_laws and is called from W12_CA(10). Stretches
+%  with no solution are broken with NaN: joining infeasible iterates with a
+%  line makes them look solved (standing-orders.md 15-76).
 
 t = S.t;  mth = S.mth;  nm = numel(mth);
 fig = figure('Color','w','Position',[60 60 820 560]);
@@ -39,7 +37,7 @@ ylim([-105 100]);
 ylabel('\delta_1  [deg]');
 legend(hl, [cellstr(mth), {'qp: no solution'}], ...
        'Location','eastoutside','FontSize',8);
-title(sprintf('Servo angle of unit 1 — the dashed lines are the %.0f deg wall', amax));
+title(sprintf('Servo angle of unit 1 — the dashed lines are the %.0f deg limit', amax));
 
 subplot(2,1,2); hold on; grid on
 for a = 1:nm
@@ -48,7 +46,7 @@ for a = 1:nm
 end
 ylabel('|| \tau_{achieved} - \tau_{demanded} ||  [N]');  xlabel('t  [s]');
 legend(mth,'Location','eastoutside','FontSize',8);
-title('What each law pays for staying inside the wall');
+title('What each law pays for staying inside the limit');
 
 W12_save_fig(fig, fullfile(outdir, 'img', 'W12_alloc_limits.png'));
 end

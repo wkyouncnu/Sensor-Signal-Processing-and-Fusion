@@ -36,6 +36,19 @@ V.k_neg      = cfg.k_neg;
 V.n_cmd     = [60 60 60 60]';
 V.d_cmd = deg2rad([45 45 45 45])';
 
+% --- 제어배분 / control allocation (W12_alloc_chain)
+%     `law` 하나가 법칙을 고른다 / one number selects the law
+%       1 최소노름 · 2 가중 최소노름 · 3 가중 + 각 한계로 접기 · 4 두 한계를 제약으로
+V.law       = 1;
+V.tau_cmd   = [0; 40; 0];        % 순수 횡력 요구 / a pure sway demand, N and N m
+V.B_alloc   = cfg.B;             % 3x8.  W03 의 열 규칙에서 나온 것
+V.W_alloc   = diag(repmat([1 10], 1, 4));
+V.Q_tau     = eye(3);
+V.eps_reg   = 1e-4;
+V.T_pos     = cfg.k_pos * cfg.n_max^2;   % 전진 추력 한계 / ahead thrust cap, N
+V.T_neg     = cfg.k_neg * cfg.n_min^2;   % 후진 추력 한계 — 양수로 쓴다 / astern, N
+V.n_chord   = 3;                 % 추력 캡을 내접 현 셋으로 본다 / three chords
+
 % --- 시작 상태 / the start state
 V.x0 = zeros(12,1);
 

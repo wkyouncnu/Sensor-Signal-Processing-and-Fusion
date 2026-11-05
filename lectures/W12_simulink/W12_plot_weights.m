@@ -1,16 +1,14 @@
 function W12_plot_weights(cfg, wlist, sf, sp, md, H1, H2, shr1, shr2, outdir)
-%W12_PLOT_WEIGHTS  §12-9 의 그림 — 값표가 못 하는 것(왼쪽)과 하는 것(오른쪽).
-%  절 스크립트(`W12_H_weights`)를 얇게 두기 위해 그림만 여기로 뺐다
-%  (`vault_check.sh` §18, 실행 줄 45 이하).
+%W12_PLOT_WEIGHTS  §12-9 의 그림 — 가중행렬이 바꾸지 못하는 것(왼쪽)과
+%  바꾸는 것(오른쪽). `W12_CA(9)` 이 부른다.
 %
 %  왼쪽 축에는 힘 둘(N), 오른쪽 축에는 각 하나(deg). 단위가 다른 것을
 %  한 축에 올리면 30 N 과 30 deg 가 포개져 같은 곡선으로 보인다 — 나누어 그린다.
 %
-%  The figure of 12-9: what the price list cannot do (left) and what it can
-%  (right). It sits in its own function to keep the section script thin
-%  (vault_check.sh 18, at most 45 executable lines). Two forces (N) go on the
-%  left axis and one angle (deg) on the right: put on one axis, 30 N and
-%  30 deg would lie on top of each other and read as the same curve.
+%  The figure of 12-9: what the weight matrix cannot change (left) and what it
+%  can (right). Called from W12_CA(9). Two forces (N) go on the left axis and
+%  one angle (deg) on the right: put on one axis, 30 N and 30 deg would lie on
+%  top of each other and read as the same curve.
 
 fig = figure('Color','w','Position',[80 80 920 340]);
 
@@ -21,7 +19,7 @@ semilogx(wlist, sp, 's-', 'LineWidth',1.8,'MarkerFaceColor','auto');
 ylabel('force components  [N]');  ylim([0 40]);
 yyaxis right
 semilogx(wlist, md, 'o-', 'LineWidth',1.8,'MarkerFaceColor','auto'); hold on
-yline(rad2deg(cfg.alpha_max(1)), '--', '45 deg servo wall', 'LineWidth',1.2, ...
+yline(rad2deg(cfg.alpha_max(1)), '--', '45 deg servo limit', 'LineWidth',1.2, ...
       'LabelHorizontalAlignment','right','LabelVerticalAlignment','bottom','FontSize',8);
 ylabel('max |\delta_i|  [deg]');  ylim([0 50]);
 grid on;  xlabel('w  —  price put on the sideways component f_y');

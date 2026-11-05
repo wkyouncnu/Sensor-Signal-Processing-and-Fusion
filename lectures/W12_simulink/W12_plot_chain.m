@@ -14,8 +14,7 @@ function W12_plot_chain(RR, cfg, outdir)
 %         Where the limits were crossed: shaft speed and servo angle, each
 %         drawn against its own limit line
 %
-%  절 스크립트(`W12_K_hardware`)를 얇게 두기 위해 그림만 여기로 뺐다
-%  (`vault_check.sh` §18, 실행 줄 45 이하).
+%  `W12_CA(12)` 이 부른다 / called from W12_CA(12)
 
 t   = RR{1}.t;  nL = numel(RR);
 cl  = lines(nL);
@@ -63,7 +62,7 @@ text(t(end), cfg.n_min, '  n_{min}', 'FontSize', 8, 'VerticalAlignment','top');
 ylabel('n_3  [rad/s]');
 legend(cellfun(@(R) R.method, RR, 'UniformOutput', false), ...
        'Location','eastoutside','FontSize',8);
-title(sprintf(['Shaft speed demanded of unit 3 — the walls are n_{max} = %.1f and ' ...
+title(sprintf(['Shaft speed demanded of unit 3 — the limits are n_{max} = %.1f and ' ...
                'n_{min} = %.1f rad/s'], cfg.n_max, cfg.n_min));
 
 subplot(2,1,2); hold on; grid on
@@ -76,7 +75,7 @@ yline(-am, 'k--', 'LineWidth', 1.2);
 ylabel('\delta_3  [deg]');  xlabel('t  [s]');
 legend(cellfun(@(R) R.method, RR, 'UniformOutput', false), ...
        'Location','eastoutside','FontSize',8);
-title(sprintf('Servo angle demanded of unit 3 — the wall is %.0f deg', am));
+title(sprintf('Servo angle demanded of unit 3 — the limit is %.0f deg', am));
 
 W12_save_fig(fig, fullfile(outdir, 'img', 'W12_chain_sat.png'));
 end

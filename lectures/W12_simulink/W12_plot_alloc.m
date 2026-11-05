@@ -1,16 +1,14 @@
 function W12_plot_alloc(cfg, H, tau_d, outdir)
 %W12_PLOT_ALLOC  §12-8 의 그림 — 평면도 위의 네 추력 화살표와 요구한 힘.
-%  절 스크립트(`W12_G_allocation`)를 얇게 두기 위해 그림만 여기로 뺐다
-%  (`vault_check.sh` §18, 실행 줄 45 이하). 그리는 규칙은 §12-8 과 같다 —
-%  추력은 빨강이고 축척이 하나, 요구한 힘은 파랑이고 **단위가 다르므로**
-%  축척이 따로다. 둘을 한 축척으로 그리면 N 과 N·m 이 섞인다.
+%  `W12_CA(8)` 이 부른다. 그리는 규칙은 §12-8 과 같다 — 추력은 빨강이고 축척이
+%  하나, 요구한 힘은 파랑이고 **단위가 다르므로** 축척이 따로다. 둘을 한 축척으로
+%  그리면 N 과 N·m 이 섞인다.
 %
 %  The figure of 12-8: the four thrust arrows seen from above, together with
-%  the force that was demanded. It sits in its own function to keep the section
-%  script thin (vault_check.sh 18, at most 45 executable lines). The drawing
-%  rule is the one 12-8 states: the thrusts are red and share one scale, the
-%  demand is blue and has a scale of its own because its UNITS ARE DIFFERENT.
-%  Drawn on one scale, N and N m would be mixed.
+%  the force that was demanded. Called from W12_CA(8). The drawing rule is the
+%  one 12-8 states: the thrusts are red and share one scale, the demand is blue
+%  and has a scale of its own because its UNITS ARE DIFFERENT. Drawn on one
+%  scale, N and N m would be mixed.
 
 x = cfg.pos(1,:);  y = cfg.pos(2,:);  s = cfg.mount;
 fig = figure('Color','w','Position',[80 80 520 640]);

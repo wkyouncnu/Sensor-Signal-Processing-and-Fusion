@@ -53,7 +53,7 @@ function R = W12_chain(B, cfg, V, P, tau_cmd, method)
 %      R.exit     배분기의 exitflag      1 x K
 %      R.method   쓴 법칙의 이름
 %
-%  See also W12_ALLOC, W12_HW, W12_PLOT_CHAIN, W12_K_HARDWARE, W12_TAB_FORMULA.
+%  See also W12_ALLOC, W12_HW, W12_PLOT_CHAIN, W12_CA, W12_TAB_FORMULA.
 
 K  = size(tau_cmd, 2);
 Mm = otter_M(V.mp, V.rp);

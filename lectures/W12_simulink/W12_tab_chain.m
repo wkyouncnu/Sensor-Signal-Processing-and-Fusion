@@ -1,13 +1,14 @@
 function RR = W12_tab_chain(B, cfg, V, P, laws)
 %W12_TAB_CHAIN  §12-12 의 표 둘 — ① 요구 하나를 법칙마다 끝까지 따라간다
-%               ② 요구 궤적 201 점에 걸어 두 벽이 깨지는 비율을 센다.
+%               ② 요구 궤적 201 점에 걸어 두 한계를 넘는 비율을 센다.
 %               The two tables of 12-12: one demand followed through every law,
-%               then a 201-point demand swept to count how often each wall breaks.
+%               then a 201-point demand swept to count how often each limit is
+%               exceeded.
 %
 %  돌려주는 것: `W12_chain` 결과의 cell (그림이 쓴다)
 %  Returns a cell of W12_chain results, for the figures.
 %
-%  절 스크립트를 얇게 두기 위해 표를 여기로 뺐다 (`vault_check.sh` §18).
+%  `W12_CA(12)` 이 부른다 / called from W12_CA(12)
 
 %% 표 (1) 하나의 요구를 끝까지 / table 1: one demand, all the way through ------
 tau1 = [300; 0; 0];
@@ -36,8 +37,8 @@ t  = linspace(0, 20, 201);
 TC = [320*sin(0.5*t); 60*cos(0.3*t); 30*sin(0.7*t)];
 RR = cell(1, numel(laws));
 fprintf('\n  (2) tau = [320 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, %d points\n\n', numel(t));
-fprintf('    %-9s %9s %10s %10s %12s %12s\n', 'law', 'max|d|', 'servo wall', ...
-        'rpm wall', 'mean |err|', 'max |err|');
+fprintf('    %-9s %9s %10s %10s %12s %12s\n', 'law', 'max|d|', 'servo lim', ...
+        'rpm lim', 'mean |err|', 'max |err|');
 fprintf('    %-9s %9s %10s %10s %12s %12s\n', '', '[deg]', '[% of t]', ...
         '[% of t]', '[N]', '[N]');
 fprintf('    %s\n', repmat('-', 1, 67));
@@ -57,7 +58,7 @@ fprintf('    the error is measured out of the motion model, not out of the alloc
 %  단위마다 M 개 더 붙으므로 **시간을 다시 잰다.** 지침: 수치는 실행 결과다.
 %  The 12-11 table has no 'wls16cap': it did not exist when that section ran.
 %  The cap adds M rows per unit, so the time is measured again rather than
-%  guessed. Allocation only is timed here -- the motion model is not in the
+%  assumed. Allocation only is timed here -- the motion model is not in the
 %  loop, so this is comparable with the 12-11 figures.
 fprintf('\n  (3) allocation time over the same %d demands,  50 Hz budget = 20000 us\n\n', numel(t));
 fprintf('    %-9s %7s %11s %11s %16s\n', 'law', 'QPs', 'mean [us]', ...

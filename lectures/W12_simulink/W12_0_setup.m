@@ -71,6 +71,42 @@ n_cmd = [60 60 60 60]';          % 축회전수 [rad/s], **rpm 이 아니다**
 d_deg = [45 45 45 45]';          % 틸팅 각 delta [deg], ±45 가 한계
 d_cmd = deg2rad(d_deg);          % 틸팅 각 delta [rad] — 모델이 받는 것
 
+%% ---- 제어배분 / control allocation ------------------------------------
+%  2단계 모델 `W12_alloc_chain` 이 쓰는 값이다. 1단계 모델은 읽지 않는다.
+%  used by the stage-2 model W12_alloc_chain; the open-loop model ignores them
+%
+%  **법칙은 파일이 아니라 숫자가 고른다.** 네 가지 배분법을 모델 넷으로 두지
+%  않고 Constant 하나로 고르므로, 학생은 `law` 만 바꾸고 Run 을 다시 누른다
+%  one number selects the law, so the four laws are compared in one model
+%      1  최소노름                / minimum norm                       12-8
+%      2  가중 최소노름           / weighted minimum norm              12-9
+%      3  가중 + 각 한계로 접기   / weighted, folded onto the limit     12-10
+%      4  두 한계를 제약으로      / both limits as constraints   12-10 · 12-12
+law     = 1;
+
+%  **요구를 왜 순수 횡력으로 두는가** / why the demand is pure sway
+%      네 법칙이 서로 다른 답을 내는 요구여야 비교가 된다. 횡력만 40 N 을
+%      요구하면 최소노름 해는 서보에 87.2 도를 지시하고, 서보는 45 도에서
+%      잘리며, 그래서 요구하지 않은 **-10.53 N m 의 선회모멘트**가 선체에
+%      들어간다. 제약을 넣고 푼 해(법칙 4)는 같은 요구를 오차 0.01 N 으로
+%      만족한다. 요구를 [60; 20; 15] 로 두면 네 법칙이 모두 정확히 맞히므로
+%      그림 넷이 똑같아진다.
+%      The four laws only differ on a demand that reaches a limit. A pure 40 N
+%      sway demand drives the minimum-norm solution to 87.2 deg of tilt; the
+%      servo stops at 45 deg, and the hull receives a yaw moment of -10.53 N m
+%      that was never asked for. Law 4 meets the same demand to 0.01 N.
+tau_cmd = [0; 40; 0];            % 요구한 [X; Y; N] / the demand, N and N m
+
+B_alloc = cfg.B;                 % 3x8. W03 의 열 규칙에서 나온 것
+W_alloc = diag(repmat([1 10], 1, 4));   % 가로 성분이 열 배 비싸다 / f_y priced 10x
+Q_tau   = eye(3);                % tau 오차의 가중 / weight on the tau error
+eps_reg = 1e-4;                  % 정칙화 / regularisation
+T_pos   = cfg.k_pos * cfg.n_max^2;   % 전진 추력 한계 [N] / ahead thrust cap
+T_neg   = cfg.k_neg * cfg.n_min^2;   % 후진 추력 한계 [N], 양수로 쓴다 / astern
+n_chord = 3;                     % 추력 캡을 내접 현 셋으로 본다 / three chords
+k_pos   = cfg.k_pos;             % 추력계수, 전진 / thrust coefficient, ahead
+k_neg   = cfg.k_neg;             % 추력계수, 후진 / thrust coefficient, astern
+
 %% ---- 시작 상태 / the start state --------------------------------------
 x0     = zeros(12,1);            % 정지, 원점, 선수방위 0
 x0(7)  = 0;                      % N [m]
