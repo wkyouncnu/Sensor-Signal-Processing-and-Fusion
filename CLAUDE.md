@@ -107,15 +107,13 @@ lectures/WXX_simulink/
 ├── WXX_plot.m             StopFcn 과 절 스크립트가 함께 부르는 플로팅 함수
 ├── WXX_animate.m          Animate 블록이 매 스텝 부르는 실시간 그리기
 ├── WXX_*.slx
-├── img/                   블록도 PNG + 결과 그래프 PNG
-├── problems/              수업 2교시 실습 — 학생이 직접 만든다
-│   ├── README.md / .pdf   문제지. 문제마다 **강의에서 잰 수치**가 합격선이다
-│   ├── WXX_P1_start.m     플랜트 하나만 든 시작 모델을 만든다
-│   └── WXX_check.m        학생 모델을 돌려 강의 수치와 대조, PASS/FAIL 출력
-└── solutions/             모범답안. 무엇을 만드는지가 아니라 **왜 그렇게**를 적는다
-    ├── README.md / .pdf   실제로 돌린 PASS 출력 그대로
-    └── WXX_S*_….m
+└── img/                   블록도 PNG + 결과 그래프 PNG
 ```
+
+> [!important] 실습 문제지·모범답안은 **만들지 않는다**
+> `problems/` · `solutions/` 를 새로 내지 않는다 — 사용자 지시 (2026-11-05).
+> W01~W05 · W07~W10 에 이미 있는 것은 **그대로 둔다.** 2교시 실습은 그 주차 `.md` 의
+> Assignment 절과 절 스크립트로 한다 → `standing-orders.md` §15-81
 
 > [!important] 절 여럿이 **같은 것**을 읽으면, 파일도 하나다
 > 절 넷이 같은 운항을 읽는 주차에서만 `WXX_V_...` 이 순서를 적고 `WXX_cases` ·
@@ -124,17 +122,10 @@ lectures/WXX_simulink/
 > 열지도 않는다. 강의 Part 2 의 순서 표가 절마다 **열어 볼 파일**을 가리켜야 끝이다
 > → `standing-orders.md` §15-72 · §15-80
 
-> [!important] 실습 문제지·답안지도 **PDF 를 함께 낸다**
-> 학생이 받는 것에는 예외가 없다. 이름이 `README.md` 라도 폴더 색인이 아니라
-> **배포물**이면 `md2pdf.sh` 를 돌린다. `vault_check` 의 `delivered()` 가 강제하며,
-> 따라서 **문제지 본문도 영어 정식 어조**이고 1·2인칭을 쓰지 않는다
+> [!important] 배포물이면 **PDF 를 함께 낸다**
+> 이름이 `README.md` 라도 폴더 색인이 아니라 **학생이 받는 것**이면 `md2pdf.sh` 를
+> 돌리고, 본문도 영어 정식 어조로 쓴다 — `vault_check` 의 `delivered()` 가 강제한다
 > → `standing-orders.md` §8-0
-
-> [!important] 실습 문제는 **채점 가능**해야 한다
-> 문제마다 강의 절 스크립트가 **실제로 잰 수치**를 합격선으로 둔다. 그래야 도면이
-> 달라도 물리가 같은지 기계가 판정한다 — "정답 도면" 이 하나가 아니어야 학생이
-> 스스로 만든다. 체커는 강의와 **같은 정의**로 재야 한다 — 정의가 어긋나 맞는 답이
-> 오답이 된 적이 있다.
 
 > [!important] `.m` 과 `.slx` 이름이 겹치면 안 된다
 > `W03_H_antiwindup.m` 과 `W03_H_antiwindup.slx` 가 함께 있으면 MATLAB 이 **모델을 열고**

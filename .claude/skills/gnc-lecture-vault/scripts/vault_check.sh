@@ -47,6 +47,9 @@ mds() {
 # "숙제도 MD 파일만 있는데 PDF로도 변환해서 같은 폴더에 넣어줘".
 #   빠지는 것  lectures/README.md,  lectures/WXX_simulink/README.md
 #   들어가는 것 lectures/WXX_simulink/problems|solutions/README.md
+# 그 두 폴더는 W01~W10 에만 있다 — 2026-11-05 부터 새 주차에는 만들지 않는다
+# (standing-orders §15-81). 폴더가 있어야 한다는 규칙은 여기에 없고, 있으면
+# 배포물로 재는 것뿐이다.
 delivered() {
   mds | grep -E '^\./lectures/' \
       | grep -vE '^\./lectures/README\.md$' \

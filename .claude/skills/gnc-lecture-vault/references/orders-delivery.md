@@ -30,6 +30,11 @@
 학생이 받는 것은 전부 PDF 가 함께 있어야 한다. 이름이 `README.md` 라도 **폴더 색인이
 아니라 배포물**이면 예외가 없다.
 
+> [!important] 아래의 `problems/`·`solutions/` 는 W01~W10 의 이야기다
+> 2026-11-05 부터 **새 주차에는 문제지·모범답안을 만들지 않는다** (→ `orders-log-6.md`
+> §15-81). 이 절의 요구는 그대로 살아 있고 대상만 **배포물 일반**이 되었다 — 새 주차에
+> 적용할 때는 `lectures/WXX_*.md` 와 그 PDF 를 보면 된다.
+
 ```bash
 bash _tools/md2pdf.sh lectures/W01_simulink/problems/README.md \
                       lectures/W01_simulink/solutions/README.md
