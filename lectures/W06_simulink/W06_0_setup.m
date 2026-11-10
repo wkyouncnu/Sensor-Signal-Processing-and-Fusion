@@ -53,7 +53,10 @@ n_max  = cfg.n_max;   n_min = cfg.n_min;   % 축 회전수 한계 / shaft-speed 
 
 %  제어 유효행렬. otter_B 가 열 규칙 하나에서 유도한다 (6-1 절).
 %  The control effectiveness matrix, derived by otter_B from the column rule.
-B    = cfg.B;            % [1 1 0; 0 0 1; 0.395 -0.395 1.5]
+B    = cfg.B;            
+% [1 1 0; 
+%  0 0 1; 
+%  0.395 -0.395 1.5]
 Binv = inv(B);           %#ok<MINV>   det B = 0.79, 그래서 역행렬이 있다 / so it exists
 
 %  선미 프로펠러 하나가 낼 수 있는 추력 / what one stern propeller can produce
