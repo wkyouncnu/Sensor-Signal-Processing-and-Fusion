@@ -70,7 +70,7 @@
 | **W02** | PID Control Fundamentals | **완료** (2026-09-21 신설) |
 | **W03** | Surge Speed Control | **완료** |
 | **W04** | Heading Control | **완료** |
-| **A1** | Actuation and the Control Effectiveness Matrix (부록) | **완료** |
+| **A1** | Actuation and the Control Effectiveness Matrix (부록) | **완료**. **부록은 이 하나뿐이다 — `A2` 는 만들지 않는다** (사용자 지시, 2026-11-05 · 11-10 재확인). 배분기·QP 는 W12 안의 절이다 → `orders-log-7.md` §15-82 |
 | **W05** | Waypoint Following and LOS Guidance | **완료** |
 | **W06** | The Bow Thruster: Position Control and Berthing | **완료** (2026-10-27 신설). 실습 문제지·모범답안은 사용자 지시로 만들지 않는다 → `orders-log-6.md` §15-81 |
 | **W07** | Control Allocation | **완료** (2026-09-25) |
