@@ -26,13 +26,20 @@ lbl = {'X  [N]', 'Y  [N]', 'N  [N m]'};
 % thicker so a later one sits on top of them and the overlap shows as a halo.
 lw  = linspace(3.0, 1.2, nL);
 
+% 해가 없는 시각은 곡선을 끊는다 — 그 점의 값은 실행 불가능한 마지막 반복값이고,
+% 이어 그리면 풀린 구간과 구별되지 않는다. `brk` 가 그 자리를 NaN 으로 바꾼다
+% Where there is no solution the curve is broken: the value at such an instant is
+% an infeasible last iterate, and drawing it through would make it
+% indistinguishable from a solved stretch. brk puts a NaN in its place.
+
 %% 그림 ① 요구한 힘과 받은 힘 / figure 1: demanded against received -----------
 fig = figure('Color','w','Position',[60 60 860 620]);
 for r = 1:3
     subplot(3,1,r); hold on; grid on
     h = gobjects(1, nL+1);
     for a = 1:nL
-        h(a+1) = plot(t, RR{a}.act(r,:), 'LineWidth', lw(a), 'Color', cl(a,:));
+        h(a+1) = plot(t, brk(RR{a}.act(r,:), RR{a}.exit), ...
+                      'LineWidth', lw(a), 'Color', cl(a,:));
     end
     % 요구는 **맨 위에** 그린다 — 맞춘 법칙이 가리지 않도록
     % the demand is drawn last, so a law that matches it cannot hide it
@@ -53,7 +60,7 @@ fig = figure('Color','w','Position',[60 60 860 620]);
 
 subplot(2,1,1); hold on; grid on
 for a = 1:nL
-    plot(t, RR{a}.n_cmd(3,:), 'LineWidth', lw(a), 'Color', cl(a,:));
+    plot(t, brk(RR{a}.n_cmd(3,:), RR{a}.exit), 'LineWidth', lw(a), 'Color', cl(a,:));
 end
 yline(cfg.n_max, 'k--', 'LineWidth', 1.2);
 yline(cfg.n_min, 'k--', 'LineWidth', 1.2);
@@ -67,7 +74,8 @@ title(sprintf(['Shaft speed demanded of unit 3 — the limits are n_{max} = %.1f
 
 subplot(2,1,2); hold on; grid on
 for a = 1:nL
-    plot(t, rad2deg(RR{a}.d_cmd(3,:)), 'LineWidth', lw(a), 'Color', cl(a,:));
+    plot(t, brk(rad2deg(RR{a}.d_cmd(3,:)), RR{a}.exit), ...
+         'LineWidth', lw(a), 'Color', cl(a,:));
 end
 am = rad2deg(cfg.alpha_max(1));
 yline( am, 'k--', 'LineWidth', 1.2);
@@ -78,4 +86,12 @@ legend(cellfun(@(R) R.method, RR, 'UniformOutput', false), ...
 title(sprintf('Servo angle demanded of unit 3 — the limit is %.0f deg', am));
 
 W12_save_fig(fig, fullfile(outdir, 'img', 'W12_chain_sat.png'));
+end
+
+% ========================================================================= %
+function y = brk(y, exitflag)
+%BRK  exitflag 가 양수가 아닌 시각을 NaN 으로 바꿔 곡선을 끊는다.
+%     Breaks the curve by replacing the instants whose exitflag is not positive
+%     with NaN.
+y(exitflag <= 0) = NaN;
 end

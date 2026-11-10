@@ -37,21 +37,30 @@ t  = linspace(0, 20, 201);
 TC = [320*sin(0.5*t); 60*cos(0.3*t); 30*sin(0.7*t)];
 RR = cell(1, numel(laws));
 fprintf('\n  (2) tau = [320 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, %d points\n\n', numel(t));
-fprintf('    %-9s %9s %10s %10s %12s %12s\n', 'law', 'max|d|', 'servo lim', ...
-        'rpm lim', 'mean |err|', 'max |err|');
-fprintf('    %-9s %9s %10s %10s %12s %12s\n', '', '[deg]', '[% of t]', ...
-        '[% of t]', '[N]', '[N]');
-fprintf('    %s\n', repmat('-', 1, 67));
+fprintf('    %-9s %9s %10s %10s %12s %12s %7s\n', 'law', 'max|d|', 'servo lim', ...
+        'rpm lim', 'mean |err|', 'max |err|', 'no sol');
+fprintf('    %-9s %9s %10s %10s %12s %12s %7s\n', '', '[deg]', '[% of t]', ...
+        '[% of t]', '[N]', '[N]', '[pts]');
+fprintf('    %s\n', repmat('-', 1, 75));
 for a = 1:numel(laws)
     R = W12_chain(B, cfg, V, P, TC, char(laws(a)));
     R.t = t;  RR{a} = R;
-    e = vecnorm(R.cmd - R.act);
-    fprintf('    %-9s %9.2f %10.1f %10.1f %12.3f %12.3f\n', laws(a), ...
-            max(abs(rad2deg(R.d_cmd(:)))), 100*mean(any(R.sat_d, 1)), ...
-            100*mean(any(R.sat_n, 1)), mean(e), max(e));
+
+    % 해가 없는 점은 통계에서 뺀다. `quadprog` 은 실행 불가능해도 마지막 반복값을
+    % 숫자로 돌려주므로, exitflag 를 읽지 않으면 그 값이 평균에 섞인다
+    % Infeasible points are kept out of the statistics. quadprog returns its last
+    % iterate as a plausible number even when there is no solution, so without
+    % reading the exitflag that value would enter the mean.
+    ok = R.exit > 0;
+    e  = vecnorm(R.cmd(:,ok) - R.act(:,ok));
+    d  = R.d_cmd(:,ok);
+    fprintf('    %-9s %9.2f %10.1f %10.1f %12.3f %12.3f %7d\n', laws(a), ...
+            max(abs(rad2deg(d(:)))), 100*mean(any(R.sat_d(:,ok), 1)), ...
+            100*mean(any(R.sat_n(:,ok), 1)), mean(e), max(e), sum(~ok));
 end
-fprintf('    %s\n', repmat('-', 1, 67));
+fprintf('    %s\n', repmat('-', 1, 75));
 fprintf('    the error is measured out of the motion model, not out of the allocator\n');
+fprintf('    every statistic is taken over the points whose exitflag is positive\n');
 
 %% 표 (3) 새 법칙의 값 / table 3: what the new law costs in time -------------
 %  §12-11 의 표에는 'wls16cap' 이 없다 — 그 절이 돌 때 없던 법칙이다. 캡 행이

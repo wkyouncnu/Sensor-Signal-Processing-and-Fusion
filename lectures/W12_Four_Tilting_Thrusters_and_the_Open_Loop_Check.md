@@ -1528,15 +1528,16 @@ W12_CA(12)
 
   (2) tau = [320 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, 201 points
 
-    law          max|d|  servo lim    rpm lim   mean |err|    max |err|
-                  [deg]   [% of t]   [% of t]          [N]          [N]
-    -------------------------------------------------------------------
-    wpinv         89.76       15.9       41.8        9.049       31.452
-    clip          45.00        0.0       41.8        9.049       31.452
-    wls16         45.00        0.0       41.8        7.353       28.361
-    wls16cap      45.00        0.0        0.0        0.012        0.018
-    -------------------------------------------------------------------
+    law          max|d|  servo lim    rpm lim   mean |err|    max |err|  no sol
+                  [deg]   [% of t]   [% of t]          [N]          [N]   [pts]
+    ---------------------------------------------------------------------------
+    wpinv         89.76       15.9       41.8        9.049       31.452       0
+    clip          45.00        0.0       41.8        9.049       31.452       0
+    wls16         45.00        0.0       41.8        7.353       28.361       0
+    wls16cap      45.00        0.0        0.0        0.012        0.018       0
+    ---------------------------------------------------------------------------
     the error is measured out of the motion model, not out of the allocator
+    every statistic is taken over the points whose exitflag is positive
 
   (3) allocation time over the same 201 demands,  50 Hz budget = 20000 us
 
@@ -1551,6 +1552,8 @@ W12_CA(12)
 ```
 
 Table (1) is the whole of lines 1 to 9 on one demand. The first three laws split $300$ N into $\pm 75$ N per unit and are correct to the column rule, yet two of the four units are driven past the shaft-speed limit, because $75$ N astern exceeds the $66.708$ N of line 4. Only `wls16cap` knows this before the command leaves the allocator: it shifts $10.56$ N of the load from the astern pair onto the ahead pair, where the cap is nearly twice as high, and the demand is then met to $0.009$ N.
+
+The `no sol` column of table (2) counts the demands for which the solver returned a non-positive exit flag. It reads $0$ for all four laws, so each statistic in the row is taken over all $201$ points. That column is not decoration: `quadprog` returns its last iterate as an ordinary number even when the constraints cannot be met, and a mean taken without reading the flag would quietly average that number in. Where the column is not zero the figures below break at those instants rather than drawing through them.
 
 ![Demanded and achieved surge, sway and yaw over the 201-point sweep, with the demand drawn as a black dashed line and each law's achieved force measured out of the motion model; only the law that enforces both limits stays on the demand throughout](W12_simulink/img/W12_chain_tau.png)
 
