@@ -10,8 +10,11 @@ function set_mlfcn(blk, lines, outName, outSize, sampleTime)
 %                 the full path of an existing MATLAB Function block
 %     lines       소스 줄들의 셀 배열. 한 원소가 한 줄
 %                 a cell array of source lines, one per element
-%     outName     크기를 명시할 출력 변수의 이름, 예를 들어 'xdot'
-%                 the output variable to give an explicit size, e.g. 'xdot'
+%     outName     크기를 명시할 출력 변수의 이름, 예를 들어 'xdot'.
+%                 출력이 둘 이상이면 셀로 준다 — {'xdot','tau'} 와 {'[12 1]','[3 1]'}
+%                 the output variable to give an explicit size, e.g. 'xdot';
+%                 for two or more outputs pass cells, {'xdot','tau'} with
+%                 {'[12 1]','[3 1]'}
 %
 %   왜 크기를 명시하는가 / why the size is stated
 %       Simulink 는 출력 크기를 추론하려 하고, 추론에 실패하면 컴파일 시점에야
@@ -59,9 +62,18 @@ end
 n.Script = strjoin(lines, newline);
 
 if nargin >= 4 && ~isempty(outName)
-    d = n.find('-isa','Stateflow.Data','-and','Name',outName);
-    d.DataType = 'double';
-    d.Props.Array.Size = outSize;
+    %  출력이 둘 이상이면 이름과 크기를 셀로 준다 / cells for two or more outputs
+    if ~iscell(outName), outName = {outName}; end
+    if ~iscell(outSize), outSize = {outSize}; end
+    for i = 1:numel(outName)
+        d = n.find('-isa','Stateflow.Data','-and','Name',outName{i});
+        if isempty(d)
+            error('set_mlfcn:noOutput', ...
+                  'the script of %s has no variable named %s', blk, outName{i});
+        end
+        d.DataType = 'double';
+        d.Props.Array.Size = outSize{i};
+    end
 end
 
 if nargin >= 5 && ~isempty(sampleTime)

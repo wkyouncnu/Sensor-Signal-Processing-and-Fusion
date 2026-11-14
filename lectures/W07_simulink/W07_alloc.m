@@ -72,11 +72,11 @@ function [f, info] = W07_alloc(B, tau, method, P)
 %      the demand is infeasible.
 %  (4) 'wls16' 까지는 추력 크기 한계를 제약으로 넣지 않는다. f 를 스칼라로 줄이면
 %      tau 도 같은 비율로 줄어 **방향이 보존**되므로 풀고 나서 한 번 곱해도 된다
-%      (`W07_hw` 의 rho). 'wls16cap' 은 그 한계를 **안에서** 지킨다 — 한 단위만
+%      (`W07_alloc_run` 의 `hw` 의 rho). 'wls16cap' 은 그 한계를 **안에서** 지킨다 — 한 단위만
 %      한계에 닿았을 때 전체를 줄이지 않기 때문에 tau 를 덜 버린다 (§7-12).
 %      Up to 'wls16' the thrust magnitude limit is left out: scaling f scales
 %      tau and preserves its direction, so one multiplication after the solve
-%      is enough (rho in W07_hw). 'wls16cap' enforces it inside instead, which
+%      is enough (rho in the hw helper of W07_alloc_run). 'wls16cap' enforces it inside instead, which
 %      gives up less of tau when only one unit is against its cap.
 %  (5) 회전수 포화는 **별개의 한계가 아니다.** n = sign(T) sqrt(|T|/k) 이므로
 %      |n| <= n_max 는 |T| <= k n_max^2 와 같은 한계를 추력곡선을 통해 본 것일
@@ -85,7 +85,7 @@ function [f, info] = W07_alloc(B, tau, method, P)
 %      same bound as |T| <= k n_max^2, seen through the thrust curve. Ahead and
 %      astern have different k, hence two different cap heights.
 %
-%  See also W07_HW, W07_CHAIN, W07_CA, W07_SL_ALLOC, OTTER_B.
+%  See also W07_ALLOC_RUN, W07_SL_ALLOC, OTTER_B.
 
 if nargin < 4, P = struct; end
 if ~isfield(P,'W'),         P.W = eye(8);              end

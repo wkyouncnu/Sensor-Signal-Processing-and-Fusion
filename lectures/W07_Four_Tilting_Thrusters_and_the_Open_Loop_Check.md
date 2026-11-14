@@ -35,7 +35,6 @@ summary: Four tilting thrusters replace the Otter's two fixed ones — what the 
 > | MATLAB | [MATLAB Onramp](https://matlabacademy.mathworks.com/kr/details/matlab-onramp/gettingstarted) · [Core MATLAB Skills](https://matlabacademy.mathworks.com/details/core-matlab-skills/lpmlcms) |
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · instructor's Simulink lectures [part 1](https://youtu.be/a-afHg_fSaU) · [part 2](https://youtu.be/070Yn0Hw5a0) |
 
-
 > [!tip] Getting the course files, and keeping them current (Windows)
 > <span style="font-size:0.88em">The notes, models and scripts are kept in one Git repository that is updated through the semester. Clone it once; before every class, pull. A pull downloads only what has changed since the last one.</span>
 >
@@ -51,7 +50,6 @@ summary: Four tilting thrusters replace the Otter's two fixed ones — what the 
 > - The MSS toolbox is not part of the repository. The weeks that simulate the Otter need it at `Tools\MSS` inside the cloned folder, and `_tools\mss_path.m` finds it there in either release layout — `Tools\MSS\VESSELS\otter.m` in the older releases, or `Tools\MSS\CRAFT\USV\models\otter.m` in the current master.
 > - **The two releases are not the same vessel.** The figures printed in these notes were measured with the older layout. Terminal surge speed agrees at 1.0286 m/s, but the current master turns 25.5 % faster under differential thrust, 0.1276 rad/s against 0.1017 rad/s. `mss_path` therefore prefers the older layout when both are present, and warns when only the newer one is available, so a reading that cannot reproduce is announced rather than silent.
 > - **A 118 MB folder disappears on the first pull after 2026-10-27.** `lectures\MSS-master` held a copy of MSS until then. It sat outside `Tools\MSS`, so no course script could reach it, and it only made cloning slower. Its removal is expected and is not a fault. Any file kept inside that folder must be moved elsewhere before pulling.
-
 
 - **Course**: USV Guidance, Navigation and Control (Graduate)
 - **Department**: Autonomous Vehicle System Engineering, Chungnam National University
@@ -73,7 +71,7 @@ Upon completion of this week, the learner is able to:
 3. Identify the four places in `otter.m` that must change to carry four tilting units, and state why the hull hydrodynamics are not among them.
 4. Predict the surge force left over when a shaft speed $+n$ is opposed by $-n$, compute the astern speed that cancels it, and confirm both against the measured table.
 5. Derive $N = \bar{x}\,Y$ with $\bar{x} = (l_f - l_a)/2$ for four equally tilted thrusters, predict the residual yaw moment of a symmetric sway command to three decimal places, and derive the thrust ratio that removes it.
-6. Distinguish a check that the equations are right from a check that the model is wired to those equations, and state why re-integrating the logged inputs outside Simulink is the second of these while a single-instant acceleration comparison is neither.
+6. Distinguish a check on the delivered force from a check on the resulting motion, say why the force is read off the motion model rather than rebuilt from the logged states, and derive the instant from which the two computations of $\boldsymbol{\tau}$ may be compared.
 7. State why the three measured asymmetries make an allocation necessary rather than optional, and name the input, the output and the fixed data of the allocation stage.
 8. Derive the minimum-norm allocation $\mathbf{f} = \mathbf{B}^\top(\mathbf{B}\mathbf{B}^\top)^{-1}\boldsymbol{\tau}_d$ from a Lagrange multiplier, invert the thrust curve to $n_i$ and $\delta_i$, and say why the thrust cap needs one scalar after the solve while the servo limit does not.
 9. State what a weight matrix changes and what it cannot change on this geometry, explain why only the ratios of its entries matter, and tune it to move load between units rather than to reduce tilt.
@@ -94,7 +92,7 @@ Upon completion of this week, the learner is able to:
 | Configuration | `otter_config('quad_tilt')` |
 | Model | `W07_openloop.slx`, written by `W07_1_build_openloop.m` |
 | Solver | fixed-step `ode4`, $h = 0.02$ s |
-| Allocation scripts | `W07_alloc.m` (eight laws behind one flag), `W07_hw.m` (thrust-curve inverse) — no model required |
+| Allocation scripts | `W07_alloc_run.m` (one file, §7-8 to §7-13, with the thrust-curve inverse as its local `hw` helper) calling `W07_alloc.m` (eight laws behind one flag) |
 | Scope of this week | §7-0 to §7-6 are **open loop only** — eight numbers given by hand. §7-7 to §7-12 add the **allocation** that produces those eight numbers from three. **No controller and no guidance in either half** |
 
 ---
@@ -283,29 +281,9 @@ Expected output:
   PASS  (tol 1e-09, 200 random states)
 ```
 
-**Reading the output against the derivation.**
-
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| `(b)` | exactly zero, not merely small | line 9 — at $\delta = 0$ the forward pair evaluates the arithmetic of `otter.m`, in the same order |
-| `(a)` | $3.55\times10^{-15}$, one rounding step | line 9 — $s_3 = s_4 = -1$, so the aft pair gives `otter.m` with every component of $\boldsymbol{\tau}$ reversed |
-| `(c)` | $7.19\times10^{-14}$ over 200 random states | line 7 — the scalar form and $B\mathbf{f}$ are one expression in two floating-point orders |
-| `(d)` | zero | the model clips **both** $n$ and $\delta$, so a command outside the envelope is received at the envelope |
-| `rank 3, null space 5` | printed, not asserted | lines 5 and 6 |
-
-**What the output says**
-
-- The four-unit model is a strict extension: nothing in it changes what the first eleven weeks measured.
-
 | What to try | What to watch |
 |---|---|
 | `verify_otter_tilt4` twice in a row | only `(c)` changes, in its last digits — the random states feed the $B\mathbf{f}$ comparison alone |
-
-> [!tip] In class
-> - **Purpose** — fix two ideas: a tilting unit is two unknowns, and the mounting sign lives in $B$.
-> - **Point to** — the third row of $B$: each pair contributes $s_i(-y_i)$ then $s_i(+x_i)$, and that is the whole of the column rule.
-> - **Ask** — "Eight unknowns and three equations. How many solutions?" Five dimensions of them, which is why an allocator is a choice and not a calculation.
-> - **Take away** — the forward pair at $\delta = 0$ **is** `otter`, to the last bit; the aft pair is `otter` running backwards.
 
 ## 7-2. What had to change inside the motion model
 
@@ -436,7 +414,7 @@ Change 3 keeps `otter.m`'s shaft-speed limit and its $k_{pos}$ / $k_{neg}$ split
 
 ## 7-3. The force eight numbers make
 
-**What is observed.** Experiment 7-3 commands eight sets of eight numbers and compares two independent computations of $\boldsymbol{\tau}$: the product $B\mathbf{f}$ of §7-1, and the force measured back out of `otter_tilt4` from the acceleration it produces. The worst disagreement over the eight scenarios is $2.8\times10^{-14}$ N or N·m.
+**What is observed.** Experiment 7-3 commands eight sets of eight numbers and compares two independent computations of $\boldsymbol{\tau}$: the product $B\mathbf{f}$ of §7-1, summed out by hand in the script, and the $[X\;Y\;N]$ the motion model built for itself and returned on its second output. The worst disagreement over the eight scenarios is $2.8\times10^{-14}$ N or N·m.
 
 - the eight scenarios isolate one effect each, and are reused by §7-4, §7-5 and §7-6
 - S8 asks for $70^\circ$, and the table records what the model received
@@ -444,27 +422,30 @@ Change 3 keeps `otter.m`'s shaft-speed limit and its $k_{pos}$ / $k_{neg}$ split
 **The result.** The model is driven open loop: eight constants on the canvas, a saturation stage, the plant, and the log.
 
 $$
-\boldsymbol{\tau}_{\text{measured}} \;=\; M\bigl(\dot{\mathbf{x}}_{\text{on}} - \dot{\mathbf{x}}_{\text{off}}\bigr)_{1:6}
+\boldsymbol{\tau}_{\text{hand}} = \sum_{i=1}^{4} s_i T_i
+\begin{bmatrix} \cos\delta_i \\ \sin\delta_i \\ x_i\sin\delta_i - y_i\cos\delta_i \end{bmatrix},
+\qquad
+\boldsymbol{\tau}_{\text{logged}} = \text{columns } 15\text{–}17 \text{ of the log}
 $$
 
 | Symbol | Quantity | Value · source |
 |---|---|---|
-| $M$ | $6\times 6$ mass matrix, rigid body plus added mass | from `otter_tilt4` at the same state |
-| $\dot{\mathbf{x}}_{\text{on}}$ | acceleration with the commanded $(n, \delta)$ | `otter_tilt4(x, n, delta, …)` |
-| $\dot{\mathbf{x}}_{\text{off}}$ | acceleration with $n = 0$ | the same call with the thrust removed |
-| residual | $\max\lvert B\mathbf{f} - [X\;Y\;N]^{\mathsf T}\rvert$ | asserted below $10^{-12}$ inside the script |
+| $\boldsymbol{\tau}_{\text{hand}}$ | the column rule of §7-1, summed in the script | `W07_openloop_run`, block (1) |
+| $\boldsymbol{\tau}_{\text{logged}}$ | the force the motion model used to integrate the hull | second output of `otter_tilt4`, logged as columns 15 to 17 |
+| $n_{\text{post}}, \delta_{\text{post}}$ | shaft speed and tilt angle **after** the servo stage | columns 7 to 10 and 11 to 14 of the same log |
+| residual | $\max\lvert\boldsymbol{\tau}_{\text{hand}} - \boldsymbol{\tau}_{\text{logged}}\rvert$ | $2.8\times10^{-14}$, read from $t = 0.58$ s on |
 
 **Derivation, one line at a time.**
 
-1. The six-row acceleration of the vessel is $\dot{\boldsymbol{\nu}} = M^{-1}(\boldsymbol{\tau} - \mathbf{d}(\boldsymbol{\nu}, \mathbf{x}))$, where $\mathbf{d}$ collects damping, Coriolis and restoring terms. Those terms depend on the state but not on the thrust.
-2. Evaluating the same state twice, once with the thrust and once with $n = 0$, therefore differences $\mathbf{d}$ away: $\dot{\boldsymbol{\nu}}_{\text{on}} - \dot{\boldsymbol{\nu}}_{\text{off}} = M^{-1}\boldsymbol{\tau}$.
-3. Multiplying back by $M$ recovers $\boldsymbol{\tau}$ exactly, not approximately, because acceleration is affine in the thrust. This is the same argument Week 6 used to show its superposition had been exact.
-4. The comparison is run **at rest**, $\mathbf{x} = \mathbf{0}$, so that no state-dependent term can hide a sign error by cancelling it.
+1. The motion model forms $\boldsymbol{\tau}$ before it integrates anything. Rows 1, 2 and 6 are built from the post-servo $(n, \delta)$ by the column rule, and the second output returns that vector unchanged, so the delivered force is read rather than reconstructed. No block outside the hull rebuilds it.
+2. The script forms the same three numbers from the clipped command by hand. The two paths share no code, so a wrong column, a wrong sign or a wrong arm on either side opens a residual far above $10^{-14}$.
+3. Reading the force out of the plant rather than reconstructing it from the logged states avoids a trap. The log carries 6 of the 12 states — $[u\;v\;r\;N\;E\;\psi]$ — and under sway the missing six, among them $w$, $p$, $q$ and $\phi$, are not zero, so a force rebuilt from an acceleration evaluated on the logged six would be evaluated at a state the vessel was never in.
+4. The comparison runs over the whole 30 s rather than at one instant, so it covers the wiring as well as the arithmetic: a tap taken before the saturation stage would reproduce the command and not the force, and S3 to S8 would disagree.
 5. The tilt command is clipped before it reaches the column rule, so the table prints the clipped angle. A case that asks for more than $45^\circ$ must therefore produce the row of the case that asked for exactly $45^\circ$.
 
 ![The open-loop model: eight constants, the saturation stage, the plant, and the log](W07_simulink/img/W07_openloop.png)
 
-Eight Constant blocks carry the eight numbers, two Mux bars gather them into vectors, the tan subsystem applies the physical envelope, the green block is `otter_tilt4`, and the grey block logs `[u v r N E psi]` followed by the post-servo $(n, \delta)$ tapped from the branches below.
+Eight Constant blocks carry the eight numbers, two Mux bars gather them into vectors, the tan subsystem applies the physical envelope, the green block is `otter_tilt4`, and the grey block logs `[u v r N E psi]`, then the post-servo $(n, \delta)$ tapped from the branches below, and last the $[X\;Y\;N]$ the plant returns on its second output.
 
 ![The servo stage: the shaft clip, and the angle clipped before it is rate-limited](W07_simulink/img/W07_openloop_servo.png)
 
@@ -475,71 +456,69 @@ The upper lane clips the shaft speed to $[-101.737, +103.931]$ rad/s. The lower 
 
 ### Experiment 7-3 · Eight commands, and the force each one makes (20 min)
 
-**What it measures.** Lines 3 and 5: that the force measured out of the plant is the force the column rule predicts, and that the servo clip is visible in the table.
+**What it measures.** Lines 2 and 5: that the force the plant reports is the force the column rule predicts, and that the servo clip is visible in the table.
 
 **The model.** `W07_openloop.slx`. Between runs only the eight constants change; the wiring does not.
 
-**Opening and running.** The runner takes a selection, so one scenario can be re-examined without redrawing the other seven.
+**Opening and running.** One file runs the whole of Part 1. Its `S` list holds one line per scenario, and a `%` in front of a line drops that scenario, so one case can be re-examined without redrawing the other seven.
 
 ```matlab
 W07_0_setup
 open_system('W07_openloop')    % Run — 궤적과 상태량이 뜬다 / the track appears
-W07_V_openloop                 % 여덟 전부 / all eight, and the three tables
-W07_V_openloop('S5')           % 하나만 / one of them, its own sheet redrawn
-W07_V_openloop({'S5','S6'})    % 둘을 견준다 / two, to be compared
+W07_openloop_run               % S 에 남은 것만 돈다 / whatever is left in S runs
 ```
 
-Expected output, the first of three tables printed by that script:
+The `S` list inside `W07_openloop_run.m`, with nothing commented out, is the full eight:
 
-```
-  (1) hand formula against the motion model, at rest
-
-      tau from the hand formula    X = sum si Ti cos di
-                                   Y = sum si Ti sin di
-                                   N = sum si (xi sin di - yi cos di) Ti
-                                   s = [+1 +1 -1 -1], the mounting signs
-      tau measured out of otter_tilt4's acceleration, same state
-
-    case  n [rad/s] after clip       delta [deg] clipped       X [N]    Y [N]  N [N m]    resid
-    -------------------------------------------------------------------------------------------
-    S1    [ 60.0  60.0 -60.0 -60.0]  [   0    0    0    0]   126.180    0.000    0.000  0.0e+00
-    S2    [-60.0 -60.0  60.0  60.0]  [   0    0    0    0]  -126.180   -0.000    0.000  1.4e-14
-    S3    [ 60.0  60.0  60.0  60.0]  [  45   45   45   45]     0.000    0.000  141.025  2.8e-14
-    S4    [ 60.0  60.0  60.0  60.0]  [ -45  -45  -45  -45]     0.000    0.000 -141.025  2.8e-14
-    S5    [ 60.0  60.0  60.0  60.0]  [  45   45  -45  -45]     0.000  112.820   28.205  1.4e-14
-    S6    [ 60.0  60.0  73.5  73.5]  [  45   45  -45  -45]   -28.205  141.025    0.000  2.2e-14
-    S7    [ 60.0  60.0 -60.0 -60.0]  [  45   45    0    0]   102.814   56.410   84.615  2.8e-14
-    S8    [ 60.0  60.0  60.0  60.0]  [  45   45  -45  -45]     0.000  112.820   28.205  1.4e-14
-    -------------------------------------------------------------------------------------------
-    worst residual 2.8e-14 N or N m over the 8 scenarios
+```matlab
+S = { ...
+    'S1'  [ 60  60 -60 -60]  [  0   0   0   0]  'surge ahead'
+    'S2'  [-60 -60  60  60]  [  0   0   0   0]  'surge astern'
+    'S3'  [ 60  60  60  60]  [ 45  45  45  45]  'yaw to starboard'
+    'S4'  [ 60  60  60  60]  [-45 -45 -45 -45]  'yaw to port'
+    'S5'  [ 60  60  60  60]  [ 45  45 -45 -45]  'sway to starboard'
+    'S6'  [ 60  60  ns  ns]  [ 45  45 -45 -45]  'sway, moment cancelled'
+    'S7'  [ 60  60 -60 -60]  [ 45  45   0   0]  'turn while making way'
+    'S8'  [ 60  60  60  60]  [ 70  70 -70 -70]  'tilt beyond the servo limit'
+};
 ```
 
-**Reading the table against the derivation.**
+The first line left in `S` is also left in the base workspace as `n_cmd` and `d_cmd`, so pressing **Run** in the open model afterwards repeats that one scenario without any further editing.
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| the `resid` column | at most $2.8\times10^{-14}$ | line 3 — the two computations are the same expression, so only rounding separates them |
-| S1, $X = 126.180$ N | $2(39.888 + 23.202)$ | §7-1 line 9 at $\delta = 0$: the bow pair ahead, and the stern pair ahead too, because $s_i = -1$ reverses a negative shaft speed |
-| S2, $X = -126.180$ N | the same magnitude, mirrored | the mounting sign swaps which pair runs astern, so the asymmetric thrust curve cancels out of the total |
-| S3, $X = Y = 0$ with $N = 141.025$ N·m | $2(l_f + l_a)T\sin 45^\circ$ | §7-1 line 7 — the four force vectors sum to zero and only their moments survive |
-| S5, $N = 28.205$ N·m although a pure sway was asked | $2(l_f - l_a)T\sin 45^\circ$ | §7-4 — the stations are not symmetric about CO |
-| S6, the commanded $73.5$ rad/s | $60\sqrt{1.5}$ | §7-4 — the stern speed that cancels that moment, at the price of $-28.205$ N of surge |
-| S8 identical to S5 | the `delta` column reads 45, although 70 was asked | line 5, and §7-2 |
+Expected output, the first of the two tables printed by that script:
 
-**What the table says**
+```
+  W07 open loop  --  8 of 8 scenarios selected : S1 S2 S3 S4 S5 S6 S7 S8
+  the base workspace now holds S1, so Run in W07_openloop reproduces it
 
-- The eight numbers reach the hull as the column rule says they will, and nothing in the wiring alters them.
+  (1) the hand formula against the force the hull reports
+
+      X = sum si Ti cos di,   Y = sum si Ti sin di
+      N = sum si (xi sin di - yi cos di) Ti
+      s = [+1 +1 -1 -1], the mounting signs
+      tau is column 15 to 17 of the log: what otter_tilt4 built for
+      itself out of the post-servo n and delta
+
+    case  n [rad/s] after servo      delta [deg] clipped       X [N]    Y [N]  N [N m]    resid  clip
+    ---------------------------------------------------------------------------------------------------
+    S1    [ 60.0  60.0 -60.0 -60.0]  [   0    0    0    0]   126.180    0.000    0.000  0.0e+00  n 0  d 0
+    S2    [-60.0 -60.0  60.0  60.0]  [   0    0    0    0]  -126.180   -0.000    0.000  0.0e+00  n 0  d 0
+    S3    [ 60.0  60.0  60.0  60.0]  [  45   45   45   45]     0.000    0.000  141.025  2.8e-14  n 0  d 1
+    S4    [ 60.0  60.0  60.0  60.0]  [ -45  -45  -45  -45]     0.000    0.000 -141.025  2.8e-14  n 0  d 1
+    S5    [ 60.0  60.0  60.0  60.0]  [  45   45  -45  -45]     0.000  112.820   28.205  3.6e-15  n 0  d 1
+    S6    [ 60.0  60.0  73.5  73.5]  [  45   45  -45  -45]   -28.205  141.025    0.000  2.1e-14  n 0  d 1
+    S7    [ 60.0  60.0 -60.0 -60.0]  [  45   45    0    0]   102.814   56.410   84.615  1.4e-14  n 0  d 1
+    S8    [ 60.0  60.0  60.0  60.0]  [  45   45  -45  -45]     0.000  112.820   28.205  3.6e-15  n 0  d 1
+    ---------------------------------------------------------------------------------------------------
+    worst 2.8e-14 N or N m over the 8 scenarios, from t = 0.58 s on
+```
+
+The `clip` column flags whether any unit ended the run sitting on a limit: `d 1` on S3 to S8 is a tilt angle at $\pm 45^\circ$, which for S8 is the $70^\circ$ brought down to the limit.
 
 | What to try | What to watch |
 |---|---|
-| `W07_V_openloop('S1')` | the S1 sheet alone: surge only, and the vessel of Weeks 1 to 6 is back |
-| `W07_V_openloop({'S5','S6'})` | two sheets and a two-curve overlay: the leftover moment, and the same crab with that moment cancelled |
-
-> [!tip] In class
-> - **Purpose** — separate "the equations are right" from "the vessel does what was wanted".
-> - **Point to** — the S1 and S2 rows. Both reach $126.180$ N although the thrust curve is far from symmetric, because the mounting sign decides which pair runs astern.
-> - **Ask** — "S8 asked for $70^\circ$. Which column shows that it did not get it?" The `delta` column, which prints what the plant received.
-> - **Take away** — a residual of $10^{-14}$ says the arithmetic is right; it says nothing about whether the force was the right force.
+| leave only the `'S1'` line in `S` | the S1 sheet alone: surge only, and the vessel of Weeks 1 to 6 is back |
+| leave only the `'S5'` and `'S6'` lines in `S` | two sheets and a two-curve overlay: the leftover moment, and the same crab with that moment cancelled |
 
 ## 7-4. Three asymmetries that break the symmetric guess
 
@@ -594,52 +573,30 @@ $$
 
 **What it measures.** Lines 3, 4, 7, 8 and 9, each against a row of table (1).
 
-**The model.** The same `W07_openloop.slx`. `W07_tab_track` prints the three asymmetries below table (3), from the same eight runs.
+**The model.** The same `W07_openloop.slx`. `W07_openloop_run` prints the three asymmetries below table (2), from the same eight runs.
 
 **Opening and running.**
 
 ```matlab
-W07_V_openloop                 % 여덟 줄 전부 / all eight rows
-W07_V_openloop({'S5','S6'})    % 두 번째 비대칭만 / the second asymmetry alone
+W07_openloop_run               % S 전부 — 여덟 줄 / all of S, all eight rows
 ```
 
-Expected output, the block printed below table (3):
+Leaving only the `'S5'` and `'S6'` lines in `S` isolates the second asymmetry.
+
+Expected output, the block printed below table (2):
 
 ```
-      the three asymmetries this week turns on
-        thrust curve   +60 rad/s gives +39.888 N, -60 rad/s gives -23.202 N, so
-                       the pair running forward carries 1.72 times the pair
-                       running astern -- and yet S1 and S2 reach the SAME
-                       +126.180 N, because the mirrored mounting swaps which
-                       pair is the one running astern
-        the stations   l_f = 1.50 m forward, l_a = 1.00 m aft, so S5 crabs with
-                        +28.205 N m of yaw left over, and S6 cancels that moment
-                       at n = 73.485 rad/s only by letting  -28.205 N of surge
-                       appear: no EQUAL-thrust sway inside +-45 deg is yaw-free
-        the servo      S8 asks for 70 deg and is given 45 deg, so its row of
-                       table (1) is S5's row exactly
+      thrust curve   +60 rad/s gives +39.888 N, -60 rad/s gives -23.202 N
+      the stations   l_f = 1.50 m forward, l_a = 1.00 m aft
+      the servo      +-45 deg, so 70 deg is given as 45 deg
 ```
 
-**Reading the output against the derivation.**
-
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| `1.72 times` | the $39.888/23.202$ split inside S1 | line 3 — $k_{pos}/k_{neg}$ |
-| `the SAME +126.180 N` | the S1 and S2 $X$ columns | line 3 — the mounting signs swap which pair runs astern |
-| `+28.205 N m of yaw` | the S5 and S8 $N$ columns | line 7 — $\bar{x}Y$ with $\bar{x} = 0.25$ m |
-| `-28.205 N of surge` | the S6 $X$ column, with $N = 0.000$ | line 8 — the moment traded for a surge |
-| `given 45 deg` | the S8 `delta` column | line 9 |
+Three lines, one per asymmetry, and each is read against a row above it: the thrust curve against S1 and S2, the stations against S5 and S6, the servo against S8.
 
 | What to try | What to watch |
 |---|---|
-| `W07_V_openloop('S6')` alone | $N = 0.000$ N·m against S5's $+28.205$, and $X$ going from $0$ to $-28.205$ N |
+| leave only the `'S6'` line in `S` | $N = 0.000$ N·m against S5's $+28.205$, and $X$ going from $0$ to $-28.205$ N |
 | `d_deg = [90 90 -90 -90]'` in `W07_0_setup`, expecting a pure sway | the table returns S5's row. The servo refuses the extra $45^\circ$ — line 9, not a sway |
-
-> [!tip] In class
-> - **Purpose** — show that the obstacle to commanding this vessel is the vessel, not the arithmetic.
-> - **Point to** — cell (b) of the figure: one arrow, offset $0.25$ m, and the yaw follows from the offset alone.
-> - **Ask** — "Which of the three would disappear if the hull were symmetric fore and aft?" Only the second. The thrust curve and the servo belong to the hardware.
-> - **Take away** — $\bar{x} = (l_f - l_a)/2 = 0.25$ m, and $N = \bar{x}Y$.
 
 ## 7-5. The track those forces produce
 
@@ -664,7 +621,7 @@ $$
 | $U$ | total speed over the water | read at $t = 30$ s |
 | $\beta$ | crab angle, body $x$ to the velocity | positive to starboard |
 | $R$ | radius of the steady turn | $U/\lvert r\rvert$; infinite when $r = 0$ |
-| $T_{final}$ | run length for these readings | 30 s, set inside `W07_tab_reint` |
+| $T_{final}$ | run length for these readings | 30 s, from `W07_vars` |
 
 **Derivation, one line at a time.**
 
@@ -684,16 +641,13 @@ $$
 **Opening and running.**
 
 ```matlab
-W07_V_openloop                 % 여덟 장 전부 / all eight sheets
-W07_V_openloop('S5')           % 한 장만 다시 / that one sheet again
+W07_openloop_run               % S 전부 — 여덟 장 / all of S, all eight sheets
 ```
 
-Expected output, the third table:
+Expected output, the second table:
 
 ```
-  (3) the motion those forces produce, scenario by scenario
-
-      every value is read at t = 30 s, by when all 8 have settled
+  (2) the motion those forces produce, read at t = 30 s
 
     case  command                      U [m/s]  crab [deg]  r [deg/s]  radius [m]
     ----------------------------------------------------------------------------
@@ -733,93 +687,65 @@ The overlay below is kept for comparison only. S8 is drawn dashed over S5, and t
 | What to try | What to watch |
 |---|---|
 | `T_final = 120; animate = 1;` then Run | the hull drawn along the circle; S5 closes its $5.64$ m circle in about 47 s |
-| `W07_V_openloop({'S5','S6'})` | two sheets and no overlay file written — a partial run never overwrites the figure this section embeds |
+| leave only the `'S5'` and `'S6'` lines in `S` | two sheets and no overlay file written — a partial run never overwrites the figure this section embeds |
 
-> [!tip] In class
-> - **Purpose** — connect a force in body axes to a track on the water, with nothing in between.
-> - **Point to** — the S5 hull symbols on the track: the bow points well off the direction of travel.
-> - **Ask** — "S7's force is at $28.74^\circ$. Why does the hull crab at only $5.89^\circ$?" Because sway is damped far harder than surge; the equilibrium is not the force direction.
-> - **Take away** — an open-loop command gives a repeatable circle, and a circle is not a mission.
+## 7-6. When the comparison may be read
 
-## 7-6. Whether the model is the equations
+**What is observed.** Table (1) states a window: `from t = 0.58 s on`. Before that instant the hand formula and the logged force genuinely differ, and the difference is not an error. The tilt servo is still travelling.
 
-**What is observed.** Experiment 7-6 re-integrates each of the eight 30-s runs outside Simulink, with the same fixed-step `ode4` and the same step, driven at every step by the $(n, \delta)$ the model actually applied. The worst disagreement in position or speed over all eight runs is exactly $0.00\mathrm{e}{+}00$.
+- $0.58$ s is not a tuned number: it is the servo rate limit plus four solver steps
+- the window is computed from the **clipped** command, so S8 gets S5's window
 
-- the driving signal is the **post-servo** pair read back from the log, not the command
-- the heading column disagrees at $1.02\times10^{-13}$ deg at worst, which is the unwrapping, not the dynamics
+**The result.** The instant from which the residual is read follows from the rate limit and the step.
 
-**The result.** Two different checks, and neither substitutes for the other.
+$$
+t_s \;=\; \frac{\max_i\lvert\delta_i\rvert}{\dot\delta_{\max}} \;+\; 4h
+\;=\; \frac{45^\circ}{90^\circ/\text{s}} + 4(0.02\ \text{s}) \;=\; 0.58\ \text{s}
+$$
 
-| Check | What it would catch | What it cannot catch |
+| Symbol | Quantity | Value · source |
 |---|---|---|
-| table (1) — hand formula against `otter_tilt4` | a wrong column, a wrong sign, a wrong arm | a model wired to the wrong signal, a wrong solver, a wrong step |
-| table (2) — the model against independent re-integration | wiring, solver, step, saturation order | an error present in `otter_tilt4` itself, which both sides share |
+| $\max_i\lvert\delta_i\rvert$ | largest clipped tilt command of the scenario | $45^\circ$ for S3 to S8, $0^\circ$ for S1 and S2 |
+| $\dot\delta_{\max}$ | servo rate limit | $90^\circ$/s — `alpha_rlim`, `otter_config('quad_tilt')` |
+| $h$ | fixed solver step | $0.02$ s — `W07_vars` |
+| $t_s$ | first instant of the comparison window | $0.58$ s — printed on the last line of table (1) |
 
 **Derivation, one line at a time.**
 
-1. Table (1) compares two evaluations of the same function at one state. It therefore tests the function and nothing downstream of it.
-2. A test of the model must re-run the model's own trajectory from an independent integrator. Writing the integrator by hand, in four lines of Runge–Kutta, removes Simulink from the comparison entirely.
-3. The independent run must be given the same input the model received, which is **not** the command: the servo clipped it. Reading $(n, \delta)$ back out of the log, where they are tapped after the saturation stage, supplies the input actually applied.
-4. The same fixed-step `ode4` at $h = 0.02$ s must be used. A variable-step solver on one side and a fixed step on the other would disagree at the step-error level and say nothing about the wiring.
-5. A single-instant acceleration comparison would not do this job. The log carries 6 of the 12 states — $[u\;v\;r\;N\;E\;\psi]$ — and under sway the missing six, among them $w$, $p$, $q$ and $\phi$, are not zero. An acceleration reconstructed from the logged six would be evaluated at a state the vessel was never in.
-6. Re-integration avoids that trap because it never reads the model's state: it starts from the same $\mathbf{x}_0$, which is known in full, and advances its own twelve states.
-7. Agreement to $0.00\mathrm{e}{+}00$ in position therefore says the two integrations performed bit-identical arithmetic, which is the strongest statement available: same equations, same inputs, same solver, same step.
-8. The heading residual of $1.02\times10^{-13}$ deg is not a dynamics disagreement. The log stores $\psi$ in degrees and the comparison takes the smallest signed angle, so the residual is the cost of two conversions.
+1. The hand formula is evaluated once per scenario, on the clipped command. It is the force of the angle the servo will **reach**, not of the angle it holds at a given instant.
+2. The plant builds its force afresh every step, out of the angle the rate limiter has reached by then. From $\delta = 0$ that angle climbs at $\dot\delta_{\max}$, so the two are unequal for as long as it climbs.
+3. A rate limiter covers $\lvert\delta\rvert$ in $\lvert\delta\rvert/\dot\delta_{\max}$, which is $0.5$ s for the $45^\circ$ of S3 to S8 and zero for the two surge rows.
+4. Four steps are added so that the first sample compared is taken after arrival rather than on the step that straddles it. Nothing is tuned here: $4h$ is $0.08$ s at the step the model runs.
+5. From $t_s$ on, both sides hold the same constant angle, and table (1) reports $10^{-14}$ — the double-precision floor. Two independent transcriptions of the column rule agree to the last bits.
+6. What this does not reach is the integration. The force is read from the model, not integrated by the script, so neither table can be wrong about the solver or the step without being wrong about something else first.
 
-### Experiment 7-6 · The model against an integrator written by hand (20 min)
+| Check | What it catches | What it cannot catch |
+|---|---|---|
+| table (1), the force | a wrong column, sign or arm; a tap taken on the wrong signal; the order of clip and rate limit | an error inside the hull's own equations, and anything about the integration |
+| table (2), the motion | that the force reaches the equilibrium §7-5 derives, and that S8 lies on S5 | the solver and the step, which are tested by halving $h$ and seeing whether the table moves |
 
-**What it measures.** Lines 3, 4 and 7: that the wiring, the solver and the saturation order are what the equations assume.
+### Experiment 7-6 · The window, and what each table covers (15 min)
 
-**The model.** The same eight runs. The comparison lives in `W07_tab_reint`, which calls `otter_tilt4` directly inside its own Runge–Kutta loop.
+**What it measures.** Lines 3 and 4: that the printed window is the servo rate limit and the step, and nothing else.
+
+**The model.** The same eight runs. Block (1) of `W07_openloop_run` prints the window on the last line of table (1).
 
 **Opening and running.**
 
 ```matlab
-W07_V_openloop                 % 블록 (2) 가 재적분을 한다 / block (2) re-integrates
+W07_openloop_run               % 창은 (1) 의 마지막 줄 / the window is (1)'s last line
 ```
 
-Expected output, the second table:
+Expected output, that last line:
 
 ```
-  (2) the Simulink model against the same equations, integrated outside it
-
-      the same fixed-step ode4 and the same step 0.020 s, started from x0,
-      driven at every step by the (n, delta) the model actually applied —
-      the post-servo values read back from the log
-
-    case   max |dN| [m]  max |dE| [m]  max |dpsi| [deg]  max |du| [m/s]   clip
-    ------------------------------------------------------------------------------
-    S1        0.00e+00      0.00e+00          0.00e+00        0.00e+00   n 0  d 0
-    S2        0.00e+00      0.00e+00          0.00e+00        0.00e+00   n 0  d 0
-    S3        0.00e+00      0.00e+00          1.02e-13        0.00e+00   n 0  d 1
-    S4        0.00e+00      0.00e+00          1.02e-13        0.00e+00   n 0  d 1
-    S5        0.00e+00      0.00e+00          2.54e-14        0.00e+00   n 0  d 1
-    S6        0.00e+00      0.00e+00          0.00e+00        0.00e+00   n 0  d 1
-    S7        0.00e+00      0.00e+00          1.02e-13        0.00e+00   n 0  d 1
-    S8        0.00e+00      0.00e+00          2.54e-14        0.00e+00   n 0  d 1
-    ------------------------------------------------------------------------------
-    worst 0.0e+00 m or m/s over the 8 30 s runs
+    worst 2.8e-14 N or N m over the 8 scenarios, from t = 0.58 s on
 ```
-
-**Reading the table against the derivation.**
-
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| `max dN`, `max dE`, `max du` | exactly zero, all eight runs | line 7 |
-| `max dpsi` | at most $1.02\times10^{-13}$ deg | line 8 — the conversion, not the dynamics |
-| `d 1` on S3 to S8 | the tilt saturation bound during those runs | line 3 — the input re-integrated is the clipped one |
-| `n 0` everywhere | the shaft limit never bound | $60 < 103.931$ and $73.485 < 103.931$ |
 
 | What to try | What to watch |
 |---|---|
-| `h = 0.05;` then `W07_V_openloop` | still zero. The agreement is between two integrators, so a coarser step moves both together |
-| drive the re-integration with `n_cmd` instead of the logged `n` | S8 stops agreeing, because the command is $70^\circ$ and the plant received $45^\circ$ — line 3 |
-
-> [!tip] In class
-> - **Purpose** — separate a check of the equations from a check of the model, and show that this week has both.
-> - **Point to** — the `clip` column. The re-integration agrees **because** it was given the clipped input.
-> - **Ask** — "Why not just compare accelerations at one instant?" Because the log carries six of twelve states, and the other six are not zero under sway.
-> - **Take away** — zero is a stronger result than small, and it is only available when both sides run the same solver on the same input.
+| replace line 29 of `W07_vars` with `V.alpha_rate = deg2rad(45);` | the window moves to $45/45 + 0.08 = 1.08$ s and the residual stays on the $10^{-14}$ floor: the force depends on where the servo arrived, not on how fast it got there |
+| `V.h = 0.01;` in `W07_vars` | table (2) should not move in its printed digits. If it does, the step was too coarse for the stiffening yaw damping of §7-5 line 2 |
 
 ---
 
@@ -979,7 +905,8 @@ $$\rho = \min\!\left(1,\ \min_i \frac{T_{\max,i}}{\lvert T_i\rvert}\right), \qqu
 ### Experiment 7-8 · The smallest of infinitely many (15 min)
 
 ```matlab
-W07_CA(8)
+% SEC 에서 '7-8' 한 줄만 남긴다 / leave only the '7-8' line in SEC
+W07_alloc_run
 ```
 
 ```
@@ -1011,26 +938,11 @@ demand  tau_d = [80 N, 30 N, 20 N m]
 
 ![The minimum-norm allocation of a demand of 80 N surge, 30 N sway and 20 N·m yaw: the four thrust vectors at their stations, the per-unit components, and the shaft speed and servo angle each unit receives](W07_simulink/img/W07_alloc_pinv.png)
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| the two residuals in block (1) | $0.00\text{e}{+}00$ and $7.94\text{e}{-}15$ | line 8 — both solutions achieve the demand exactly |
-| $42.99$ N against $58.72$ N | the null-space solution costs $37\%$ more thrust for the same force | line 9 — adding $\mathbf{z}$ can only add length |
-| $f_{y}$ equal within each pair, $9.773$ and $-5.227$ | the sideways components split by pair, not by unit | §7-7 line 1 — the $f_y$ columns carry both $Y$ and the long moment arms |
-| $\lvert f_{x,1}\rvert = \lvert f_{x,3}\rvert = 20.718$ | the forward components are antisymmetric about the beam | the $\pm d$ entries in row 3 of $\mathbf{B}$ |
-| signs of $n_3$ and $n_4$ | negative, and larger in magnitude than $n_1$, $n_2$ | $k_{\text{neg}} < k_{\text{pos}}$, so reverse thrust needs more shaft speed |
-| $\rho = 1.0000$ | no shaft limit was reached, so the demand was met in full | line 4 — $\rho$ is the only thing that can shrink it |
-
 | What to try | What to watch |
 |---|---|
 | raise the demand to `tau_d = [300; 100; 60]` | $\rho$ drops below 1 and the achieved force shrinks **along the same direction** — line 4 |
 | set `tau_d = [0; 0; 20]` | all four $f_x$ vanish; a pure moment is carried on the long $f_y$ arms alone |
 | compare `B'*((B*B')\tau)` with `pinv(B)*tau` | the same numbers. `pinv` forms a singular-value decomposition, which is unnecessary when $\mathbf{B}$ has full row rank |
-
-> [!tip] In class
-> - **Purpose** — show that allocation is a choice, and that one specific choice has a closed form.
-> - **Point to** — the $37\%$ figure. It is the price of a solution that is correct but not minimal.
-> - **Ask** — "Why is $\mathbf{B}\mathbf{B}^\top$ only $3\times3$ when there are eight unknowns?" Because line 4 restricts the answer to three directions before the inverse is ever taken.
-> - **Take away** — a formula, not an iteration: $\mathbf{f} = \mathbf{B}^{+}\boldsymbol{\tau}_d$.
 
 ---
 
@@ -1090,7 +1002,8 @@ $$Y = f_{y,1} + f_{y,2} - f_{y,3} - f_{y,4}
 ### Experiment 7-9 · What the price list can and cannot do (20 min)
 
 ```matlab
-W07_CA(9)
+% SEC 에서 '7-9' 한 줄만 남긴다 / leave only the '7-9' line in SEC
+W07_alloc_run
 ```
 
 ```
@@ -1119,27 +1032,11 @@ what the price list cannot change: what the demand has already fixed
 
 ![Left: sweeping the price of the sideways component over three decades leaves the total sideways thrust at 30 N, spreads the forward components from 1.44 N to 15.67 N, and raises the worst servo angle from 26.88 to 31.73 degrees. Right: pricing the aft pair five times dearer moves its share of the thrust from 48.9 to 17.5 per cent](W07_simulink/img/W07_alloc_weights.png)
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| the $\Sigma\lvert f_y\rvert$ column | $30.00$ N at every price, equal to the demanded $Y$ | line 6 — the bound $\sum\lvert f_{y,i}\rvert \ge \lvert Y\rvert$, met with equality |
-| the spread column | $1.44 \to 15.67$ N as the price rises | line 7 — the moment moves onto the $0.395$ m arm |
-| the worst-angle column | $26.88^\circ \to 31.73^\circ$, rising | line 8 — the counter-intuitive prediction, confirmed |
-| the dashed line on the left panel | the $45^\circ$ servo limit, never reached by this demand | §7-10 uses a demand that does reach it |
-| $\mathbf{W}$ against $1000\mathbf{W}$, $2.81\text{e}{-}15$ N | the same solution to solver precision | line 4 — a common factor cancels |
-| the right panel, $48.9\%$ against $17.5\%$ | the load does move between units | line 9 — units are interchangeable, components are not |
-| the last column of the table | residual at machine precision throughout | the constraint $\mathbf{B}\mathbf{f} = \boldsymbol{\tau}_d$ is still exact |
-
 | What to try | What to watch |
 |---|---|
 | `P.W = diag([1 1 1 1 1 1 1 1])` in the sweep | the first row of the table reappears: $\mathbf{W} = \mathbf{I}$ is §7-8 — line 3 |
 | price only unit 1, `diag([5 5 1 1 1 1 1 1])` | unit 1's thrust falls and the other three absorb it; $\Sigma\lvert f_y\rvert$ does not move |
 | set the demand to `[80; 0; 20]` and sweep again | with $Y = 0$ the bound of line 6 is slack, and now the price **does** reduce the sideways thrust |
-
-> [!tip] In class
-> - **Purpose** — give the weight matrix a meaning that survives measurement, and show how to tune it.
-> - **Point to** — the $\Sigma\lvert f_y\rvert$ column. Seven different price lists, one number.
-> - **Ask** — "A reference implementation prices $f_y$ a thousand times above $f_x$ to keep the servos near zero. What does the table say it achieves?" A worse worst angle, on this geometry.
-> - **Take away** — a weight redistributes among genuine alternatives. What one axis alone can supply is not an alternative.
 
 ---
 
@@ -1222,7 +1119,8 @@ $$\text{clip} \longrightarrow
 ### Experiment 7-10 · Five answers to one impossible command (25 min)
 
 ```matlab
-W07_CA(10)
+% SEC 에서 '7-10' 한 줄만 남긴다 / leave only the '7-10' line in SEC
+W07_alloc_run
 ```
 
 ```
@@ -1259,30 +1157,12 @@ the demand  tau = [100 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, 201 poi
 
 ![Upper panel: the servo angle of unit 1 along a twenty-second force trajectory, with the two closed-form laws running far outside the 45 degree limit and the constrained laws held against it, the red squares marking the instants where the single-combination quadratic program returned no solution. Lower panel: the force error each law pays for staying inside the limit](W07_simulink/img/W07_alloc_limits.png)
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| `wpinv` at $85.68^\circ$ | the closed form has no angle limit in it | §7-9 has no constraint in it |
-| `clip` at $45.00^\circ$ and $40.728$ N | inside the limit, but the force is no longer the demanded one | line 9, first bullet |
-| `qp` exit $-2$ | the chosen sign combination admits **no** feasible point | line 4 — a convex solver sees one subset only |
-| `wls16` at $0.020$ N | the demand was reachable under a different sign combination | line 10 — the closed form never produced it |
-| `wls` at $38.891$ N against `wls16` at $0.020$ N | same solver, same cost function, sixteen combinations instead of one | line 9, second and third bullets |
-| the `solved` column, `qp` at $85.6\%$ | one in seven instants of the trajectory has no answer | line 5 — the union is not covered by any single subset |
-| `pinv` and `wpinv`, past limit $43.8\%$ and $50.7\%$ | half the trajectory asks for angles the servo cannot reach | the angle limit is set by the hardware, not by preference |
-| the upper panel, flat tops at $\pm45^\circ$ | every constrained law holds at the limit rather than passing it | line 3 — the constraint is active there |
-| `wls16` mean error $0.010$ N | not exactly zero | the $\varepsilon$ term of line 6, not the angle limit |
-
 | What to try | What to watch |
 |---|---|
 | `P.eps_reg = 1e-8` | the `wls16` residual falls further; the command becomes less well conditioned in exchange |
 | `P.Q = diag([1 1 5])` | yaw is now bought before sway, and the force error moves from $N$ into $Y$ |
 | `P.alpha_max = deg2rad(90)` | every method agrees, because the angle limit no longer binds and line 1 is vacuous |
 | in `W07_alloc`, make `'wls16'` try only combinations $0..7$ | the combination of line 10 is excluded and the residual jumps — the enumeration is not padding |
-
-> [!tip] In class
-> - **Purpose** — show that a hard limit changes the problem's **shape**, not just its numbers.
-> - **Point to** — `qp` exit $-2$ beside `wls16` at $0.020$ N. Same limit, same demand, opposite verdicts.
-> - **Ask** — "Why not simply put a large weight on $f_y$ instead of a constraint?" §7-9 line 8 measured that: the worst angle gets worse.
-> - **Take away** — the angle limit is fixed by the hardware, the force demand is what the controller asked for, and the sign combination is a discrete choice that no convex solver will make.
 
 ---
 
@@ -1317,7 +1197,8 @@ $$\mathbf{K}_W = \mathbf{W}^{-1}\mathbf{B}^\top\left(\mathbf{B}\mathbf{W}^{-1}\m
 ### Experiment 7-11 · The 50 Hz budget, measured (15 min)
 
 ```matlab
-W07_CA(11)
+% SEC 에서 '7-11' 한 줄만 남긴다 / leave only the '7-11' line in SEC
+W07_alloc_run
 ```
 
 ```
@@ -1337,17 +1218,6 @@ W07_CA(11)
   distance between Kw*tau and wpinv       : 5.62e-15 N
 ```
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| `wpinv` at $7.7$ µs mean | a closed form, with the inverse still formed inside the call | §7-9 line 2 |
-| the precomputed matrix at $0.94$ µs | eight times faster again, for the same answer | line 2 — 24 multiplications and nothing else |
-| the difference $5.62\text{e}{-}15$ N | precomputing changes the cost, not the result | line 1 — the grouping is algebraic |
-| `qp` and `wls`, mean against max | $436.5 \to 1879.0$ µs and $179.6 \to 1075.9$ µs | line 3 — the active set is demand-dependent |
-| `wls16` at $12.79\%$ of the budget | sixteen combinations fit, with room for the rest of the loop | line 4 — affordable, and measured to be so |
-| `fmincon` worst case $40\,035$ µs | **twice** the $20\,000$ µs deadline, on its own | line 5 — finite differences on an $\operatorname{atan2}$ |
-| the `x pinv` column | $1$, $1$, $1$, $33$, $14$, $195$, $406$ | the three orders of magnitude between a formula and a solver |
-| `pinv` at $13.1$ µs mean but $227.6$ µs max | the first call of any method pays for the library being loaded | the `max` column is a tail, not a typical cost |
-
 > [!warning] A timing is a measurement of one machine
 > These figures were taken on the laboratory machine with MATLAB R2024b and nothing else running, and they move by tens of per cent between runs. What does **not** move is the ordering and the orders of magnitude: a closed form is microseconds, one quadratic program is hundreds of microseconds, sixteen are milliseconds, and a nonlinear solver on the same problem overruns a 50 Hz budget. A deployed allocator must be timed on its own target, under load, and judged on its worst case.
 
@@ -1356,12 +1226,6 @@ W07_CA(11)
 | raise the demand count to $1001$ points | the mean settles; the maximum does not, because it is a tail |
 | time `Kw*tau` against `wpinv` inside a tight loop | the gap is the cost of forming $(\mathbf{B}\mathbf{W}^{-1}\mathbf{B}^\top)^{-1}$ every step |
 | add `'Algorithm','active-set'` to the `quadprog` options | the mean moves; the conclusion of line 3 does not |
-
-> [!tip] In class
-> - **Purpose** — make real-time feasibility a measured quantity rather than an assertion.
-> - **Point to** — the two numbers $0.94$ µs and $40\,035$ µs. Both solve a version of the same problem.
-> - **Ask** — "Which column matters for a 50 Hz loop, mean or max?" The max, every time; a deadline missed once is a deadline missed.
-> - **Take away** — the fastest allocator and the most correct allocator are not the same one, and the choice is now a numbered table rather than a preference.
 
 ## 7-12. The second limit, and what the hull actually receives
 
@@ -1489,7 +1353,7 @@ Ensure:  n (4x1) [rad/s], delta (4x1) [rad], tau_act (3x1) [N, N, N m]
 | $R_i$ | cap height for unit $i$ in its own axes | $T^{+}$ or $T^{-}$ by $\sigma_i$ |
 | $M$ | chords replacing the arc | $3$, `P.n_chord` |
 | $\theta_j$ | normal direction of chord $j$ | $-30^\circ$, $0^\circ$, $+30^\circ$ at $M = 3$ |
-| $\boldsymbol{\tau}_{\text{act}}$ | force the motion model produced | line 10, `W07_chain` |
+| $\boldsymbol{\tau}_{\text{act}}$ | force the motion model produced | line 10, §7-12 of `W07_alloc_run` |
 
 > [!note] Choosing $M$
 > $M = 1$ is a single flat cut across the sector and gives up $29\%$ of the radius at the corners; $M = 3$ gives up $3.41\%$; $M = 6$ gives up $0.86\%$. Each step adds four rows to a problem already solved sixteen times, and §7-11's measurement says what that costs. $M = 3$ is used here because the thrust cap is itself a fitted quantity — $k_{\mathrm{pos}}$ and $k_{\mathrm{neg}}$ are regression coefficients, not exact numbers — and an approximation three times finer than the data it approximates buys nothing.
@@ -1497,7 +1361,8 @@ Ensure:  n (4x1) [rad/s], delta (4x1) [rad], tau_act (3x1) [N, N, N m]
 ### Experiment 7-12 · Following one demand all the way to the hull (25 min)
 
 ```matlab
-W07_CA(12)
+% SEC 에서 '7-12' 한 줄만 남긴다 / leave only the '7-12' line in SEC
+W07_alloc_run
 ```
 
 ```
@@ -1557,24 +1422,7 @@ The `no sol` column of table (2) counts the demands for which the solver returne
 
 ![Demanded and achieved surge, sway and yaw over the 201-point sweep, with the demand drawn as a black dashed line and each law's achieved force measured out of the motion model; only the law that enforces both limits stays on the demand throughout](W07_simulink/img/W07_chain_tau.png)
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| the purple `wls16cap` trace, all three panels | lies on the dashed demand everywhere | lines 6 to 8 — the feasible set is now exact in both limits |
-| the orange `clip` trace around $t = 12$ s | departs from the demand in $X$, $Y$ and $N$ at once | line 9 — $\rho$ scales the whole vector, so one saturated unit moves all three components |
-| the blue halo under the orange trace | `wpinv` and `clip` coincide to the width of the line | line 11 — the plant clips where `clip` clips |
-| the yellow `wls16` trace, $8 < t < 11$ s | inside the orange but still off the dashed line | line 3 — the servo limit is solved, the thrust cap is not |
-| all four laws near $t = 0$ and $t = 20$ s | the largest departures, in $N$ especially | line 4 — the demand turns through the astern cap there |
-
 ![Shaft speed and servo angle commanded of unit 3 against their two limits, drawn as dashed lines; the laws that ignore the thrust cap drive the shaft past the reverse limit while the law that includes it rides along it](W07_simulink/img/W07_chain_sat.png)
-
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| upper panel, $2 < t < 4.5$ s | three laws reach $-115$ rad/s, below the $-101.74$ dashed line | line 3 — the shaft-speed limit is the astern thrust cap, and it binds first |
-| upper panel, the purple trace in the same window | flat along $-101.74$, never below | line 7 — the chords are inscribed, so the cap cannot be broken |
-| upper panel, $8 < t < 10$ s | no law reaches $n_{\max} = 103.9$ | line 4 — the ahead cap is $1.79$ times the astern one |
-| lower panel, the blue spikes at $\pm 90^\circ$ | `wpinv` commands twice the servo travel that exists | §7-10 line 1 — the closed form has no angle limit in it |
-| lower panel, the other three traces | clipped flat at $\pm 45^\circ$ | line 11 — allocator clipping and hardware clipping meet at the same value |
-| lower panel, where blue leaves the limit | the same instants at which $X$ departs in the previous figure | line 9 — the direction error becomes a force error |
 
 Table (3) re-times the laws because `wls16cap` did not exist when §7-11 ran. The cap adds three rows per unit to a problem already solved sixteen times, and the measured cost of that is $2560.0 \to 3577.7$ µs in the mean: $40\%$ more, for an error $600$ times smaller. The worst case of $4222.9$ µs is still under $22\%$ of the $20\,000$ µs budget, so the exact answer is affordable at $50$ Hz on this machine.
 
@@ -1582,14 +1430,8 @@ Table (3) re-times the laws because `wls16cap` did not exist when §7-11 ran. Th
 |---|---|
 | set `P.n_chord = 1` and run again | the thrust cap is still respected, but the error rises: one flat cut gives up $29\%$ of the radius |
 | set `P.T_neg = P.T_pos` and run again | the `n clip` column of table (1) empties, which identifies the asymmetry of line 4 as the cause |
-| raise the demand in `W07_tab_chain` from $320$ N to $400$ N | `wls16cap` begins to miss as well, because $400$ N is past the $372.78$ N of line 4 |
+| raise the demand in §7-12 of `W07_alloc_run` from $320$ N to $400$ N | `wls16cap` begins to miss as well, because $400$ N is past the $372.78$ N of line 4 |
 | print `info.sigma` for `wls16` and `wls16cap` at the same instant | the two laws choose different sign patterns once the cap is in the problem |
-
-> [!tip] In class
-> - **Purpose** — close the loop between the allocator's arithmetic and the force the hull receives.
-> - **Point to** — the `rpm lim` column of table (2): $41.8\%$ for three laws and $0.0\%$ for one.
-> - **Ask** — "`wpinv` and `clip` have exactly the same error. What did clipping buy?" Nothing, until the clipped limit is inside the optimisation.
-> - **Take away** — a limit enforced after the solve costs force in every component; the same limit enforced inside the solve costs milliseconds.
 
 > [!note] What this week does not do
 > Three things are deliberately left out, and each has a reason.
@@ -1607,22 +1449,22 @@ Table (3) re-times the laws because `wls16cap` did not exist when §7-11 ran. Th
 
 1. The model is the four-stage chain of §7-0 — command, allocation, plant, measurement — with one stage replaced. The command stage carries three Constants for $X$, $Y$, $N$ and one Constant `law`; the plant is the same `otter_tilt4`; only the allocation stage is new.
 
-2. The `allocate` block evaluates $\mathbf{f} = \texttt{W07\_sl\_alloc}(\boldsymbol{\tau}_d, \texttt{law}, \ldots)$, which maps the constant onto a law already derived earlier in the week:
+2. The allocation stage holds **four MATLAB Function blocks, one law in each**, and a Multiport Switch named `pick the law` passes one of their four outputs on. Each block computes $\mathbf{f}$ from $\boldsymbol{\tau}_d$ and the constants wired into it and calls nothing outside itself, so reading a law means opening one block:
 
-| `law` | Name drawn on the Scope | Method in `W07_alloc` | Derived in |
+| `law` | Block inside `allocation` | Same law in `W07_alloc` | Derived in |
 |---|---|---|---|
-| 1 | minimum norm | `pinv` | §7-8 |
-| 2 | weighted minimum norm | `wpinv` | §7-9 line 2 |
-| 3 | weighted, folded onto the servo limit | `clip` | §7-10 line 9 |
-| 4 | servo limit and thrust cap as constraints | `wls16cap` | §7-12 lines 5 to 8 |
+| 1 | `law 1  minimum norm` | `pinv` | §7-8 |
+| 2 | `law 2  weighted minimum norm` | `wpinv` | §7-9 line 2 |
+| 3 | `law 3  folded onto the limit` | `clip` | §7-10 line 9 |
+| 4 | `law 4  limits as constraints` | `wls16cap` | §7-12 lines 5 to 8 |
 
-   The index is taken as $k = \max(1, \min(4, \operatorname{round}(\texttt{law})))$, so a value outside the range selects the nearest law instead of failing mid-run.
+   The switch is set to one-based contiguous indexing, so `law` is $1$, $2$, $3$ or $4$ and nothing else. All four blocks are evaluated at every step — the switch decides which answer leaves the subsystem, not which block runs — so a run costs what law 4 costs, about $8.5$ s of wall time for the $30$ s simulation whichever law is selected.
 
 3. The `force to input` block is §7-8 lines 1 to 4 drawn as one block: the thrust sign $\sigma_i = \operatorname{sign}(f_{x,i})$, the magnitude $T_i = \sigma_i\lVert\mathbf{f}_i\rVert$, the folded angle $\delta_i = \operatorname{atan2}(\sigma_i f_{y,i},\,\sigma_i f_{x,i})$ and the shaft speed $n_i = \operatorname{sign}(T_i)\sqrt{\lvert T_i\rvert / k_i}$. The fold is inside this block, so every law reaches the servo with an angle already inside $[-90^\circ, +90^\circ]$.
 
 4. The two Saturation blocks come **after** that, not before it: `shaft limit` clips $n$ into $[n_{\min}, n_{\max}]$ and `servo limit` clips $\delta$ into $\pm\alpha_{\max}$. Their position in the diagram is the whole point of the section — an allocator that does not carry a limit cannot know that its answer was clipped.
 
-5. The `force delivered` block recomputes $\boldsymbol{\tau}_{\text{act}} = \mathbf{B}\,\mathbf{f}(n_{\text{clipped}}, \delta_{\text{clipped}})$ by §7-12 line 10 and sends it to the Scope beside $\boldsymbol{\tau}_d$. The gap is therefore read off a figure, not inferred from a residual.
+5. Nothing outside the plant rebuilds the delivered force. `otter_tilt4` has to form $\boldsymbol{\tau} = \mathbf{B}\,\mathbf{f}(n_{\text{clipped}}, \delta_{\text{clipped}})$ in order to integrate the hull at all, so the `Otter hull` block returns that vector as its **second output** and the Scope receives it beside $\boldsymbol{\tau}_d$. What is plotted is therefore the force the hull actually felt, not a reconstruction of it that could drift from the model.
 
 6. The demand is $\boldsymbol{\tau}_d = [0,\ 40\ \text{N},\ 0]^\top$, held constant for the whole run. A pure sway is the hardest direction for a $\pm 45^\circ$ servo: the ideal unit force is sideways, which is $\delta_i = 90^\circ$, exactly twice the travel that exists.
 
@@ -1636,9 +1478,9 @@ Table (3) re-times the laws because `wls16cap` did not exist when §7-11 ran. Th
 
 | Symbol | Quantity | Value or source |
 |---|---|---|
-| `law` | Constant selecting the allocation law | $1$ to $4$; set in `W07_0_setup` |
+| `law` | Constant selecting the allocation law | $1$, $2$, $3$ or $4$; set in `W07_0_setup` |
 | $\boldsymbol{\tau}_d$ | demanded generalised force | `tau_cmd` $= [0;\,40;\,0]$, N and N m |
-| $\boldsymbol{\tau}_{\text{act}}$ | force recovered from the clipped inputs | $\mathbf{B}\mathbf{f}$, §7-12 line 10 |
+| $\boldsymbol{\tau}_{\text{act}}$ | force the hull received | second output of the `Otter hull` block |
 | $\alpha_{\max}$ | servo travel | $45^\circ$, `otter_config('quad_tilt')` |
 
 ### Experiment 7-13 · One model, four laws (20 min)
@@ -1650,7 +1492,127 @@ W07_0_setup             % puts every constant on the workspace
 
 ![Top level of W07_alloc_chain: the three force Constants and the law Constant feed one allocation subsystem, whose clipped shaft speeds and servo angles drive the Otter plant, with the demanded and delivered force meeting again in the measurement block](W07_simulink/img/W07_alloc_chain.png)
 
-![Inside the allocation subsystem: allocate, force to input, the shaft and servo Saturation blocks, and force delivered, which recomputes the force from the clipped values](W07_simulink/img/W07_alloc_chain_alloc.png)
+![Inside the allocation subsystem: the four law blocks stacked on the left, the Multiport Switch pick the law choosing one of their outputs, force to input turning the chosen eight components into shaft speeds and tilt angles, and the shaft and servo Saturation blocks clipping the result](W07_simulink/img/W07_alloc_chain_alloc.png)
+
+The four law blocks of the figure, as they open when double-clicked, with the header comments that merely repeat §7-10 and §7-12 left out. Each block is the whole law: none of them calls a function stored elsewhere, so the arithmetic of §7-8 to §7-12 sits on the screen the switch points at.
+
+```matlab
+function f = law1_minimum_norm(tau_d, B_alloc)
+% LAW 1 -- minimum norm.  Section 7-8.
+%
+%     min f'f    subject to    B f = tau_d        ->    f = B'(B B')\tau_d
+%
+% Eight unknowns against three equations: the demand leaves five directions
+% free, and this law spends them on the shortest f. Nothing here knows about
+% the servo limit or the thrust cap, which is what laws 3 and 4 go on to fix.
+f = B_alloc' * ((B_alloc*B_alloc') \ tau_d);
+end
+
+function f = law2_weighted_minimum_norm(tau_d, B_alloc, W_alloc)
+% LAW 2 -- weighted minimum norm.  Section 7-9.
+%
+%     min f' W f    subject to    B f = tau_d
+%     ->    f = W^-1 B' (B W^-1 B')^-1 tau_d
+%
+% W states what is expensive. With W = diag([1 10 1 10 ...]) the sway
+% component of a unit costs ten times its surge component, so the solution
+% leans on the shaft speeds rather than on the tilt angles.
+Wi = W_alloc \ eye(8);
+f  = Wi * B_alloc' * ((B_alloc*Wi*B_alloc') \ tau_d);
+end
+
+function f = law3_folded_onto_the_limit(tau_d, B_alloc, W_alloc, alpha_lim)
+% LAW 3 -- the weighted solution, folded onto the servo limit.  Section 7-10.
+Wi = W_alloc \ eye(8);
+f  = Wi * B_alloc' * ((B_alloc*Wi*B_alloc') \ tau_d);
+
+for i = 1:4
+    fx = f(2*i-1);
+    fy = f(2*i);
+    s  = sign(fx);
+    if s == 0
+        s = 1;        % a unit with no surge component is left pointing abeam
+    end
+    T  = s * hypot(fx, fy);
+    de = atan2(s*fy, s*fx);
+    de = min(max(de, -alpha_lim), alpha_lim);
+    f(2*i-1) = T * cos(de);
+    f(2*i)   = T * sin(de);
+end
+end
+
+function f = law4_limits_as_constraints(tau_d, B_alloc, W_alloc, alpha_lim, ...
+                                        Q_tau, eps_reg, T_pos, T_neg)
+% LAW 4 -- the servo limit AND the thrust cap as hard constraints.  7-12.
+% lsqlin has no code generation support, so the call is extrinsic and every
+% output it returns is given a size and a type beforehand.
+coder.extrinsic('lsqlin', 'optimoptions');
+
+M = 3;                   % chords per cone, the n_chord of W07_vars
+t = tan(alpha_lim);
+
+% the whole cost as one least-squares residual,  ||C f - d||
+C = [Q_tau*B_alloc ; sqrt(eps_reg)*sqrt(W_alloc)];
+d = [Q_tau*tau_d   ; zeros(8,1)];
+
+% the fallback, used if no sign combination turns out to be feasible
+Wi = W_alloc \ eye(8);
+f  = Wi * B_alloc' * ((B_alloc*Wi*B_alloc') \ tau_d);
+
+opts = optimoptions('lsqlin', 'Display', 'off');
+best = inf;
+
+for p = 0:15
+    % the four thrust signs of combination p, read off its four bits
+    sg = zeros(4,1);
+    for i = 1:4
+        sg(i) = 1 - 2*mod(floor(p/2^(i-1)), 2);
+    end
+
+    A = zeros(4*(2+M), 8);
+    b = zeros(4*(2+M), 1);
+    r = 0;
+    for i = 1:4
+        s = sg(i);
+        if s > 0
+            R = T_pos;
+        else
+            R = T_neg;    % written positive, so the cap is a radius
+        end
+        r = r + 1;  A(r, 2*i-1) = -t*s;  A(r, 2*i) =  1;
+        r = r + 1;  A(r, 2*i-1) = -t*s;  A(r, 2*i) = -1;
+        for j = 1:M
+            th = -alpha_lim + (j - 0.5)*(2*alpha_lim/M);
+            r  = r + 1;
+            A(r, 2*i-1) = s*cos(th);
+            A(r, 2*i)   = s*sin(th);
+            b(r)        = R*cos(alpha_lim/M);
+        end
+    end
+
+    x   = zeros(8,1);
+    cst = 0;
+    res = zeros(11,1);
+    ef  = 0;
+    [x, cst, res, ef] = lsqlin(C, d, A, b, [], [], [], [], [], opts);
+
+    % a cost is a cost only where the solver reported a solution
+    if ef > 0 && cst < best
+        best = cst;
+        f    = x;
+    end
+end
+end
+```
+
+| In the code | In the figure | Note |
+|---|---|---|
+| `tau_d` | the signal from the three force Constants of the command stage | the same $[0;\,40;\,0]$ reaches all four blocks |
+| `B_alloc`, `W_alloc`, `alpha_lim`, `Q_tau`, `eps_reg`, `T_pos`, `T_neg` | Constants wired into the blocks that need them | law 1 takes two inputs, law 4 takes eight; the figure shows the difference |
+| `f` | the four lines entering `pick the law` | ports $1$ to $4$ of the switch, in law order |
+| `M = 3` | nothing | the `n_chord` of §7-12 line 7, fixed inside the block because a MATLAB Function block cannot size an array from a Constant without dynamic memory |
+| `coder.extrinsic` | nothing | `lsqlin` is not written for code generation, so it is called as ordinary MATLAB and its outputs are pre-sized |
+| the fallback `f` before the loop | nothing | if no sign combination is feasible the block returns the law 2 answer rather than leaving $\mathbf{f}$ undefined |
 
 Changing the law means changing one number and pressing Run. `W07_plot_ca` is the model's `StopFcn`, so the table and the figure appear without a further command.
 
@@ -1693,56 +1655,48 @@ Collecting the $Y$ and $N$ rows of all four printed blocks, with the raw angle e
 
 ![Demanded and delivered force under law 4, with the servo limit and the thrust cap inside the solve: the two traces coincide at the width of the line in all three components](W07_simulink/img/W07_alloc_chain_law4.png)
 
-| Where to look | What is there | Which line predicts it |
-|---|---|---|
-| law 1, middle panel | delivered sway flat at $28.3$ N under a $40$ N dashed demand | line 8 — the clip removes what the closed form assumed it could use |
-| law 1, lower panel | $-10.5$ N m of yaw from a demand with none in it | line 8 — four units clipped unequally no longer cancel |
-| laws 2 and 3, identical rows | the same $29.677$ and $-7.675$ | line 9 — folding moves where the clip happens, not what reaches the hull |
-| laws 2 and 3, the angle column | $74.0^\circ$ against $45.0^\circ$ | line 9 — only law 3's own output is what the hull received |
-| law 4, all three panels | the two traces coincide | line 10 — the limit is a constraint of the solve, not a correction after it |
-
 | What to try | What to watch |
 |---|---|
 | set `tau_cmd = [40; 0; 0]` and run all four laws | the four rows collapse onto one: a pure surge needs $\delta_i = 0$, and no law reaches a limit |
 | print the raw angles with `f = W07_alloc(B, [0;40;0], 'wpinv', P)` and `atan2` on its pairs | the $74.0^\circ$ of the table, before any Saturation block exists |
-| set `law = 2.6` | law 3 runs, because the index is rounded and clamped by line 2 |
+| set `law = 5` | the run stops at `pick the law` with `Simulink:blocks:MPSwitchControlInputOORIndexValue`: the switch is one-based contiguous, and $5$ is not one of its four ports |
 | raise `tau_cmd` to $[0; 120; 0]$ | law 4 misses as well: $120$ N of sway is past what four units at $45^\circ$ can make |
-
-> [!tip] In class
-> - **Purpose** — show the four laws as one model with one number changed, rather than four files.
-> - **Point to** — laws 2 and 3 in the table: the same two delivered numbers, different raw angles.
-> - **Ask** — "Laws 1 and 2 both solve $\mathbf{B}\mathbf{f} = \boldsymbol{\tau}_d$ exactly. Why does the hull get $28$ N?" Because the servo block is downstream of the arithmetic.
-> - **Take away** — the position of a saturation block in the diagram decides whether the allocator's answer is a prediction or a guess.
 
 ---
 
 # Part 2 · Laboratory run order
 
-The experiments of Part 1 are worked through in order; this table is the index of what was run, for repeating the week at home.
+The week runs out of **two files**. Every experiment of Part 1 is a block inside one of them.
 
 | Experiment | Model | Script | What it shows |
 |---|---|---|---|
 | 7-0 | `W07_openloop` | `W07_1_build_openloop`, `W07_0_setup` | the model written from code, and every constant |
 | 7-1 | none | `verify_otter_tilt4` | four identities; $\delta = 0$ returns `otter.m` |
-| 7-3 | `W07_openloop` | `W07_V_openloop` → `W07_tab_formula` | table (1) — force against the column rule |
-| 7-4 | `W07_openloop` | `W07_V_openloop` → `W07_tab_track` | the three asymmetries, each against a row |
-| 7-5 | `W07_openloop` | `W07_V_openloop` → `W07_plot_scenario` | the eight sheets `img/W07_result_S1.png` … `_S8.png` |
-| 7-6 | `W07_openloop` | `W07_V_openloop` → `W07_tab_reint` | table (2) — the model against hand re-integration |
-| 7-8 | none | `W07_CA(8)` | the pseudo-inverse, and the $37\%$ a null-space solution costs |
-| 7-9 | none | `W07_CA(9)` | the price sweep: what $\mathbf{W}$ moves and what it cannot |
-| 7-10 | none | `W07_CA(10)` | five laws at the $45^\circ$ servo limit, and the sixteen sign combinations |
-| 7-11 | none | `W07_CA(11)` | the 50 Hz budget, measured for every law |
-| 7-12 | none | `W07_CA(12)` | both limits, and the force the motion model produced |
-| 7-13 | `W07_alloc_chain` | `W07_2_build_alloc` → `W07_0_setup`, then set `law` and Run | the same four laws inside one model, one constant apart |
+| 7-3 | `W07_openloop` | `W07_openloop_run`, block (1) | table (1) — the logged force against the column rule |
+| 7-4 | `W07_openloop` | `W07_openloop_run`, block (2) | the three asymmetries, each against a row |
+| 7-5 | `W07_openloop` | `W07_openloop_run`, blocks (2) and (3) | table (2), and the eight sheets `img/W07_result_S1.png` … `_S8.png` |
+| 7-6 | `W07_openloop` | `W07_openloop_run`, block (1) | the comparison window of table (1), $t_s = 0.58$ s |
+| 7-8 | none | `W07_alloc_run`, section `7-8` | the pseudo-inverse, and the $37\%$ a null-space solution costs |
+| 7-9 | none | `W07_alloc_run`, section `7-9` | the price sweep: what $\mathbf{W}$ moves and what it cannot |
+| 7-10 | none | `W07_alloc_run`, section `7-10` | five laws at the $45^\circ$ servo limit, and the sixteen sign combinations |
+| 7-11 | none | `W07_alloc_run`, section `7-11` | the 50 Hz budget, measured for every law |
+| 7-12 | none | `W07_alloc_run`, section `7-12` | both limits, and the force the motion model produced |
+| 7-13 | `W07_alloc_chain` | `W07_alloc_run`, section `7-13` | the same four laws inside one model, one constant apart |
 
-Selecting runs: `W07_V_openloop` for all eight, `W07_V_openloop('S5')` for one, `W07_V_openloop({'S5','S6'})` for a pair, `W07_V_openloop(1:4)` by number. A partial run writes only the sheets it ran and leaves the overlay file alone.
+**Choosing what runs.** Each file carries one list near its top, and one line of that list is one unit of work. Put a `%` in front of a line and it drops out; leave the file as it is and everything runs.
 
-Sections 7-8 to 7-12 are all driven by the one script `W07_CA`, whose argument is the section number: `W07_CA(8)` prints §7-8 and draws its figure, `W07_CA(12)` prints §7-12 and draws its two. The five sections share one allocator and one hardware model, so they share one file rather than five. Everything `W07_CA` calls is named for what it does: `W07_alloc` holds the eight laws behind one `method` flag, `W07_hw` turns eight force components into four shaft speeds and four servo angles by §7-8 lines 1 to 4, `W07_chain` calls `otter_tilt4` to recover the force the hull actually received by §7-12 line 10, `W07_sweep_laws` and `W07_tab_chain` print the tables, `W07_plot_alloc`, `W07_plot_weights`, `W07_plot_limits` and `W07_plot_chain` draw the figures, and `W07_save_fig` writes every one of them to `img/`. The sections run in any order and in isolation, because the demand $\boldsymbol{\tau}_d$ is supplied by the script rather than by a controller.
+| File | The list | One line is |
+|---|---|---|
+| `W07_openloop_run.m` | `S`, eight rows | one scenario, `S1` to `S8` |
+| `W07_alloc_run.m` | `SEC`, six rows | one section, §7-8 to §7-13 |
+| `W07_alloc_run.m` | `LAWS`, four rows | one allocation law of §7-13 |
 
-Section 7-13 is where a controller's view of the same four laws is restored, and it is the only part of the allocation half with a model file. `W07_alloc_chain` is built by `W07_2_build_alloc`, filled by `W07_0_setup`, and switched between laws by the single Constant `law`; `W07_sl_alloc` is the wrapper its MATLAB Function block calls, and `W07_plot_ca` is its `StopFcn`. Four laws therefore need one model, not four.
+**Running a model by hand.** Either file leaves the first selected case in the base workspace — `n_cmd` and `d_cmd` for `W07_openloop`, `law` and `tau_cmd` for `W07_alloc_chain`. Opening that `.slx` and pressing Run repeats that one case, so the model file itself is never edited.
+
+The two files call almost nothing of their own: `W07_vars` holds the values, `W07_plot` and `W07_plot_ca` draw, `W07_alloc` holds the eight laws behind one `method` flag, and the thrust-curve inverse and the chain measurement are local functions at the foot of `W07_alloc_run`.
 
 > [!note] One run order, four sections
-> Sections 7-3 to 7-6 share the **same eight 30-s runs**: table (1) measures the force at the start of each, table (2) re-integrates the whole of each, table (3) reads the end of each, and `W07_plot_scenario` draws each. Splitting them would send the vessel out thirty-two times for eight trajectories, and the tables would then be read against runs only nominally the same. The runs happen once, in `W07_V_openloop`, and each section's block is a file of its own — `W07_cases` fixes the eight commands, `W07_tab_formula` is §7-3, `W07_tab_track` is §7-4 and §7-5, `W07_tab_reint` is §7-6. The arrow names the file to open for that section.
+> Sections 7-3 to 7-6 read the **same eight 30-s runs**: block (1) compares the force throughout each, block (2) reads the end of each, and block (3) draws each. Running them apart would send the vessel out twenty-four times for eight trajectories.
 
 ---
 
@@ -1761,8 +1715,8 @@ Section 7-13 is where a controller's view of the same four laws is restored, and
 | 7 | the residual yaw of a symmetric sway derived | $N = \bar{x}Y = 28.205$ N·m, matching S5 and S8 exactly |
 | 8 | the thrust ratio that removes that yaw derived and run | $T_a = 1.5T_f$, i.e. $n_a = 73.485$ rad/s: $N = 0.000$ N·m at $X = -28.205$ N |
 | 9 | the servo limit shown to act inside the plant | S8 asks $70^\circ$, table (1) records $45^\circ$, and S8 lies on S5 |
-| 10 | the eight tracks read at $t = 30$ s, one sheet each | table (3) and `img/W07_result_S1.png` … `_S8.png` |
-| 11 | the model checked against an independent integrator | table (2), $0.00\mathrm{e}{+}00$ m and m/s over eight 30-s runs |
+| 10 | the eight tracks read at $t = 30$ s, one sheet each | table (2) and `img/W07_result_S1.png` … `_S8.png` |
+| 11 | the comparison window derived from the servo rate limit | $t_s = 45/90 + 4h = 0.58$ s, the window table (1) prints |
 | 12 | allocation stated as a choice among infinitely many solutions | $42.99$ N against $58.72$ N for the same $\boldsymbol{\tau}$: the null space costs $37\%$ |
 | 13 | the minimum-norm solution derived and inverted to hardware | residual $0.00\mathrm{e}{+}00$, $\rho = 1$, worst angle $26.88^\circ$ |
 | 14 | the weight matrix measured over three decades | $\Sigma\lvert f_y\rvert$ fixed at $30.00$ N; the worst angle **rises** $26.88^\circ \to 31.73^\circ$ |
@@ -1785,7 +1739,7 @@ Section 7-13 is where a controller's view of the same four laws is restored, and
 - [ ] Able to say where the mounting sign $s_i$ sits in $B$, and why the two pairs have different zeros but the same sense
 - [ ] Able to name the four places `otter.m` changes, and say why the damping is not one of them
 - [ ] Able to derive $N = \bar{x}Y$ with $\bar{x} = (l_f - l_a)/2$, and predict $28.205$ N·m without the script
-- [ ] Able to say why re-integrating the logged input is a different check from table (1), and why a single-instant acceleration comparison is neither
+- [ ] Able to say why the delivered force is read off the motion model rather than rebuilt from the logged states, and to derive the $0.58$ s window of table (1)
 - [ ] Able to name the input and the output of the allocation stage, and say what it knows in advance
 - [ ] Able to derive $\mathbf{f} = \mathbf{B}^\top(\mathbf{B}\mathbf{B}^\top)^{-1}\boldsymbol{\tau}_d$ with a Lagrange multiplier, and say why the inverted matrix is $3\times3$
 - [ ] Able to say why the thrust cap needs one scalar after the solve while the servo limit does not
@@ -1801,14 +1755,15 @@ Section 7-13 is where a controller's view of the same four laws is restored, and
 
 - [ ] `verify_otter_tilt4` ran and printed `PASS` with identities (a), (b) and (d) exactly zero
 - [ ] `W07_1_build_openloop` ran and printed overlaps 0, diagonals 0
-- [ ] `W07_V_openloop` ran and wrote all three tables and the eight sheets
-- [ ] `W07_V_openloop('S5')` ran alone and rewrote only that one sheet
+- [ ] `W07_openloop_run` ran with nothing commented out of `S` and wrote both tables and the eight sheets
+- [ ] the same file ran with only the `'S5'` line left in `S`, and rewrote only that one sheet
 - [ ] A ninth case was commanded by hand from `W07_0_setup`, and its $X$, $Y$ and $N$ were predicted before the run
-- [ ] `W07_CA(8)` ran and printed a residual of exactly $0$ and $\rho = 1$
-- [ ] `W07_CA(9)` ran and printed the seven-row price sweep and the two share figures
-- [ ] `W07_CA(10)` ran and printed both the single hard demand and the 201-point trajectory
-- [ ] `W07_CA(11)` ran and printed the microseconds each law costs against the $20\,000$ µs budget
-- [ ] `W07_CA(12)` ran and printed all three tables, with the `rpm lim` column $0.0\%$ for `wls16cap` alone
+- [ ] `W07_alloc_run` with only `'7-8'` left in `SEC` printed a residual of exactly $0$ and $\rho = 1$
+- [ ] with only `'7-9'` left, it printed the seven-row price sweep and the two share figures
+- [ ] with only `'7-10'` left, it printed both the single hard demand and the 201-point trajectory
+- [ ] with only `'7-11'` left, it printed the microseconds each law costs against the $20\,000$ µs budget
+- [ ] with only `'7-12'` left, it printed all three tables, with the `rpm lim` column $0.0\%$ for `wls16cap` alone
+- [ ] with only `'7-13'` left, it ran the model once per line of `LAWS` and wrote the four law figures
 - [ ] `W07_2_build_alloc` ran and printed overlaps 0, diagonals 0
 - [ ] The four laws ran inside `W07_alloc_chain` from the single `law` constant, and the delivered sway was read off each time
 
@@ -1837,8 +1792,8 @@ Requirements 1 to 3 are three runs, each one eight numbers given by hand in `W07
 1. **Reproduce the yaw-free crab.** Apply §7-4 line 8 to obtain the stern shaft speed that cancels the residual yaw of a $45^\circ$ four-unit sway command. Derive it rather than copying $73.485$ rad/s: show the step from $\sum x_i T_i = 0$ to $T_a = 1.5T_f$ and the conversion to shaft speed, including which thrust coefficient applies and why. Report the surge force the cancellation costs.
 2. **Find a motion that is neither.** Choose eight numbers for which $X = 0$ **and** $N = 0$ while $Y \neq 0$ — a pure sway, with no surge and no yaw. Keep $\delta_i \in \{+45^\circ, -45^\circ\}$ so that only the four shaft speeds are free. State the two linear conditions on $T_1 \ldots T_4$, solve them by hand, convert each $T_i$ to a shaft speed with the correct sign-dependent coefficient, and check every value against the shaft limits before running.
 3. **Break it deliberately.** Take the solution of requirement 2 and change one shaft speed by 10 %. Report what appears in $X$, $Y$ and $N$, and say which of the three asymmetries the change exposed.
-4. **Let the allocator choose, and audit it.** Take the pure-sway demand solved by hand in requirement 2 as $\boldsymbol{\tau}_d$, scale its sway component until the servo limit is exceeded, and allocate that demand with `W07_alloc` under `'wpinv'`, `'clip'`, `'wls'` and `'wls16'` in turn, with $\mathbf{W} = \operatorname{diag}([1\ 10\ 1\ 10\ 1\ 10\ 1\ 10])$. For each law report $\max_i\lvert\delta_i\rvert$, $\lVert\mathbf{B}\mathbf{f}-\boldsymbol{\tau}_d\rVert$ and the exit flag returned in `info.exit`, then feed the eight numbers of the law with the smallest force error into `W07_hw` and command the resulting $n_i$ and $\delta_i$ to the plant. State whether the measured $X$, $Y$ and $N$ match $\mathbf{B}\mathbf{f}$ and, where a law went past the limit, say what the plant did with the command it could not execute.
-5. **Find the second limit, and measure past it.** Derive both thrust caps from `otter_config('quad_tilt')` by §7-12 line 3 — not by copying $119.682$ N and $66.708$ N — and state which of the two binds a pure surge demand and why. Then raise a pure surge demand $\boldsymbol{\tau}_d = [X_d\ 0\ 0]^\top$ from $X_d = 100$ N in steps until `'wls16'` first asks for a shaft speed outside the limits, report that $X_d$ against the envelope corner of §7-12 line 4, and allocate the same demand with `'wls16cap'`. For both laws report the four $T_i$, the worst $n_i$, the two clip counts and the force error **measured out of the motion model** by §7-12 line 10, using `W07_chain`. Explain the direction in which `'wls16cap'` moved the load between the two pairs, and why the scalar $\rho$ of §7-8 line 4 could not have done the same.
+4. **Let the allocator choose, and audit it.** Take the pure-sway demand solved by hand in requirement 2 as $\boldsymbol{\tau}_d$, scale its sway component until the servo limit is exceeded, and allocate that demand with `W07_alloc` under `'wpinv'`, `'clip'`, `'wls'` and `'wls16'` in turn, with $\mathbf{W} = \operatorname{diag}([1\ 10\ 1\ 10\ 1\ 10\ 1\ 10])$. For each law report $\max_i\lvert\delta_i\rvert$, $\lVert\mathbf{B}\mathbf{f}-\boldsymbol{\tau}_d\rVert$ and the exit flag returned in `info.exit`, then feed the eight numbers of the law with the smallest force error into the `hw` helper of `W07_alloc_run` and command the resulting $n_i$ and $\delta_i$ to the plant. State whether the measured $X$, $Y$ and $N$ match $\mathbf{B}\mathbf{f}$ and, where a law went past the limit, say what the plant did with the command it could not execute.
+5. **Find the second limit, and measure past it.** Derive both thrust caps from `otter_config('quad_tilt')` by §7-12 line 3 — not by copying $119.682$ N and $66.708$ N — and state which of the two binds a pure surge demand and why. Then raise a pure surge demand $\boldsymbol{\tau}_d = [X_d\ 0\ 0]^\top$ from $X_d = 100$ N in steps until `'wls16'` first asks for a shaft speed outside the limits, report that $X_d$ against the envelope corner of §7-12 line 4, and allocate the same demand with `'wls16cap'`. For both laws report the four $T_i$, the worst $n_i$, the two clip counts and the force error **measured out of the motion model** by §7-12 line 10, as §7-12 of `W07_alloc_run` does it. Explain the direction in which `'wls16cap'` moved the load between the two pairs, and why the scalar $\rho$ of §7-8 line 4 could not have done the same.
 
 ### ② Verification — mandatory
 
@@ -1847,9 +1802,9 @@ Requirements 1 to 3 are three runs, each one eight numbers given by hand in `W07
 | What to report | How |
 |---|---|
 | hand-predicted $X$, $Y$, $N$ for each of the three runs | from §7-1 line 7, before running anything |
-| measured $X$, $Y$, $N$ | table (1) of `W07_V_openloop`, or the same arithmetic in a script written for the purpose |
+| measured $X$, $Y$, $N$ | table (1) of `W07_openloop_run`, or the same arithmetic in a script written for the purpose |
 | the residual between the two | one number per run, and it must be below $10^{-12}$ |
-| $U$, $\beta$ and $r$ at $t = 30$ s | read at $t = 30$ s, as table (3) does; state the instant, not an average |
+| $U$, $\beta$ and $r$ at $t = 30$ s | read at $t = 30$ s, as table (2) does; state the instant, not an average |
 | the clip flags | whether the shaft or the servo limit bound during the run |
 | for requirement 4, one row per law | $\max_i\lvert\delta_i\rvert$, $\lVert\mathbf{B}\mathbf{f}-\boldsymbol{\tau}_d\rVert$, `info.exit` and the number of quadratic programs solved |
 | the achieved force of the chosen law | $\mathbf{B}\mathbf{f}$ computed from the eight components, against the plant's measured $X$, $Y$, $N$ |
@@ -1884,17 +1839,17 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 | Four equal $\delta_i = +45^\circ$ at four equal $n_i$ produce no force at all, only a spot turn | the mounting signs: $s_3 = s_4 = -1$ reverses the stern pair's force, so the four cancel in surge and sway | expected, and it is row S3. A sway needs the two pairs at **opposite** $\delta$, which is S5 |
 | A $B$ copied from another drawing or script has **every** sign reversed from the one in §7-1 | the convention is not in the matrix but in $s_i$: a source that lets the bow zero push astern, $s = [-1, -1, +1, +1]$, produces exactly $-B$, and its third row reads $[-d_1, -l_f, -d_2, -l_f, \ldots]$ — every arm of row 3 changes sign, because each one carries an $s_i$ | neither labelling is wrong, but the two cannot be mixed. Rebuild $B$ from the column rule rather than importing it: the course, `_tools/otter_B.m` and every measured number of §7-3 use $s = [+1, +1, -1, -1]$, and taking $B$ from one convention while commanding $\delta$ in the other reverses every manoeuvre |
 | A symmetric four-unit sway command yaws at $7.589$ deg/s | $\bar{x} = 0.25$ m, §7-4 line 7 | expected. Apply the ratio of §7-4 line 8 to cancel it, and accept the surge it costs |
-| `W07_result_openloop.png` does not change after a run | a run of fewer than eight scenarios deliberately does not overwrite it, so the figure §7-5 embeds always carries all eight | run `W07_V_openloop` with no argument |
+| `W07_result_openloop.png` does not change after a run | a run of fewer than eight scenarios deliberately does not overwrite it, so the figure §7-5 embeds always carries all eight | uncomment every line of `S` and run `W07_openloop_run` again |
 | A Constant block shows `-C-` instead of its value | `mss_style` sets Constant width to 55 px, and a longer expression does not fit | keep the Value expression short — the model uses `d_cmd`, not `delta_cmd` |
 | `n_cmd = 600` saturates immediately | the command is rad/s, not rpm | 60 rad/s is about 573 rpm; the limit is 103.931 rad/s |
-| `W07_V_openloop` runs but no figure appears | the script was called before `W07_0_setup` | run `W07_0_setup` first; it defines `animate`, `pace` and `h` |
+| `W07_openloop_run` runs but no figure appears | the script was called before `W07_0_setup` | run `W07_0_setup` first; it defines `animate`, `pace` and `h` |
 | A quadratic program solved in one sign combination reports an angle and a force error that look reasonable, while the demand is in fact unreachable in that combination | `quadprog` and `lsqlin` return their last iterate together with a non-positive exit flag, and an iterate of an infeasible problem satisfies nothing | read `info.exit` before reading anything else, and exclude those instants from every statistic. Experiment 7-10 does this, which is why its limit and error columns are computed over the solved points only |
 | Multiplying $\mathbf{W}$ by a constant changes nothing | $\mathbf{W}^{-1}\mathbf{B}^\top(\mathbf{B}\mathbf{W}^{-1}\mathbf{B}^\top)^{-1}$ is unchanged by a scalar factor: only the ratios between the eight entries enter the solution | change the ratio, not the magnitude. Measured in Experiment 7-9: $\mathbf{W}$ and $1000\mathbf{W}$ agree to $2.81\mathrm{e}{-}15$ N |
 | Raising the price of the sideways components does not reduce the tilt | row 2 of $\mathbf{B}$ is $[0\ 1\ 0\ 1\ 0\ {-1}\ 0\ {-1}]$, so $\sum_i\lvert f_{y,i}\rvert$ is pinned by the demanded $Y$ and the price can only move the yaw onto the short $f_x$ arms | a hard limit is not a price. Put $\alpha_{\max}$ in the constraints, as §7-10 does, and use $\mathbf{W}$ for what it can do — moving load between units |
-| Two timing runs of `W07_CA(11)` disagree by tens of per cent | the solver timings include allocation, interpreter and operating-system load | expected. The ordering of the laws and the orders of magnitude between them are reproducible; a single figure is not. Report the run, not a remembered number |
+| Two runs of §7-11 disagree by tens of per cent | the solver timings include allocation, interpreter and operating-system load | expected. The ordering of the laws and the orders of magnitude between them are reproducible; a single figure is not. Report the run, not a remembered number |
 | A script run by name appears to do nothing at all | a `.slx` sharing its base name takes precedence, and MATLAB opens the model instead of running the script | never let a `.m` and a `.slx` share a name; the builders append `_run` where a collision is possible |
 | A law that keeps every $\delta_i$ inside $45^\circ$ still drives a shaft past $n_{\min}$ | the servo limit and the thrust cap are two different limits, and §7-10 put only the first inside the solve | use `'wls16cap'`, which adds the chord rows of §7-12 line 6. The `rpm lim` column of Experiment 7-12 is the check |
-| An allocation reports a residual of $0$ while the hull produces a visibly different force | the residual was computed as $\lVert\mathbf{B}\mathbf{f} - \boldsymbol{\tau}_d\rVert$ inside the allocator, where the hardware limits have not yet been applied | measure out of the motion model by §7-12 line 10. `W07_chain` does this, and `W07_hw` alone does not |
+| An allocation reports a residual of $0$ while the hull produces a visibly different force | the residual was computed as $\lVert\mathbf{B}\mathbf{f} - \boldsymbol{\tau}_d\rVert$ inside the allocator, where the hardware limits have not yet been applied | measure out of the motion model by §7-12 line 10. §7-12 of `W07_alloc_run` does this, and the `hw` helper alone does not |
 | `wpinv` and `clip` report **identical** errors, which makes the clipping look pointless | the plant clips at the same value the allocator clips to, so the two produce the same force | expected, and it is §7-12 line 11. Clipping earns nothing on its own; it earns something only when the clipped limit is inside the optimisation |
 
 ---
@@ -1932,10 +1887,10 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 - Week 6 — `otter_bow.m`: changing the motion model rather than adding to its input
 - `_tools/otter_tilt4.m` — the four changes, each marked `% ---- CHANGED (i of 4)`
 - `_tools/verify_otter_tilt4.m` — the four identities of Experiment 7-1
-- `W07_simulink/W07_alloc.m` — the eight allocation laws of §7-8 to §7-12 behind one `method` flag
-- `W07_simulink/W07_hw.m` — the thrust-curve inversion of §7-8 lines 1 to 5, including the scalar $\rho$
-- `W07_simulink/W07_CA.m` — the one entry point of §7-8 to §7-12: `W07_CA(n)` runs the section whose number is given
-- `W07_simulink/W07_sl_alloc.m` — the wrapper the model's MATLAB Function block calls, mapping the `law` constant of §7-13 onto four of those eight methods
+- `W07_simulink/W07_alloc.m` — the eight allocation laws of §7-8 to §7-12 behind one `method` flag, including the thrust-curve inversion with the scalar $\rho$
+- `W07_simulink/W07_alloc_run.m` — the one entry point of §7-8 to §7-13: comment a line out of its `SEC` list and that section does not run
+- `W07_simulink/W07_openloop_run.m` — the one entry point of §7-2 to §7-6, with the eight scenarios of §7-5 in its `SCN` list
+- `W07_alloc_chain`, subsystem `allocation` — four MATLAB Function blocks, each holding one of laws 1 to 4 complete, with a Multiport Switch selecting one of them from the `law` constant of §7-13
 
 ---
 

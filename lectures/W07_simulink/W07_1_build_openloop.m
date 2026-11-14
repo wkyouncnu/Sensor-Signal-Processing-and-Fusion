@@ -23,9 +23,11 @@
 %                         뒤에 와서 같은 자리에 들어간다. 플랜트가 열두 주차
 %                         내내 같은 자리에 있게 하려는 것이다
 %       Otter USV         `otter_tilt4.m`. 축회전수 넷과 각도 넷을 받아 tau 의
-%                         1·2·6 행을 **함수 안에서** 만든다. tau_ext 중첩이 없다
+%                         1·2·6 행을 **함수 안에서** 만든다. tau_ext 중첩이 없다.
+%                         그렇게 만든 [X; Y; N] 이 **둘째 출력**으로 나온다 —
+%                         실제로 가해진 힘을 바깥에서 다시 계산하지 않는다
 %       Measurements      `add_measurement`. 앞 여섯 열은 온 과정의 계약이고,
-%                         7주차가 여덟 열을 더한다 — n(4) 과 delta(4)
+%                         7주차가 열한 열을 더한다 — n(4) · delta(4) · tau(3)
 %
 %   로그는 **서보 뒤에서** 갈라진다 / the log taps POST-SERVO
 %       명령이 아니라 배가 실제로 받은 값을 기록한다. 그래서 70 도를 지시했을 때
@@ -132,9 +134,10 @@ add_otter_plant(m, 'Otter USV', P.plant, cfg);
 % ---- measurement ---------------------------------------------------------
 %  블록 이름에 '/' 를 쓸 수 없으므로 단위를 풀어 적는다 / a block name cannot
 %  contain a slash, so the unit is spelled out
-add_measurement(m, P.measurement, 'W07', {'n', 'delta'}, ...
+add_measurement(m, P.measurement, 'W07', {'n', 'delta', 'tau'}, ...
                 struct('dash', true, ...
-                       'weekName', 'input  n  (rad per s)  and  delta  (rad)'));
+                       'weekName', ['input  n  (rad per s)  and  delta  (rad), ' ...
+                                    ' force delivered  tau  (N, N, N m)']));
 
 % ---- wiring --------------------------------------------------------------
 %  상수를 자기 포트의 행으로 옮겨서 연결한다 — 곧은 선은 겹칠 수 없다
@@ -145,6 +148,10 @@ row_feed(m, 'delta cmd',    {'delta1', 'delta2', 'delta3', 'delta4'});
 lane_line(m, 'servo limits', 1, 'Otter USV',    1, 540);
 lane_line(m, 'servo limits', 2, 'Otter USV',    2, 590);
 lane_line(m, 'Otter USV',    1, 'Measurements', 1, 850);
+
+%  플랜트가 스스로 만든 [X; Y; N]. 손 수식과 견주는 값이 여기서 나온다
+%  the [X; Y; N] the hull formed for itself; the hand formula is checked on it
+lane_line(m, 'Otter USV',    2, 'Measurements', 4, 870);
 
 %  로그로 가는 분기. 블록 밑으로 돌려 보내 플랜트를 지나가지 않게 한다
 tap(m, 'servo limits', 1, 'Measurements', 2, 520, 790, 920);
@@ -167,7 +174,12 @@ b.Text = strjoin({ ...
   '', ...
   'The log branches off the servo outputs rather than off the Constants,', ...
   'which is why a command beyond a limit is recorded as what the hull', ...
-  'received and not as what was asked for.'}, newline);
+  'received and not as what was asked for.', ...
+  '', ...
+  'The second output of Otter USV is the [X; Y; N] the motion model built', ...
+  'from those post-servo numbers to integrate the hull at all. It is logged', ...
+  'as columns 15 to 17, so the force checked against the hand formula is the', ...
+  'force the hull actually felt and not a reconstruction of it.'}, newline);
 b.Position = [40 900 1080 1060];
 b.HorizontalAlignment = 'left';
 b.BackgroundColor = 'lightBlue';

@@ -37,7 +37,7 @@ LOG = {};
 root = fileparts(fileparts(mfilename('fullpath')));
 addpath(fullfile(root,'_tools'));  mss_path();
 
-if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','W06','W07','W08','W09','W10','A1'}; end
+if nargin < 2 || isempty(WK), WK = {'W01','W02','W03','W04','W05','W06','W07','A1'}; end
 %  '_check' 는 빼지 않는다. 학생용 채점기(problems/WXX_check.m)는 하위 폴더에 있어
 %  이 목록(최상위 WXX_*.m)에 원래 안 잡히고, 최상위의 W01_F_button_check 같은 것은
 %  **강의 절 스크립트**다 — 2026-09-14 까지 잘못 빼고 있었다.
@@ -65,6 +65,13 @@ for i = 1:numel(WK)
         nm = erase(S(k).name, '.m');
         if any(cellfun(@(p) contains(nm,p), SKIP)), continue; end
         old = pwd;  cd(d);
+        %  인자를 요구하는 함수는 절 스크립트가 아니다 — 혼자 돌리면 "입력 인수가
+        %  부족합니다" 로 실패한다. 이름으로 빼지 않고 **직접 물어본다.**
+        %  A function that needs arguments is not a section script; running it alone
+        %  fails for want of them. Ask the file itself instead of listing names.
+        needs_args = false;
+        try, needs_args = nargin(nm) > 0; catch, end
+        if needs_args, cd(old); continue; end
         try
             %  base 워크스페이스에서 돌린다. run() 을 여기서 부르면 스크립트
             %  첫 줄의 `clear` 가 **이 함수의** 누적 변수를 지운다 — 실제로
@@ -100,8 +107,7 @@ fprintf('\n  %d개 실행, 실패 %d개\n\n', numel(names), nf);
 %% ---- 검증 도구: 강의에 적힌 상수·유도를 원천과 대조한다 ----------------
 V = {'verify_constants','verify_w01_theory','verify_guidance','verify_alos', ...
      'verify_review_math','verify_w02_pid','verify_w03_speed','verify_w04_heading','verify_w05_guidance', ...
-     'verify_w06_actuation','verify_w07_allocation','verify_w08_waves','verify_w09_dp', ...
-     'verify_w10_integration'};
+     'verify_w06_actuation','verify_otter_bow','verify_otter_tilt4'};
 fprintf('  ================ 검증 도구 ================\n\n');
 for i = 1:numel(V)
     if ~exist(V{i}, 'file'), fprintf('  %-22s 없음\n', V{i}); continue; end

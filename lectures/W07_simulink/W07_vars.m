@@ -2,18 +2,18 @@ function V = W07_vars()
 %W07_VARS  7주차의 값 전부를 struct 하나로.
 %          Every Week 7 value as one struct.
 %
-%   절 스크립트와 `W07_read` 가 쓴다. `W07_0_setup` 과 **같은 값**이고, 다른 것은
+%   두 러너 `W07_openloop_run` 과 `W07_alloc_run` 이 쓴다. `W07_0_setup` 과 **같은 값**이고, 다른 것은
 %   셋뿐이다 — 실시간 화면을 끄고(`animate = 0`), 현실 시간 진행을 끄고
-%   (`pace = 0`), 더 짧게 돈다. 사람이 Run 을 누를 때와 스크립트가 여섯 경우를
+%   (`pace = 0`), 더 짧게 돈다. 사람이 Run 을 누를 때와 스크립트가 여덟 경우를
 %   돌릴 때 **물리는 같고 기다리는 시간만 다르다**.
 %
-%   Used by the section script and by W07_read. The values are those of
+%   Used by the two run scripts, W07_openloop_run and W07_alloc_run. The values are those of
 %   W07_0_setup with three exceptions: the live view is off, pacing is off and
 %   the run is shorter. The physics is identical; only the waiting differs.
 %
 %   값을 두 군데 적지 않으려고 추진기 배치와 한계는 `otter_config` 에서 만든다.
 %
-%   See also W07_0_SETUP, W07_READ, W07_V_OPENLOOP.
+%   See also W07_0_SETUP, W07_OPENLOOP_RUN, W07_ALLOC_RUN.
 
 cfg = otter_config('quad_tilt');
 

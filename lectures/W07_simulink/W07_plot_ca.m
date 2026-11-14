@@ -12,7 +12,7 @@
 %           5:7    tau_act    실제로 나온 [X Y N] / what the hull received
 %           8:10   u v r      선체 속도            / the hull velocities
 %
-%   See also W07_2_BUILD_ALLOC, W07_SAVE_FIG, W07_CA.
+%   See also W07_2_BUILD_ALLOC, W07_ALLOC_RUN, W07_ALLOC.
 
 if evalin('base', 'exist(''W07ca_log'', ''var'')') ~= 1
     return
@@ -77,4 +77,10 @@ fprintf('\n');
 
 % 법칙마다 그림을 따로 남긴다 — 넷을 나란히 두고 보는 것이 이 모델의 목적이다
 % one figure per law, so the four can be laid side by side
-W07_save_fig(f, fullfile(here, 'img', sprintf('W07_alloc_chain_law%d.png', k)));
+pf = fullfile(here, 'img', sprintf('W07_alloc_chain_law%d.png', k));
+try
+    exportgraphics(f, pf, 'Resolution', 150);
+catch
+    print(f, pf, '-dpng', '-r150');
+end
+fprintf('\n    saved %s\n', pf);

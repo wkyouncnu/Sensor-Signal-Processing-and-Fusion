@@ -123,6 +123,16 @@ add_block('simulink/Sinks/Out1',  [sub '/x'],        'Position',[700 143 730 157
 if tilt
     add_block('simulink/Sources/In1', [sub '/delta'], 'Position',[40 153 70 167]);
 end
+%  틸팅 넷에서만 포트가 하나 더 붙는다 / one more port, on the four-tilt hull only
+%      운동모델이 **이미** 포화 뒤의 n 과 delta 로 [X Y N] 을 만든다. 그것을
+%      내보내면 바깥에서 같은 계산을 되풀이하는 블록이 필요 없다. 다른 주차의
+%      선체는 이 포트를 갖지 않으므로 그 모델들은 그대로다.
+%      The motion model already forms [X Y N] from the clipped n and delta;
+%      bringing it out removes the block that repeated that arithmetic outside.
+%      The other weeks' hulls have no such port, so their models are untouched.
+if tilt4
+    add_block('simulink/Sinks/Out1', [sub '/tau act'], 'Position',[700 243 730 257]);
+end
 if ext
     add_block('simulink/Sources/In1', [sub '/tau_ext'], 'Position',[40 163 70 177]);
 end
@@ -143,7 +153,7 @@ add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
           'Position',[330 100 520 340]);
 if tilt4
     code = { ...
-'function xdot = otter_hull(x, n, delta, mp, rp, V_c, beta_c, quad)'
+'function [xdot, tau] = otter_hull(x, n, delta, mp, rp, V_c, beta_c, quad)'
 '% otter_tilt4.m: Fossen''s otter.m with four tilting thrusters, called'
 '% unchanged from _tools. Four shaft speeds and four angles in, tau built'
 '% inside, in the same four marked places as otter_bow.m.'
@@ -157,12 +167,18 @@ if tilt4
 '% [e_x; e_y; x e_y - y e_x] with e = [cos delta; sin delta]. Nothing is'
 '% added after the call; there is no superposition and no tau_ext port.'
 '%'
+'% The second output is the [X; Y; N] the model actually used, formed after n'
+'% and delta are clipped to their limits. It is the delivered force, so no'
+'% block outside has to rebuild it from n and delta.'
+'%'
 '% otter_tilt4.m is not written for code generation, so the call is extrinsic'
-'% and xdot has to be pre-sized for Simulink to know the output width.'
+'% and both outputs have to be pre-sized for Simulink to know their widths.'
 'coder.extrinsic(''otter_tilt4'');'
 ''
 'xdot = zeros(12,1);'
-'xdot = otter_tilt4(x, n, delta, mp, rp, V_c, beta_c, quad);'
+'spd  = 0;'
+'tau  = zeros(3,1);'
+'[xdot, spd, tau] = otter_tilt4(x, n, delta, mp, rp, V_c, beta_c, quad);'
 'end'};
 elseif bow
     code = { ...
@@ -223,7 +239,11 @@ else
 'xdot = otter(x, u_thr, mp, rp, V_c, beta_c);'
 'end'};
 end
-set_mlfcn(blk, code, 'xdot', '[12 1]');
+if tilt4
+    set_mlfcn(blk, code, {'xdot','tau'}, {'[12 1]','[3 1]'});
+else
+    set_mlfcn(blk, code, 'xdot', '[12 1]');
+end
 
 %% ---- integrator ---------------------------------------------------------
 add_block('simulink/Continuous/Integrator', [sub '/states'], ...
@@ -252,6 +272,7 @@ for i = 1:numel(K), L([K{i} '/1'], sprintf('Otter hull/%d', i+np)); end
 L('Otter hull/1',  'states/1');
 L('states/1',      'Go_x/1');
 L('states/1',      'x/1');
+if tilt4, L('Otter hull/2', 'tau act/1'); end
 
 Simulink.BlockDiagram.arrangeSystem(sub);
 end

@@ -26,7 +26,7 @@ description: 대학원 USV GNC 강의 볼트(GradCourse)에서 강의자료를 �
 > **그 파일만** 읽는다 — 전부 읽지 않는다. 지침을 받으면 순서대로:
 > 1. 지침을 주제가 맞는 `references/orders-*.md` 에 **추가**하고 `standing-orders.md`
 >    색인에 한 줄 더한다. 날짜가 붙는 기록이면 **색인이 말하는 마지막 로그 파일**
->    끝에 다음 번호로 (지금은 `orders-log-7.md`, 다음 번호는 §15-82)
+>    끝에 다음 번호로 (지금은 `orders-log-7.md`, 다음 번호는 §15-88)
 > 2. 해당 규칙 문서를 고친다 (`difficulty` · `results-and-figures` · `figures-svg` · `model-layout` · `lecture-md`)
 > 3. `CLAUDE.md` 를 고친다
 > 4. **`PLAN.md` 를 고친다** — 볼트 루트에 있다. 계획은 거기 하나뿐이다

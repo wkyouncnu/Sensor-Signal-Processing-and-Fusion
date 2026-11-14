@@ -1,9 +1,18 @@
-function [xdot,U] = otter_tilt4(x,n,delta,mp,rp,V_c,beta_c,quad)
+function [xdot,U,tau_act] = otter_tilt4(x,n,delta,mp,rp,V_c,beta_c,quad)
 %OTTER_TILT4  Otter USV with four tilting thrusters: four shaft speeds and
 %             four tilt angles in.
 %
 %   [xdot,U] = otter_tilt4(x,n,delta,mp,rp,V_c,beta_c)
 %   [xdot,U] = otter_tilt4(x,n,delta,mp,rp,V_c,beta_c,quad)
+%   [xdot,U,tau_act] = otter_tilt4(...)
+%
+%   세 번째 출력 tau_act 는 **이 운동모델이 실제로 쓴** [X ; Y ; N] 이다. n 과
+%   delta 를 한계로 자른 뒤 계산한 것이므로, 배분기가 요구한 tau 와 다를 수 있다.
+%   요구와 실제를 견주려면 바깥에서 다시 계산하지 말고 이것을 쓴다.
+%   The third output is the [X ; Y ; N] this motion model actually used. It is
+%   formed after n and delta are clipped to their limits, so it differs from the
+%   tau the allocator demanded whenever a limit is active. Compare demand with
+%   delivery from this output rather than recomputing it outside.
 %
 %   MSS 의 VESSELS/otter.m 을 **그대로 복사**한 뒤 네 군데만 고친 것이다.
 %   `otter_bow.m` 과 **같은 방식**이다 — 고치는 자리도 같은 네 곳이다.
@@ -336,6 +345,10 @@ f = [ Thrust(1)*cos(delta(1))
       Thrust(4)*sin(delta(4)) ];
 
 tau3 = B_thr * f;                       % [X ; Y ; N]
+
+% 실제로 가해진 힘·모멘트를 그대로 내보낸다 — 포화 뒤의 n 과 delta 로 만든 것이다
+% report the delivered force and moment: built from the clipped n and delta
+tau_act = tau3;
 
 tau = [tau3(1)
        tau3(2)

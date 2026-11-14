@@ -47,10 +47,10 @@
 │                            verify_w05_guidance.m                     (W05 모델 없는 유도 튜닝: LOS=P, ILOS=PI)
 │                            verify_w06_actuation.m                    (W06 선수추진기: B 의 열·계급, 횡력 한계,
 │                              누출, 두 좌표계의 등가성, 포화 모양 둘 — 검사 17 개)
-│                            verify_w07_allocation.m                   (W07 제어 배분: pinv(B), 잔차, 자르기 대 비율)
-│                            verify_w08_waves.m · wave_train.m         (W08 파랑: 스펙트럼 한 실현, 노치 필터)
-│                            verify_w09_dp.m                          (W09 위치제어: B 의 계급, 웨더베인, 임무 상태기계)
-│                            verify_w10_integration.m                 (W10 통합: 기준 임무, 절제 둘, 두 종류의 한계, 실현 폭)
+│                            verify_otter_bow.m                        (W06 선수추진기 형상: B 의 열, 횡력 한계)
+│                            verify_otter_tilt4.m                      (W07 틸팅 넷: B(δ) 의 열 규칙, 추력 곡선, M)
+│                            wave_train.m                              (파랑 스펙트럼 한 실현 — 쓰는 주차는 지금 없다.
+│                              옛 W08 과 함께 2026-11-14 에 강의에서 내렸고, 도구만 남겼다)
 │                            vault_runall.m · vault_number_audit.m · verify_review_math.m  (전체 검토:
 │                              전 스크립트 실행 → 문서 수치를 실행 로그와 대조 → 검토에서 실은 수치 재현)
 │                            vault_rename_tau_u.m · vault_unify_ypont.m · w05_beta_fix.m   (기호 통일 변환기)

@@ -19,9 +19,9 @@ function f = W07_plot(R, LBL, ttl, STY)
 %       다른 명령 없이 그림이 뜬다. V 절도 같은 함수를 부르므로, 학생이 화면에서
 %       보는 그림과 강의노트에 실린 그림이 같은 코드에서 나온다.
 %
-%   R 의 원소는 `W07_read` 가 돌려주는 struct 다 — 필드 이름으로 쓰고 열 번호를
+%   R 의 원소는 로그에 이름을 붙인 struct 다 — 필드 이름으로 쓰고 열 번호를
 %   세지 않는다. StopFcn 으로 불릴 때는 기본 작업공간의 로그를 같은 모양으로
-%   바꿔서 쓴다 / each element of R is what W07_read returns; the StopFcn path
+%   바꿔서 쓴다 / each element of R is the log under field names; the StopFcn path
 %   converts the base-workspace log into the same shape.
 %       t  u  v  r [rad/s]  N  E  psi [deg]  n [4]  delta [4 rad]
 %
@@ -132,7 +132,7 @@ end
 % =========================================================================
 function R = named(t, y)
 %  로그의 열 순서를 이름으로. 이 순서를 정하는 것은 `_tools/add_measurement` 이고
-%  `W07_read` 가 같은 이름을 쓴다 / the column order add_measurement fixes
+%  `W07_openloop_run` 이 같은 이름을 쓴다 / the column order add_measurement fixes
 R.t     = t;
 R.u     = y(:, 1);  R.v   = y(:, 2);  R.r   = y(:, 3);
 R.N     = y(:, 4);  R.E   = y(:, 5);  R.psi = y(:, 6);     % [deg]
