@@ -1,5 +1,23 @@
-%W07_ALLOC_RUN  7주차 제어배분 — §7-8 부터 §7-13 까지를 **이 파일 하나에서** 돈다.
-%               Week 7 control allocation: 7-8 to 7-13, out of this one file.
+%W07_ALLOC_RUN  7주차 제어배분 — **모델을 돌려서** §7-8 부터 §7-13 까지를 낸다.
+%               Week 7 control allocation: 7-8 to 7-13, all of it by running
+%               the model.
+%
+%  이 파일이 **하지 않는** 일 / what this file does NOT do
+%      배분 법칙을 다시 구현하지 않는다. 법칙 넷은 `W07_alloc_chain.slx` 의
+%      `allocation` 서브시스템 안에 **MATLAB Function 블록 넷**으로 들어 있고,
+%      Multiport Switch 가 `law` 로 하나를 고른다. 이 스크립트는 작업공간의
+%      `law` 와 `tau_cmd` 와 가중값을 바꾸고 `sim` 을 부를 뿐이다
+%      (사용자 지시, 2026-11-14).
+%      It does not re-implement a single allocation law. The four laws live in
+%      four MATLAB Function blocks inside the allocation subsystem of
+%      W07_alloc_chain.slx, and a Multiport Switch picks one with `law`. This
+%      script only changes `law`, `tau_cmd` and the weights on the workspace
+%      and calls sim.
+%
+%      그래서 강의자료의 모든 수치는 **학생이 Run 을 눌러서 보는 그 블록**에서
+%      나온다. 스크립트와 모델이 어긋날 자리가 없다.
+%      Every number in the lecture therefore comes out of the very block the
+%      student sees on Run. There is no second implementation to drift.
 %
 %  고르는 법 / how to choose
 %      아래 SEC 목록에서 **줄을 주석 처리하면 그 절은 돌지 않는다.** 아무것도
@@ -7,33 +25,36 @@
 %      Comment a line out of the SEC list below and that section does not run.
 %      With nothing commented out, all six sections run, in order.
 %
+%  왜 `sim` 이 전부 스크립트 본문에 있는가 / why every sim sits in the script body
+%      `sim` 을 **함수 안에서** 부르면 To Workspace 블록의 로그가 그 함수의
+%      작업공간에 생긴다. 그러면 모델의 StopFcn (`W07_plot_ca`) 이 기준
+%      작업공간에서 로그를 찾지 못해 그림이 뜨지 않는다. 그래서 이 파일은
+%      값을 놓는 일(`set_vars`) 과 읽는 일(`read_logs`) 만 함수로 두고,
+%      `sim` 은 **본문에서** 부른다 — 스크립트의 작업공간이 곧 기준 작업공간이다.
+%      Called from inside a function, sim leaves the To Workspace logs in that
+%      function's workspace, where the model's StopFcn cannot find them. Only
+%      placing the values (set_vars) and reading the logs (read_logs) are
+%      functions here; every sim is called from the script body, whose
+%      workspace IS the base workspace.
+%
 %  시뮬링크에서 직접 / straight from Simulink
-%      §7-13 은 모델 `W07_alloc_chain` 을 돈다. 이 스크립트가 한 번 돌고 나면
-%      `law` 와 `tau_cmd` 가 작업공간에 남으므로, 모델을 열고 Run 을 누르는 것만
-%      으로 같은 법칙이 다시 돈다. 다른 법칙을 보려면 작업공간의 `law` 를
-%      1~4 로 바꾸고 Run 을 누른다. `.slx` 는 고치지 않는다.
-%      Section 7-13 runs the model W07_alloc_chain. After this script has run
-%      once, `law` and `tau_cmd` are left on the workspace, so opening the model
-%      and pressing Run repeats the same law. To see another, change `law` on
-%      the workspace to 1..4 and press Run. The .slx is never edited.
+%      이 스크립트가 한 번 돌고 나면 `law` 와 `tau_cmd` 가 작업공간에 남는다.
+%      모델을 열고 Run 을 누르면 같은 법칙이 다시 돌고, `W07_plot_ca` 가 진단
+%      그림 여섯 칸을 띄운다. 다른 법칙을 보려면 작업공간의 `law` 를 1~4 로
+%      바꾸고 Run 을 누른다. `.slx` 는 고치지 않는다.
+%      After this script has run once, `law` and `tau_cmd` are left on the
+%      workspace. Open the model, press Run, and the same law runs again with
+%      the six diagnostic panels of W07_plot_ca. To see another law, set `law`
+%      to 1..4 on the workspace and press Run. The .slx is never edited.
 %
 %  밖에 두는 것 / what is left outside this file
-%      `W07_alloc`     배분 법칙 여덟 가지. 이 스크립트의 표(§7-8~§7-12)가 쓴다.
-%                      모델은 이것을 부르지 않는다 — `allocation` 서브시스템의
-%                      MATLAB Function 블록 넷이 법칙 1~4 를 **각자 안에서** 끝내고,
-%                      Multiport Switch 가 `law` 로 하나를 고른다
-%                      the eight laws, used by this script's tables. The model
-%                      does not call it: four MATLAB Function blocks inside the
-%                      allocation subsystem each hold one law, complete, and a
-%                      Multiport Switch picks one of them with `law`
-%      `otter_config` · `otter_tilt4` · `otter_M`   공용 플랜트 / shared plant
-%      `W07_plot_ca`   §7-13 모델의 StopFcn / the StopFcn of the 7-13 model
+%      `W07_alloc_chain.slx`  법칙 넷과 하드웨어 한계 / the laws and the limits
+%      `otter_config` · `otter_B`                공용 형상 / shared geometry
+%      `W07_vars`      그 주차의 값 한 벌 / the week's settings
+%      `W07_plot_ca`   모델의 StopFcn — 진단 그림 여섯 칸 / the six panels
+%      `quad_thrust_plan`   위에서 본 추력 그림 / the plan view
 %
-%      그 밖의 계산과 그림은 전부 이 파일 안에 있다 — 표를 찍고 그림을 그리는
-%      데 다른 `.m` 을 열 필요가 없다.
-%      Everything else -- every table and every figure -- is in this file.
-%
-%  See also W07_OPENLOOP_RUN, W07_ALLOC, W07_0_SETUP.
+%  See also W07_OPENLOOP_RUN, W07_2_BUILD_ALLOC, W07_PLOT_CA, W07_0_SETUP.
 
 close all;
 
@@ -42,660 +63,506 @@ root = fileparts(fileparts(here));
 addpath(fullfile(root, '_tools'), here);
 mss_path();
 
+mdl = 'W07_alloc_chain';
+assert(isfile(fullfile(here, [mdl '.slx'])), 'W07:noModel', ...
+       '%s.slx 가 없다. 먼저 W07_2_build_alloc 를 돌린다 / build it first', mdl);
+
 cfg = otter_config('quad_tilt');
-B   = cfg.B;
 V   = W07_vars();
 if ~isfolder(fullfile(here, 'img')), mkdir(fullfile(here, 'img')); end
 
-% 여섯 절이 같은 설정을 쓴다 / every section uses the same settings
-% 작업공간에 같은 이름이 남아 있어도 덮어쓴다 / overwrite whatever P was before
-P           = struct();
-P.W         = diag(repmat([1 10], 1, 4));   % 가로 성분이 열 배 비싸다 / f_y priced 10x
-P.alpha_max = cfg.alpha_max(1);             % 서보 각 한계 / servo-angle limit
-P.Q         = eye(3);                       % tau 오차의 가중 / weight on the tau error
-P.eps_reg   = 1e-4;                         % 정칙화 / regularisation
-P.T_pos     = cfg.k_pos * cfg.n_max^2;      % 전진 추력 한계 [N] / ahead thrust cap
-P.T_neg     = cfg.k_neg * cfg.n_min^2;      % 후진 추력 한계 [N] / astern thrust cap
-P.n_chord   = 3;                            % 추력 캡의 내접 현 수 / inscribed chords
+%  모델이 읽는 이름을 작업공간에 한 번 깔아 둔다 / the names the model reads
+push_vars(V);
+animate  = 0;        % 화면을 그리지 않는다 / no live window
+pace     = 0;        % 현실 시간으로 기다리지 않는다 / no real-time pacing
+W07batch = true;     % run_alone 이 animate 를 올리지 않게 / keep it quiet
+W07quiet = true;     % StopFcn 의 그림을 끈다 / the StopFcn draws nothing
+
+B     = cfg.B;
+aft   = cfg.pos(1,:) < 0;                      % 선미 쌍 / the aft pair
+quadq = [cfg.pos ; cfg.alpha_max ; cfg.mount];
+
+%  돌리는 시간 — 배분은 대수식이므로 짧아도 된다 / allocation is algebraic
+T_SWEEP = 1;        % 표를 뽑는 동안 / while tables are being measured
+T_SHOW  = 5;        % 그림에 시간축이 보여야 하는 절 / where a history is drawn
+
+law_name = {'minimum norm', 'weighted minimum norm', ...
+            'weighted, folded onto the servo limit', ...
+            'servo limit and thrust cap as constraints'};
 
 %% 돌릴 절 — 줄을 주석 처리하면 그 절이 빠진다 / the sections to run ----------
 %     한 줄이 한 절이다. `%` 하나로 절 하나가 빠진다
 %     one line is one section; one % removes one section
 SEC = { ...
-    '7-8'   'the allocation problem and its minimum-norm solution'
-    '7-9'   'the weight matrix W'
-    '7-10'  'the servo-angle limit'
-    '7-11'  'the time one solve takes'
-    '7-12'  'two limits: the servo angle and the shaft speed'
-    '7-13'  'the four laws inside one model'
+    '7-8'   'the minimum-norm solution, straight out of the block'
+    '7-9'   'the weight matrix W, swept'
+    '7-10'  'the servo-angle limit: law 2 against law 3'
+    '7-11'  'how long one solve takes, the four laws timed'
+    '7-12'  'the thrust cap as well: law 4, and how Q and eps are tuned'
+    '7-13'  'the four laws side by side, out of one model'
 };
 
-%% §7-13 에서 돌릴 법칙 — 여기도 줄을 주석 처리해서 고른다 / the laws of 7-13 --
-LAWS = { ...
-    1  'minimum norm'
-    2  'weighted minimum norm'
-    3  'weighted, folded onto the servo limit'
-    4  'servo limit and thrust cap as constraints'
-};
+tau_nom  = [  0 ;  40 ;  0];    % 순수 횡방향 — 서보 한계를 건드린다 / servo-binding
+tau_hard = [340 ;  60 ; 25];    % 추력 캡까지 건드린다 / thrust-cap-binding
 
-assert(~isempty(SEC), 'W07:noSection', 'every line of SEC is commented out');
-fprintf('\nW07 control allocation -- %d of 6 sections selected :', size(SEC,1));
-fprintf(' %s', string(SEC(:,1)));
-fprintf('\n');
+want = @(s) any(strcmp(s, SEC(:,1)));
+fprintf('\n==== W07 allocation, run from the model %s ====\n', mdl);
+fprintf('  sections: %s\n', strjoin(SEC(:,1).', ', '));
 
-%% (7-8) 해는 무한히 많고, 그 중 노름이 가장 작은 하나 / the minimum-norm one --
-if any(strcmp(SEC(:,1), '7-8'))
+%% §7-8  최소 노름 해 — 블록이 그 공식을 그대로 쓰는가 ----------------------
+if want('7-8')
+hdr('7-8', 'the minimum-norm solution, straight out of the block');
+T_final = T_SWEEP;
 
-tau_d = [80; 30; 20];
-fprintf('\n=== 7-8  the allocation problem and its minimum-norm solution ===\n');
-fprintf('B is %dx%d,  rank %d,  null space dimension %d\n', ...
-        size(B,1), size(B,2), rank(B), size(B,2)-rank(B));
-fprintf('demand  tau_d = [%.0f N, %.0f N, %.0f N m]\n', tau_d);
+set_vars(1, tau_nom);  sim(mdl);  R1 = read_logs(1);
 
-% 영공간 벡터를 더해도 같은 tau 가 나온다 / a null-space vector leaves tau unchanged
-f0 = W07_alloc(B, tau_d, 'pinv');
-Z  = null(B);
-f1 = f0 + 40*Z(:,1);
-fprintf('\n(1) two solutions that give the same tau\n');
-fprintf('    minimum norm      ||f|| = %7.2f N   ||B f - tau|| = %.2e\n', ...
-        norm(f0), norm(B*f0 - tau_d));
-fprintf('    null space added        %7.2f N   %21.2e\n', ...
-        norm(f1), norm(B*f1 - tau_d));
-fprintf('    -> the same force costs the thrusters %.0f %% more\n', ...
-        100*(norm(f1)/norm(f0) - 1));
+%  블록이 유도의 공식을 그대로 쓰는지 본다 / does the block use the formula
+%      f = B' * inv(B*B') * tau_d                     (§7-8)
+f_hand = B.' * ((B * B.') \ tau_nom);
+fprintf('  the block and  f = B''(BB'')^-1 tau_d  agree to %.3e N\n', ...
+        max(abs(R1.f - f_hand)));
+fprintf('  ||f|| from the block         %8.4f N\n', norm(R1.f));
+fprintf('  ||f|| from the hand solution %8.4f N\n', norm(f_hand));
 
-fprintf('\n(2) minimum norm  f = B^T (B B^T)^{-1} tau\n');
-fprintf('    unit      f_x [N]   f_y [N]\n');
-fprintf('     %d      %9.3f %9.3f\n', [1:4; f0(1:2:7).'; f0(2:2:8).']);
+unit_table(R1, 'law 1, minimum norm');
 
-% 여덟 성분을 여덟 명령으로 / the eight components, turned into eight commands
-H = hw(B, f0, cfg);
-fprintf('\n(3) hardware command\n');
-fprintf('    unit     T [N]   delta [deg]    n [rad/s]   |delta|<=45?\n');
-for i = 1:4
-    fprintf('     %d    %8.3f %11.2f %12.2f        %s\n', i, H.T(i), ...
-        rad2deg(H.delta(i)), H.n(i), ...
-        string(abs(H.delta(i)) <= cfg.alpha_max(i)+1e-9));
-end
-fprintf('    rho = %.4f   (1 means the thrust limit was not reached)\n', H.rho);
-fprintf('    tau achieved = [%.3f %.3f %.3f]   distance from the demand %.2e\n', ...
-        H.tau, norm(H.tau - tau_d));
-
-% 그림 — 평면도 위의 네 추력 화살표와 요구한 힘. 추력은 빨강이고 축척이 하나,
-% 요구한 힘은 파랑이고 **단위가 다르므로** 축척이 따로다
-% the figure: the four thrust arrows seen from above, with the demand. The
-% thrusts are red on one scale, the demand is blue on a scale of its own
-% because its units are different
-xp = cfg.pos(1,:);  yp = cfg.pos(2,:);  sm = cfg.mount;
-fig = figure('Color','w','Position',[80 80 520 640]);
-hold on; axis equal; grid on
-for sy = [-1 1]      % 두 폰툰. 가로축이 y_b 다 / two pontoons; y_b is horizontal
-    rectangle('Position',[sy*0.395-0.16, -1.45, 0.32, 3.35], ...
-              'Curvature',0.35,'EdgeColor',[.65 .65 .65],'FaceColor',[.95 .95 .95]);
-end
-sc  = 0.70/max(abs(H.T));       % 추력 화살표 축척 / thrust arrow scale [m/N]
-sct = 0.70/norm(tau_d(1:2));    % tau 는 따로 / tau has its own
-for i = 1:4
-    vx = sm(i)*H.T(i)*cos(H.delta(i));  vy = sm(i)*H.T(i)*sin(H.delta(i));
-    plot(yp(i), xp(i), 'ko','MarkerFaceColor','k','MarkerSize',6);
-    quiver(yp(i), xp(i), sc*vy, sc*vx, 0, 'LineWidth',2,'Color',[.85 .2 .2], ...
-           'MaxHeadSize',0.9);
-    text(yp(i)+0.10, xp(i)-0.17, sprintf('%d:  %.0f N,  %.0f%c', ...
-         i, H.T(i), rad2deg(H.delta(i)), char(176)), 'FontSize',9);
-end
-quiver(0, 0, sct*tau_d(2), sct*tau_d(1), 0, 'LineWidth',2.5, ...
-       'Color',[.1 .3 .8], 'MaxHeadSize',0.9);
-text(-0.62, 0.62, sprintf('\\tau_d = [%.0f N, %.0f N, %.0f Nm]', tau_d), ...
-     'FontSize',10,'Color',[.1 .3 .8],'HorizontalAlignment','right');
-text(-1.50, -1.80, {'red   thrust of each unit, to scale', ...
-                    'blue  demanded X and Y, own scale'}, 'FontSize',9);
-xlabel('y_b  (starboard) [m]');  ylabel('x_b  (bow) [m]');
-title('Minimum-norm allocation');
-xlim([-1.60 1.60]);  ylim([-2.1 2.5]);
+fig = figure('Color', 'w', 'Position', [60 60 980 640]);
+subplot(2,2,1);
+quad_thrust_plan(quadq, R1.T, R1.d_ask, tau_nom(1:2).', ...
+                 'What law 1 asked for, before any limit');
+subplot(2,2,2);
+bar(R1.f); grid on
+set(gca, 'XTick', 1:8, 'XTickLabel', ...
+    {'f_{x1}','f_{y1}','f_{x2}','f_{y2}','f_{x3}','f_{y3}','f_{x4}','f_{y4}'});
+ylabel('[N]');
+title(sprintf('The eight components,  ||f|| = %.2f N', norm(R1.f)), 'FontSize', 9);
+subplot(2,2,3);
+bar(rad2deg([R1.d_ask R1.d_got])); grid on; hold on
+yline( rad2deg(V.alpha_lim), 'r--', '+limit', 'FontSize', 8);
+yline(-rad2deg(V.alpha_lim), 'r--', '-limit', 'FontSize', 8);
+set(gca, 'XTickLabel', {'1','2','3','4'});
+xlabel('unit'); ylabel('delta [deg]');
+legend({'asked','allowed'}, 'Location', 'best', 'FontSize', 8);
+title('Every unit asks for more tilt than the servo has', 'FontSize', 9);
+subplot(2,2,4);
+bar([R1.tau_d ; R1.tau_a].'); grid on
+set(gca, 'XTickLabel', {'X','Y','N'});
+legend({'demanded','delivered'}, 'Location', 'best', 'FontSize', 8);
+title(sprintf('A yaw of %+.2f N m arrives that was never asked for', ...
+      R1.tau_a(3)), 'FontSize', 9);
+sgtitle('7-8  minimum norm: the solution, and what the servo limit does to it', ...
+        'FontSize', 11);
 savepng(fig, fullfile(here, 'img', 'W07_alloc_pinv.png'));
-
 end
 
-%% (7-9) 가중행렬은 값표다 / the weight matrix is a price list ----------------
-if any(strcmp(SEC(:,1), '7-9'))
+%% §7-9  가중 행렬 W — 값을 바꿔 가며 모델을 다시 돈다 ----------------------
+if want('7-9')
+hdr('7-9', 'the weight matrix W, swept');
+T_final = T_SWEEP;
 
-% B 의 둘째 줄이 [0 1 0 1 0 -1 0 -1] 이므로 Y 는 f_y 열만이 낸다. 따라서
-% sum|f_y| 는 요구가 정한 값에 묶여 있고, f_y 를 비싸게 매겨도 줄지 않는다
-% Row 2 of B is [0 1 0 1 0 -1 0 -1], so Y comes from the f_y columns alone. The
-% sum of |f_y| is pinned by the demand; what the price list moves is who pays
-tau_d = [80; 30; 20];
-wlist = [1 3 10 30 100 300 1000];
-
-fprintf('\n=== 7-9  the weight matrix W ===\n');
-fprintf('demand tau_d = [%.0f N, %.0f N, %.0f N m],  W = diag([1 w 1 w 1 w 1 w])\n', tau_d);
-fprintf('Y comes from the f_y columns alone (row 2 of B = [%s]) -> sum|f_y| is pinned\n\n', ...
-        strtrim(sprintf('%g ', B(2,:))));
-fprintf('       w   sum|f_y| [N]   f_x spread [N]   max|delta| [deg]   ||f|| [N]   ||B f - tau||\n');
-
-md = zeros(size(wlist));  nf = md;  sf = md;  sp = md;
-for j = 1:numel(wlist)
-    f  = W07_alloc(B, tau_d, 'wpinv', struct('W', diag(repmat([1 wlist(j)], 1, 4))));
-    H  = hw(B, f, cfg);
-    fx = f(1:2:end);  fy = f(2:2:end);
-    md(j) = max(abs(rad2deg(H.delta)));
-    nf(j) = norm(f);
-    sf(j) = sum(abs(fy));
-    sp(j) = max(abs(fx)) - min(abs(fx));   % f_x 의 쏠림 / how skewed f_x is
-    fprintf('  %6g %13.2f %16.2f %18.2f %12.2f %15.1e\n', ...
-            wlist(j), sf(j), sp(j), md(j), nf(j), norm(B*f - tau_d));
+%  (가) 가로 성분의 값만 올린다 / (a) raise the price of the sideways component
+w_list = [1 3 10 30 100 300 1000];
+S      = zeros(numel(w_list), 5);
+for i = 1:numel(w_list)
+    set_vars(2, tau_nom, struct('W_alloc', diag(repmat([1 w_list(i)], 1, 4))));
+    sim(mdl);
+    R  = read_logs(2);
+    fx = R.f(1:2:7);  fy = R.f(2:2:8);
+    S(i,:) = [sum(abs(fy)), max(fx) - min(fx), ...
+              rad2deg(max(abs(R.d_ask))), norm(R.f), norm(R.e)];
+end
+fprintf('  (a) the price of the sideways component\n');
+fprintf('        w_y    sum|f_y|   spread|f_x|   worst delta     ||f||   tau err\n');
+for i = 1:numel(w_list)
+    fprintf('   %9.0f %10.2f %12.2f %13.2f %9.2f %9.3f\n', w_list(i), S(i,:));
 end
 
-% W 를 통째로 키워도 해가 같다 — 비율만이 뜻을 가진다
-% scaling the whole of W changes nothing: only the ratios carry meaning
-f_a = W07_alloc(B, tau_d, 'wpinv', struct('W', diag(repmat([1 10],1,4))));
-f_b = W07_alloc(B, tau_d, 'wpinv', struct('W', 1000*diag(repmat([1 10],1,4))));
-fprintf('\ndistance between the W and 1000*W solutions : %.2e N   (only ratios matter)\n', ...
-        norm(f_a - f_b));
+%  (나) 선미 쌍만 비싸게 한다 / (b) price the aft pair dearer
+c_list = [1 2 5 10 20];
+Sa     = zeros(numel(c_list), 3);
+for i = 1:numel(c_list)
+    d = repmat([1 10], 1, 4);
+    d(repelem(aft, 2)) = d(repelem(aft, 2)) * c_list(i);
+    set_vars(2, tau_nom, struct('W_alloc', diag(d)));
+    sim(mdl);
+    R   = read_logs(2);
+    mag = hypot(R.f(1:2:7), R.f(2:2:8));
+    Sa(i,:) = [100 * sum(mag(aft)) / sum(mag), norm(R.f), norm(R.e)];
+end
+fprintf('  (b) the aft pair priced c times the forward pair\n');
+fprintf('          c   aft share [%%]      ||f||    tau err\n');
+for i = 1:numel(c_list)
+    fprintf('   %10.0f %13.1f %10.2f %10.3f\n', c_list(i), Sa(i,:));
+end
+set_vars(2, tau_nom, struct('W_alloc', V.W_alloc));
 
-% 값표가 실제로 바꾸는 것 — 어느 추진기가 몫을 지는가
-% what the price list does change: which unit carries the share
-f2   = W07_alloc(B, tau_d, 'wpinv', struct('W', diag([1 10 1 10 5 50 5 50])));
-H2   = hw(B, f2,  cfg);
-H1   = hw(B, f_a, cfg);
-shr1 = 100*sum(abs(H1.T(3:4)))/sum(abs(H1.T));
-shr2 = 100*sum(abs(H2.T(3:4)))/sum(abs(H2.T));
-fprintf('\nwhat the price list can change: who carries the share\n');
-fprintf('  same price fore and aft : |T| = [%6.2f %6.2f %6.2f %6.2f] N   aft pair %.1f %%\n', ...
-        abs(H1.T), shr1);
-fprintf('  aft priced 5x dearer    : |T| = [%6.2f %6.2f %6.2f %6.2f] N   aft pair %.1f %%\n', ...
-        abs(H2.T), shr2);
-fprintf('\nwhat the price list cannot change: what the demand has already fixed\n');
-fprintf('  sum|f_y| : %.2f N and %.2f N  (Y = %.0f N fixes it)\n', ...
-        sum(abs(f_a(2:2:end))), sum(abs(f2(2:2:end))), tau_d(2));
-
-% 그림 — 왼쪽은 바꾸지 못하는 것, 오른쪽은 바꾸는 것. 왼쪽 축에 힘(N),
-% 오른쪽 축에 각(deg) — 한 축에 올리면 30 N 과 30 deg 가 포개진다
-% the figure: what W cannot change (left) and what it can (right). Forces in N
-% on the left axis, the angle in deg on the right: on one axis 30 N and 30 deg
-% would lie on top of each other
-fig = figure('Color','w','Position',[80 80 920 340]);
-subplot(1,2,1)
+fig = figure('Color', 'w', 'Position', [60 60 980 400]);
+subplot(1,2,1);
 yyaxis left
-semilogx(wlist, sf, 'd:', 'LineWidth',1.6,'MarkerFaceColor','auto'); hold on
-semilogx(wlist, sp, 's-', 'LineWidth',1.8,'MarkerFaceColor','auto');
-ylabel('force components  [N]');  ylim([0 40]);
+semilogx(w_list, S(:,2), 'o-', 'LineWidth', 1.6); hold on
+semilogx(w_list, S(:,1), ':',  'LineWidth', 1.6);
+ylabel('[N]');
 yyaxis right
-semilogx(wlist, md, 'o-', 'LineWidth',1.8,'MarkerFaceColor','auto'); hold on
-yline(rad2deg(cfg.alpha_max(1)), '--', '45 deg servo limit', 'LineWidth',1.2, ...
-      'LabelHorizontalAlignment','right','LabelVerticalAlignment','bottom','FontSize',8);
-ylabel('max |\delta_i|  [deg]');  ylim([0 50]);
-grid on;  xlabel('w  —  price put on the sideways component f_y');
-legend({'\Sigma|f_y| (pinned by Y)','|f_x| spread','max |\delta_i|'}, ...
-       'Location','northwest','FontSize',8);
-title({'Pricing f_y cannot reduce the tilt:','\Sigma|f_y| is fixed, so f_x goes lopsided instead'}, ...
-      'FontSize',9);
-subplot(1,2,2)
-bar([abs(H1.T); abs(H2.T)]');  grid on
-set(gca,'XTickLabel',{'unit 1','unit 2','unit 3','unit 4'});
-ylabel('|T_i|  [N]');  ylim([0 58]);
-legend({sprintf('equal price  (aft %.0f %%)', shr1), ...
-        sprintf('aft 5x dearer  (aft %.0f %%)', shr2)}, ...
-       'Location','northwest','FontSize',8);
-title({'What the price list can do:','move the load between units'},'FontSize',9);
+semilogx(w_list, S(:,3), 's-', 'LineWidth', 1.6); hold on
+yline(rad2deg(V.alpha_lim), 'r--', 'servo limit', 'FontSize', 8);
+ylabel('worst |delta|  [deg]');
+grid on; xlabel('price of the sideways component,  w_y');
+legend({'spread of |f_x|', 'sum |f_y|, pinned by the demand', ...
+        'worst |delta|'}, 'Location', 'northwest', 'FontSize', 7);
+title('Pricing f_y cannot move sideways thrust -- it buys back angle', 'FontSize', 9);
+
+subplot(1,2,2);
+semilogx(c_list, Sa(:,1), 'o-', 'LineWidth', 1.6); grid on; hold on
+yline(50, 'k:', 'an even share', 'FontSize', 8);
+xlabel('the aft pair priced c times the forward pair');
+ylabel('aft share of the total thrust  [%]');
+ylim([0 60]);
+title('Pricing one pair against the other does move load', 'FontSize', 9);
+sgtitle('7-9  what the weight matrix can and cannot move', 'FontSize', 11);
 savepng(fig, fullfile(here, 'img', 'W07_alloc_weights.png'));
-
 end
 
-%% (7-10) 서보 각 한계 / the servo-angle limit -------------------------------
-if any(strcmp(SEC(:,1), '7-10'))
+%% §7-10  서보 각 한계 — 법칙 2 와 법칙 3 ----------------------------------
+if want('7-10')
+hdr('7-10', 'the servo-angle limit: law 2 against law 3');
+T_final = T_SWEEP;
 
-amax     = rad2deg(P.alpha_max);
-tau_hard = [15; 70; 10];              % 한계 밖의 요구 / a demand outside the limit
+set_vars(2, tau_nom);  sim(mdl);  R2 = read_logs(2);
+set_vars(3, tau_nom);  sim(mdl);  R3 = read_logs(3);
+unit_table(R2, 'law 2, weighted minimum norm');
+unit_table(R3, 'law 3, weighted and folded onto the servo limit');
 
-fprintf('\n=== 7-10  the servo-angle limit ===\n');
-fprintf('a demand that exceeds it,  tau = [%.0f N, %.0f N, %.0f N m]\n', tau_hard);
-fprintf('  (the sideways force is larger than the forward one -> the angle grows)\n\n');
-fprintf('  method       max|delta| [deg]   ||B f - tau|| [N]   ||f|| [N]   QPs   exit\n');
-for m = ["wpinv" "clip" "qp" "wls" "wls16"]
-    [f, in] = W07_alloc(B, tau_hard, char(m), P);
-    H = hw(B, f, cfg);
-    fprintf('  %-10s %13.2f %18.3f %12.2f %6d %6d\n', m, ...
-            max(abs(rad2deg(H.delta))), norm(H.tau - tau_hard), norm(f), ...
-            in.ntried, in.exit);
+fprintf('  what the fold costs and what it buys\n');
+fprintf('        law   worst delta asked   clipped units   tau error [N]\n');
+for R = [R2 R3]
+    fprintf('   %10d %18.2f %15d %15.3f\n', R.law, ...
+            rad2deg(max(abs(R.d_ask))), sum(abs(R.d_ask - R.d_got) > 1e-9), ...
+            norm(R.e));
 end
 
-% 추력 부호를 고정하면 각 한계가 직선 둘이 되어 QP 하나가 된다. 부호 조합이
-% 열여섯 가지이므로 하나만 푸는 'qp' 는 틀릴 수 있고, 'wls16' 은 열여섯을
-% 모두 풀어 가장 싼 것을 남긴다
-% Fixing the thrust signs turns the angle limit into two straight lines, so the
-% problem becomes one QP. There are sixteen sign combinations: 'qp' solves the
-% one the closed form suggests, 'wls16' solves all sixteen and keeps the best
-[~, i1] = W07_alloc(B, tau_hard, 'qp',    P);
-[~, i2] = W07_alloc(B, tau_hard, 'wls16', P);
-fprintf('\nsign combination from the closed form  sigma = [%2d %2d %2d %2d]  -> quadprog exit %d\n', ...
-        i1.sigma, i1.exit);
-fprintf('best of the sixteen combinations       sigma = [%2d %2d %2d %2d]  -> cost %.4f\n', ...
-        i2.sigma, i2.cost);
-fprintf('  -> the demand is feasible, but not with the sign combination the\n');
-fprintf('     weighted minimum norm produced\n');
-
-% 같은 법칙들을 요구 궤적 하나에 걸어 본다 — 요구 하나가 아니라 201 점이다
-% the same laws over one trajectory: 201 demands rather than one
-ts  = linspace(0, 20, 201);
-tau = [100*sin(0.5*ts); 60*cos(0.3*ts); 30*sin(0.7*ts)];
-mth = ["pinv" "wpinv" "clip" "qp" "wls" "wls16"];
-nm  = numel(mth);
-MD  = zeros(nm, numel(ts));  ER = zeros(nm, numel(ts));
-D1  = zeros(nm, numel(ts));  EF = zeros(nm, numel(ts));
-RHO = ones(nm, numel(ts));
-for a = 1:nm
-    for k = 1:numel(ts)
-        [f, in] = W07_alloc(B, tau(:,k), char(mth(a)), P);
-        H = hw(B, f, cfg);
-        MD(a,k)  = max(abs(rad2deg(H.delta)));
-        D1(a,k)  = rad2deg(H.delta(1));
-        ER(a,k)  = norm(H.tau - tau(:,k));
-        RHO(a,k) = H.rho;
-        EF(a,k)  = in.exit;
-    end
+fig = figure('Color', 'w', 'Position', [60 60 980 640]);
+RR = [R2 R3];
+for j = 1:2
+    subplot(2,2,j);
+    bar(rad2deg([RR(j).d_ask RR(j).d_got])); grid on; hold on
+    yline( rad2deg(V.alpha_lim), 'r--', '+limit', 'FontSize', 8);
+    yline(-rad2deg(V.alpha_lim), 'r--', '-limit', 'FontSize', 8);
+    set(gca, 'XTickLabel', {'1','2','3','4'});
+    xlabel('unit'); ylabel('delta [deg]');
+    legend({'asked','allowed'}, 'Location', 'best', 'FontSize', 8);
+    title(sprintf('law %d -- %s', RR(j).law, law_name{RR(j).law}), 'FontSize', 9);
 end
-
-% 통계는 **해가 나온 점에서만** 낸다. `quadprog`·`lsqlin` 은 실행 불가능한
-% 마지막 반복값을 그럴듯한 숫자로 돌려준다
-% The statistics are taken ONLY where a solution was found: quadprog and lsqlin
-% return the last infeasible iterate as a plausible looking number
-fprintf('\nthe demand  tau = [100 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, %d points\n\n', ...
-        numel(ts));
-fprintf('  method     solved    past limit   max|delta|   mean |tau err|   max |tau err|   rho<1\n');
-fprintf('           [%% of pts]    [%% of pts]       [deg]             [N]             [N] [%% of pts]\n');
-for a = 1:nm
-    ok = EF(a,:) > 0;
-    fprintf('  %-9s %8.1f %13.1f %12.2f %15.3f %15.3f %10.1f\n', mth(a), ...
-        100*mean(ok), ...
-        100*mean(MD(a,ok) > amax + 1e-6), max(MD(a,ok)), ...
-        mean(ER(a,ok)), max(ER(a,ok)), 100*mean(RHO(a,ok) < 1-1e-9));
-end
-fprintf('\n  (the limit and error statistics are taken only where a solution was\n');
-fprintf('   found -- qp fails to find one at some of the points)\n');
-
-% 그림 — 해가 없는 구간은 NaN 으로 끊는다. qp 는 풀린 구간에서 wls16 과
-% 겹치므로 굵게 그려 테두리로 보이게 한다
-% the figure: stretches with no solution are broken with NaN. Where qp does
-% solve it coincides with wls16, so it is drawn thick and the overlap shows
-fig = figure('Color','w','Position',[60 60 820 560]);
-cl = lines(nm);
-lw = 1.5*ones(1,nm);  lw(strcmp(mth,'qp')) = 3.5;
-subplot(2,1,1); hold on; grid on
-hl = gobjects(1, nm+1);
-for a = 1:nm
-    d = D1(a,:);  d(EF(a,:) <= 0) = NaN;
-    hl(a) = plot(ts, d, 'LineWidth',lw(a),'Color',cl(a,:));
-end
-yline( amax,'k--','LineWidth',1.2);
-yline(-amax,'k--','LineWidth',1.2);
-iq  = find(strcmp(mth,'qp'));
-bad = ts(EF(iq,:) <= 0);
-hl(nm+1) = plot(bad, -99*ones(size(bad)), 's', 'MarkerSize',3, ...
-                'MarkerFaceColor',[.75 0 0], 'MarkerEdgeColor','none');
-ylim([-105 100]);
-ylabel('\delta_1  [deg]');
-legend(hl, [cellstr(mth), {'qp: no solution'}], ...
-       'Location','eastoutside','FontSize',8);
-title(sprintf('Servo angle of unit 1 — the dashed lines are the %.0f deg limit', amax));
-subplot(2,1,2); hold on; grid on
-for a = 1:nm
-    e = ER(a,:);  e(EF(a,:) <= 0) = NaN;
-    plot(ts, e, 'LineWidth',lw(a),'Color',cl(a,:));
-end
-ylabel('|| \tau_{achieved} - \tau_{demanded} ||  [N]');  xlabel('t  [s]');
-legend(mth,'Location','eastoutside','FontSize',8);
-title('What each law pays for staying inside the limit');
+subplot(2,2,3);
+bar([R2.tau_d ; R2.tau_a ; R3.tau_a].'); grid on
+set(gca, 'XTickLabel', {'X','Y','N'});
+legend({'demanded','law 2','law 3'}, 'Location', 'best', 'FontSize', 8);
+title('What the hull received', 'FontSize', 9);
+subplot(2,2,4);
+bar([norm(R2.e) norm(R3.e)]); grid on
+set(gca, 'XTickLabel', {'law 2','law 3'});
+ylabel('||tau delivered - tau demanded||  [N]');
+title('Folding the solution onto the limit is not free', 'FontSize', 9);
+sgtitle('7-10  a limit the solver never saw, and a fold that respects it', ...
+        'FontSize', 11);
 savepng(fig, fullfile(here, 'img', 'W07_alloc_limits.png'));
-
 end
 
-%% (7-11) 한 번 푸는 데 걸리는 시간 / the time one solve takes ----------------
-if any(strcmp(SEC(:,1), '7-11'))
+%% §7-11  한 번 푸는 데 걸리는 시간, 그리고 스위치가 무엇을 고르는가 ---------
+if want('7-11')
+hdr('7-11', 'what one solve costs, and what the switch does not save');
 
-ts     = linspace(0, 20, 101);
-tau    = [100*sin(0.5*ts); 60*cos(0.3*ts); 30*sin(0.7*ts)];
-mth    = ["pinv" "wpinv" "clip" "qp" "wls" "wls16" "fmincon"];
-budget = 20000;                            % 50 Hz = 20 ms = 20000 us
+%  한 번의 `sim` 에는 **고정비**가 있다 — 초기화·로그 기록·창 닫기. 그 고정비가
+%  배분 한 번보다 훨씬 커서, 총 시간을 스텝 수로 나누면 네 법칙이 모두 같아
+%  보인다. 그래서 **정지 시각 둘**에서 재고 기울기를 쓴다 — 고정비가 상쇄되고
+%  한 스텝의 값만 남는다.
+%  One sim carries a fixed cost -- initialise, log, close -- far larger than one
+%  allocation solve, so dividing the total by the number of steps makes the four
+%  laws look identical. Timing at two stop times and taking the slope cancels
+%  that fixed cost and leaves the cost of one step.
+%  **짧은 쪽과 긴 쪽의 차이가 커야** 기울기가 잡음에 묻히지 않는다. 1 s 와 5 s
+%  로는 네 법칙의 차이가 측정 오차 안에 들어간다 — 1 s 와 20 s 로 벌린다.
+%  The two stop times must be far apart or the slope drowns in noise: at 1 s
+%  against 5 s the four laws fall inside the measurement error. 1 s against
+%  20 s gives ten times the resolution.
+T_TIME = 20;
+fprintf('  a fixed cost (initialise, log, close) dominates one sim, so the\n');
+fprintf('  laws are timed at two stop times and the slope is taken: the fixed\n');
+fprintf('  cost cancels and the cost of one step is what is left.\n');
+fprintf('        law   t(1 s) [s]  t(20 s) [s]   per step [ms]   relative to law 1\n');
+tms = zeros(1,4);
+for k = 1:4
+    T_final = T_SWEEP;  %#ok<NASGU>
+    set_vars(k, tau_nom);  sim(mdl);                % 예열 / warm-up, discarded
+    set_vars(k, tau_nom);
+    t0 = tic;  sim(mdl);  w1 = toc(t0);
+    Rt = read_logs(k);  s1 = Rt.steps;
+    T_final = T_TIME;  %#ok<NASGU>
+    set_vars(k, tau_nom);
+    t0 = tic;  sim(mdl);  w2 = toc(t0);
+    Rt = read_logs(k);  s2 = Rt.steps;
+    tms(k) = 1e3 * (w2 - w1) / (s2 - s1);
+    fprintf('   %10d %12.2f %12.2f %15.3f %18.1f\n', k, w1, w2, ...
+            tms(k), tms(k) / tms(1));
+end
+fprintf('  the four rows agree to within %.0f %%, which is the measurement\n', ...
+        100 * (max(tms) - min(tms)) / min(tms));
+fprintf('  itself. the next table says why.\n');
 
-for a = 1:numel(mth)                       % 첫 호출은 느리다 — 미리 한 번 돌린다
-    W07_alloc(B, tau(:,1), char(mth(a)), P);   % warm-up: the first call is slow
+%  스위치는 **출력**을 고를 뿐, 계산을 고르지 않는다. 고르지 않은 가지의 블록도
+%  매 스텝 돈다 — 그래서 `law` 가 1 이어도 법칙 4 의 `lsqlin` 이 다 돌아간다.
+%  벽시계로는 보이지 않으니 **프로파일러로 호출 횟수를 센다.**
+%  A Multiport Switch picks an output, not a computation: the blocks on the
+%  branches it did not pick still run every step. With law = 1 the lsqlin calls
+%  of law 4 are all still made. Wall time cannot see that, so the calls are
+%  counted with the profiler.
+fprintf('  how many constrained solves each step really makes, counted by the\n');
+fprintf('  profiler -- `law` selects an output, not a computation\n');
+fprintf('        law   steps   lsqlin calls   calls per step\n');
+for k = 1:4
+    T_final = T_SWEEP;  %#ok<NASGU>
+    set_vars(k, tau_nom);  sim(mdl);                % 예열 / warm-up
+    profile off; profile clear; profile on
+    sim(mdl);
+    profile off
+    S  = profile('info');
+    nm = {S.FunctionTable.FunctionName};
+    i0 = find(strcmp(nm, 'lsqlin'), 1);
+    nc = 0;
+    if ~isempty(i0), nc = S.FunctionTable(i0).NumCalls; end
+    Rt = read_logs(k);
+    fprintf('   %10d %7d %14d %16.2f\n', k, Rt.steps, nc, nc / Rt.steps);
+end
+profile clear
+fprintf('  every row is the same: on real hardware one law is built, not four\n');
+fprintf('  (a Variant Subsystem), and then the cost of that law is what runs\n');
+T_final = T_SWEEP;
 end
 
-fprintf('\n=== 7-11  the time one solve takes ===\n');
-fprintf('%d demands allocated one after another.  the 50 Hz budget is %d us\n\n', ...
-        numel(ts), budget);
-fprintf('  method       QPs   mean [us]   max [us]   x pinv   budget used [%%]\n');
+%% §7-12  두 한계 모두 — 법칙 4, 그리고 Q 와 eps -----------------------------
+if want('7-12')
+hdr('7-12', 'the thrust cap as well: law 4, and how Q and eps are tuned');
+T_final = T_SWEEP;
+Q_tau   = eye(3);  %#ok<NASGU>
+eps_reg = 1e-4;  %#ok<NASGU>
 
-base = NaN;
-for a = 1:numel(mth)
-    e = zeros(1, numel(ts));  nq = 0;
-    for k = 1:numel(ts)
-        c = tic;  [~, in] = W07_alloc(B, tau(:,k), char(mth(a)), P);  e(k) = toc(c);
-        nq = in.ntried;
-    end
-    mu = 1e6*mean(e);  mx = 1e6*max(e);
-    if a == 1, base = mu; end
-    fprintf('  %-10s %5d %11.1f %10.1f %8.0f %17.2f\n', ...
-            mth(a), nq, mu, mx, mu/base, 100*mu/budget);
-end
-
-% 닫힌형이 빠른 이유 — B 가 상수이므로 8x3 행렬을 한 번만 만들면 된다
-% why the closed form is fast: B is constant, so the 8x3 matrix is built once
-Wi = P.W \ eye(8);
-Kw = Wi * B.' / (B*Wi*B.');
-e  = zeros(1, numel(ts));
-fk = zeros(8,1);
-for k = 1:numel(ts), c = tic; fk = Kw*tau(:,k); e(k) = toc(c); end
-fprintf('\n  with one 8x3 matrix prepared in advance : %.2f us  (24 multiplies)\n', ...
-        1e6*mean(e));
-fprintf('  distance between Kw*tau and wpinv       : %.2e N\n', ...
-        norm(fk - W07_alloc(B, tau(:,end), 'wpinv', P)));
-
-end
-
-%% (7-12) 한계가 둘이다 / there are two limits -------------------------------
-if any(strcmp(SEC(:,1), '7-12'))
-
-% |n| <= n_max 는 T = k n|n| 을 지나 추력 한계가 된다. 전진과 후진의 k 가
-% 다르므로 한계의 높이도 둘이다
-% |n| <= n_max becomes a thrust limit through T = k n|n|; k differs ahead and
-% astern, so the two limits have different heights
-fprintf('\n=== 7-12  two limits: the servo angle and the shaft speed ===\n\n');
-fprintf('  the shaft speed limits are n_max = %+8.2f and n_min = %+8.2f rad/s\n', ...
-        cfg.n_max, cfg.n_min);
-fprintf('  through T = k n|n| those become thrust limits\n');
-fprintf('      ahead   T <= k_pos n_max^2 = %.3f * %.2f^2 = %8.3f N\n', ...
-        cfg.k_pos, cfg.n_max, P.T_pos);
-fprintf('      astern  T <= k_neg n_min^2 = %.3f * %.2f^2 = %8.3f N\n', ...
-        cfg.k_neg, abs(cfg.n_min), P.T_neg);
-fprintf('  the astern limit is %.0f%% of the ahead limit, and that is what binds\n', ...
-        100*P.T_neg/P.T_pos);
-fprintf('  at delta = 0 the hull can therefore make at most\n');
-fprintf('      X = 2 * %.2f + 2 * %.2f = %.2f N\n', ...
-        P.T_pos, P.T_neg, 2*P.T_pos + 2*P.T_neg);
-
-laws = ["wpinv" "clip" "wls16" "wls16cap"];
-
-% 표 (1) 하나의 요구를 끝까지 / table 1: one demand, all the way through
-tau1 = [300; 0; 0];
-fprintf('\n  (1) one demand followed through the chain,  tau = [%.0f N, %.0f N, %.0f N m]\n\n', tau1);
-fprintf('      pure surge, so units 1-2 push forward and units 3-4 must push astern\n');
-fprintf('      the astern cap is the smaller one, and that is what binds\n\n');
-fprintf('    %-9s %9s %9s %10s %7s %7s %12s\n', 'law', 'T fwd', 'T astern', ...
-        'worst n', 'n clip', 'd clip', '|tau err|');
-fprintf('    %-9s %9s %9s %10s %7s %7s %12s\n', '', '[N]', '[N]', ...
-        '[rad/s]', '[units]', '[units]', '[N]');
-fprintf('    %s\n', repmat('-', 1, 70));
-for a = 1:numel(laws)
-    R  = chain(B, cfg, V, P, tau1, char(laws(a)));
-    Tf = max([R.T(R.T >= 0); 0]);
-    Tr = min([R.T(R.T <  0); 0]);
-    [~, iw] = max(abs(R.n_cmd));
-    fprintf('    %-9s %9.2f %9.2f %10.1f %7d %7d %12.3f\n', laws(a), Tf, Tr, ...
-            R.n_cmd(iw), sum(R.sat_n), sum(R.sat_d), norm(R.cmd - R.act));
-end
-fprintf('    %s\n', repmat('-', 1, 70));
-fprintf('    the caps are %+7.2f N ahead and %+7.2f N astern\n', P.T_pos, -P.T_neg);
-
-% 표 (2) 요구 궤적 하나에 전부 / table 2: the same laws over a trajectory
-ts = linspace(0, 20, 201);
-TC = [320*sin(0.5*ts); 60*cos(0.3*ts); 30*sin(0.7*ts)];
-RR = cell(1, numel(laws));
-fprintf('\n  (2) tau = [320 sin0.5t ; 60 cos0.3t ; 30 sin0.7t],  t = 0..20 s, %d points\n\n', numel(ts));
-fprintf('    %-9s %9s %10s %10s %12s %12s %7s\n', 'law', 'max|d|', 'servo lim', ...
-        'rpm lim', 'mean |err|', 'max |err|', 'no sol');
-fprintf('    %-9s %9s %10s %10s %12s %12s %7s\n', '', '[deg]', '[% of t]', ...
-        '[% of t]', '[N]', '[N]', '[pts]');
-fprintf('    %s\n', repmat('-', 1, 75));
-for a = 1:numel(laws)
-    R = chain(B, cfg, V, P, TC, char(laws(a)));
-    R.t = ts;  RR{a} = R;
-
-    % 해가 없는 점은 통계에서 뺀다 / infeasible points are kept out
-    ok = R.exit > 0;
-    e  = vecnorm(R.cmd(:,ok) - R.act(:,ok));
-    d  = R.d_cmd(:,ok);
-    fprintf('    %-9s %9.2f %10.1f %10.1f %12.3f %12.3f %7d\n', laws(a), ...
-            max(abs(rad2deg(d(:)))), 100*mean(any(R.sat_d(:,ok), 1)), ...
-            100*mean(any(R.sat_n(:,ok), 1)), mean(e), max(e), sum(~ok));
-end
-fprintf('    %s\n', repmat('-', 1, 75));
-fprintf('    the error is measured out of the motion model, not out of the allocator\n');
-fprintf('    every statistic is taken over the points whose exitflag is positive\n');
-
-% 표 (3) 새 법칙의 값 / table 3: what the new law costs in time.
-%   §7-11 의 표에는 'wls16cap' 이 없다 — 그 절이 돌 때 없던 법칙이다. 캡 행이
-%   단위마다 셋씩 더 붙으므로 **시간을 다시 잰다**
-%   The 7-11 table has no 'wls16cap': it did not exist when that section ran.
-%   The cap adds rows per unit, so the time is measured again rather than assumed
-fprintf('\n  (3) allocation time over the same %d demands,  50 Hz budget = 20000 us\n\n', numel(ts));
-fprintf('    %-9s %7s %11s %11s %16s\n', 'law', 'QPs', 'mean [us]', ...
-        'max [us]', 'budget used [%]');
-fprintf('    %s\n', repmat('-', 1, 58));
-nq = struct('wpinv',0, 'clip',0, 'wls16',16, 'wls16cap',16);
-for a = 1:numel(laws)
-    lw = char(laws(a));
-    el = zeros(1, numel(ts));
-    for k = 1:numel(ts)
-        c = tic;  W07_alloc(B, TC(:,k), lw, P);  el(k) = toc(c);
-    end
-    fprintf('    %-9s %7d %11.1f %11.1f %16.2f\n', lw, nq.(lw), ...
-            1e6*mean(el), 1e6*max(el), 100*mean(el)/0.02);
-end
-fprintf('    %s\n', repmat('-', 1, 58));
-fprintf('    the cap adds %d rows per unit, so wls16cap is wls16 plus that\n', P.n_chord);
-
-% 그림 ① 요구한 힘과 받은 힘 / figure 1: demanded against received.
-%   법칙 둘이 같은 답을 내는 일이 있다 (wpinv 와 clip). 먼저 그리는 것을 굵게
-%   해서 겹친 것이 테두리로 보이게 한다
-%   Two laws can give the same answer, so earlier ones are drawn thicker and
-%   the overlap shows as a halo
-nL  = numel(RR);
-cl  = lines(nL);
-lwv = linspace(3.0, 1.2, nL);
-lbl = {'X  [N]', 'Y  [N]', 'N  [N m]'};
-fig = figure('Color','w','Position',[60 60 860 620]);
-for r = 1:3
-    subplot(3,1,r); hold on; grid on
-    % `h` 라고 쓰지 않는다 — 모델의 적분 간격이 그 이름을 쓴다
-    % not named `h`: the model's step size already owns that name
-    hp = gobjects(1, nL+1);
-    for a = 1:nL
-        y = RR{a}.act(r,:);  y(RR{a}.exit <= 0) = NaN;
-        hp(a+1) = plot(ts, y, 'LineWidth', lwv(a), 'Color', cl(a,:));
-    end
-    % 요구는 맨 위에 그린다 — 맞춘 법칙이 가리지 않도록
-    % the demand is drawn last, so a law that matches it cannot hide it
-    hp(1) = plot(ts, RR{1}.cmd(r,:), 'k--', 'LineWidth', 1.4);
-    ylabel(lbl{r});
-    if r == 1
-        nmv = cellfun(@(R) R.method, RR, 'UniformOutput', false);
-        legend(hp, [{'demanded by the controller'}, nmv], ...
-               'Location','eastoutside','FontSize',8);
-        title('What the controller asked for, and what the motion model produced');
+%  (가) 네 법칙을 같은 두 명령에 걸어 본다 / (a) four laws, two demands
+fprintf('  (a) the same demand through each of the four laws\n');
+fprintf('      demand                   law   tau error [N]   clipped units\n');
+RH = [];
+for d = 1:2
+    tt = [tau_nom tau_hard];
+    tt = tt(:,d);
+    for k = 1:4
+        set_vars(k, tt);  sim(mdl);  R = read_logs(k);
+        fprintf('   [%5.0f %5.0f %5.0f] %9d %15.3f %13d\n', tt, k, norm(R.e), ...
+                sum(abs(R.d_ask - R.d_got) > 1e-9) + ...
+                sum(abs(R.n_ask - R.n_got) > 1e-9));
+        if d == 2, RH = [RH R];  end                              %#ok<AGROW>
     end
 end
-xlabel('t  [s]');
+
+%  (나) eps 를 바꾼다 / (b) the regularisation
+fprintf('  (b) law 4 at the hard demand, eps swept\n');
+fprintf('          eps     tau error [N]      ||f|| [N]\n');
+for ep = [1e-8 1e-6 1e-4 1e-2 1e0]
+    set_vars(4, tau_hard, struct('eps_reg', ep));
+    sim(mdl);
+    R = read_logs(4);
+    fprintf('   %12.0e %15.4f %14.2f\n', ep, norm(R.e), norm(R.f));
+end
+eps_reg = 1e-4;
+
+%  (다) Q 를 바꾼다 / (c) the weight on the three components of the error
+fprintf('  (c) law 4 at the hard demand, Q swept\n');
+fprintf('      diag(Q)              X err      Y err      N err     norm\n');
+Qs = {eye(3), diag([1 1 10]), diag([10 10 1]), diag([1 1 100])};
+for i = 1:numel(Qs)
+    set_vars(4, tau_hard, struct('Q_tau', Qs{i}));
+    sim(mdl);
+    R = read_logs(4);
+    fprintf('   [%4.0f %4.0f %4.0f] %14.3f %10.3f %10.3f %8.3f\n', ...
+            diag(Qs{i}), R.e, norm(R.e));
+end
+Q_tau = eye(3);
+set_vars(4, tau_hard, struct('Q_tau', Q_tau, 'eps_reg', eps_reg));
+
+fig = figure('Color', 'w', 'Position', [60 60 980 640]);
+subplot(2,2,1);
+bar([RH.T].'); grid on; hold on
+yline( V.T_pos, 'r--', 'ahead cap',  'FontSize', 8);
+yline(-V.T_neg, 'r--', 'astern cap', 'FontSize', 8);
+set(gca, 'XTickLabel', {'law 1','law 2','law 3','law 4'});
+ylabel('T per unit  [N]');
+title('The thrust each law asked of the four units', 'FontSize', 9);
+subplot(2,2,2);
+bar(rad2deg([RH.d_ask].')); grid on; hold on
+yline( rad2deg(V.alpha_lim), 'r--', '+limit', 'FontSize', 8);
+yline(-rad2deg(V.alpha_lim), 'r--', '-limit', 'FontSize', 8);
+set(gca, 'XTickLabel', {'law 1','law 2','law 3','law 4'});
+ylabel('delta asked  [deg]');
+title('What each law asked of the servos', 'FontSize', 9);
+subplot(2,2,3);
+bar(arrayfun(@(R) norm(R.e), RH)); grid on
+set(gca, 'XTickLabel', {'law 1','law 2','law 3','law 4'});
+ylabel('||tau delivered - tau demanded||  [N]');
+title(sprintf('Demand [%g %g %g]', tau_hard), 'FontSize', 9);
+subplot(2,2,4);
+quad_thrust_plan(quadq, RH(4).T, RH(4).d_got, tau_hard(1:2).', ...
+                 'Law 4: inside both limits, and still on the demand');
+sgtitle('7-12  two limits at once, and what they cost each law', 'FontSize', 11);
+savepng(fig, fullfile(here, 'img', 'W07_chain_sat.png'));
+end
+
+%% §7-13  법칙 넷을 한 모델에서 ---------------------------------------------
+if want('7-13')
+hdr('7-13', 'the four laws side by side, out of one model');
+T_final  = T_SHOW;
+W07quiet = false;  %#ok<NASGU>  % StopFcn 이 진단 그림 여섯 칸을 낸다 / six panels each
+
+RS = [];
+for k = 1:4
+    set_vars(k, tau_nom);
+    sim(mdl);
+    RS = [RS read_logs(k)];                                       %#ok<AGROW>
+end
+W07quiet = true;
+
+fprintf('  every row below came out of the same .slx, with `law` changed\n');
+fprintf('        law     X [N]     Y [N]   N [N m]   error [N]   servo   rpm\n');
+for R = RS
+    fprintf('   %10d %9.3f %9.3f %9.3f %11.3f %7d %5d\n', R.law, R.tau_a, ...
+            norm(R.e), sum(abs(R.d_ask - R.d_got) > 1e-9), ...
+            sum(abs(R.n_ask - R.n_got) > 1e-9));
+end
+
+fig = figure('Color', 'w', 'Position', [60 60 980 400]);
+subplot(1,2,1);
+bar([RS(1).tau_d ; vertcat(RS.tau_a)].'); grid on
+set(gca, 'XTickLabel', {'X','Y','N'});
+legend({'demanded','law 1','law 2','law 3','law 4'}, ...
+       'Location', 'northwest', 'FontSize', 7);
+ylabel('force / moment');
+title(sprintf('Demand [%g %g %g] through each law', tau_nom), 'FontSize', 9);
+subplot(1,2,2);
+bar(arrayfun(@(R) norm(R.e), RS)); grid on
+set(gca, 'XTickLabel', {'law 1','law 2','law 3','law 4'});
+ylabel('||tau delivered - tau demanded||  [N]');
+title('The same model, the same demand, four answers', 'FontSize', 9);
+sgtitle('7-13  one model, four laws, chosen by the Constant `law`', 'FontSize', 11);
 savepng(fig, fullfile(here, 'img', 'W07_chain_tau.png'));
 
-% 그림 ② 두 포화 / figure 2: the two saturations
-fig = figure('Color','w','Position',[60 60 860 620]);
-nmv = cellfun(@(R) R.method, RR, 'UniformOutput', false);
-subplot(2,1,1); hold on; grid on
-for a = 1:nL
-    y = RR{a}.n_cmd(3,:);  y(RR{a}.exit <= 0) = NaN;
-    plot(ts, y, 'LineWidth', lwv(a), 'Color', cl(a,:));
-end
-yline(cfg.n_max, 'k--', 'LineWidth', 1.2);
-yline(cfg.n_min, 'k--', 'LineWidth', 1.2);
-text(ts(end), cfg.n_max, '  n_{max}', 'FontSize', 8, 'VerticalAlignment','bottom');
-text(ts(end), cfg.n_min, '  n_{min}', 'FontSize', 8, 'VerticalAlignment','top');
-ylabel('n_3  [rad/s]');
-legend(nmv, 'Location','eastoutside','FontSize',8);
-title(sprintf(['Shaft speed demanded of unit 3 — the limits are n_{max} = %.1f and ' ...
-               'n_{min} = %.1f rad/s'], cfg.n_max, cfg.n_min));
-subplot(2,1,2); hold on; grid on
-for a = 1:nL
-    y = rad2deg(RR{a}.d_cmd(3,:));  y(RR{a}.exit <= 0) = NaN;
-    plot(ts, y, 'LineWidth', lwv(a), 'Color', cl(a,:));
-end
-am = rad2deg(cfg.alpha_max(1));
-yline( am, 'k--', 'LineWidth', 1.2);
-yline(-am, 'k--', 'LineWidth', 1.2);
-ylabel('\delta_3  [deg]');  xlabel('t  [s]');
-legend(nmv, 'Location','eastoutside','FontSize',8);
-title(sprintf('Servo angle demanded of unit 3 — the limit is %.0f deg', am));
-savepng(fig, fullfile(here, 'img', 'W07_chain_sat.png'));
-
+fprintf('\n  which law to use\n');
+fprintf('    1  no limit is near            -- the cheapest, and the baseline\n');
+fprintf('    2  one axis costs more         -- same price, shapes the solution\n');
+fprintf('    3  the servo limit is reached  -- cheap, but the demand is missed\n');
+fprintf('    4  any limit is reached        -- meets the demand, costs the most\n');
 end
 
-%% (7-13) 법칙 넷을 모델 하나에 / the four laws inside one model --------------
-if any(strcmp(SEC(:,1), '7-13'))
+fprintf('\n==== done.  `law` = %d and `tau_cmd` are on the workspace;\n', law);
+fprintf('     open %s and press Run to see that law again. ====\n\n', mdl);
 
-assert(~isempty(LAWS), 'W07:noLaw', 'every line of LAWS is commented out');
-mdl = 'W07_alloc_chain';
-assert(isfile(fullfile(here, [mdl '.slx'])), 'W07:noModel', ...
-       '%s.slx is missing -- run W07_2_build_alloc first', mdl);
 
-fprintf('\n=== 7-13  the four laws inside one model ===\n');
-fprintf('the demand is held at tau_cmd = [%.0f %.0f %.0f] for the whole run\n', V.tau_cmd);
-fprintf('one Constant, `law`, picks the law. the .slx is the same for all four\n');
-
-tau_cmd = V.tau_cmd;        % 모델의 Constant 가 읽는다 / read by the model Constant
-
-% 돌리는 동안만 배치 깃발을 세운다 — 실시간 화면이 뜨지 않게 한다.
-% 그림과 표는 StopFcn 의 `W07_plot_ca` 가 법칙마다 하나씩 낸다
-% the batch flag is raised only while the loop runs, so the live view stays off.
-% the table and the figure come from W07_plot_ca, the model's StopFcn
-W07batch = true;  %#ok<NASGU>
-for a = 1:size(LAWS, 1)
-    law = LAWS{a,1};
-    fprintf('\n  law %d  %s\n', law, LAWS{a,2});
-    sim(mdl);
-end
-clear W07batch
-
-% 마지막에 고른 법칙을 작업공간에 남긴다 — 모델을 열고 Run 을 누르면 이것이
-% 다시 돈다. 다른 법칙은 `law` 를 바꾸고 Run 을 누르면 된다
-% the law chosen last is left on the workspace: opening the model and pressing
-% Run repeats it. For another law, change `law` and press Run
-fprintf('\n  `law` = %d and `tau_cmd` are on the workspace.\n', law);
-fprintf('  open %s.slx and press Run to repeat that law, or change `law` first.\n', mdl);
-
+% =========================================================================
+function hdr(sec, txt)
+%HDR  절 머리 / one section heading
+fprintf('\n---- %s  %s %s\n', sec, txt, repmat('-', 1, max(0, 56 - numel(txt))));
 end
 
-fprintf('\nW07 control allocation -- done\n\n');
+% =========================================================================
+function push_vars(V)
+%PUSH_VARS  `W07_vars` 의 값을 작업공간에 올린다 — 모델이 이 이름들을 읽는다
+%           put the W07_vars settings on the base workspace, where the model
+%           resolves every Constant and every block parameter
+fn = fieldnames(V);
+for i = 1:numel(fn)
+    assignin('base', fn{i}, V.(fn{i}));
+end
+end
 
-% ========================================================================= %
-% 이 파일 안에서만 쓰는 보조 함수 둘 / the two helpers used only in this file
-% ========================================================================= %
-function H = hw(B, f, cfg)
-%HW  배분된 여덟 성분을 하드웨어가 받는 여덟 숫자로 (§7-8 유도 1~4행).
-%    The eight allocated components, turned into the eight numbers the hardware
-%    receives (7-8, derivation lines 1 to 4).
+% =========================================================================
+function set_vars(law, tau, ov)
+%SET_VARS  다음 `sim` 이 쓸 값을 작업공간에 놓는다 / the values the next sim uses
 %
-%    두 한계가 서로 다르게 작용한다 / the two limits act differently
-%      각 한계  |delta| <= alpha_max 는 **방향**을 바꾼다 — 배분 안에서 푼다
-%        the angle limit changes the DIRECTION, so it is solved inside the
-%        allocation itself
-%      추력 한계 |T| <= k n_max^2 는 **크기**만 바꾼다 — f 를 한 번 곱해 끝낸다
-%        (B 가 선형이므로 rho*f 는 rho*tau 를 낸다)
-%        the thrust cap changes only the MAGNITUDE, so one scaling settles it
-T  = zeros(1,4);  de = zeros(1,4);
+%   법칙은 모델 안에 있다. 여기서 하는 일은 `law` 와 `tau_cmd` (그리고 필요하면
+%   가중값) 를 놓고, 지난 로그를 지우는 것뿐이다.
+%   The law is in the model. All that happens here is that `law`, `tau_cmd` and
+%   any overrides are placed on the workspace and the previous logs are cleared.
+assignin('base', 'law',     law);
+assignin('base', 'tau_cmd', tau(:));
+if nargin > 2
+    fn = fieldnames(ov);
+    for i = 1:numel(fn)
+        assignin('base', fn{i}, ov.(fn{i}));
+    end
+end
+evalin('base', 'clear W07ca_log W07ca_act');
+end
+
+% =========================================================================
+function R = read_logs(law)
+%READ_LOGS  방금 돈 `sim` 의 로그 둘을 한 구조체로 / the two logs of the last sim
+L = pull('W07ca_log', 10);
+A = pull('W07ca_act', 24);
+assert(~isempty(L) && ~isempty(A), 'W07:noLog', ...
+       '로그가 비었다 / the model produced no log');
+
+R.law    = law;
+R.steps  = size(L, 1);
+R.t      = L(:,1);
+R.hist_d = L(:,2:4);
+R.hist_a = L(:,5:7);
+R.tau_d  = L(end, 2:4);
+R.tau_a  = L(end, 5:7);
+R.e      = R.tau_a - R.tau_d;
+
+R.f     = A(end,  1:8 ).';
+R.n_ask = A(end,  9:12).';
+R.n_got = A(end, 13:16).';
+R.d_ask = A(end, 17:20).';
+R.d_got = A(end, 21:24).';
+
+%  부호 있는 추력 — 배분기가 지시한 쪽 / the signed thrust the allocator asked for
+sg = sign(R.f(1:2:7));
+sg(sg == 0) = 1;
+R.T = sg .* hypot(R.f(1:2:7), R.f(2:2:8));
+end
+
+% =========================================================================
+function M = pull(nm, ncol)
+%PULL  작업공간의 로그를 행렬로 / one log off the workspace, as a matrix
+if evalin('base', sprintf('exist(''%s'', ''var'')', nm)) ~= 1
+    M = [];  return
+end
+M = evalin('base', nm);
+if ndims(M) == 3
+    M = permute(M, [3 1 2]);
+end
+if isempty(M) || size(M, 2) < ncol
+    M = [];
+end
+end
+
+% =========================================================================
+function unit_table(R, ttl)
+%UNIT_TABLE  추진기 넷을 한 표로 / the four units, one row each
+fprintf('  %s\n', ttl);
+fprintf('      unit    T [N]   delta asked   delta allowed    n asked   n allowed\n');
 for i = 1:4
-    fx = f(2*i-1);  fy = f(2*i);
-    s  = sign(fx);  if s == 0, s = 1; end
-    T(i)  = s * hypot(fx, fy);
-    de(i) = atan2(s*fy, s*fx);
+    fprintf('   %7d %8.2f %13.2f %15.2f %10.2f %11.2f\n', i, R.T(i), ...
+            rad2deg(R.d_ask(i)), rad2deg(R.d_got(i)), R.n_ask(i), R.n_got(i));
 end
-H.hit = abs(abs(de) - cfg.alpha_max(:)') < 1e-6;
-
-% 추력 한계 — 전진과 후진이 다르다 (k_pos ~= k_neg)
-% the thrust cap: ahead and astern are not the same, because k_pos ~= k_neg
-Tlim  = (T >= 0) .* (cfg.k_pos*cfg.n_max^2) + (T < 0) .* (cfg.k_neg*cfg.n_min^2);
-H.rho = min([1, Tlim ./ max(abs(T), eps)]);
-
-Tr = H.rho * T;
-k  = (Tr >= 0)*cfg.k_pos + (Tr < 0)*cfg.k_neg;
-H.T     = Tr;
-H.delta = de;
-H.n     = sign(Tr) .* sqrt(abs(Tr) ./ k);
-H.tau   = B * (H.rho * f(:));
+fprintf('      tau demanded  [%8.3f %8.3f %8.3f]\n', R.tau_d);
+fprintf('      tau delivered [%8.3f %8.3f %8.3f]   error %.3f N\n', ...
+        R.tau_a, norm(R.e));
 end
 
-% ========================================================================= %
-function R = chain(B, cfg, V, P, tau_cmd, method)
-%CHAIN  제어기 → 배분 → 하드웨어 → 운동모델. 요구한 힘과 **배가 실제로 받은
-%       힘**을 나란히 돌려준다 (§7-12 유도 9~10행).
-%       Controller to allocator to hardware to motion model. Returns the demand
-%       and the force the hull ACTUALLY received, side by side (7-12, lines 9-10).
-%
-%  `otter_tilt4` 는 받은 n 과 delta 를 스스로 깎는다. 그래서 배분기가 낸 답이
-%  한계를 넘으면 배는 요구와 다른 힘을 받고, 그 차이는 배분기의 장부에 적히지
-%  않는다. 같은 상태에서 추진기를 켜고 한 번, n = 0 으로 한 번 불러 그 차이에
-%  질량행렬을 곱하면 추진기가 만든 tau 다 — §7-2 가 쓴 방법과 같다.
-%      tau = M (xdot|_on - xdot|_off)
-%  otter_tilt4 clips the n and delta it is given, so an answer outside the limits
-%  reaches the hull as a DIFFERENT force and nothing in the allocator's own
-%  bookkeeping shows it. It is called twice in the same state -- thrusters on,
-%  then n = 0 -- and the difference times the mass matrix is the thruster tau,
-%  which is the method 7-2 already used.
-K  = size(tau_cmd, 2);
-Mm = otter_M(V.mp, V.rp);
-x0 = V.x0;
-
-R.t      = [];
-R.method = method;
-R.cmd    = tau_cmd;
-R.act    = zeros(3, K);
-R.n_cmd  = zeros(4, K);   R.n_act = zeros(4, K);
-R.d_cmd  = zeros(4, K);   R.d_act = zeros(4, K);
-R.T      = zeros(4, K);   R.exit  = zeros(1, K);
-R.sat_n  = false(4, K);   R.sat_d = false(4, K);
-
-for k = 1:K
-    % ① 배분 / allocate
-    [f, in] = W07_alloc(B, tau_cmd(:,k), method, P);
-    R.exit(k) = in.exit;
-
-    % ② 크기와 각 / magnitude and angle, per unit
-    fx = f(1:2:end);  fy = f(2:2:end);
-    s  = sign(fx);  s(s == 0) = 1;
-    T  = s .* hypot(fx, fy);
-    d  = atan2(s.*fy, s.*fx);
-
-    % ③ 추력곡선을 거꾸로 / the thrust curve, inverted
-    kk = cfg.k_pos*(T >= 0) + cfg.k_neg*(T < 0);
-    n  = sign(T) .* sqrt(abs(T) ./ kk);
-
-    % ④ 하드웨어가 깎는 자리 — 운동모델이 안에서 하는 것과 같은 깎기
-    %    the same clip the motion model applies inside itself
-    n_a = min(max(n, cfg.n_min), cfg.n_max);
-    d_a = min(max(d, -cfg.alpha_max(:)), cfg.alpha_max(:));
-
-    % ⑤ 운동모델에서 실제 tau 를 잰다. 깎지 않은 명령을 그대로 넘긴다 —
-    %    깎는 것은 플랜트의 일이다 / clipping is the plant's job
-    xd_on  = otter_tilt4(x0, n,         d, V.mp, V.rp, V.V_c, V.beta_c, V.quad);
-    xd_off = otter_tilt4(x0, [0 0 0 0], d, V.mp, V.rp, V.V_c, V.beta_c, V.quad);
-    tau    = Mm * (xd_on(1:6) - xd_off(1:6));
-
-    R.act(:,k)   = tau([1 2 6]);
-    R.T(:,k)     = T;
-    R.n_cmd(:,k) = n;      R.n_act(:,k) = n_a;
-    R.d_cmd(:,k) = d;      R.d_act(:,k) = d_a;
-    R.sat_n(:,k) = abs(n - n_a) > 1e-9;
-    R.sat_d(:,k) = abs(d - d_a) > 1e-9;
-end
-end
-
-% ========================================================================= %
+% =========================================================================
 function savepng(fig, p)
-%SAVEPNG  그림 하나를 150 dpi PNG 로. `exportgraphics` 가 없으면 `print`.
-%         One figure as a 150 dpi PNG, falling back to print.
+%SAVEPNG  그림 하나를 150 dpi 로 / one figure at 150 dpi
 try
     exportgraphics(fig, p, 'Resolution', 150);
 catch
     print(fig, p, '-dpng', '-r150');
 end
-fprintf('\n    saved %s\n', p);
+fprintf('    saved %s\n', p);
 end

@@ -7,8 +7,8 @@
 %  script is that computation, and its printed numbers go into the .tex as they
 %  are.
 %
-%  부채꼴은 `W07_alloc` 의 `cone_cap` 과 **같은 식**이다 / the sector is the one
-%  cone_cap builds:
+%  부채꼴은 법칙 4 블록 (`law4_limits_as_constraints`) 의 추력 캡과 **같은 식**이다
+%  the thrust-cap chords of that block are:
 %      cos(th_j) x' + sin(th_j) y' <= R cos(alpha_max/M),
 %      th_j = -alpha_max + (j - 0.5)*(2 alpha_max / M)
 
