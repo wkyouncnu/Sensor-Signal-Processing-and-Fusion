@@ -49,14 +49,12 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W04 | [Heading Control](lectures/W04_Heading_Control.md) | `W04_C_open_loop` · `W04_D_P` · `W04_E_PD` · `W04_F_PID` · `W04_G_wrap` · `W04_H_tuning` (model-free tuning) |
 | W05 | [Waypoint Following and LOS Guidance](lectures/W05_Waypoint_Following_and_LOS_Guidance.md) | `W05_C_atan2` · `W05_D_LOS` · `W05_E_switching` · `W05_F_ILOS` · `W05_G_tuning` (model-free tuning) |
 | W06 | [The Bow Thruster: Position Control and Berthing](lectures/W06_Bow_Thruster_Position_Control_and_Berthing.md) | `W06_1_point` · `W06_2_sway` · `W06_3_thrust` · `W06_4_stop` · `W06_5_dock` · `W06_7_front` · `W06_8_ned` (사다리 한 단에 모델 하나, 스크립트 하나) |
-| W07 | [Control Allocation](lectures/W07_Control_Allocation.md) | `W07_C_square` · `W07_D_pseudo` · `W07_E_curve` · `W07_F_limits` (실험 하나에 모델 하나) |
-| W08 | [Environmental Loads and Wave Filtering](lectures/W08_Environmental_Loads_and_Wave_Filtering.md) | `W08_C_wave` · `W08_D_no_filter` · `W08_E_notch` · `W08_G_slow` (실험 하나에 모델 하나) |
-| W09 | [Dynamic Positioning and Mission Integration](lectures/W09_Dynamic_Positioning_and_Mission_Integration.md) | `W09_C_fixed` · `W09_D_weathervane` · `W09_E_cascade` · `W09_F_mission` (실험 하나에 모델 하나) |
-| W10 | [Integration: One Vessel, One Mission](lectures/W10_Integration_One_Vessel_One_Mission.md) | `W10_C_full` · `W10_D_ablation` · `W10_E_weather` · `W10_F_limits` (실험 하나에 모델 하나) |
+| W07 | [Four Tilting Thrusters, and the Open-Loop Check](lectures/W07_Four_Tilting_Thrusters_and_the_Open_Loop_Check.md) | `W07_openloop` · `W07_alloc_chain` (진입점 하나 — `W07_CA(n)` 이 절 7-n 을 돌린다) |
 | A1 | [Actuation and the Control Effectiveness Matrix](lectures/A1_Actuation_and_the_Control_Effectiveness_Matrix.md) (부록) | `A1_actuation` |
 
-W07 이후는 [PLAN.md](PLAN.md) §2 참조. **W05 는 유도, W07 는 Control Allocation** 이다 —
-사용자 결정으로 둘의 순서를 바꿨다. 2026-09-21 에 PID 입문을 새 W02 로 넣으면서
+W08 이후는 [PLAN.md](PLAN.md) §2 참조. **W05 는 유도, W07 은 네 개의 틸팅 추진기**다 —
+2026-11-14 에 사용자 결정으로 옛 W07(Control Allocation)·W08·W09·W10 을 내리고,
+옛 W12 의 틸팅 추진기 자료를 W07 로 옮겼다. 2026-09-21 에 PID 입문을 새 W02 로 넣으면서
 그 뒤 주차가 모두 한 칸씩 밀렸다 (옛 W02 속도 → W03, 옛 W03 선수각 → W04, 옛 W04 유도 → W05).
 
 ## 실행

@@ -45,12 +45,12 @@ function B = otter_B(cfg)
 %   with the pair adjacent and in that order.
 %
 %   거치 방향 / which way the unit is mounted
-%       추진기가 선체에 거꾸로 달릴 수 있다. W12 의 Otter 가 그렇다 — 선수 둘은
+%       추진기가 선체에 거꾸로 달릴 수 있다. W07 의 Otter 가 그렇다 — 선수 둘은
 %       앞을, 선미 둘은 뒤를 보고 달려 있어서 **서보 0 도의 뜻이 쌍마다 다르다.**
 %       그 차이는 열 규칙을 고치지 않는다. 거치 부호 s_i = +-1 을 두어
 %       e 를 s_i e 로 바꾸면 끝이다 — 열이 s_i 배가 되고, 서보각 delta_i 는
 %       **그 쌍의 0 도에서** 재는 각이 된다.
-%       A unit can be mounted facing aft. On the Otter of Week 12 the two bow
+%       A unit can be mounted facing aft. On the Otter of Week 7 the two bow
 %       units face forward and the two stern units face aft, so servo zero
 %       means a different direction for each pair. The column rule does not
 %       change: a mounting sign s_i = +-1 replaces e by s_i e, which scales

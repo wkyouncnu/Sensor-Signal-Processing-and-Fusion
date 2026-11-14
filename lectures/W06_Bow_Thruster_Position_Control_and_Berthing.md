@@ -406,8 +406,8 @@ The pages reproduced here are from this course's 2025 slides on USV controller d
 | (2) Triple drive (TD) | three units all pushing along $x_b$ — a third column $[1\ \ 0\ \ 0]^{\mathsf T}$, which adds nothing to the rank |
 | (3) DD with a lateral thrust at the bow (DDB) | **this week**: $\operatorname{rank}B = 3$, square, one exact solution |
 | (4) DD with a lateral thrust at the centre (DDC) | the same rank, but with the lateral unit at $x_t = 0$ its column is $[0\ \ 1\ \ 0]^{\mathsf T}$ and sway costs the stern pair nothing — §6-2's lever $a$ vanishes |
-| (5) Twin azimuth (TA) | two units free to rotate through $\alpha_1, \alpha_2$: rank 3 with a null space, Week 7 |
-| (6) X-type, (7) $+$-type | four fixed units, rank 3, over-actuated — Week 7 again |
+| (5) Twin azimuth (TA) | two units free to rotate through $\alpha_1, \alpha_2$: rank 3 with a null space, which is the situation Week 7 meets with four units instead of two |
+| (6) X-type, (7) $+$-type | four fixed units, rank 3, over-actuated — Week 7 gives each of its four a servo |
 | $L_1$, $L_2$ in the sketches | the moment arms of step 2: $L_1$ the lateral offset of the stern pair, $L_2$ the longitudinal arm of a lateral unit |
 
 **Before the bow unit is fitted.** The page states $\boldsymbol{\tau} = TK\mathbf{u}$ for the two-thruster vessel, and writes the sway row as zero in red.
@@ -626,7 +626,7 @@ The second check is worth stating plainly, because it is easy to mistake this we
 
 ### Beyond three thrusters, in one page
 
-The slides continue past this week's configuration to one that Week 7 takes up: two azimuth units and a bow tunnel thruster, from the CSEI model vessel.
+The slides continue past this week's configuration to one this course does not build: two azimuth units and a bow tunnel thruster, from the CSEI model vessel. Week 7 asks the same question of four tilting units instead.
 
 ![azimuth thrusters with a bow thruster](../figures/refs/w06-ref-azimuth-bow.png)
 
@@ -675,7 +675,7 @@ $$u_i = \frac{f_{cmd,i}}{k_i} \tag{7.47}$$
 | Equation | What it is for | Where it reappears |
 |---|---|---|
 | (7.44) | the magnitude an azimuth unit must produce | Week 7, as the quantity that saturates |
-| (7.45) | the angle it must be turned to | Week 7, as the quantity with a rate limit and forbidden sectors |
+| (7.45) | the angle it must be turned to | Week 7, as the quantity with a mechanical limit that bounds the attainable set |
 | (7.46) | a tunnel thruster has no angle to choose | this week: the bow unit's column is fixed, which is why $B$ is square |
 | (7.47) | force back to a normalised command | derivation step 8, $u_i = f_i / k_i$, identical in form |
 
@@ -1575,7 +1575,7 @@ end
 | `%#codegen` | — | the block is compiled; `persistent` state is therefore held in generated code too, not only in interpreted simulation |
 
 > [!warning] A latch is a decision that cannot be revisited
-> The latch removes chatter and, by construction, removes recovery. If phase 3 is entered and a current then pushes the vessel back outside $R_{app}$, the logic does not return to phase 1 — it continues trying to berth from wherever it is. Experiment 6-4 showed exactly that failure in a $0.3$ m/s cross-current: the arrival test is never satisfied and the vessel holds station $2.153$ m out, with the sway demand pinned at $35.13$ N. For a vessel that must abort and retry, the states need guarded re-entry, which is a Stateflow chart rather than nine lines of MATLAB. Week 9 builds one.
+> The latch removes chatter and, by construction, removes recovery. If phase 3 is entered and a current then pushes the vessel back outside $R_{app}$, the logic does not return to phase 1 — it continues trying to berth from wherever it is. Experiment 6-4 showed exactly that failure in a $0.3$ m/s cross-current: the arrival test is never satisfied and the vessel holds station $2.153$ m out, with the sway demand pinned at $35.13$ N. For a vessel that must abort and retry, the states need guarded re-entry, which is a Stateflow chart rather than nine lines of MATLAB. This course stops at the latched form and measures what it costs.
 
 ### Experiment 6-5 · The four phases, measured (20 min)
 
@@ -1721,7 +1721,7 @@ $$t_{berth} \approx \frac{\texttt{stand\_off}}{v_{cap}} + \frac{1}{K_{p,pos}},
 The last row of the figure is the part that is not about control at all. A hull alongside presents its full length to the quay and can take lines fore and aft; a hull bow-first touches at one point and must be held by that point. Which of those is wanted is a seamanship question, and the controller's job is only to make both reachable.
 
 > [!note] Where this structure comes from
-> Carrying **two** berthing strategies and switching between them is the arrangement reported and sea-trialled by Bang et al. (2025), who place a transition logic above the manoeuvre so that one autonomous system can berth a USV either alongside or bow-first. The `psi_berth` Constant of this week is the degenerate case of that logic — a selection made once, on the canvas, before the run, instead of one made on conditions during it. The mission block of §6-5 already carries the machinery a running selection would need: latched phases, and an arrival test that is a conjunction of bounded terms rather than a single distance. What §6-5 does not carry is a rule for *re-entering* an earlier phase, and that omission is deliberate — Week 9 introduces it under a current, where it is needed.
+> Carrying **two** berthing strategies and switching between them is the arrangement reported and sea-trialled by Bang et al. (2025), who place a transition logic above the manoeuvre so that one autonomous system can berth a USV either alongside or bow-first. The `psi_berth` Constant of this week is the degenerate case of that logic — a selection made once, on the canvas, before the run, instead of one made on conditions during it. The mission block of §6-5 already carries the machinery a running selection would need: latched phases, and an arrival test that is a conjunction of bounded terms rather than a single distance. What §6-5 does not carry is a rule for *re-entering* an earlier phase, and that omission is deliberate: re-entry earns its complexity only under a disturbance able to push the vessel back out, which is the case §6-4 measures rather than repairs.
 >
 > The berthing logic of §6-5 and §6-6 has no counterpart to copy in MSS. The copy this course runs against — the one `_tools/mss_path.m` resolves, its files dated 2026-08-31 — holds dynamic-positioning material (`demoDPThrusterModels`, `demoSemisubDPsystem`, `demoCS2passiveObserverDP`) but no berthing demonstration, and no file in it matches *berth* or *dock* by name. The phase machine here was therefore written from the derivation of §6-5 rather than adapted, which is why that section derives it rather than citing it.
 
@@ -2014,7 +2014,7 @@ The body-fixed panel for the same demand is the one already read in Section 6-3;
 
 What the placement of the rotation decides is which frame the *limits* are expressed in, and limits are where a linear design stops being linear. In hull axes the limits are constants of the vessel — $0.80$ and $0.35$ m/s, $120$ and $35.13$ N — and a controller written in hull axes can use all four of them. In north and east the same physical limits become functions of $\psi$, and a controller written there can only use the weakest value of each: one speed, one gain pair, one loose force bound. The three costs of steps 5, 7 and 8 are three faces of that single fact.
 
-The costs are not equal. Being slow is visible and bounded: $8.32$ s at $\psi_d = 0$, and only $1.64$ s at $\psi_d = 45$ degrees, once the body-fixed advantage has been spent on the bend in its own track. Asking for $43.68$ N of sway is different in kind. Two separate limits lie below that demand, and the run passes both: $Y_{max} = 35.13$ N, the sway the hull can hold when no yaw is asked of it at the same time, and $F_{B,max} = 40$ N, the bow unit's own rating, which the output shows it reaching exactly. The demand is still enforced — the allocation clips it, and the vessel arrives — but it is enforced where the integrator cannot see it happen, so the integral state carries credit for work the hull never did. With no current and a reachable target, that costs only time. Week 9 puts the same structure under a current, where the integrator is what holds station, and the difference stops being cosmetic.
+The costs are not equal. Being slow is visible and bounded: $8.32$ s at $\psi_d = 0$, and only $1.64$ s at $\psi_d = 45$ degrees, once the body-fixed advantage has been spent on the bend in its own track. Asking for $43.68$ N of sway is different in kind. Two separate limits lie below that demand, and the run passes both: $Y_{max} = 35.13$ N, the sway the hull can hold when no yaw is asked of it at the same time, and $F_{B,max} = 40$ N, the bow unit's own rating, which the output shows it reaching exactly. The demand is still enforced — the allocation clips it, and the vessel arrives — but it is enforced where the integrator cannot see it happen, so the integral state carries credit for work the hull never did. With no current and a reachable target, that costs only time. Under a current the integrator is what holds station, and the difference stops being cosmetic — §6-4 puts the same structure in a $0.3$ m/s cross-current and measures the station it settles for.
 
 The last three lines of the output are a caution about measurement, not about frames. The NED peak speed at $\psi_d = 45$ degrees, $0.468$ m/s, sits $34$ % above its own $0.350$ m/s ceiling, and the natural suspicion is the surge leak of Section 6-2 — a sway demand above $Y_{max}$ producing unasked-for surge. The script answers by printing the single instant at which $\lvert U \rvert$ peaks rather than a second maximum to subtract. That instant is $t = 1.38$ s, inside the opening turn, with $u = +0.378$ and $v = -0.277$ m/s and the yaw demand exactly on $N_{max} = 52.70$ N$\cdot$m. Asked for a yaw it cannot produce alongside the surge and sway, the allocation clips per thruster, and what reaches the hull is not what any one axis requested. The peak belongs to the heading turn passing through the allocation — Section 6-2's subject, not this section's. The $\psi_d = 0$ run, whose yaw demand never approaches $N_{max}$, peaks only $3.7$ % above its ceiling: the inner PI overshooting its own command, the same effect as $0.878$ against $0.873$ on the body-fixed side.
 
@@ -2370,7 +2370,7 @@ Against a north–south quay the alongside attitude spent $4.0$ % of its berth l
 | the model stops at `Undefined function or variable 'h'` | the workspace is empty and every Constant holds a **name** | nothing is broken. The model's `InitFcn` fills missing variables itself, so this appears only if the `.slx` was copied out of the vault and `_tools` can no longer be found from it |
 | adding the measured distance as an input to `mission` is reported as an algebraic loop | the mission block sets the target, the loops compute $d$ from that target, and $d$ would then set the target | the block computes its own distance from $x$; it must not receive one |
 | a heading on a Scope is about $57$ times the expected number | `psi` and `psi_set` are both logged in **degrees**, not radians | subtract them as they are; do not convert either |
-| the vessel holds station a few metres out and never declares arrival | a current pushes it back outside $R_{app}$, and the latch does not re-enter phase 1 | expected, and measured: §6-4 gives $2.153$ m in a $0.3$ m/s current. Guarded re-entry is Week 9 |
+| the vessel holds station a few metres out and never declares arrival | a current pushes it back outside $R_{app}$, and the latch does not re-enter phase 1 | expected, and measured: §6-4 gives $2.153$ m in a $0.3$ m/s current. Guarded re-entry would repair it, and is not built in this course |
 | `W06_plot` draws a figure that does not match these notes | a changed variable is still in the workspace | run `W06_0_setup` again |
 
 ---
@@ -2389,10 +2389,10 @@ Against a north–south quay the alongside attitude spent $4.0$ % of its berth l
 - Week 2 §2-6 to §2-8: P, I and the tuning order, used unchanged by the velocity loop of §6-3.
 - Week 4 §4-4: heading is not course. It is why the heading loop stays separate from the position loop rather than being folded into it.
 - Week 5 §5-7: the yaw moment a surge force leaves behind. Section 6-2 asks the same question of sway, and the answer is harsher.
-- Week 9: dynamic positioning on the under-actuated hull, under a current, with the guarded phase re-entry §6-4 and §6-5 both point forward to.
+- Appendix A1 §A1-3 and §A1-6: the rank of $\mathbf{B}$ and the attainable control set, which is where the ceiling of §6-2 is stated in general form.
 
 ---
 
 ## Next Week
 
-**Week 7 — Control Allocation.** The allocation of this week was a square solve: three demands, three thrusters, exactly one answer, nothing to choose. Section 6-2 clipped that answer when it exceeded a ceiling and measured what leaked out. Week 7 adds actuators until the answer is no longer unique — the rank stays 3 while the null space grows — and at that point clipping is no longer the best attainable approximation of the demand. Its first experiment measures how far short the clipped solution falls, and its subject is the constrained minimisation that replaces it.
+**Week 7 — Four Tilting Thrusters, and the Open-Loop Check.** The allocation of this week was a square solve: three demands, three thrusters, exactly one answer, nothing to choose. Section 6-2 clipped that answer when it exceeded a ceiling and measured what leaked out. Week 7 replaces the two fixed thrusters with four tilting ones, so $B$ becomes $3\times 8$ with rank 3 and a five-dimensional null space: the answer is no longer unique, and clipping is no longer the best attainable approximation of the demand. Its first half gives the eight numbers by hand and checks that the motion model is the equations; its second half reverses the arithmetic — three demanded forces into eight components, under a weight matrix, a servo limit, a thrust cap and a 50 Hz budget.

@@ -128,3 +128,51 @@ TikZ 지뢰 둘을 밟았다: `cap` 은 TikZ 내장 키(line cap)라 `\tikzset` 
   x*ey - y*ex = -1.3842 와 수직거리 1.3842 m 가 정확히 같다 ·
   `a1-four-layouts.svg` — 형상 넷과 계급, otter_config.m 좌표에서 awk 가 생성
 
+
+---
+
+### 옛 W07~W10 을 내리고 옛 W12 를 W07 로 옮겼다 — 완료 (2026-11-14, 사용자 지시)
+
+사용자 지시: "W07 부터 08, 09, 10 내용을 지워주고 W12 에 있는 for tilting thruster 그 부분을
+7주차로 옮겨줘. W11 은 지금 없으니까 놔두고."
+
+**내린 것.** 강의 `.md` · `.pdf` · `WXX_simulink/` 를 함께 내렸다 — 옛 **W07** Control
+Allocation · **W08** Environmental Loads and Wave Filtering · **W09** Dynamic Positioning
+and Mission Integration · **W10** Integration: One Vessel, One Mission. 넷 다 `git rm -r`
+이므로 되살릴 자리는 git 역사뿐이다. **W11** 은 파일이 없고 계획 항목만 있어
+사용자 지시대로 손대지 않았다.
+
+**옮긴 것.** 전부 `git mv` 다 — `lectures/W12_…_Open_Loop_Check.md|.pdf` → `W07_…`,
+`lectures/W12_simulink/` 의 `.m` 30 개 · `.slx` 둘 · `img/*.png` 26 개,
+`figures/w12-*.svg|png` 여섯 쌍과 `figures/src/w12-*.tex`,
+`_tools/w12_sector_chords_geom.m`.
+
+**지뢰 넷.**
+
+1. **폴더째 `git mv` 는 막힌다** — MATLAB 이 `lectures/W12_simulink` 를 잡고 있어
+   `Permission denied` 가 났다. 빈 `W07_simulink/img` 를 먼저 만들고 추적되는 파일
+   56 개를 하나씩 옮겼다. 남은 빈 폴더는 `rm -rf` 로도 지워지지 않아
+   PowerShell `Remove-Item -Recurse -Force` 로 지웠다.
+2. **파일 안의 토큰은 MATLAB 으로 고친다** (CLAUDE.md §4-11 — `.md` 의 LaTeX 에
+   `sed` 를 대지 않는다). 37 개 파일에 `replace`/`regexprep` 를 돌렸다:
+   `W12`→`W07`, `w12`→`w07`, `Week 12`→`Week 7`, `12주차`→`7주차`,
+   `week: 12`→`week: 7`, `Assignment 12`→`Assignment 7`, 그리고 절 번호만
+   `(?<![0-9.])12-(?=[0-9])` → `7-`.
+3. **치수를 절 번호로 착각하지 않게** 앞막이를 둔다 — `112.820` · `-12.64` ·
+   `Fossen §12.3.4` 는 `12` 뒤가 `.` 이거나 앞이 숫자라 걸리지 않는다. 적용 전에
+   그것을 확인했다.
+4. **`.slx` 은 이름만 바꾸면 모델 이름이 파일 이름과 어긋난다.** 둘을 지우고 빌더를
+   다시 돌려 새로 만들었다 — `W07_1_build_openloop` · `W07_2_build_alloc`,
+   둘 다 `overlaps 0  diagonals 0`.
+
+**살아남은 문서의 가리킴.** W01 · W02 · W04 · W05 · W06 · A1 (영문·국문)이 내린 주차를
+**앞으로의 주차**로 가리키던 문장 서른 남짓을 같은 날 고쳤다. 고치는 기준은 하나였다 —
+**있는 것을 가리키거나(W06 §6-3 · §6-4 · §6-5, A1 §A1-3 · §A1-6), 이 강의가 그것을
+만들지 않는다고 분명히 적는다.** 없는 주차를 약속하지 않는다. 새 W07 에 여전히 맞는
+가리킴(과구동·영공간·의사역행렬·제약 최소화·서보 한계·추력 캡)은 그대로 두었다.
+
+**다시 돌려 확인한 것.** `W07_V_openloop`(30 s × 8) · `W07_CA(8)`…`W07_CA(12)` ·
+`W07_alloc_chain` 을 `law = 1…4` 로 네 번 · `verify_otter_tilt4`. 문서의 수치가
+그대로 나왔다 — `126.180` N · `141.025` N·m · `112.820` N · `28.205` N·m ·
+`k_neg/k_pos = 0.5817` · 재적분 잔차 `0.0e+00` · `PASS`. 아무도 부르지 않는
+`img/W07_alloc_chain_tau.png` 은 옛 빌더가 남긴 것이라 지웠다.

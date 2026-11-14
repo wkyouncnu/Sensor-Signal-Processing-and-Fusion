@@ -1,0 +1,160 @@
+% figures/w07-sector-chords.svg — 한 단위의 실현 가능 영역은 **원의 부채꼴**이고,
+% QP 는 직선만 받으므로 원호를 **내접 현**으로 바꾼다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w07-sector-chords.tex figures/w07-sector-chords.svg
+%
+% 사용자 지시 (2026-11-04): "각 n rpm값의 saturation과 서보 각도의 saturation도
+% 고려해야 하고...."  — 벽이 둘이고, 둘이 서로 다르게 생겼다는 것이 §7-12 다.
+%
+% 두 칸이 §7-12 의 두 줄이다.
+%  (왼쪽)  서보 벽은 직선 둘, 추력 캡은 원호 하나. 합치면 부채꼴이다.
+%          원호는 2차식이므로 QP 의 제약으로 쓸 수 없다.
+%  (오른쪽) 원호를 각을 M 등분한 현 M 개로 바꾼다. 이웃한 현은 반지름 R 의 원
+%          **위**에서 만나므로 다각형은 내접하고, 중점에서만 0.966 R 이다.
+%
+% 좌표는 눈대중이 아니다 (`CLAUDE.md` §4-6-1) — `_tools/w07_sector_chords_geom.m`
+% 이 찍은 값을 그대로 옮겼다. alpha_max = 45 도, M = 3, R = 2.30 cm 에서
+%   꼭짓점  -45: (1.62635, -1.62635)   -15: (2.22163, -0.59528)
+%           +15: (2.22163, +0.59528)   +45: (1.62635, +1.62635)
+%   현의 중점 -30: (1.92399, -1.11081)   0: (2.22163, 0)   +30: (1.92399, +1.11081)
+%   R cos15 = 0.9659 R,  중점에서 3.41 % 보수적
+%   확대경   틈 0.07837 cm, 원본 원의 중심 (-30 도, 2.26081), 반지름 0.0775 cm,
+%            x8 로 키우면 0.627 cm — 반지름 0.62 cm 의 확대경 안에 들어간다
+% 식은 `W07_alloc` 의 `cone_cap` 과 같은 것이다. 바꿀 때 둘을 함께 고친다.
+%
+% 앞 그림들에서 배운 것 셋을 여기서도 지킨다 (`standing-orders.md` §15-41).
+%  (1) 칸 둘의 중심 간격(7.6 cm)은 제목이 서로 닿지 않을 만큼 넓게. 7.0 cm 에서는
+%      제목 둘이 겹쳤다 — 간격을 넓히고 제목을 줄여서 고쳤다.
+%  (2) 제목 노드는 축 이름표보다 5 mm 이상 위에. 축을 2.40 에서 끊고 이름표를
+%      2.22 에 두어 부제(3.10)와 떨어뜨렸다.
+%  (3) `cap` 은 TikZ 내장 키라 스타일 이름으로 쓸 수 없다 — `capl` 로 둔다.
+%
+% 틈이 R 의 3.4 % 라 본문 폭에서 2 px 다. **보이지 않는 것을 숫자로만 주장하지
+% 않는다** (`CLAUDE.md` §4-6) — -30 도 현의 중점을 x8 로 확대해 그 틈을 그린다.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+
+\tikzset{
+  ax/.style     = {ink, line width=0.5pt, -{Stealth[length=4pt,width=3pt]}},
+  wall/.style   = {accent, line width=1.0pt},
+  capl/.style   = {warn, line width=1.0pt},
+  chord/.style  = {knownc, line width=1.0pt},
+  ghost/.style  = {warn, line width=0.7pt, densely dotted},
+  lead/.style   = {soft, line width=0.4pt},
+  shade/.style  = {fill=accent!12},
+  sliver/.style = {fill=warn!45},
+  dim/.style    = {ink, line width=0.4pt,
+                   {Stealth[length=3pt,width=2.5pt]}-{Stealth[length=3pt,width=2.5pt]}},
+  lab/.style    = {font=\scriptsize, align=left,   inner sep=1.5pt},
+  clab/.style   = {font=\scriptsize, align=center, inner sep=1.5pt},
+  tlab/.style   = {font=\small,      align=center, inner sep=2pt},
+  box/.style    = {font=\scriptsize, align=center, inner sep=3pt,
+                   draw=knownc, fill=white, rounded corners=1pt, text=knownc},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+% ===== 왼쪽: 부채꼴 =========================================================
+\begin{scope}[shift={(0,0)}]
+  \fill[shade] (0,0) -- (-45:2.30) arc (-45:45:2.30) -- cycle;
+
+  \draw[ax] (-0.55,0) -- (3.00,0);
+  \draw[ax] (0,-2.60) -- (0,2.40);
+  \node[clab, anchor=west]       at (3.02,0)     {$x_i'$};
+  \node[clab, anchor=south east] at (-0.08,2.22) {$y_i'$};
+
+  % 서보 벽 — 직선 둘 / the servo wall, two straight lines
+  \draw[wall] (0,0) -- (45:2.30);
+  \draw[wall] (0,0) -- (-45:2.30);
+  % 추력 캡 — 원호 하나 / the thrust cap, one arc
+  \draw[capl] (-45:2.30) arc (-45:45:2.30);
+
+  % alpha_max 와 R / the angle and the radius
+  \draw[ink, line width=0.4pt] (0.95,0) arc (0:45:0.95);
+  \node[clab] at (22.5:1.26) {$\alpha_{\max}$};
+  \draw[lead] (0,0) -- (-22.5:2.30);
+  \node[clab, fill=white, inner sep=1pt] at (-22.5:1.30) {$R$};
+
+  \node[lab, anchor=south west, text=accent] at (0.26,1.82)
+    {the servo wall: \textbf{two straight lines}\\
+     $\lvert y_i'\rvert \le \tan\alpha_{\max}\, x_i'$};
+  \node[lab, anchor=north west, text=warn] at (0.26,-1.86)
+    {the thrust cap: \textbf{one arc}\\
+     $x_i'^2 + y_i'^2 \le R^2$ --- not linear};
+
+  \node[tlab] at (1.60,3.50) {one unit's feasible set is a \textbf{sector}};
+  \node[clab] at (1.60,3.10)
+    {the angle is the servo wall, the radius is the shaft-speed cap};
+\end{scope}
+
+% ===== 오른쪽: 현으로 바꾼다 ================================================
+\begin{scope}[shift={(7.6,0)}]
+  % 다각형 / the polygon the QP actually sees
+  \fill[shade] (0,0) -- (1.62635,-1.62635) -- (2.22163,-0.59528)
+                     -- (2.22163, 0.59528) -- (1.62635, 1.62635) -- cycle;
+  % 버린 얇은 조각 셋 / the three slivers that are given up
+  \fill[sliver] (-45:2.30) arc (-45:-15:2.30) -- cycle;
+  \fill[sliver] (-15:2.30) arc (-15: 15:2.30) -- cycle;
+  \fill[sliver] ( 15:2.30) arc ( 15: 45:2.30) -- cycle;
+
+  \draw[ax] (-0.55,0) -- (3.00,0);
+  \draw[ax] (0,-2.60) -- (0,2.40);
+  \node[clab, anchor=west]       at (3.02,0)     {$x_i'$};
+  \node[clab, anchor=south east] at (-0.08,2.22) {$y_i'$};
+
+  % 대신한 원호를 점선으로 남겨 둔다 / the arc it replaced, kept as a dotted line
+  \draw[ghost] (-45:2.30) arc (-45:45:2.30);
+
+  \draw[wall] (0,0) -- (45:2.30);
+  \draw[wall] (0,0) -- (-45:2.30);
+  \draw[chord] (1.62635,-1.62635) -- (2.22163,-0.59528);
+  \draw[chord] (2.22163,-0.59528) -- (2.22163, 0.59528);
+  \draw[chord] (2.22163, 0.59528) -- (1.62635, 1.62635);
+
+  % 꼭짓점은 원 위에 있다 / the vertices sit on the circle
+  \foreach \a in {-45,-15,15,45} { \fill[ink] (\a:2.30) circle (1.6pt); }
+  \draw[lead] (2.52,1.14) -- (2.22163,0.59528);
+  \node[lab, anchor=west] at (2.54,1.18) {the vertices lie\\\textbf{on} the circle};
+
+  \node[lab, anchor=south west, text=knownc] at (0.26,1.82)
+    {the arc becomes $M=3$ \textbf{chords}\\
+     $\cos\theta_j\,x_i' + \sin\theta_j\,y_i' \le R\cos(\alpha_{\max}/M)$\\
+     $\theta_j = -30^\circ,\ 0^\circ,\ +30^\circ$ \quad
+     $R\cos 15^\circ = 0.966\,R$};
+
+  % ---- 확대경: 현과 원호 사이의 틈 / the lens on the chord-to-arc gap ------
+  \coordinate (Pc) at (-30:2.26081);
+  \coordinate (Lc) at (3.05,-1.95);
+  \draw[lead] (Pc) circle (0.0775);
+  \draw[lead] ($(Pc)!0.0775cm!(Lc)$) -- ($(Lc)!0.62cm!(Pc)$);
+  \begin{scope}[shift={(Lc)}, rotate=-30]
+    \begin{scope}
+      \clip (0,0) circle (0.62);
+      \fill[sliver] (-0.3135,-0.62) rectangle (0.3135,0.62);
+      \draw[chord] (-0.3135,-0.62) -- (-0.3135,0.62);
+      \draw[ghost] ( 0.3135,-0.62) -- ( 0.3135,0.62);
+    \end{scope}
+    \draw[lead] (0,0) circle (0.62);
+    \draw[dim] (-0.3135,0) -- (0.3135,0);
+  \end{scope}
+  \node[clab] at (3.05,-2.84) {$\times 8$: chord to arc, $3.4\,\%$ of $R$};
+
+  \node[tlab] at (1.60,3.50) {the QP sees \textbf{chords}, not the arc};
+  \node[clab] at (1.60,3.10) {straight lines only, and inscribed in the sector};
+\end{scope}
+
+% ===== 아래: 같은 그림이 두 캡 높이를 모두 쓴다 =============================
+\node[box] at (5.70,-3.86)
+  {In unit axes $x_i'=\sigma_i f_{x,i}$ and $y_i'=\sigma_i f_{y,i}$,
+   so one picture serves a unit pushing ahead and one pushing astern.\\
+   Only $R$ differs: ahead $R=k_{\mathrm{pos}}n_{\max}^2=119.68$~N,
+   astern $R=k_{\mathrm{neg}}n_{\min}^2=66.71$~N, which is $56\,\%$ of it,\\
+   so the astern cap is the wall that binds.
+   \texttt{W07\_alloc} builds exactly these rows in \texttt{cone\_cap}:
+   two for the wall and $M$ for the cap, for each of the four units.};
+
+\end{tikzpicture}
+\end{document}

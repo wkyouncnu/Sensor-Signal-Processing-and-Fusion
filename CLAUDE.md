@@ -65,7 +65,7 @@
 │   ├── A1_….md / .pdf       부록 — 본과정에서 빼낸 심화. W 다음에 정렬된다
 │   └── A1_simulink/
 │
-├── figures/                 개념도 SVG (w01-… … w12-…). 러너가 만든 PNG 는 여기 아니다
+├── figures/                 개념도 SVG (w01-… … w07-…). 러너가 만든 PNG 는 여기 아니다
 │   ├── src/                 그 SVG 의 TikZ 원본 (*.tex) + gnc-style.tex
 │   │                        `tikz2svg.sh` 이 여기서 ../*.svg 를 만든다
 │   └── refs/                **가져온** 그림 — 사용자의 옛 강의 슬라이드·교재 캡처

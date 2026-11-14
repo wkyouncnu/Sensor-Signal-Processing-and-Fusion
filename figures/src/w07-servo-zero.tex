@@ -1,0 +1,100 @@
+% w07-servo-zero.tex
+%   7주차 §7-1. **서보 0도의 정의가 쌍마다 다르다.** 선수 둘과 선미 둘을
+%   칸을 나눠 같은 화살표를 두 번 그린다 (CLAUDE.md 4-6-4).
+%
+%   왜 이 그림이 따로 있는가 / why this is its own figure (사용자 지시 2026-11-03)
+%       "앞 뒤의 2개 모터가 바라보는 방향이 달라서....서보 각도의 정의가 달라
+%        ....0도의 정의가 달라....ppt 잘 보고...잘 그려줘봐"
+%       평면도(w07-tilt-geometry)는 **자리**를 말하고, 이 그림은 **0 의 자리**만
+%       말한다. 둘을 한 장에 넣으면 각도 넷과 치수선 여섯이 겹쳐 읽히지 않는다.
+%
+%   무엇이 다르고 무엇이 같은가 / what differs and what does not
+%       다른 것   0 의 방향 하나다. s_i = +1 이면 0 이 +x_b(앞), s_i = -1 이면
+%                 -x_b(뒤)를 민다. otter_config('quad_tilt').mount = [1 1 -1 -1].
+%       같은 것   **부호의 방향**이다. 둘 다 자기 0 에서 y_b 쪽으로 재므로,
+%                 이 평면도에서 delta > 0 은 **두 칸 모두 시계방향**이다.
+%       이것이 표로 쓰면 한 줄인데 그림이 없으면 학생이 매번 틀리는 곳이다.
+%
+%   회전 방향의 계산 / the sense, computed            (CLAUDE.md 4-6-2)
+%       화면 기저는 오른쪽 = +y_b, 위 = +x_b, 화면 안쪽 = +z_b.
+%       선수 칸: 0 은 화면 위(90 deg). +45 deg 는 y_b 쪽이므로 화면 45 deg.
+%                따라서 arc (90:50:14) — 끝 각이 작으니 시계.
+%       선미 칸: 0 은 화면 아래(270 deg). 추력은 s_i (cos d, sin d) 이므로
+%                d = +45 에서 (-0.707, -0.707) = 화면 225 deg (왼쪽 아래).
+%                따라서 arc (270:230:14) — 역시 시계. 두 칸의 방향이 같다.
+%
+%   화살표의 뜻 / what the arrows are
+%       유닛 **하나가 내는 힘의 방향**이다. 크기가 아니다 — 세 화살표의 길이가
+%       같은 것은 같은 추력에서 각만 바뀐다는 뜻이다.
+
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\definecolor{hull}{HTML}{E6F0E6}
+\definecolor{hulle}{HTML}{59735A}
+
+%  칸 하나 / one panel
+%    #1 화면 X 중심   #2 0 도의 화면 각   #3 +45 의 화면 각   #4 -45 의 화면 각
+%    #5 delta 호의 끝 각   #6 호 이름표의 각   #7 유닛 이름   #8 s_i
+\newcommand{\servopanel}[8]{%
+  \begin{scope}[shift={(#1,0)}]
+    %  폰툰 토막 — 유닛이 선체 어디에 얹혀 있는지 / the pontoon it sits on
+    \filldraw[fill=hull, draw=hulle, line width=0.35pt, rounded corners=1pt]
+      (-5,-17) rectangle (5,17);
+    %  선체 기준선. 세로가 x_b, 가로가 y_b / the body axes, as reference
+    \draw[soft, line width=0.3pt, densely dotted] (0,-31) -- (0,31);
+    \draw[soft, line width=0.3pt, densely dotted] (-31,0) -- (31,0);
+    \node[note, anchor=south] at (0,31.5)  {$+x_b$};
+    \node[note, anchor=west]  at (31.5,0)  {$+y_b$};
+    %  서보가 닿는 부채꼴 / the sector the servo can reach
+    \fill[accent, opacity=0.09] (0,0) -- (#3:28) arc (#3:#4:28) -- cycle;
+    \draw[accent, opacity=0.55, densely dashed, line width=0.35pt]
+         (#3:28) -- (0,0) -- (#4:28);
+    %  세 방향. 0 도만 굵다 / three directions, the zero drawn heavy
+    \draw[accent, line width=0.5pt, -{Stealth[length=4pt, width=3pt]}] (#3:6) -- (#3:28);
+    \draw[accent, line width=0.5pt, -{Stealth[length=4pt, width=3pt]}] (#4:6) -- (#4:28);
+    \draw[accent, line width=1.2pt, -{Stealth[length=6pt, width=4.5pt]}] (#2:6) -- (#2:28);
+    %  각의 부호 방향 / the sense of a positive delta
+    \draw[accent, line width=0.6pt, -{Stealth[length=4pt, width=3pt]}]
+         (#2:14) arc (#2:#5:14);
+    \node[anote] at (#6:19.5) {$\delta_i>0$};
+    %  유닛 / the unit
+    \node[circle, draw=ink, fill=white, line width=0.5pt, inner sep=0.5pt,
+          minimum size=8mm, font=\scriptsize] at (0,0) {#7};
+    \node[ink, anchor=south, font=\scriptsize\bfseries] at (0,45) {#8};
+  \end{scope}}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm, font=\scriptsize]
+
+%  선수 쌍 — 0 도가 화면 위 / the bow pair: zero points up
+\servopanel{0}{90}{45}{135}{50}{70}{1, 2}%
+  {units 1 and 2 $\cdot$ the bow pair $\cdot$ $s_i=+1$}
+\node[anote, anchor=east] at (-2,23) {$\delta_i=0$};
+\node[anote, anchor=south west] at (20.8,20.8) {$\delta_i=+45^\circ$};
+\node[anote, anchor=south east] at (-20.8,20.8) {$\delta_i=-45^\circ$};
+\node[ink, anchor=north, align=center, text width=56mm] at (0,-37)
+     {zero pushes the hull \textbf{ahead}, so $n_i>0$ drives it forward};
+
+%  선미 쌍 — 0 도가 화면 아래 / the stern pair: zero points down
+\servopanel{86}{270}{225}{315}{230}{250}{3, 4}%
+  {units 3 and 4 $\cdot$ the stern pair $\cdot$ $s_i=-1$}
+\node[anote, anchor=west] at (87,-23) {$\delta_i=0$};
+\node[anote, anchor=north east] at (65.2,-20.8) {$\delta_i=+45^\circ$};
+\node[anote, anchor=north west] at (106.8,-20.8) {$\delta_i=-45^\circ$};
+%  두 칸의 문장은 **같은 높이**에 둔다. 그래야 둘이 한 줄에서 견주어진다
+%  / both cells carry their sentence at the same height, so the two compare
+\node[ink, anchor=north, align=center, text width=56mm] at (86,-37)
+     {zero pushes the hull \textbf{astern}, so $n_i>0$ drives it backward};
+
+%  칸을 가르는 선 / the rule between the cells
+\draw[soft, line width=0.3pt] (43,-44) -- (43,44);
+
+\node[note, anchor=north, align=center, text width=110mm] at (43,-56)
+     {The bow is up in both cells. Each pair measures $\delta_i$ from its
+      \emph{own} zero towards $y_b$, so a positive $\delta_i$ turns clockwise
+      here in both. Only the zero differs, and that difference is the sign
+      $s_i$ carried by the columns of $B$.};
+
+\end{tikzpicture}
+\end{document}

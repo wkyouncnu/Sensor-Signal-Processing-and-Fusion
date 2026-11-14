@@ -1143,7 +1143,7 @@ $$
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | buoyancy and weight acting through different points |
 | $\boldsymbol{\tau}$ | control force | what the thrusters produce |
 
-- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, Week 5 §5-5 pays for it with a permanent path error, and Week 8 adds wind and waves beside it.
+- $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces depend on relative velocity, not on ground velocity. This distinction is dormant this week, because the current is set to zero. §1-13 works it through line by line, and Week 5 §5-5 pays for it with a permanent path error.
 
 > [!important] The added mass is not a correction term
 > For the Otter, $-X_{\dot u} = 5.50$ kg against a hull-plus-payload mass of $80.0$ kg, so the water contributes $6.4\%$ of the effective surge inertia. In sway it contributes far more, $-Y_{\dot v} = 82.5$ kg against the same $80.0$ kg. It is part of the model, not a refinement of it.
@@ -1440,7 +1440,7 @@ $$
 - The middle row is **exactly zero**, and $\operatorname{rank}(\mathbf{B}) = 2$. Appendix A1 derives this matrix from a general rule and shows what it costs; this week only records that the row is empty.
 
 > [!important] Zero is not a small number
-> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 11 meets this fact again as a hard limit on what can be controlled.
+> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 6 meets this fact again as a hard limit on what can be controlled, and answers it by bolting a third thruster to the bow; Appendix A1 §A1-3 states the same limit as the rank of $\mathbf{B}$.
 
 ### The whole chain, from revolutions to generalised force
 

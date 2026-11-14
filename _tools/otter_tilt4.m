@@ -213,7 +213,7 @@ d2  = -s(2)*py(2);                      % -0.395 m  unit 2, the other side
 d3  = -s(3)*py(3);                      % -0.395 m  unit 3
 d4  = -s(4)*py(4);                      % +0.395 m  unit 4
 
-% 유효행렬을 **여기서** 쓴다 — 강의 §12-1 의 행렬 그대로다. 이름이 B_thr 인
+% 유효행렬을 **여기서** 쓴다 — 강의 §7-1 의 행렬 그대로다. 이름이 B_thr 인
 % 것은 otter.m 의 B 가 이미 **선폭**이라서다 — 그 줄은 고치지 않는다.
 % 1·2 행은 거치 부호만, 3 행은 위에서 이름 붙인 팔만 들고 있다.
 % The effectiveness matrix, written out here exactly as the matrix of 12-1. It

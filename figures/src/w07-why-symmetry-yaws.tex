@@ -1,0 +1,155 @@
+% w07-why-symmetry-yaws.tex
+%   7주차 §7-4. **순수 횡이동을 지시했는데도** 배가 도는 이유.
+%   왼쪽 칸은 유닛 넷이 각각 내는 모멘트, 오른쪽 칸은 그것을 한 점으로 모은 것.
+%   같은 것을 두 가지로 보는 그림이므로 칸을 나누고 같은 선체를 두 번 그린다
+%   (사용자 지시 2026-10-17, CLAUDE.md 4-6-4).
+%
+%   축척 / scale
+%       1 m = 24 mm. 평면도 — 화면 위가 x_b, 화면 오른쪽이 y_b.
+%
+%   수치의 출처 / where the numbers come from
+%       W07_V_openloop.m 의 **S5** (n = 60 rad/s 넷, delta = [+45 +45 -45 -45] deg).
+%       거치 부호 s = [+1 +1 -1 -1] 이므로 유닛의 힘은 s_i T_i (cos d_i, sin d_i):
+%           선수 둘   (+28.205, +28.205) N
+%           선미 둘   (-28.205, +28.205) N
+%       네 유닛의 **횡력이 같고**(+28.205 N 넷), 종력은 선수-선미로 상쇄된다.
+%       유닛별 모멘트 x_i f_iy - y_i f_ix =
+%           1: 1.5( 28.205) - (-0.395)( 28.205) = +53.449
+%           2: 1.5( 28.205) - ( 0.395)( 28.205) = +31.166
+%           3: -1( 28.205) - (-0.395)(-28.205) = -39.346
+%           4: -1( 28.205) - ( 0.395)(-28.205) = -17.064   합 +28.205 N m
+%       합력의 작용점 xbar = mean(x_i) = 0.25 m = (l_f - l_a)/2,
+%       그래서 N = Y xbar = 112.820 * 0.25 = 28.205 N m.
+%
+%   회전 방향 / the sense                        (CLAUDE.md 4-6-2)
+%       N > 0 은 선수를 우현으로 — 이 평면도에서 **시계방향**이다.
+%       arc(330:210:r) 은 끝 각이 작으므로 시계다.
+%
+%   유닛의 자리 / where the units are drawn
+%       **실제 자리**다 — 선수 x = +1.5 m, 선미 x = -1.0 m. 그래서 폰툰을
+%       그 자리가 들어가는 길이로 그린다 (w07-tilt-geometry.tex 와 같은 처리).
+%       모멘트 팔을 눈으로 견주는 것이 이 그림의 전부이므로, 팔을 줄여 그리면
+%       그림이 말하려는 것을 그림이 부정한다.
+
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm, font=\scriptsize]
+
+\def\YP{9.48}       % y_pont = 0.395 m
+\def\XF{36}         % l_f = +1.5 m
+\def\XA{-24}        % l_a = -1.0 m
+
+% 선체 하나를 그리는 매크로 / one hull, drawn twice
+\newcommand{\hull}{%
+  \fill[ink, opacity=0.10, rounded corners=2pt] (-12.48,-30) rectangle (-6.48,42);
+  \fill[ink, opacity=0.10, rounded corners=2pt] (  6.48,-30) rectangle (12.48,42);
+  \draw[ink, line width=0.4pt, rounded corners=2pt] (-12.48,-30) rectangle (-6.48,42);
+  \draw[ink, line width=0.4pt, rounded corners=2pt] (  6.48,-30) rectangle (12.48,42);
+  \draw[soft, line width=0.35pt] (-6.48, 42) -- (6.48, 42);
+  \draw[soft, line width=0.35pt] (-6.48,-30) -- (6.48,-30);
+  \fill[ink] (0,0) circle (0.7);
+  \node[ink, anchor=north east, inner sep=1.2pt] at (0,0) {$o_b$};
+}
+
+% 선체좌표축 / the body axes, drawn in both cells
+\newcommand{\bodyaxes}{%
+  \draw[ink, line width=0.4pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+        (0,0) -- (0,16) node[anchor=south east, inner sep=1pt] {$x_b$};
+  \draw[ink, line width=0.4pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+        (0,0) -- (17,0) node[anchor=north west, inner sep=1pt] {$y_b$};
+}
+
+% =======================================================================
+% (a) 유닛 넷이 각각 내는 모멘트
+% =======================================================================
+\node[ink, anchor=south, font=\scriptsize] at (2,56)
+      {\textbf{(a) four equal sway forces, four unequal arms}};
+
+\hull
+\bodyaxes
+
+%  선수 둘 — 힘 (+f_x, +f_y) 이므로 화면에서 오른쪽 위
+%  / the bow pair: starboard and ahead
+\foreach \p/\lab in {-\YP/1, \YP/2}{
+  \node[circle, draw=ink, fill=white, line width=0.4pt,
+        inner sep=0pt, minimum size=5mm] at (\p,\XF) {\lab};
+  \draw[accent, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}]
+        (\p+1.77,\XF+1.77) -- (\p+11.31,\XF+11.31);
+}
+%  선미 둘 — 힘 (-f_x, +f_y) 이므로 화면에서 오른쪽 아래. 횡력은 선수와 **같다**
+%  / the stern pair: starboard and astern, the same sway as the bow pair
+\foreach \p/\lab in {-\YP/3, \YP/4}{
+  \node[circle, draw=ink, fill=white, line width=0.4pt,
+        inner sep=0pt, minimum size=5mm] at (\p,\XA) {\lab};
+  \draw[accent, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}]
+        (\p+1.77,\XA-1.77) -- (\p+11.31,\XA-11.31);
+}
+
+\node[errc, anchor=east, inner sep=1.5pt] at (-13.5, 36) {$+53.449$};
+\node[errc, anchor=west, inner sep=1.5pt] at ( 13.5, 29) {$+31.166$};
+\node[errc, anchor=east, inner sep=1.5pt] at (-13.5,-24) {$-39.346$};
+\node[errc, anchor=west, inner sep=1.5pt] at ( 13.5,-17) {$-17.064$};
+
+\node[ink, anchor=north, text width=62mm, align=center, inner sep=1.5pt]
+      at (2,-44) {%
+  Every unit is given $n_i = 60$ rad/s, the bow pair at $\delta_i = +45^\circ$
+  and the stern pair at $-45^\circ$. With $s_i$ the four \emph{sway} forces come
+  out equal, $f_{iy} = 28.205$ N, and the surge forces cancel fore
+  against aft.\\[3pt]
+  {\color{errc}$x_i f_{iy} - y_i f_{ix}$} \,[N m] is printed beside each unit.
+  The $f_{ix}$ terms cancel inside each pair, at $\pm y$, and what is
+  left is\\[2pt]
+  $N = f_y \sum x_i = 2\,(l_f - l_a)\,f_y$
+};
+
+% =======================================================================
+% (b) 같은 힘을 한 점으로
+% =======================================================================
+\begin{scope}[shift={(82,0)}]
+
+\node[ink, anchor=south, font=\scriptsize] at (2,56)
+      {\textbf{(b) the same four forces, moved to one point}};
+
+\hull
+\bodyaxes
+
+%  합력은 네 자리의 무게중심에 선다 / the resultant acts at the centroid
+\fill[accent] (0,6) circle (0.9);
+%  합력은 **순수 횡력**이다 — 종력이 상쇄되었으므로 화면에서 오른쪽 하나
+%  / the resultant is pure sway: the surge components have already cancelled
+\draw[accent, line width=1.1pt, -{Stealth[length=5pt,width=4pt]}]
+      (0,6) -- (26,6);
+\node[accent, anchor=west, inner sep=1.5pt, align=left] at (27.5,6)
+      {$X = 0$\\ $Y = 112.820$ N};
+
+%  xbar 치수 / the offset of that point
+\draw[soft, dotted, line width=0.35pt] (0,0) -- (-19,0);
+\draw[soft, dotted, line width=0.35pt] (0,6) -- (-19,6);
+\draw[alng, line width=0.6pt, |-|] (-19,0) -- (-19,6);
+\node[alng, anchor=east, inner sep=1.5pt, text width=22mm, align=right]
+      at (-20.5,3) {$\bar{x} = 0.25$ m};
+
+%  그 결과의 요 모멘트 — 시계방향 / the yaw it leaves, clockwise
+\draw[warn, line width=0.6pt, -{Stealth[length=4pt,width=3pt]}]
+      (5.20,-3.0) arc (330:210:6);
+\node[warn, anchor=north, inner sep=1.5pt] at (0,-11)
+      {$N = 28.205$ N m};
+
+\node[ink, anchor=north, text width=62mm, align=center, inner sep=1.5pt]
+      at (2,-44) {%
+  Four equal sway forces are one sway force at the centroid of the four
+  stations:
+  \\[3pt]
+  $\bar{x} = \tfrac14 \sum x_i = \dfrac{l_f - l_a}{2} = 0.25$ m
+  \\[3pt]
+  That point is not $o_b$, so a sway command given symmetrically to four
+  thrusters pulls 0.25 m ahead of the origin and yaws:\\[2pt]
+  $N = Y\,\bar{x} = 112.820 \times 0.25 = 28.205$ N m
+};
+
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

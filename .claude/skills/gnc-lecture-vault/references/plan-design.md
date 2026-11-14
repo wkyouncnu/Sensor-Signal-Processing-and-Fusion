@@ -10,7 +10,8 @@
 
 ## 5. 플랜트 구조 — 이 설계의 핵심 결정
 
-`otter.m` 은 `numel(n) == 2` 를 강제하므로 W11~W12 에 그대로 못 쓴다.
+`otter.m` 은 `numel(n) == 2` 를 강제하므로 추진기가 둘이 아닌 주차(W06 의 선수추진기,
+W07 의 틸팅 넷, 계획상의 W11)에 그대로 못 쓴다.
 네 번 복사하는 것은 **틀린 답**이다. 파라미터화된 플랜트 하나를 쓴다.
 
 ```matlab
@@ -35,7 +36,8 @@ add_otter_plant(mdl, 'Otter plant', pos, cfg);
 
 ## 6. 환경
 
-- MATLAB **R2024b** + Simulink (+ Stateflow: W09, Optimization Toolbox: W07·W12)
+- MATLAB **R2024b** + Simulink (+ Optimization Toolbox: W07 의 `quadprog`·`lsqlin`.
+  Stateflow 를 쓰던 옛 W09 는 2026-11-14 에 내렸다)
 - MSS 는 `10_연구_USV_MILS/Proj_SHI_USV_MILS/Tools/MSS` — `_tools/mss_path.m` 이 찾는다
 - **문서 PDF 파이프라인은 Git Bash + Chrome 뿐이다. pandoc 없음** — `md2pdf.sh` 는
   MathJax 를 브라우저에서 돌린다. 이건 안 바뀐다

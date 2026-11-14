@@ -59,7 +59,7 @@ status: done
 
 > [!important] When to read this
 > - This appendix is **optional for Weeks 3 and 4**. Those weeks need only two results from it, and both are quoted where they are used: the vessel can produce $X \in [-133.42,\ 239.36]$ N, and its yaw moment is $N = y_{\text{pont}}(T_1 - T_2)$.
-> - It becomes **required before Week 7**, where the allocation problem stops having an obvious answer, and before Weeks 11 to 12, where the thruster layout changes three times.
+> - It becomes **required before Week 7**, where the allocation problem stops having an obvious answer, and before Week 7, where the thruster layout changes to four tilting units.
 > - Prerequisites: Week 1 — the twelve states, $T = k\,n|n|$ with $k_{\text{pos}} \neq k_{\text{neg}}$, and the observation that $Y \equiv 0$. Here that observation becomes a theorem.
 
 ---
@@ -114,9 +114,9 @@ This appendix is a prerequisite for Week 7 and is referenced from Weeks 3, 4 and
 
 | Reason | Where it is felt |
 |---|---|
-| Weeks 11 to 12 change the thruster layout three times | a transcribed matrix would have to be re-derived and re-checked three times |
+| Week 7 changes the thruster layout to four tilting units | a transcribed matrix would have to be re-derived and re-checked for each layout |
 | This project already ships two mutually **negative** $\mathbf{B}$ matrices | a transcribed matrix cannot be told apart from its own sign error |
-| Week 7 inverts $\mathbf{B}$ | an inverse is only as trustworthy as the matrix it inverts |
+| Weeks 3, 4 and 6 invert $\mathbf{B}$, and Week 7 pseudo-inverts it | an inverse is only as trustworthy as the matrix it inverts |
 
 > [!caution] Two contradictory matrices exist in this repository
 > `Lecture/_tools/otter4_B.m` and `otter_params.m` line 41 differ by an overall sign. Neither is imported into this course. Every $\mathbf{B}$ used from this week onward is produced by `_tools/otter_B.m` from the single rule of §A1-2, so a sign convention cannot enter twice.
@@ -411,7 +411,7 @@ $$
 - Week 1 attributed the sway velocity of a turn to the Coriolis term. For the **steady** value that is correct: setting $\dot{\boldsymbol{\nu}} = \mathbf{0}$ removes $\mathbf{M}$ from the equation. This section is about the transient, and both mechanisms are real.
 
 > [!important] Actuation rank and controllability are different questions
-> A rank-2 $\mathbf{B}$ says the vessel cannot be *pushed* sideways. It does not say the vessel cannot *reach* a point to its side — it plainly can, by turning and driving. What underactuation costs is the ability to do so **without changing heading**, and that is exactly what Week 9 needs for dynamic positioning and cannot have from this hull.
+> A rank-2 $\mathbf{B}$ says the vessel cannot be *pushed* sideways. It does not say the vessel cannot *reach* a point to its side — it plainly can, by turning and driving. What underactuation costs is the ability to do so **without changing heading**, and that is exactly what dynamic positioning needs and cannot have from this hull.
 
 ---
 
@@ -772,4 +772,4 @@ Read the size honestly: sway reaches $-0.015$ m/s and then turns back. This coup
 | $N = y_{\text{pont}}(T_1 - T_2)$ | Week 4, as the yaw allocation |
 | $n_2 = -n_1\sqrt{k_{\text{pos}}/k_{\text{neg}}}$ | Week 4, which produces the same pair automatically by allocating **thrust** rather than shaft speed |
 | the column rule and $\mathbf{B}^{\dagger}$ | Week 7, control allocation |
-| the four layouts and their ranks | Weeks 11 to 12, the hull variants |
+| the four layouts and their ranks | Week 6 §6-1 and Week 7, where the layout changes |

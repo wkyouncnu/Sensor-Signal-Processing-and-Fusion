@@ -1,0 +1,113 @@
+% figures/w07-servo-cone.svg — 서보 벽은 직선 둘이고, 양쪽을 합치면 볼록하지 않다.
+%
+%   bash _tools/tikz2svg.sh figures/src/w07-servo-cone.tex figures/w07-servo-cone.svg
+%
+% 사용자 지시 (2026-11-03): "제약 조건을 어떻게 고려해야 하는지...제약 조건에 대한
+% optimization 알고리즘을 사용한다면...어떤 개념이고".
+%
+% §7-10 의 두 줄이 이 그림 하나에 들어간다.
+%  (왼쪽) |delta_i| <= alpha_max 는 atan2 로 쓰면 비선형으로 보이지만, 그 단위의
+%         추력 **부호**를 먼저 정해 두면 직선 둘이다. 그래서 QP 다.
+%  (오른쪽) 앞으로 미는 반쪽과 뒤로 미는 반쪽을 합친 것은 **볼록하지 않다** —
+%         두 점을 잇는 선분이 집합을 벗어난다. 그림이 그 선분을 직접 그린다.
+%         볼록하지 않은 것은 조각 2^4 = 16 개로 **정확히** 덮인다.
+%
+% alpha_max = 45 deg 이므로 tan = 1 이고 벽은 f_y = +-f_x 다. 이 그림의 좌표는
+% 그것을 그대로 쓴다 — 45 도가 아닌 값으로 바꾸려면 기울기 t 를 함께 고친다.
+%
+% 앞 그림(w07-allocation-chain)에서 배운 것 둘을 여기서도 지킨다.
+%  (1) 글자는 상자/칸 **안**에 둔다. 칸 밖에 두면 옆 칸을 침범한다.
+%  (2) 칸 둘의 중심 간격(7.0 cm)은 칸 폭(약 4.8 cm)보다 넉넉히 넓게.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+
+\tikzset{
+  ax/.style      = {ink, line width=0.5pt, -{Stealth[length=4pt,width=3pt]}},
+  wall/.style    = {accent, line width=1.0pt},
+  wallb/.style   = {warn, line width=1.0pt},
+  fwd/.style     = {fill=accent!12},
+  rev/.style     = {fill=warn!12},
+  fvec/.style    = {ink, line width=1.1pt, -{Stealth[length=5pt,width=3.6pt]}},
+  chord/.style   = {knownc, line width=0.9pt, densely dashed},
+  lab/.style     = {font=\scriptsize, align=center, inner sep=1.5pt},
+  tlab/.style    = {font=\small, align=center, inner sep=2pt},
+  note/.style    = {font=\scriptsize, align=center, inner sep=3pt,
+                    draw=knownc, fill=white, rounded corners=1pt, text=knownc},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+% ===== 왼쪽: 부호를 정하면 직선 둘 =========================================
+\begin{scope}[shift={(0,0)}]
+  \fill[fwd] (0,0) -- (2.15,2.15) -- (2.15,-2.15) -- cycle;
+
+  \draw[ax] (-2.45,0) -- (2.60,0);
+  \draw[ax] (0,-2.45) -- (0,2.30);
+  \node[lab, anchor=west] at (2.62,0)     {$f_{x,i}$};
+  \node[lab, anchor=east] at (-0.10,2.22) {$f_{y,i}$};
+
+  \draw[wall] (0,0) -- (2.15, 2.15);
+  \draw[wall] (0,0) -- (2.15,-2.15);
+
+  % 추력 벡터 하나와 그 각
+  \draw[fvec] (0,0) -- (1.386,0.800);
+  \draw[ink, line width=0.5pt] (0.72,0) arc (0:30:0.72);
+  \node[lab, anchor=west] at (0.80,0.22) {$\delta_i$};
+  \node[lab, anchor=south west] at (1.44,0.86) {$T_i>0$};
+
+  \node[lab, anchor=west, text=accent] at (0.80,1.78)
+    {$f_{y,i}=+\tan\alpha_{\max}\,f_{x,i}$};
+  \node[lab, anchor=west, text=accent] at (0.80,-1.78)
+    {$f_{y,i}=-\tan\alpha_{\max}\,f_{x,i}$};
+
+  \node[lab, anchor=north east] at (-0.14,-0.18)
+    {with $\sigma_i=+1$ fixed,\\the wedge is convex};
+
+  \node[tlab] at (0.10,3.22)
+    {$\lvert\delta_i\rvert\le\alpha_{\max}$ is \textbf{two straight lines}};
+  \node[lab] at (0.10,2.84)
+    {$\lvert f_{y,i}\rvert \le \tan\alpha_{\max}\,\sigma_i f_{x,i}$};
+\end{scope}
+
+% ===== 오른쪽: 양쪽을 합치면 볼록하지 않다 ==================================
+\begin{scope}[shift={(7.0,0)}]
+  \fill[fwd] (0,0) -- (2.15,2.15) -- (2.15,-2.15) -- cycle;
+  \fill[rev] (0,0) -- (-2.15,2.15) -- (-2.15,-2.15) -- cycle;
+
+  \draw[ax] (-2.60,0) -- (2.60,0);
+  \draw[ax] (0,-2.45) -- (0,2.30);
+  \node[lab, anchor=west] at (2.62,0)     {$f_{x,i}$};
+  \node[lab, anchor=east] at (-0.10,2.22) {$f_{y,i}$};
+
+  \draw[wall]  (0,0) -- ( 2.15, 2.15);
+  \draw[wall]  (0,0) -- ( 2.15,-2.15);
+  \draw[wallb] (0,0) -- (-2.15, 2.15);
+  \draw[wallb] (0,0) -- (-2.15,-2.15);
+
+  \node[lab, anchor=center, text=accent] at ( 1.42,-0.50) {$\sigma_i=+1$\\$T_i>0$};
+  \node[lab, anchor=center, text=warn]   at (-1.42,-0.50) {$\sigma_i=-1$\\$T_i<0$};
+
+  % 볼록하지 않다는 증거 — 두 점을 잇는 선분이 집합을 벗어난다
+  \draw[chord] (1.70,0.75) -- (-1.70,0.75);
+  \fill[ink] ( 1.70,0.75) circle (1.6pt);
+  \fill[ink] (-1.70,0.75) circle (1.6pt);
+  \draw[knownc, line width=0.9pt] (0,0.75) circle (2.4pt);
+  \node[lab, anchor=south, text=knownc, fill=white] at (0,0.95)
+    {this midpoint is not allowed};
+
+  \node[tlab] at (0,3.22) {both halves together are \textbf{not convex}};
+  \node[lab]  at (0,2.84) {so one solver call must be told which half};
+\end{scope}
+
+% ===== 아래: 그래서 몇 조각인가 =============================================
+\node[note] at (3.50,-3.05)
+  {one unit has 2 halves, so four units have $2^4=16$ convex pieces.
+   Guessing one piece is fast but can be wrong,\\
+   or infeasible when the demand would in fact fit in another piece;
+   solving all sixteen returns the true optimum.};
+
+\end{tikzpicture}
+\end{document}
