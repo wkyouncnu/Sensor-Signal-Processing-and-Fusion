@@ -239,3 +239,35 @@ grep 해 목록을 만들고 Edit 도구로만 고쳤다(§4-11). 절의 번호 
 **확인.** `W07_1_build_openloop` · `W07_2_build_alloc` 둘 다 `overlaps 0
 diagonals 0`, 개루프 여덟 시나리오 재적분 잔차 **2.8e-14** (t = 0.58 s 이후),
 `md2pdf` 성공, `vault_check` **전 항목 0 건**.
+
+---
+
+## 2026-11-15 · 부록 A1 을 내렸다
+
+사용자 지시: "A1_Actuation_and_the_Control_Effectiveness_Matrix.pdf 이 내용도 삭제해줘."
+
+**지운 것.** `lectures/A1_Actuation_and_the_Control_Effectiveness_Matrix.md` · `.pdf`,
+`lectures/A1_simulink/` 전부(`A1_0_setup` · `A1_1_build_actuation` · 절 스크립트 넷 ·
+`A1_actuation.slx` · `A1_animate` · `A1_plot` · `A1_read` · `A1_vars` · `img/`),
+`figures/a1-column-rule.svg|png` · `figures/a1-four-layouts.svg|png`,
+`figures/src/a1-column-rule.tex` · `a1-four-layouts.tex`. **이제 부록은 없다** —
+`lectures/` 는 주차뿐이다 (`CLAUDE.md` §2 의 폴더 그림도 그렇게 고쳤다).
+
+**옮긴 것.** A1 이 **유일하게** 지고 있던 증명은 열 규칙의 모멘트 항이었다. W03 §3-6
+콜아웃 안에 $\mathbf{b}_i = [\,e_x\ \ e_y\ \ x_i e_y - y_i e_x\,]^\top$ 와
+$\mathbf{r}_i \times f_i \mathbf{e}_i$ 를 **그 자리에 유도**해 넣었다. 나머지는 이미
+주인이 있어 화살표만 돌렸다 — $\mathbf{B}$ 와 회전수-힘 → W01 §1-10, 횡동요-선회 결합
+→ W01 §1-12, 구동 계급의 천장 → W06 §6-2, 틸팅 단위의 확장 추력벡터 → W07 §7-1.
+W03 의 추력 한계 $[-133.42,\ 239.36]$ N 은 출처를 `_tools/otter_config.m` +
+`W03_0_setup.m:31` 로 바꿨다.
+
+**고친 파일.** `PLAN.md` · `README.md` · `CLAUDE.md` 의 주차 표와 폴더 그림,
+`W01`(EN·KO) · `W03`(EN·KO) · `W06`(EN·KO) · `W07` 의 상호참조, `_tools/vault_unify_ypont.m`
+(파일 목록) · `_tools/verify_review_math.m` · `_tools/w03_windup_geo.awk` ·
+`figures/src/w03-why-T.tex`, 그리고 `W01_simulink` 의 주석과 모델 주석. `.md` 는 Edit
+도구로만(§4-11), `.m`·`.awk`·`.tex` 는 `sed` 로 고쳤다.
+
+**남긴 것.** `problems/` · `solutions/` 의 `.slx` 안 주석(사용자 지시 2026-11-05 —
+"이미 있는 것은 그대로 둔다")과 `_previous_version/` 의 옛 빌더. 스킬의 기록 문서
+(`orders-log-*` · `plan-log-*` · `plan-labfiles.md`)도 그대로 둔다 — 그때 있었던 것을
+적은 기록이다 → `orders-log-7.md` §15-89

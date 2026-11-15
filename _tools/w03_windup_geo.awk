@@ -1,5 +1,5 @@
 # w03_windup_geo.awk — figures/w03-windup.svg 의 포화 곡선 좌표를 계산한다.
-#   가로축 X_cmd, 세로축 X_sat. 한계는 A1-6 의 도달가능 집합에서 온다.
+#   가로축 X_cmd, 세로축 X_sat. 한계는 W03 의 추력 한계에서 온다.
 BEGIN {
     lo = -133.42; hi = 239.36            # X_sat 한계 [N]
     cmax = 3480.0                        # section F 가 측정한 X_cmd 최대값

@@ -50,7 +50,10 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W05 | [Waypoint Following and LOS Guidance](lectures/W05_Waypoint_Following_and_LOS_Guidance.md) | `W05_C_atan2` · `W05_D_LOS` · `W05_E_switching` · `W05_F_ILOS` · `W05_G_tuning` (model-free tuning) |
 | W06 | [The Bow Thruster: Position Control and Berthing](lectures/W06_Bow_Thruster_Position_Control_and_Berthing.md) | `W06_1_point` · `W06_2_sway` · `W06_3_thrust` · `W06_4_stop` · `W06_5_dock` · `W06_7_front` · `W06_8_ned` (사다리 한 단에 모델 하나, 스크립트 하나) |
 | W07 | [Four Tilting Thrusters, and the Open-Loop Check](lectures/W07_Four_Tilting_Thrusters_and_the_Open_Loop_Check.md) | `W07_openloop` · `W07_alloc_chain` (러너 둘 — `W07_openloop_run` · `W07_alloc_run`, 목록 한 줄을 주석 처리해서 고른다) |
-| A1 | [Actuation and the Control Effectiveness Matrix](lectures/A1_Actuation_and_the_Control_Effectiveness_Matrix.md) (부록) | `A1_actuation` |
+
+부록은 없다 — 2026-11-15 에 사용자 지시로 A1(Actuation and the Control Effectiveness Matrix)을
+내렸다. 열 규칙은 W03 §3-6, $B$ 의 계급과 도달 가능 집합은 W01 §1-10 과 W06 §6-2,
+틸팅 단위의 확장 추력벡터와 배분은 W07 이 맡는다.
 
 W08 이후는 [PLAN.md](PLAN.md) §2 참조. **W05 는 유도, W07 은 네 개의 틸팅 추진기**다 —
 2026-11-14 에 사용자 결정으로 옛 W07(Control Allocation)·W08·W09·W10 을 내리고,

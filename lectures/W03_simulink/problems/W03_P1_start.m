@@ -13,7 +13,7 @@ function W03_P1_start(mdl)
 %
 %   The thrust map is provided because Week 3 is about the CONTROLLER, not
 %   about propellers: turning a demanded surge force into two shaft speeds is
-%   Appendix A1's subject, and repeating it here would spend the hour on the
+%   the subject of Week 3 section 3-6, and repeating it here would spend the hour on
 %   wrong thing.
 %
 %   THE BLOCKS THAT ARE PROVIDED
@@ -22,7 +22,7 @@ function W03_P1_start(mdl)
 %                      Outport 1 : n, the two shaft speeds [rad/s]
 %
 %                      n = sign(X/2/k_pos) sqrt(|X| / (2 k_pos)) on both
-%                      shafts, saturated at the Otter's limits. Section A1-C
+%                      shafts, saturated at the Otter's limits. Section 3-6
 %                      derives it.
 %
 %     Otter USV        Inport  1 : n
@@ -68,7 +68,7 @@ set_mlfcn([sub '/map'], { ...
 '%  one propeller is T = k_pos n|n| ahead, k_neg n|n| astern. Inverting that'
 '%  and saturating at the Otter''s shaft limits gives the command.'
 '%'
-'%  Derived in Appendix A1 section C. Provided here so that Week 3 spends'
+'%  Derived in Week 3 section 3-6. Provided here so that Week 3 spends'
 '%  its hour on the controller.'
 'k_pos = 0.02216/2;   k_neg = 0.01289/2;'
 'n_max =  sqrt((0.5*24.4*9.81)/k_pos);'

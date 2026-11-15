@@ -21,13 +21,13 @@ function W01_G_build_rc(src)
 %       Part 2 절 G 가 쓰는 모델이다. 절 F 까지는 프로펠러 회전수 n 을 직접
 %       명령했으나, 이 모델에서는 사람이 원하는 힘을 요구하고 추력 배분이 그
 %       힘을 n 으로 바꾼다. 무인수상정을 실제로 조종할 때의 구조가 이것이며,
-%       배분을 본격적으로 다루는 것은 부록 A1 과 7주차이다.
+%       배분을 본격적으로 다루는 것은 7주차이다.
 %
 %       This is the model used by section G of Part 2. Through section F the
 %       propeller speeds were commanded directly; here a force is demanded and
 %       control allocation converts it into propeller speeds. This is the
 %       structure a real USV is driven with, and allocation itself is treated
-%       in Appendix A1 and in Week 7.
+%       in Week 7.
 %
 %   신호의 흐름 / the chain (gnc_chain, MSS 데모와 같은 순서 / the MSS order)
 %
@@ -51,7 +51,7 @@ function W01_G_build_rc(src)
 %       slider is one transmitter channel, and the range 0 to 100 stands for
 %       the receiver pulse width of 1000 to 2000 us, with 50 at centre.
 %
-%   추력 배분 / the allocation (절 G, §1-10, 부록 A1 / section G, §1-10, Appendix A1)
+%   추력 배분 / the allocation (절 G, §1-10 / section G, §1-10)
 %       [X; N] = Bxn [T_L; T_R],  Bxn = [1 1; y_pont -y_pont]  ->  T = Bxn^-1 tau_d
 %       n = sign(T) sqrt(|T|/k),  k = k_pos (T >= 0), k_neg (T < 0)
 %       회전수를 [n_min, n_max] 로 자른 뒤, 실제로 낸 힘 tau_a = Bxn k n|n| 을 함께
@@ -353,7 +353,7 @@ note(m, [bx by+Hb+30 bx+Wb by+Hb+560], strjoin({ ...
 '  open circle   demanded  tau_d'
 '  orange dot    delivered tau_a'
 '  apart = saturated: the sticks ask for more than the'
-'  two propellers can give (sec. G, appendix A1-6)'}, newline));
+'  two propellers can give (sec. G, §1-10)'}, newline));
 end
 
 %% ---- 모델을 열 때 경로를 스스로 잡는다 · 실행마다 탭을 비운다 -----------

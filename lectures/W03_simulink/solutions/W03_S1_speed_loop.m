@@ -109,7 +109,7 @@ add_block('simulink/User-Defined Functions/MATLAB Function', [sub '/map'], ...
 set_mlfcn([sub '/map'], { ...
 'function n = map(X)'
 '%#codegen'
-'%MAP  Demanded surge force -> two equal shaft speeds. Appendix A1 section C.'
+'%MAP  Demanded surge force -> two equal shaft speeds. Week 3 section 3-6.'
 'k_pos = 0.02216/2;   k_neg = 0.01289/2;'
 'n_max =  sqrt((0.5*24.4*9.81)/k_pos);'
 'n_min = -sqrt((0.5*13.6*9.81)/k_neg);'

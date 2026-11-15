@@ -2389,7 +2389,7 @@ Against a north–south quay the alongside attitude spent $4.0$ % of its berth l
 - Week 2 §2-6 to §2-8: P, I and the tuning order, used unchanged by the velocity loop of §6-3.
 - Week 4 §4-4: heading is not course. It is why the heading loop stays separate from the position loop rather than being folded into it.
 - Week 5 §5-7: the yaw moment a surge force leaves behind. Section 6-2 asks the same question of sway, and the answer is harsher.
-- Appendix A1 §A1-3 and §A1-6: the rank of $\mathbf{B}$ and the attainable control set, which is where the ceiling of §6-2 is stated in general form.
+- Week 3 §3-6: the column rule that produces $\mathbf{B}$, of which the three-thruster $\mathbf{B}$ of §6-2 is one case.
 
 ---
 

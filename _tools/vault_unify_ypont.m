@@ -14,8 +14,7 @@ function vault_unify_ypont()
 
 root = fileparts(fileparts(mfilename('fullpath')));
 F = { 'W01_Vessel_Kinematics_and_the_Otter_Model.md'
-      'W03_Surge_Speed_Control.md'
-      'A1_Actuation_and_the_Control_Effectiveness_Matrix.md' };
+      'W03_Surge_Speed_Control.md' };
 pat = 'y_p(?![a-zA-Z{])';
 rep = 'y_{\\text{pont}}';
 

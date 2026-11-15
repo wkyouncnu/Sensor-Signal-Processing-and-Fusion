@@ -1008,7 +1008,7 @@ $$
 | $\mathbf{C}_{RB}$, $\mathbf{C}_{A}$ | Coriolis and centripetal | a consequence of writing $\boldsymbol{\nu}$ in a rotating frame |
 | $\mathbf{D}$ | damping — skin friction, then cross-flow drag | measured, or estimated from strip theory |
 | $\mathbf{g}(\boldsymbol{\eta})$ | restoring | weight and buoyancy acting at different points |
-| $\boldsymbol{\tau}$ | control force | $\mathbf{B}\mathbf{f}$, §1-10 and Appendix A1 |
+| $\boldsymbol{\tau}$ | control force | $\mathbf{B}\mathbf{f}$, §1-10 |
 
 - $\boldsymbol{\nu}_r = \boldsymbol{\nu} - \boldsymbol{\nu}_c$ is the velocity **relative to the water**. Hydrodynamic forces feel relative velocity, not ground velocity. Dormant this week ($V_c = 0$); §1-13 shows exactly where it enters `otter.m`.
 
@@ -1073,7 +1073,7 @@ $$
 >
 > With those readings the $(3,3)$ entry checks: $I_z - N_{\dot r} = 16.9779 + 25.6736 = 42.6515$ kg·m² $= M_{66}$.
 
-- Note the structure: surge decouples from sway and yaw, while **sway and yaw stay coupled** through $x_g$ — the centre of gravity being off the origin. Appendix A1 measures exactly that coupling on this vessel.
+- Note the structure: surge decouples from sway and yaw, while **sway and yaw stay coupled** through $x_g$ — the centre of gravity being off the origin. §1-12 measures exactly that coupling on this vessel.
 - $\mathbf{g}(\boldsymbol{\eta})$ disappears: a surface craft has no restoring force in surge, sway or yaw. Nothing pushes it back to a preferred heading or position.
 
 > [!important] What justifies dropping three degrees of freedom
@@ -1437,10 +1437,10 @@ y_{\text{pont}} & -y_{\text{pont}}
 = \mathbf{B}\,\mathbf{f}
 $$
 
-- The middle row is **exactly zero**, and $\operatorname{rank}(\mathbf{B}) = 2$. Appendix A1 derives this matrix from a general rule and shows what it costs; this week only records that the row is empty.
+- The middle row is **exactly zero**, and $\operatorname{rank}(\mathbf{B}) = 2$. Week 3 §3-6 derives this matrix from the general column rule and shows what it costs; this week only records that the row is empty.
 
 > [!important] Zero is not a small number
-> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 6 meets this fact again as a hard limit on what can be controlled, and answers it by bolting a third thruster to the bow; Appendix A1 §A1-3 states the same limit as the rank of $\mathbf{B}$.
+> $Y = 0$ is a statement about where the propellers are bolted, not about how large a force they make. No gain, no controller and no propeller speed can produce a sideways force on this hull. Week 6 meets this fact again as a hard limit on what can be controlled, and answers it by bolting a third thruster to the bow, where §6-2 states the same limit as the rank of $\mathbf{B}$.
 
 ### The whole chain, from revolutions to generalised force
 
@@ -1695,7 +1695,7 @@ $$
 ### Allocation, step 3 — saturate, and report what was delivered
 
 - The shaft speeds are clipped to $[n_{\min},\ n_{\max}] = [-101.74,\ 103.93]$ rad/s by the block `shaft limits`. The block `delivered thrust` then runs the propeller curve of `otter.m` lines 165–177 forward on the clipped speeds, and `B` maps the result back to $\boldsymbol{\tau}_a = \mathbf{B}_{XN}\,\mathbf{T}(\mathbf{n}_{\text{sat}})$.
-- Inside the attainable set of Appendix A1-6, $\boldsymbol{\tau}_a = \boldsymbol{\tau}_d$ to round-off. Outside it, the two differ, and the difference is what the operator asked for and did not get.
+- Inside the attainable set of the two propellers, $\boldsymbol{\tau}_a = \boldsymbol{\tau}_d$ to round-off. Outside it, the two differ, and the difference is what the operator asked for and did not get.
 
 > [!warning] Saturation changes the direction of the force, not only its size
 > Each propeller is clipped on its own. When one of them saturates and the other does not, the ratio $N_a/X_a$ is no longer the ratio the sticks asked for. In case 5 below the sticks ask for $N_d/X_d = 0.220$ and receive $0.153$: the vessel turns less sharply than commanded, not merely more slowly. What to give up first — surge or yaw — is a design decision, and a later allocation method must make it explicitly.
@@ -1761,7 +1761,7 @@ W01_G_rc_check      % also writes the figure below
 
 | Element | Meaning |
 |---|---|
-| grey region | the attainable set of Appendix A1-6: every $[X;\ N]$ the two propellers can produce, drawn with $N$ across and $X$ up |
+| grey region | the attainable set: every $[X;\ N]$ the two propellers can produce, drawn with $N$ across and $X$ up |
 | dashed blue rectangle | everything the sticks can ask for, $\lvert X\rvert \le X_{\max}$ and $\lvert N\rvert \le N_{\max}$ |
 | open circle | the demanded force $\boldsymbol{\tau}_d$ of each case; the number is the case of the table above |
 | orange dot | the delivered force $\boldsymbol{\tau}_a$ |
@@ -2067,7 +2067,7 @@ $$
 | $M_{24}\,\dot p$ | roll is not actuated and is restored by buoyancy (§1-7) | a 4-DOF model, when roll must be damped |
 | terms in $p$, $q$, $w$ of $\mathbf{C}$ | products with roll, pitch and heave rates; the steady-turn balance below closes to $2.6\times10^{-5}$ N without them | not for this hull |
 | $Y_v\,v_r$ | $Y_v = 0$ in the 2021 `otter.m` | the 2024 recalibration of MSS uses $Y_v = -M_{22}/T_{\text{sway}}$ |
-| $Y$ | zero by the geometry of $\mathbf{B}$ | an actuator with a sideways component — Appendix A1 |
+| $Y$ | zero by the geometry of $\mathbf{B}$ | an actuator with a sideways component — Week 6 and Week 7 |
 
 - What remains is the planar sway equation:
 
@@ -2125,7 +2125,7 @@ $$
 > [!note] There is no linear sway damping in this hull
 > The 2021 `otter.m` sets `Yv = 0`. Everything that resists sideways motion comes from the cross-flow drag integral `crossFlowDrag`, which is quadratic in the local transverse velocity $v + x\,r$ along the hull. The steady sway velocity is the point where the Coriolis force and cross-flow drag balance, and no linear term participates.
 
-- The remaining term, $M_{26}\,\dot r$, acts only while $r$ is changing — at the entry to and the exit from each turn. The payload places the centre of gravity $0.153$ m forward of the origin, so a **pure yaw moment produces a sway acceleration**, $\dot v = [\mathbf{M}^{-1}]_{26}\,N = -1.305\times10^{-3}$ m/s² per N·m, with no sway force anywhere. Appendix A1 measures this directly.
+- The remaining term, $M_{26}\,\dot r$, acts only while $r$ is changing — at the entry to and the exit from each turn. The payload places the centre of gravity $0.153$ m forward of the origin, so a **pure yaw moment produces a sway acceleration**, $\dot v = [\mathbf{M}^{-1}]_{26}\,N = -1.305\times10^{-3}$ m/s² per N·m, with no sway force anywhere.
 - The two therefore occupy different regimes: $M_{26}\dot r$ shapes the first instants of a turn, and $M_{11}ur$ sets the steady drift.
 - The angle between where the vessel points and where it actually travels is the **crab angle**
 
@@ -2690,5 +2690,5 @@ W01_check(1)                 % run this whenever, as often as needed
 - Preparation: nothing from this week's models. Week 2 needs Simulink only; the MSS toolbox is not used.
 - **Week 3 — Surge Speed Control** then closes the first loop on the Otter. Bring $T_u = 1.1025$ s and $K_u = 0.012894$ (m/s)/N from §1-11, and the derivation of $u_{ss}(n)$ from Assignment 1.
 
-> [!note] Appendix A1 is available but not required yet
-> The general rule that produces $\mathbf{B}$ for any thruster layout, together with the attainable control set and what actuation rank costs, is written up as **Appendix A1**. Weeks 3 and 4 quote its two results where they need them. It becomes required reading before Week 7.
+> [!note] Where the general rule for $\mathbf{B}$ is written out
+> The rule that produces $\mathbf{B}$ for any thruster layout — one thruster, one column — is derived in **Week 3 §3-6**, and this week's $\mathbf{B}$ is the two-propeller case of it. What actuation rank costs is answered in **Week 6 §6-2**, and the tilting units that fill the empty middle row in **Week 7**.

@@ -12,7 +12,7 @@ function W04_P1_start(mdl)
 %   together. The AUTOPILOT is the exercise.
 %
 %   The allocation is provided because turning a demanded yaw moment into two
-%   shaft speeds is Appendix A1's subject. Week 4 is about the loop that
+%   shaft speeds is the subject of Week 3 section 3-6. Week 4 is about the loop that
 %   decides what that moment should be.
 %
 %   THE BLOCKS THAT ARE PROVIDED

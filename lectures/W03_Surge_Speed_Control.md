@@ -150,7 +150,7 @@ This section answers: what changes when the controller of Week 2 is placed aroun
 
 | Block in the model | What it does | Where it comes from |
 |---|---|---|
-| `thrust limit` | holds $X$ inside $[-133.42,\ 239.36]$ N | the largest thrust the two propellers produce forward and backward; derived in Appendix A1 |
+| `thrust limit` | holds $X$ inside $[-133.42,\ 239.36]$ N | the largest thrust the two propellers produce forward and backward: `W03_0_setup` computes $2k_{pos}n_{\max}^2$ and $2k_{neg}n_{\min}^2$ from `otter_config` |
 | `allocation` | a MATLAB Function block, commented line by line: ① each propeller takes half of $X$, $T = X/2$; ② the thrust is turned into the shaft speed that produces it, $n = \mathrm{sign}(T)\sqrt{\lvert T\rvert/k}$; ③ both shafts get that speed | going straight, both propellers do the same work; the propeller curve $T = k\,n\lvert n\rvert$ of Week 1, solved for $n$, with $k$ different ahead and astern |
 | `Otter` | the MSS model `otter.m`, twelve states | Week 1 |
 | `surge speed u` | picks the first state, the surge speed $u$ | Week 1: $\mathbf{x} = [u\ v\ w\ p\ q\ r\ \dots]$ |
@@ -677,7 +677,7 @@ $$
 | line 3, "what the two controllers asked for" | $(X, N)$ arrives from outside | the allocator has no opinion about whether the demand is sensible — §3-4's limits are where that is decided |
 
 > [!note] Where this comes from, and where it is proved
-> That the forces read off the drawing in that particular arrangement is not a coincidence of this hull. One thruster at $(x_i, y_i)$ pushing along a unit vector $\mathbf{e}_i$ contributes exactly one column, $\mathbf{b}_i = [\,e_x\ \ e_y\ \ x_i e_y - y_i e_x\,]^\top$ — the **column rule**, derived and checked against a drawing in Appendix A1 §A1-2 and applied to this hull in Week 1's `w01-otter-layout` figure. `_tools/otter_B.m` evaluates it and returns $[\,1\ 1;\ 0\ 0;\ b\ {-b}\,]$, the same matrix to zero difference. Nothing in this course transcribes a $\mathbf{B}$ by hand.
+> That the forces read off the drawing in that particular arrangement is not a coincidence of this hull. One thruster at $(x_i, y_i)$ pushing along a unit vector $\mathbf{e}_i$ contributes exactly one column, $\mathbf{b}_i = [\,e_x\ \ e_y\ \ x_i e_y - y_i e_x\,]^\top$ — the **column rule**. Its first two entries are the force itself resolved in $\{b\}$; the third is the moment of that force about the origin, $\mathbf{r}_i \times f_i \mathbf{e}_i$, whose only non-zero component in the horizontal plane is $f_i(x_i e_y - y_i e_x)$. The rule is applied to this hull in Week 1's `w01-otter-layout` figure, and extended to a unit that can tilt — two columns instead of one — in Week 7 §7-1. `_tools/otter_B.m` evaluates it and returns $[\,1\ 1;\ 0\ 0;\ b\ {-b}\,]$, the same matrix to zero difference. Nothing in this course transcribes a $\mathbf{B}$ by hand.
 
 2. **Deleting the empty row leaves a square system.** Stacking the two that remain,
 
@@ -957,7 +957,7 @@ Compare the final gains with those of §3-5. Explain, from the measurement of �
 ### In this course
 
 - Week 2 §2-4 (the metrics), §2-6 to §2-8 (P, D and I), §2-11 (anti-windup) and §2-12 (the tuning order).
-- Appendix A1 — where the thrust limit $[-133.42,\ 239.36]$ N comes from.
+- `_tools/otter_config.m` and `W03_0_setup.m` — where the thrust limit $[-133.42,\ 239.36]$ N comes from.
 - The previous, model-based version of this week — plant identification, pole placement, the three anti-windup schemes compared with the library block — is kept in `W03_simulink/_previous_version/` for reference.
 
 ---

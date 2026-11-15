@@ -87,7 +87,7 @@ Upon completion of this week, the learner is able to:
 | MATLAB | R2024b or later, with Simulink |
 | MSS toolbox | reachable at `Tools\MSS`; `_tools\mss_path.m` adds it |
 | Optimization Toolbox | version 24.2 or later, for the `lsqlin` that law 4 of §7-12 calls sixteen times per step. Verify with `ver('optim')` |
-| Weeks assumed | Week 3 (the column rule and $B$), Week 5 (saturation and limits), Week 6 (changing the motion model itself, and the square allocation of §6-2 with its clipping), Appendix A1 (the rank of $B$, the extended thrust vector, and the attainable control set) |
+| Weeks assumed | Week 3 (the column rule and $B$), Week 5 (saturation and limits), Week 6 (changing the motion model itself, and the square allocation of §6-2 with its clipping) |
 | Plant | `_tools\otter_tilt4.m` — `otter.m` with four tilting units, same hull |
 | Configuration | `otter_config('quad_tilt')` |
 | Model | `W07_openloop.slx`, written by `W07_1_build_openloop.m` |
@@ -2275,8 +2275,7 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 
 ### In this course
 
-- Week 3 — the column rule, and the only definition of $B$ this course uses
-- **Appendix A1 — actuation and the control effectiveness matrix**: the column rule written out (§A1-2), the rank of $B$ and what it leaves unreachable (§A1-3), the extended thrust vector of a tilting unit (§A1-4), and the attainable control set (§A1-6)
+- **Week 3 §3-6 — the column rule**, and the only definition of $B$ this course uses. The extended thrust vector of a tilting unit, which gives each unit two columns instead of one, is §7-1 of this week; the rank of $B$ and what it leaves unreachable is Week 1 §1-10 for two propellers and Week 6 §6-2 for three
 - **Week 6 §6-2 — the square allocation**: three demands, three thrusters, exactly one answer, and what leaks out when that answer is clipped at a ceiling. This week is the case the square rule cannot cover: the null space is five-dimensional, so there is something to choose, and §7-7 to §7-12 are how it is chosen
 - Week 5 — saturation, and what a limit does to a command
 - Week 6 — `otter_bow.m`: changing the motion model rather than adding to its input

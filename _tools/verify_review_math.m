@@ -14,7 +14,7 @@ function ok = verify_review_math()
 %                 그리고 btilde = 17 deg, y_e = -1 cm 의 반례 값
 %    3. W05 §H    운동학 부분만 적분했을 때 V 가 모든 표본에서 감소하는지,
 %                 y_e 가 처음 음수가 되는 시각
-%    4. W01/A1   x_g 가 정확히 0.153125 m 이고 그 곱들이 닫히는지
+%    4. W01      x_g 가 정확히 0.153125 m 이고 그 곱들이 닫히는지
 
 ok = true;
 fprintf('\n  verify_review_math — 2026-09-14 검토에서 실은 수치\n');
@@ -62,7 +62,7 @@ fprintf('     later opposite-sign samples: %d, widest band there %.1e m, inside 
         sum(both), wmax, sum(abs(X(both,1)) < Dl*abs(btv(both)-sin(btv(both)))./cos(btv(both))));
 ok = ok && frac == 100;
 
-%% 4. x_g 와 그 곱 (W01 §1-9, A1 §A1-7)
+%% 4. x_g 와 그 곱 (W01 §1-9 · §1-12)
 xg = (55*0.2 + 25*0.05)/80;
 fprintf('\n  4) x_g = %.6f m,  80 x_g = %.4f,  80 x_g^2 = %.4f\n', xg, 80*xg, 80*xg^2);
 fprintf('     15.1021 + 25.6736 = %.4f ;  + 1.8758 = %.4f\n', 15.1021+25.6736, 15.1021+25.6736+1.8758);

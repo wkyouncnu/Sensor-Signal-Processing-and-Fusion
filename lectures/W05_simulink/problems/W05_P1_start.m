@@ -21,7 +21,7 @@ function W05_P1_start(mdl)
 %   THE BLOCKS THAT ARE PROVIDED
 %
 %     Heading autopilot    tau_N = Kp ssa(psi_d - psi) - Kd r      (Week 4)
-%     Control allocation   tau_N, X_ff -> two shaft speeds         (A1)
+%     Control allocation   tau_N, X_ff -> two shaft speeds         (W3 3-6)
 %     Otter USV            n -> twelve states
 %
 %   WHAT IS MISSING, AND THEREFORE WHAT THE PROBLEMS ARE

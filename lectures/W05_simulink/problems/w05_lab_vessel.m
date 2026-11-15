@@ -83,7 +83,7 @@ add_block('simulink/User-Defined Functions/MATLAB Function', blk, ...
 set_mlfcn(blk, { ...
 'function n = allocation(tau_N, X_ff, k_pos, k_neg, n_max, n_min, y_pont)'
 '%#codegen'
-'% Demanded surge force and yaw moment to two shaft speeds. Appendix A1.'
+'% Demanded surge force and yaw moment to two shaft speeds. Week 3 section 3-6.'
 'T = [X_ff/2 + tau_N/(2*y_pont);'
 '     X_ff/2 - tau_N/(2*y_pont)];'
 'n = zeros(2,1);'
