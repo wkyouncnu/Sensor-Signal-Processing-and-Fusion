@@ -21,8 +21,17 @@
 %       3  선미 좌현 / aft  port    x = -1.00 m,  y = -0.395 m
 %       4  선미 우현 / aft  stbd    x = -1.00 m,  y = +0.395 m
 %
-%   See also W07_1_BUILD_OPENLOOP, W07_V_OPENLOOP, W07_VARS, W07_PLOT,
-%            OTTER_TILT4, OTTER_CONFIG, VERIFY_OTTER_TILT4.
+%   이 주차의 모델 넷 / the four models of this week
+%       W07_openloop      손으로 준 여덟 숫자만. 제어기도 배분기도 없다
+%       W07_alloc_chain   배분기 넷을 `law` 하나로 비교한다 (열린 루프)
+%       W07_wpt_los       LOS 유도 + 전진속도 + 선수각. 루프가 닫힌다
+%       W07_pose_dp       (0,0,0도) 에서 (10 m, 10 m, 45도) 로 가서 머문다
+%       The last two close the loop with law 4 alone, the law §7-12 selects.
+%
+%   See also W07_1_BUILD_OPENLOOP, W07_2_BUILD_ALLOC, W07_3_BUILD_WPT,
+%            W07_4_BUILD_POSE, W07_V_OPENLOOP, W07_VARS, W07_PLOT,
+%            W07_WPT_RUN, W07_POSE_RUN, OTTER_TILT4, OTTER_CONFIG,
+%            VERIFY_OTTER_TILT4.
 
 clear; close all;
 
@@ -115,6 +124,70 @@ n_chord = 3;                     % 추력 캡을 내접 현 셋으로 본다 / t
 k_pos   = cfg.k_pos;             % 추력계수, 전진 / thrust coefficient, ahead
 k_neg   = cfg.k_neg;             % 추력계수, 후진 / thrust coefficient, astern
 
+%% ---- 닫힌 루프의 게인 / the closed-loop gains -------------------------
+%  3·4단계 모델 `W07_wpt_los` 와 `W07_pose_dp` 가 쓰는 값이다. 배분기는 둘 다
+%  **법칙 4 하나**이고 (§7-12), 그래서 이 게인들이 정하는 것은 "배가 얼마나
+%  급하게 따라가는가" 뿐이다 / used by the two closed-loop models; both allocate
+%  with law 4 alone, so these gains set only how briskly the hull follows
+%
+%  **왜 게인을 3·4주차에서 그대로 가져올 수 있는가** / why Weeks 3 and 4 carry
+%      선체가 같고 (`otter_config` 의 같은 질량·감쇠), 달라진 것은 구동장치뿐
+%      이다. 1 m/s 를 유지하는 데 선체가 요구하는 전진력은 78 N 남짓이고,
+%      추진기 넷이 낼 수 있는 전진력은 그보다 훨씬 크다. 그래서 3·4주차에서
+%      제어기를 묶고 있던 것은 **구동장치의 한계**였고, 이 주차에서는 그것이
+%      풀린다. 아래의 X_max · Y_max · N_lim 은 물리적 한계가 아니라 **승차감을
+%      위해 사람이 고른 값**이다 — §7-14 가 남은 여유를 표로 센다.
+%      The hull is Weeks 3 to 6's hull; only the actuation changed. Holding
+%      1 m/s costs the hull some 78 N, and four thrusters deliver far more, so
+%      the ceiling that bound the controllers in Weeks 3 to 6 is gone. X_max,
+%      Y_max and N_lim below are therefore a COMFORT choice, not a physical
+%      limit, and §7-14 counts the headroom that remains.
+
+% -- 안쪽 루프, 두 주차와 같은 PI / the inner loops, Weeks 3 and 6 unchanged
+Kp_u  = 200;   Ki_u = 200;      % 전진 PI / the surge PI        (3주차)
+Kp_v  = 200;   Ki_v = 200;      % 횡방향 PI / the sway PI
+Kb    = 1;                      % 되감기 게인 / the back-calculation gain
+X_max = 120;                    % 전진력 한계 [N] / the surge force limit
+Y_max = 120;                    % 횡력 한계 [N] / the sway force limit
+%  **6주차와 달라진 두 줄이 Kp_v 와 Y_max 다.** 6주차는 선수 터널추진기 하나로
+%  횡력을 냈고 한계가 35.13 N 이어서 게인을 150 으로 낮추어야 했다. 기울 수 있는
+%  추진기 넷은 순수 횡력을 그보다 몇 배 낸다 — 그래서 횡방향이 전진과 같은
+%  게인으로 돌고, 위치제어가 옆으로도 똑바로 간다
+%  Two lines differ from Week 6: with one bow tunnel the sway limit was 35.13 N
+%  and the gain had to drop to 150. Four tilting thrusters give several times
+%  that in pure sway, so the sway axis runs with the surge gains.
+
+% -- 선수각 P-D, 4주차 그대로 / the heading P-D of Week 4
+Kp    = 300;   Kd = 100;
+N_lim = 150;                     % 선회모멘트 한계 [N m] / the yaw limit
+
+%% ---- 3단계: 웨이포인트 추종 / stage 3, waypoint following -------------
+%  외곽 루프가 LOS 유도, 안쪽이 전진속도와 선수각이다. 경로는 네모 하나와
+%  마지막 한 변 — 오른쪽으로 두 번, 왼쪽으로 한 번 돌아 네 변을 모두 본다
+%  The outer loop is LOS guidance; the inner loops are surge speed and heading
+WP_N = [0  60  60   0   60]';    % 웨이포인트 북 [m] / waypoints, north
+WP_E = [0   0  60  60  120]';    % 웨이포인트 동 [m] / waypoints, east
+Delta       = 5;                 % LOS 바라보기 거리 [m] / the lookahead
+R_switch    = 3;                 % 전환 반지름 [m] / the switching circle
+stop_at_end = 1;                 % 마지막 점에서 멈춘다 / stop at the last point
+stop_hold   = 15;                % 멈추기 전에 더 보는 시간 [s] / hold after
+u_d         = 1.0;               % 전진속도 명령 [m/s] / the speed command
+
+%% ---- 4단계: 위치와 선수각 / stage 4, position and heading -------------
+%  (0 m, 0 m, 0 도) 에서 (10 m, 10 m, 45 도) 로 가서 그 자리에 머문다.
+%  세 자유도를 **한꺼번에** 지시한다 — 6주차는 횡력이 모자라 선수를 먼저
+%  돌려야 했지만, 여기서는 횡력이 넉넉하므로 임무 상태기가 필요 없다
+%  From (0, 0, 0 deg) to (10 m, 10 m, 45 deg) and stay. All three degrees of
+%  freedom are commanded at once: Week 6 had to turn the bow first because sway
+%  was scarce, and here it is not, so no mission state machine is needed
+p_d     = [10; 10];              % 목표 위치 [N; E] [m] / the target position
+psi_set = deg2rad(45);           % 목표 선수각 [rad] / the target heading
+Kp_pos  = 0.30;                  % 위치 P 게인 [1/s] / the outer gain
+u_lim   = 0.80;                  % 전진 속도명령 한계 [m/s] / surge command cap
+v_lim   = 0.60;                  % 횡방향 속도명령 한계 [m/s] / sway command cap
+%  v_lim 이 6주차의 0.35 에서 올라간 것도 같은 이유다 / the sway cap rises from
+%  Week 6's 0.35 for the same reason: the sway force is no longer scarce
+
 %% ---- 시작 상태 / the start state --------------------------------------
 x0     = zeros(12,1);            % 정지, 원점, 선수방위 0
 x0(7)  = 0;                      % N [m]
@@ -132,8 +205,15 @@ track_Nmin    = -60;
 track_Nmax    =  140;
 
 %% ---- 시뮬레이션 / the simulation --------------------------------------
+%  **길이가 모델마다 다르다.** 열린 루프는 한 가지 명령을 60 초 보면 끝이지만,
+%  웨이포인트 넷은 240 m 를 1 m/s 로 가야 하므로 그 넷째가 안 된다. 그래서
+%  이름을 셋으로 나눈다 — 모델의 StopTime 이 저마다 다른 이름을 읽는다
+%  The run length differs per model: 60 s shows one open-loop command, but the
+%  waypoint path is 240 m at 1 m/s. Each StopTime therefore reads its own name
 h       = 0.02;                  % 고정 스텝 [s] / fixed step
-T_final = 60;                    % 길이 [s] / run length
+T_final = 60;                    % W07_openloop · W07_alloc_chain [s]
+T_wpt   = 400;                   % W07_wpt_los — 상한이다. Stop 블록이 먼저 선다
+T_pose  = 60;                    % W07_pose_dp — 20 s 면 서고, 나머지는 머무는 것을 본다
 
 %% ---- 이 구성에서 실제로 잰 것 / what this configuration measures -------
 %  강의 본문이 인용하는 수치를 **여기서 계산해** 찍는다. 문서에 손으로 적어 둔
@@ -156,3 +236,15 @@ fprintf(['\n  Week 7  four tilting thrusters, open loop\n' ...
         cfg.n_min, cfg.n_max, T_fwd, T_rev, cfg.k_neg/cfg.k_pos, n_cxl, ...
         size(cfg.B,1), size(cfg.B,2), rank(cfg.B), ...
         size(cfg.B,2) - rank(cfg.B), n_cmd, d_deg);
+
+fprintf(['  Week 7  the two closed-loop models (law %d allocates for both)\n' ...
+         '    waypoint path       %d points, %.0f m of track\n' ...
+         '                        lookahead %.0f m, switching circle %.0f m\n' ...
+         '    speed command       %.2f m/s,  surge limit %.0f N\n' ...
+         '    target pose         N = %.1f m, E = %.1f m, psi = %.1f deg\n' ...
+         '    sway command cap    %.2f m/s,  sway limit  %.0f N\n' ...
+         '    heading P-D         Kp = %g, Kd = %g,  yaw limit %.0f N m\n' ...
+         '    run lengths         open loop %g s, waypoint %g s, pose %g s\n\n'], ...
+        law, numel(WP_N), sum(hypot(diff(WP_N), diff(WP_E))), Delta, R_switch, ...
+        u_d, X_max, p_d(1), p_d(2), rad2deg(psi_set), v_lim, Y_max, ...
+        Kp, Kd, N_lim, T_final, T_wpt, T_pose);

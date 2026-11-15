@@ -1,0 +1,136 @@
+%W07_POSE_RUN  위치·선수각 제어 모델을 돌리고, 명령과 실제를 그린다.
+%              Run the position-and-heading model and draw command against
+%              actual.
+%
+%   사용법 / how to use
+%       W07_pose_run                아래 `SEC` 의 절을 차례로 돌린다
+%       한 줄을 `%` 로 막으면 그 절이 빠진다 / one % removes one section
+%
+%   무엇을 보이려는 운항인가 / what the run is for
+%       (0, 0) 에서 선수각 0 도로 떠서 (10, 10) 에 선수각 45 도로 **선다.**
+%       웨이포인트 추종과 달리 배가 가야 할 방향과 향해야 할 방향이 **다르고**,
+%       그래서 세 자유도를 따로 명령할 수 있어야 한다. 추진기 넷이 모두 돌아가는
+%       형상이 그것을 할 수 있다는 것이 이 절의 요점이다.
+%       The vessel leaves (0, 0) heading 0 deg and comes to rest at (10, 10)
+%       heading 45 deg. Unlike waypoint following, where it goes and where it
+%       points are different, which is what four tilting units make possible.
+%
+%   `sim` 을 본문에서 부르는 이유는 `W07_wpt_run` 과 같다 / the same reason as
+%   in W07_wpt_run: inside a function the logs would not reach this workspace.
+%
+%   See also W07_4_BUILD_POSE, W07_PLOT_POSE, W07_PLOT_SAT, W07_WPT_RUN,
+%            W07_0_SETUP.
+
+close all;
+
+here = fileparts(mfilename('fullpath'));
+root = fileparts(fileparts(here));
+addpath(fullfile(root, '_tools'), here);
+mss_path();
+
+mdl = 'W07_pose_dp';
+assert(isfile(fullfile(here, [mdl '.slx'])), 'W07:noModel', ...
+       '%s.slx 가 없다. 먼저 W07_4_build_pose 를 돌린다 / build it first', mdl);
+
+V = W07_vars();
+if ~isfolder(fullfile(here, 'img')), mkdir(fullfile(here, 'img')); end
+img = fullfile(here, 'img');
+
+push_vars(V);
+animate  = 0;
+pace     = 0;
+W07batch = true;
+W07quiet = true;     % StopFcn 의 그림을 끈다. 이 파일이 대신 그린다
+
+%% 돌릴 절 / the sections to run ---------------------------------------------
+SEC = { ...
+    'A'  'from the origin to (10, 10) m at 45 deg, command beside actual'
+    'B'  'the outer-loop gain Kp_pos, swept'
+};
+want = @(s) any(strcmp(s, SEC(:,1)));
+
+fprintf('\n==== W07 position and heading control, model %s ====\n', mdl);
+fprintf('  law %d,  target N %g m  E %g m  psi %g deg,  Kp_pos %g\n', ...
+        V.law, V.p_d(1), V.p_d(2), rad2deg(V.psi_set), V.Kp_pos);
+fprintf('  speed cap on the outer loop: u %g m/s,  v %g m/s\n', V.u_lim, V.v_lim);
+fprintf('  sections: %s\n', strjoin(SEC(:,1).', ', '));
+
+%% A  한 번의 위치 제어 — 이 절의 그림이 강의자료에 실린다 ------------------
+if want('A')
+    hdr('A', 'one run to the commanded pose');
+    set_vars(struct('Kp_pos', V.Kp_pos, 'T_pose', V.T_pose));
+    sim(mdl);
+    W07_plot_pose(fullfile(img, 'W07_pose'));   % 수치는 그 함수가 찍는다 / it prints
+end
+
+%% B  바깥 고리 게인 Kp_pos — 무엇이 달라지는가 -----------------------------
+%     바깥 고리는 위치 오차를 **속도 명령**으로 바꾼다. 게인이 크면 빨리 가되
+%     속도 한계에 더 오래 붙어 있고, 작으면 조용히 가되 늦게 선다. 그 교환을
+%     숫자로 본다 — 정착 시간과 지나친 거리.
+%     The outer loop turns a position error into a speed command: a high gain
+%     arrives sooner but sits on the speed cap, a low one is slower. The table
+%     shows the trade as settling time against overshoot.
+if want('B')
+    hdr('B', 'the outer-loop gain, swept');
+    K_SWEEP = [0.15 0.30 0.60];
+    SW      = nan(numel(K_SWEEP), 4);
+    for i = 1:numel(K_SWEEP)
+        set_vars(struct('Kp_pos', K_SWEEP(i), 'T_pose', V.T_pose));
+        sim(mdl);
+        SW(i,:) = pstat(K_SWEEP(i));
+    end
+    fprintf('\n   settling = the last instant the error leaves the band, +1 sample\n');
+    fprintf('    Kp_pos    t to 0.50 m [s]   peak |u| [m/s]   overshoot [m]\n');
+    fprintf('   %7.2f %16.2f %16.3f %15.3f\n', SW.');
+    fprintf('   The speed cap is %g m/s: where peak |u| sits on it, the gain is\n', V.u_lim);
+    fprintf('   no longer what sets the approach — the cap is.\n');
+    set_vars(struct('Kp_pos', V.Kp_pos, 'T_pose', V.T_pose));
+end
+
+fprintf('\n==== done ====\n');
+
+% =========================================================================
+function hdr(sec, txt)
+fprintf('\n---- %s  %s %s\n', sec, txt, repmat('-', 1, max(0, 56 - numel(txt))));
+end
+
+% =========================================================================
+function push_vars(V)
+%PUSH_VARS  `W07_vars` 의 값을 작업공간에 올린다 / the names the model reads
+fn = fieldnames(V);
+for i = 1:numel(fn)
+    assignin('base', fn{i}, V.(fn{i}));
+end
+end
+
+% =========================================================================
+function set_vars(ov)
+%SET_VARS  다음 `sim` 이 쓸 값을 놓고 지난 로그를 지운다 / values, then clear
+fn = fieldnames(ov);
+for i = 1:numel(fn)
+    assignin('base', fn{i}, ov.(fn{i}));
+end
+evalin('base', 'clear W07pose W07pose_act');
+end
+
+% =========================================================================
+function s = pstat(K)
+%PSTAT  한 번의 운항에서 네 수치만 / four numbers out of one run
+%       정착 판정은 `W07_plot_pose` 와 **같다** — 마지막으로 띠를 벗어난 다음
+%       표본 / the same settling rule as W07_plot_pose
+W = evalin('base', 'W07pose');
+t = W.time(:);
+y = squeeze(W.signals.values);
+if size(y,1) < size(y,2), y = y.'; end
+d  = hypot(y(:,7) - y(:,4), y(:,8) - y(:,5));
+k  = find(d > 0.50, 1, 'last');
+if isempty(k)
+    ts = 0;
+elseif k == numel(t)
+    ts = NaN;
+else
+    ts = t(k+1);
+end
+over = max(0, max(hypot(y(:,4), y(:,5))) - hypot(y(end,7), y(end,8)));
+s    = [K, ts, max(abs(y(:,1))), over];
+end

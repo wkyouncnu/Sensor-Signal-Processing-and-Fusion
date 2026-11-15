@@ -49,7 +49,7 @@ Fossen 의 **Otter** 를 Simulink 하나로 다루는 대학원 강의. 근거�
 | W04 | [Heading Control](lectures/W04_Heading_Control.md) | `W04_C_open_loop` · `W04_D_P` · `W04_E_PD` · `W04_F_PID` · `W04_G_wrap` · `W04_H_tuning` (model-free tuning) |
 | W05 | [Waypoint Following and LOS Guidance](lectures/W05_Waypoint_Following_and_LOS_Guidance.md) | `W05_C_atan2` · `W05_D_LOS` · `W05_E_switching` · `W05_F_ILOS` · `W05_G_tuning` (model-free tuning) |
 | W06 | [The Bow Thruster: Position Control and Berthing](lectures/W06_Bow_Thruster_Position_Control_and_Berthing.md) | `W06_1_point` · `W06_2_sway` · `W06_3_thrust` · `W06_4_stop` · `W06_5_dock` · `W06_7_front` · `W06_8_ned` (사다리 한 단에 모델 하나, 스크립트 하나) |
-| W07 | [Four Tilting Thrusters, and the Open-Loop Check](lectures/W07_Four_Tilting_Thrusters_and_the_Open_Loop_Check.md) | `W07_openloop` · `W07_alloc_chain` (러너 둘 — `W07_openloop_run` · `W07_alloc_run`, 목록 한 줄을 주석 처리해서 고른다) |
+| W07 | [Four Tilting Thrusters, Control Allocation, and Closed-Loop Control](lectures/W07_Four_Tilting_Thrusters_Control_Allocation_and_Closed_Loop_Control.md) | `W07_openloop` · `W07_alloc_chain` · `W07_wpt_los` · `W07_pose_dp` (러너 넷 — `W07_openloop_run` · `W07_alloc_run` · `W07_wpt_run` · `W07_pose_run`, 목록 한 줄을 주석 처리해서 고른다) |
 
 부록은 없다 — 2026-11-15 에 사용자 지시로 A1(Actuation and the Control Effectiveness Matrix)을
 내렸다. 열 규칙은 W03 §3-6, $B$ 의 계급과 도달 가능 집합은 W01 §1-10 과 W06 §6-2,

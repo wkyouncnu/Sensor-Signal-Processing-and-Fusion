@@ -1,14 +1,14 @@
 ---
 type: week
 week: 7
-title: Week 7 — Four Tilting Thrusters, and the Open-Loop Check
+title: Week 7 — Four Tilting Thrusters, Control Allocation, and Closed-Loop Control
 date: 2026-11-03
-tags: [week, otter, tilting-thruster, thrust-configuration, open-loop, verification, simulink]
+tags: [week, otter, tilting-thruster, thrust-configuration, open-loop, control-allocation, los-guidance, position-control, verification, simulink]
 status: draft
-summary: Four tilting thrusters replace the Otter's two fixed ones — what the change costs the motion model, what eight hand-given numbers do to the hull, the three asymmetries that make the symmetric guess wrong, and the allocation that reverses the arithmetic: three demanded forces into eight components, under a weight matrix, a servo limit and a 50 Hz budget
+summary: Four tilting thrusters replace the Otter's two fixed ones — what the change costs the motion model, what eight hand-given numbers do to the hull, the three asymmetries that make the symmetric guess wrong, the allocation that reverses the arithmetic (three demanded forces into eight components, under a weight matrix, a servo limit and a 50 Hz budget), and the two closed loops that follow once one law is chosen: a four-leg route under LOS guidance, and a commanded position and heading held at once
 ---
 
-# Week 7 · Four Tilting Thrusters, and the Open-Loop Check
+# Week 7 · Four Tilting Thrusters, Control Allocation, and Closed-Loop Control
 
 > [!note] Recordings of this semester's own classes
 > <span style="font-size:0.88em">Every session of this course is recorded as it is given and posted to the playlist below. The written material here is the reference; the recording is the lecture, at the pace it was actually delivered. Use it to review a derivation, or to catch up on a missed week before the laboratory.</span>
@@ -53,7 +53,7 @@ summary: Four tilting thrusters replace the Otter's two fixed ones — what the 
 
 - **Course**: USV Guidance, Navigation and Control (Graduate)
 - **Department**: Autonomous Vehicle System Engineering, Chungnam National University
-- **This week**: ① a tilting thruster occupies **two** columns of $B$, not one ② the four places `otter.m` must change to carry four of them ③ eight numbers given by hand, and the three asymmetries that make the symmetric guess wrong
+- **This week**: ① a tilting thruster occupies **two** columns of $B$, not one ② the four places `otter.m` must change to carry four of them ③ eight numbers given by hand, and the three asymmetries that make the symmetric guess wrong ④ four allocation laws compared, and the one that survives put inside two closed loops
 
 > [!important] Before starting
 > - Week 3's column rule must be available from memory: a thrust applied at a point contributes one column to $B$, and the rule that builds that column is the only definition of $B$ this course uses.
@@ -78,7 +78,10 @@ Upon completion of this week, the learner is able to:
 10. Turn $\lvert\delta_i\rvert \le \alpha_{\max}$ into two linear inequalities once the thrust sign is fixed, say why four units give sixteen convex subsets and what taking only the sign combination of the closed form risks, and read a measured per-step cost against the $20$ ms a 50 Hz loop allows.
 11. Show that the shaft-speed limit $\lvert n_i\rvert \le n_{\max}$ is the thrust cap $\lvert T_i\rvert \le k_i n_{\max}^2$ seen through the thrust curve, replace the resulting circular arc by inscribed chords, and state why the polygon can never violate the cap.
 12. Measure the force the motion model actually produced rather than the force the allocator reported, and explain why a law that clips inside the allocator and a law that leaves the clipping to the hardware deliver the same force.
-13. State what this week deliberately leaves out, and why a controller is not needed to study allocation.
+13. Say why allocation can be studied with no controller at all, and what changes once one is put in front of it.
+14. Assemble a waypoint follower from the LOS guidance of Week 5 over the surge PI of Week 3 and the heading PD of Week 4, linearise the LOS law to show that the outer gain is $1/\Delta$, and read a measured cross-track error against the lookahead distance that produced it.
+15. Assemble a position-and-heading controller as three cascaded loops, say why the position error is rotated into the body frame before the velocity loops see it, and show from the per-axis speed cap why the approach arrives without overshoot.
+16. Distinguish an actuator that is **on** its limit from one that was **clipped**, and say which of the four allocation laws can produce the first without the second.
 
 ## Prerequisites and Setup
 
@@ -87,14 +90,16 @@ Upon completion of this week, the learner is able to:
 | MATLAB | R2024b or later, with Simulink |
 | MSS toolbox | reachable at `Tools\MSS`; `_tools\mss_path.m` adds it |
 | Optimization Toolbox | version 24.2 or later, for the `lsqlin` that law 4 of §7-12 calls sixteen times per step. Verify with `ver('optim')` |
-| Weeks assumed | Week 3 (the column rule and $B$), Week 5 (saturation and limits), Week 6 (changing the motion model itself, and the square allocation of §6-2 with its clipping) |
+| Weeks assumed | Week 3 (the column rule and $B$, and the surge PI of §3-3 with the anti-windup of §3-4), Week 4 (the heading PD of §4-3), Week 5 (saturation and limits, and the LOS law of §5-3), Week 6 (changing the motion model itself, the square allocation of §6-2 with its clipping, and the three loops of §6-3) |
 | Plant | `_tools\otter_tilt4.m` — `otter.m` with four tilting units, same hull |
 | Configuration | `otter_config('quad_tilt')` |
 | Model | `W07_openloop.slx`, written by `W07_1_build_openloop.m` |
 | Solver | fixed-step `ode4`, $h = 0.02$ s |
 | Allocation model | `W07_alloc_chain.slx`, written by `W07_2_build_alloc.m` — the four laws as four MATLAB Function blocks behind one Multiport Switch |
 | Allocation runner | `W07_alloc_run.m` — one file, §7-8 to §7-13. It sets `law` and `tau_cmd` on the workspace and calls `sim`: no law is implemented in the `.m` |
-| Scope of this week | §7-0 to §7-6 are **open loop only** — eight numbers given by hand. §7-7 to §7-12 add the **allocation** that produces those eight numbers from three. **No controller and no guidance in either half** |
+| Closed-loop models | `W07_wpt_los.slx` by `W07_3_build_wpt.m` (§7-14) and `W07_pose_dp.slx` by `W07_4_build_pose.m` (§7-15) — both with law 4 alone and no switch |
+| Closed-loop runners | `W07_wpt_run.m` and `W07_pose_run.m`, two sections each. Both set constants and call `sim` |
+| Scope of this week | §7-0 to §7-6 are **open loop only** — eight numbers given by hand, no controller and no guidance. §7-7 to §7-13 add the **allocation** that produces those eight numbers from three, still with no controller. §7-14 and §7-15 close the loop around the one law that survives the comparison |
 
 ---
 
@@ -2060,9 +2065,251 @@ Two things in the right-hand bars are worth saying out loud. Laws 2 and 3 are th
 
 ---
 
+## 7-14. Waypoint following with the one law that keeps its limits
+
+**What is observed.** Sections 7-8 to 7-13 put a single demand to the allocator and read what came back. A vessel following a route never holds one demand: the guidance law rewrites it at every step, and whatever the allocator fails to deliver is integrated by the hull before the next demand exists. Once the comparison of §7-13 has been made, three of the four laws have no further use — a law that silently loses force in closed loop loses it into the position of the vessel. What remains is to fly a route with the one law that keeps its own limits.
+
+**The result.** A four-leg route of $264.85$ m is flown in $274.12$ s with a cross-track error of $0.467$ m rms and $2.964$ m at worst, every excursion sitting at a corner. The surge loop holds $0.945$ m/s of the $1.000$ m/s commanded. The servo limit is reached at $71$ samples and **nothing is clipped at any of them**: law 4 carries that limit inside its solve, so the force the allocator reports is the force the hull receives.
+
+**Derivation.**
+
+1. The model is a cascade of three loops, each already derived in an earlier week, with the allocation stage of §7-12 between them and the hull. The outer loop runs on position, the two inner loops on surge speed and on heading, and nothing in the chain is new to this week except the stage that turns $\boldsymbol{\tau}_d$ into four shaft speeds and four tilt angles.
+
+2. The outer loop is Week 5's lookahead-based line-of-sight guidance, §5-3, unchanged. With the active leg running from $(N_k, E_k)$ to $(N_{k+1}, E_{k+1})$, the path angle and the cross-track error are
+
+$$\pi_p = \operatorname{atan2}\!\left(E_{k+1} - E_k,\; N_{k+1} - N_k\right), \qquad
+  y_e = -(N - N_k)\sin\pi_p + (E - E_k)\cos\pi_p ,$$
+
+   and the heading command is the path angle turned towards the line,
+
+$$\psi_d = \pi_p - \arctan\!\left(\frac{y_e}{\Delta}\right).$$
+
+3. For small $y_e$ the arctangent is $y_e/\Delta$, so the outer loop is a proportional controller on the cross-track error whose gain is $1/\Delta$ and whose output is an **angle**. That is the whole reason the lookahead distance is the one tuning knob of the section: a small $\Delta$ turns hard towards the line, a large $\Delta$ turns gently and converges from further away.
+
+4. A leg is finished when the vessel comes within $R_{\text{switch}}$ of its end point, which is Week 5 §5-4's switching circle, at which the guidance block advances $k$ and recomputes $\pi_p$ for the new leg. At the last waypoint it drops `gate` to zero instead. The gate multiplies the speed command, so $u_d$ becomes $0$, the surge loop brings the vessel to rest, and a Stop Simulation block ends the run `stop_hold` seconds later. The route therefore sets its own stop time; $T_{\text{wpt}}$ is only an upper bound.
+
+5. The surge loop is Week 3's PI with the back-calculation anti-windup of §3-4, unchanged block for block:
+
+$$e_u = u_d - u, \qquad X_{\text{raw}} = K_{p,u}\,e_u + I, \qquad
+  \dot I = K_{i,u}\,e_u + K_b\,(X - X_{\text{raw}}), \qquad X = \operatorname{sat}(X_{\text{raw}}).$$
+
+6. The heading loop is Week 4's PD, §4-3, whose derivative term is the **measured** yaw rate rather than the derivative of the error, so the step in $\psi_d$ at every leg change produces no kick:
+
+$$e_\psi = \operatorname{ssa}(\psi_d - \psi), \qquad N = \operatorname{sat}\!\left(K_p\,e_\psi - K_d\,r\right),
+  \qquad \operatorname{ssa}(u) = \operatorname{atan2}(\sin u, \cos u).$$
+
+7. The demand assembled from the two inner loops is $\boldsymbol{\tau}_d = [X,\ 0,\ N]^\top$. The zero is a Constant on the canvas rather than a missing wire: this run follows the path **by turning the bow**, which is how a conventional hull must do it, and leaving the sway command visible is what makes §7-15 a change of one input rather than a change of architecture. The four tilting units are therefore not being used for what they can uniquely do — that is the next section's subject.
+
+8. The allocation stage is `add_allocation_tilt4` with law 4 and **no switch**. A Multiport Switch selects an output, not a computation, so a model that offers one law carries no switch and no `law` inport. The block inside is the same text as the `law 4  limits as constraints` block of §7-13, which is why §7-12's derivation covers it without restatement.
+
+9. The saturations of the two inner loops, $X_{\max} = Y_{\max} = 120$ N and $N_{\text{lim}} = 150$ N m, are a **comfort choice and not a physical limit**. The surge corner of the envelope is $372.78$ N by §7-12 line 4, so a $120$ N cap sits at under a third of it: the caps exist to keep the demand in a region where the allocator still has headroom, not because the actuators run out there. Week 6's $Y_{\max} = 35.13$ N was the opposite kind of number — the hardware's own ceiling.
+
+10. The whole route stays well inside the actuator envelope on two of the three quantities. The worst shaft speed is $-101.41$ rad/s against a reverse limit of $-101.74$, which is $81.1\,\%$ of the limit on the utilisation scale, and no sample sits on it; the worst signed thrust is $-66.28$ N against an astern cap of $-66.71$ N, $99.4\,\%$, and again no sample sits on it.
+
+11. The tilt angle is the quantity that runs out. It reaches exactly $\pm 45.00^\circ$ at $71$ samples, all of them inside the three corners, and the count of clipped samples is **zero**. Touching a limit and being clipped are two different events: law 4 solves against the wall, so the angle it reports is already an angle the servo can hold. Under law 1 the same corner would have produced the silent shortfall of §7-13, integrated here into cross-track error.
+
+12. The remaining difference between asked and delivered force is $0.9890$ N at worst, taken over the samples asking for more than $2$ N. That is the regularisation bias and the inscribed-chord error of §7-12 lines 7 and 11 — not a saturation error — and it is why the asked and applied traces of the force panels lie on top of one another.
+
+| Symbol | Quantity | Value or source |
+|---|---|---|
+| $\Delta$ | lookahead distance of the LOS law | `Delta` $= 5$ m, `W07_0_setup` |
+| $R_{\text{switch}}$ | radius at which the next leg becomes active | `R_switch` $= 3$ m |
+| $u_d$ | commanded surge speed, before the gate | `u_d` $= 1.0$ m/s |
+| $(N_k, E_k)$ | the waypoint list | `WP_N`, `WP_E`; five points, four legs, $60 + 60 + 60 + 84.85 = 264.85$ m |
+| $K_{p,u},\,K_{i,u},\,K_b$ | surge PI and its back-calculation gain | $200$, $200$, $1$ |
+| $K_p,\,K_d$ | heading PD | $300$, $100$ |
+| $X_{\max},\,N_{\text{lim}}$ | inner-loop saturations | $120$ N, $150$ N m |
+| $\alpha_{\max}$ | servo travel | $45^\circ$, `otter_config('quad_tilt')` |
+
+### Experiment 7-14 · Flying a route on four tilting units (25 min)
+
+```matlab
+W07_3_build_wpt         % writes W07_wpt_los.slx and the block-diagram PNGs
+W07_wpt_run             % runs the model and draws both figures
+```
+
+The runner reads its values from `W07_vars`, so nothing has to be set up first. `W07_0_setup` is what to run before pressing **Run** on the model by hand: the same values, plus `animate = 1`.
+
+![Top level of W07_wpt_los: the guidance subsystem on the left turns the waypoint list into a heading command and a cross-track error, the speed and heading loops sit in the middle column, the allocation subsystem holding law 4 follows, and the Otter plant returns both the state and the force it actually produced](W07_simulink/img/W07_wpt_los.png)
+
+![Inside the guidance subsystem: the active-leg block computes the path angle and the cross-track error, the LOS block turns them into a heading command, and the Unit Delay at the top level carries the leg counter from one step to the next](W07_simulink/img/W07_wpt_los_guid.png)
+
+The leg counter travels through a **visible** Unit Delay rather than a `persistent` variable inside the block. A state that exists only inside a MATLAB Function cannot be read off the diagram, and which leg is active is the one thing a reader of this model wants to know.
+
+```
+==== W07 waypoint following, run from the model W07_wpt_los ====
+  law 4,  waypoints 5,  Delta 5 m,  R_switch 3 m,  u_d 1 m/s
+  sections: A, B
+
+---- A  one run of the whole route ------------------------------
+
+  W07 waypoint following with allocation law 4
+   run length                  274.12 s
+   statistics window             0.00 .. 274.12 s  (from |y_e| < Delta)
+   cross-track |y_e|           max  2.964 m    rms  0.467 m
+   surge speed u             mean  0.945 m/s   command 1.000 m/s
+   heading error               max 111.358 deg  rms 11.355 deg
+   distance to last waypoint    2.602 m
+   peak force on the hull    X 120.00 N   Y   0.01 N   N 149.99 N m
+   worst |asked - applied|     0.9890  N, over the samples asking above 2 N
+  waypoint following: are the four units inside their limits?
+      what          worst value        limit            used   samples on it
+   shaft speed  -101.41 ..   84.26   -101.74 ..  103.93     81.1 %           0
+   thrust        -66.28 ..   78.66    -66.71 ..  119.68     99.4 %           0
+   tilt angle    -45.00 ..   45.00    -45.00 ..   45.00    100.0 %          71
+   a limit was on at some samples, which is where the law earns its keep.
+   nothing was clipped after the solve: the law kept its own walls.
+```
+
+![Waypoint following, command beside actual: surge speed against its command, heading against the LOS command, the cross-track error, the three force components asked and delivered, and the track with the hull drawn every few metres](W07_simulink/img/W07_wpt_cmd.png)
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| top left, $u$ against $u_d$ | the two traces coincide except for a dip at each corner, and the mean is $0.945$ of $1.000$ | line 5: the surge PI holds its command until the turn costs more than $X_{\max}$ |
+| top centre, $\psi$ against $\psi_d$ | $\psi_d$ steps at each leg change and $\psi$ arrives a few seconds later; the worst error, $111.358^\circ$, is at the third corner | line 6: the PD has no derivative kick, so a step command is answered by a ramp in heading |
+| middle left, $y_e$ | three spikes of about $3$ m, one per corner, each decaying back to zero | lines 2 and 3: LOS drives $y_e$ to zero, and only a change of leg can make it large |
+| middle centre, $\tau_X$ | asked and applied lie on one line; the peak is $120.00$ N | lines 9 and 12: the cap is the inner loop's, and law 4 delivers what it is asked |
+| bottom left, $\tau_Y$ | flat at zero for the whole run | line 7: this model commands no sway at all |
+| bottom centre, $\tau_N$ | $\pm 150$ N m pulses at the corners and nothing between them | line 9: $N_{\text{lim}}$ is what a corner costs |
+| right, the track | the hull symbol points along the leg on the straights and across it at the corners | line 7: the path is followed by turning the bow, so heading and track differ only while turning |
+
+![Waypoint following against the actuator limits: shaft speed, signed thrust per unit and tilt angle each against their own limit lines, and the worst unit of the three expressed as a percentage of its limit](W07_simulink/img/W07_wpt_sat.png)
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| top left, shaft speed | four traces between $-101.41$ and $84.26$ rad/s, the limit lines never touched | line 10: $81.1\,\%$ of the limit, no sample on it |
+| top right, thrust | the astern cap is approached to $99.4\,\%$ but no sample sits on it | line 10: astern is the weaker of the two caps, so it is the one that is approached |
+| bottom left, tilt angle | flat at $0^\circ$ on the straights, hard against $\pm 45^\circ$ at each corner | line 11: a corner asks for a sideways force the servo cannot point at |
+| bottom right, headroom | the tilt trace reaches $100\,\%$ three times, the other two stay below $50\,\%$ | line 11: of the three limits only the servo runs out, and only at corners |
+
+| What to try | What to watch |
+|---|---|
+| leave only the `'B'` line in `SEC` and run | $\Delta = 2$, $5$, $10$ m give $0.395$, $0.446$ and $0.533$ m rms over the same $180$ s window — a shorter window than section `A`'s, which is why its $\Delta = 5$ row reads $0.446$ and not $0.467$. A shorter lookahead holds the line more closely, and turns harder to do it |
+| set `Delta = 1` in `W07_0_setup` and run section `A` | the heading command begins to chatter between legs — the outer loop's gain is $1/\Delta$, and the loop is now faster than the autopilot under it |
+| set `law = 1` in `W07_vars` and run section `A` | the corners widen: the force lost at $\pm 45^\circ$ is no longer recovered, and the cross-track error at a corner grows |
+| set `R_switch = 10` | the corners are cut: the next leg becomes active before the vessel has arrived, which lowers $y_e$ at the cost of not passing the waypoint |
+
+---
+
+## 7-15. Position and heading control, all three degrees at once
+
+**What is observed.** The route of §7-14 asked for no sway, because a conventional hull cannot produce any. Four tilting units can: §7-5 measured up to $295$ N of pure sway from the same hull. Holding a position and a heading at the same time is the manoeuvre that needs it, and it is the one manoeuvre for which this actuator arrangement exists.
+
+**The result.** Commanded from the origin at $0^\circ$ to $(10,\,10)$ m at $45^\circ$, the vessel arrives with an error of $0.000$ m and $0.003^\circ$. The heading settles in $2.98$ s and the position in $19.44$ s, with no overshoot on either axis. Surge and sway are commanded together throughout; the servo limit is reached at $155$ samples and, again, nothing is clipped.
+
+**Derivation.**
+
+1. The loop structure is the same cascade as §7-14 with the outer stage replaced. Position replaces guidance, a second Week 3 PI appears beside the first so that sway has its own loop, and the heading autopilot is unchanged.
+
+2. The outer loop is `add_position_loop`. The position error is formed in NED, where the command lives, and then rotated into the body frame, where the actuators live:
+
+$$\mathbf{p}_e = \mathbf{p}_d - \mathbf{p}, \qquad
+  \mathbf{p}_b = \mathbf{R}(\psi)^\top \mathbf{p}_e, \qquad
+  \boldsymbol{\nu}_d = g\,\operatorname{sat}\!\left(K_{p,\text{pos}}\,\mathbf{p}_b\right) .$$
+
+3. The rotation is the step that makes the cascade work, and it is the one rotation of Week 6 §6-3 in the same place. The inner loops control $u$ and $v$, which are measured along the hull, so a command expressed in north and east would ask them for something they do not control. Rotating first means the outer loop says "so far forward, so far to port", which is exactly what the two PIs can answer.
+
+4. The saturation is per axis, at $u_{\text{lim}} = 0.80$ m/s and $v_{\text{lim}} = 0.60$ m/s. Its effect is to turn the outer loop into a **speed-limited** approach: far from the target the command is the cap, and only inside $u_{\text{lim}}/K_{p,\text{pos}} = 2.67$ m does the proportional term take over. That is why the approach is a straight run followed by a soft arrival rather than an exponential decay.
+
+5. The gate $g$ is held at $1$ for the whole run. Week 6 §6-5 needed a mission state machine — turn first, then translate — because its single bow thruster made sway scarce: $Y_{\max} = 35.13$ N against $X_{\max} = 120$ N. Here all three degrees of freedom are commanded from the first step, and the state machine disappears rather than being switched off.
+
+6. The two inner loops are the Week 3 PI twice, one on $u$ driving $X$ and one on $v$ driving $Y$, with the same gains: $K_{p,u} = K_{i,u} = K_{p,v} = K_{i,v} = 200$. Week 6 ran the sway axis at $150$ because its tunnel thruster could deliver only $35.13$ N; with four tilting units the sway axis is no longer the weak one, so it is given the surge gains.
+
+7. The heading loop runs **in parallel**, not under the position loop. Its command is a Constant, $\psi_{\text{set}}$, and the vessel is free to hold any heading while travelling in any direction — which is the observable difference between this model and §7-14, where heading was the only steering authority there was.
+
+8. The demand is now $\boldsymbol{\tau}_d = [X,\ Y,\ N]^\top$ with all three live, and it goes to the same law-4 allocation block as §7-14. Nothing in the allocation stage changes between the two models; only what is asked of it does.
+
+9. The heading settles first, $2.98$ s to within $2^\circ$ and never leaving, because yaw has the least inertia and the most authority. Position settles in $19.44$ s to within $0.50$ m, with overshoot of $0.000$ m on both axes: an approach that spends most of its time on the speed cap arrives without overshooting, since the proportional term is already small when the cap releases.
+
+10. The peak measured surge speed is $0.836$ m/s against a commanded cap of $0.80$ m/s. The excess is the **inner** loop overshooting its own command, not the cap failing: the outer loop never asks for more than $0.80$.
+
+11. The peak force on the hull is $X = 120.00$ N, $Y = 119.97$ N, $N = 149.99$ N m — all three inner-loop saturations are active during the first seconds, which is the point of commanding three degrees of freedom at once. The worst difference between asked and applied is $0.9998$ N over the samples asking above $2$ N, the same regularisation residue as §7-14.
+
+12. The actuators behave as in §7-14 but work harder: $86.1\,\%$ of the shaft-speed limit and $99.5\,\%$ of the astern thrust cap, neither with a sample on it, and the servo at $\pm 45.00^\circ$ for $155$ samples with nothing clipped. A pure sway demand is the direction that asks a $\pm 45^\circ$ servo for $90^\circ$, which is §7-13's demand arriving by a different route.
+
+| Symbol | Quantity | Value or source |
+|---|---|---|
+| $\mathbf{p}_d$ | commanded position in NED | `p_d` $= [10;\,10]$ m |
+| $\psi_{\text{set}}$ | commanded heading | $45^\circ$, a Constant on the canvas |
+| $K_{p,\text{pos}}$ | outer-loop proportional gain | $0.30$ s$^{-1}$ |
+| $u_{\text{lim}},\,v_{\text{lim}}$ | per-axis speed caps of the outer loop | $0.80$, $0.60$ m/s |
+| $K_{p,v},\,K_{i,v}$ | sway PI | $200$, $200$ — the surge values |
+| $g$ | gate on the velocity command | held at $1$; Week 6 drove it from a state machine |
+| $T_{\text{pose}}$ | stop time | $60$ s, fixed: there is no end-of-mission event here |
+
+### Experiment 7-15 · Holding a position and a heading (20 min)
+
+```matlab
+W07_4_build_pose        % writes W07_pose_dp.slx and the block-diagram PNGs
+W07_pose_run            % runs the model and draws both figures
+```
+
+![Top level of W07_pose_dp: the position-loop subsystem turns the commanded position into a body-axis velocity command, the velocity loop and the heading autopilot form the three force components, and the law-4 allocation subsystem drives the Otter plant](W07_simulink/img/W07_pose_dp.png)
+
+![Inside the position loop: the error is formed in NED, rotated into the body frame by the transpose of the heading rotation, scaled by the outer-loop gain, saturated per axis and multiplied by the gate](W07_simulink/img/W07_pose_dp_pos.png)
+
+```
+==== W07 position and heading control, model W07_pose_dp ====
+  law 4,  target N 10 m  E 10 m  psi 45 deg,  Kp_pos 0.3
+  speed cap on the outer loop: u 0.8 m/s,  v 0.6 m/s
+  sections: A, B
+
+---- A  one run to the commanded pose ---------------------------
+
+  W07 position and heading hold with allocation law 4
+   run length                   60.00 s
+   commanded pose             N  10.00 m   E  10.00 m   psi  45.00 deg
+   reached pose               N  10.00 m   E  10.00 m   psi  45.00 deg
+   error at the end             0.000 m     0.003 deg
+   settling (never leaves)     19.44 s to 0.50 m     2.98 s to 2.00 deg
+   overshoot past the target  N  0.000 m   E  0.000 m
+   peak speed                 u  0.836 m/s (cmd cap 0.80)   v  0.570 m/s (cmd cap 0.60)
+   peak force on the hull     X 120.00 N   Y 119.97 N   N 149.99 N m
+   worst |asked - applied|     0.9998  N, over the samples asking above 2 N
+  position hold: are the four units inside their limits?
+      what          worst value        limit            used   samples on it
+   shaft speed  -101.46 ..   89.46   -101.74 ..  103.93     86.1 %           0
+   thrust        -66.34 ..   88.67    -66.71 ..  119.68     99.5 %           0
+   tilt angle    -45.00 ..   45.00    -45.00 ..   45.00    100.0 %         155
+   a limit was on at some samples, which is where the law earns its keep.
+   nothing was clipped after the solve: the law kept its own walls.
+```
+
+![Position and heading control, command beside actual: north and east against their commands, heading against its command, the two body-axis speeds against what the outer loop asked for, the three force components, and the track from the origin to the commanded pose](W07_simulink/img/W07_pose_cmd.png)
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| top row, $N$ and $E$ | both rise almost linearly for $15$ s, then bend onto $10$ m without crossing it | line 4: the approach is on the speed cap until the error falls inside $2.67$ m |
+| middle left, $\psi$ | at $45^\circ$ within $3$ s and flat afterwards, while the vessel is still far from the target | lines 7 and 9: heading is an independent command, and it is the fastest axis |
+| middle centre, $u$ and $v$ | both non-zero throughout the approach, and $u$ reaches $0.836$ against a command of $0.80$ | lines 6 and 10: sway has its own loop here, and the overshoot is the inner loop's |
+| bottom left, $\tau_X$ and $\tau_Y$ | asked and applied coincide; both saturate near $120$ N in the first seconds | line 11: all three inner saturations are active at the start |
+| bottom centre, $\tau_N$ | one pulse to $150$ N m at $t = 0$ and nothing afterwards | line 9: the heading manoeuvre is over before the translation has begun |
+| right, the track | the hull symbol holds $45^\circ$ along a path that is itself close to $45^\circ$, ending inside the dashed commanded pose | line 7: the heading is held, not derived from the direction of travel |
+
+![Position hold against the actuator limits: shaft speed, signed thrust per unit and tilt angle each against their own limit lines, with the worst unit of the three as a percentage of its limit](W07_simulink/img/W07_pose_sat.png)
+
+| Where to look | What is there | Which line predicts it |
+|---|---|---|
+| top left, shaft speed | between $-101.46$ and $89.46$ rad/s, $86.1\,\%$ of the limit, nothing on it | line 12: harder than §7-14 but still inside |
+| top right, thrust | the astern cap is approached to $99.5\,\%$ during the first four seconds | line 11: the opening transient is where all three demands peak together |
+| bottom left, tilt angle | hard against $\pm 45^\circ$ for the first four seconds, then smoothly back to $0^\circ$ | line 12: a large sway demand is what asks the servo for more than it has |
+| bottom right, headroom | all three reach or approach $100\,\%$ early and fall below $5\,\%$ after $20$ s | lines 9 and 12: once the vessel is on station, holding it costs almost nothing |
+
+| What to try | What to watch |
+|---|---|
+| leave only the `'B'` line in `SEC` and run | $K_{p,\text{pos}} = 0.15$, $0.30$, $0.60$ settle in $26.08$, $19.44$ and $17.48$ s while peak $\lvert u\rvert$ stays at $0.836$ — past a point the cap sets the approach, not the gain |
+| set `psi_set = deg2rad(0)` and run section `A` | the vessel reaches the same point holding $0^\circ$: the path is unchanged, and the four units simply redistribute between surge and sway |
+| set `v_lim = 0` | the manoeuvre becomes §7-14's: no sway is commanded, and the position loop can only drive the vessel along its own bow |
+| set `p_d = [40; 0]` and raise `T_pose` to $120$ | the approach spends almost all of its time on the cap, and the settling time becomes distance divided by $u_{\text{lim}}$ |
+
+> [!note] Two models, one limit figure
+> `W07_plot_sat` draws the four actuator panels for both sections. The question is the same — are the units inside their limits — so the figure exists once and is called twice. A copy in each plotting script would drift the moment one of them was corrected.
+
+---
+
 # Part 2 · Laboratory run order
 
-The week runs out of **two files**. Every experiment of Part 1 is a block inside one of them.
+The week runs out of **four files**. Every experiment of Part 1 is a block inside one of them.
 
 | Experiment | Model | Script | What it shows |
 |---|---|---|---|
@@ -2078,6 +2325,8 @@ The week runs out of **two files**. Every experiment of Part 1 is a block inside
 | 7-11 | `W07_alloc_chain` | `W07_alloc_run`, section `7-11` | the cost of one step, and what the switch does **not** save |
 | 7-12 | `W07_alloc_chain` | `W07_alloc_run`, section `7-12` | law 4 with both limits inside the solve, and the $\varepsilon$ and $\mathbf{Q}$ sweeps |
 | 7-13 | `W07_alloc_chain` | `W07_alloc_run`, section `7-13` | the four laws side by side, one constant apart |
+| 7-14 | `W07_wpt_los` | `W07_3_build_wpt`, `W07_wpt_run` | the four-leg route under law 4, and the $\Delta$ sweep |
+| 7-15 | `W07_pose_dp` | `W07_4_build_pose`, `W07_pose_run` | the pose command at $(10,\,10)$ m and $45^\circ$, and the $K_{p,\text{pos}}$ sweep |
 
 **Choosing what runs.** Each file carries one list near its top, and one line of that list is one unit of work. Put a `%` in front of a line and it drops out; leave the file as it is and everything runs.
 
@@ -2085,10 +2334,12 @@ The week runs out of **two files**. Every experiment of Part 1 is a block inside
 |---|---|---|
 | `W07_openloop_run.m` | `S`, eight rows | one scenario, `S1` to `S8` |
 | `W07_alloc_run.m` | `SEC`, six rows | one section, §7-8 to §7-13 |
+| `W07_wpt_run.m` | `SEC`, two rows | `A` the whole route, `B` the lookahead sweep |
+| `W07_pose_run.m` | `SEC`, two rows | `A` one run to the pose, `B` the outer-gain sweep |
 
-**Running a model by hand.** Either file leaves the first selected case in the base workspace — `n_cmd` and `d_cmd` for `W07_openloop`, `law` and `tau_cmd` for `W07_alloc_chain`. Opening that `.slx` and pressing Run repeats that one case, so the model file itself is never edited.
+**Running a model by hand.** Every runner leaves the first selected case in the base workspace — `n_cmd` and `d_cmd` for `W07_openloop`, `law` and `tau_cmd` for `W07_alloc_chain`, the whole constant set for the two closed-loop models. Opening that `.slx` and pressing Run repeats that one case, so the model file itself is never edited. The two closed-loop models also draw the live view while they run, because `W07_0_setup` leaves `animate` at $1$ while the runners set it to $0$: a person pressing Run wants to watch, and a sweep of three gains does not.
 
-**Neither file implements anything the model implements.** `W07_vars` holds the values, `W07_plot` and `W07_plot_ca` draw, and the whole of `W07_alloc_run`'s contact with the four laws is three lines of its local `set_vars`: `law` and `tau_cmd` go onto the base workspace, the two logs are cleared, and `sim` is called. Changing a law therefore means changing a block inside `W07_alloc_chain` and nothing else — there is no second copy of any law in any `.m` of this week.
+**No runner implements anything a model implements.** `W07_vars` holds the values, `W07_plot`, `W07_plot_ca`, `W07_plot_wpt`, `W07_plot_pose` and `W07_plot_sat` draw, and the whole of `W07_alloc_run`'s contact with the four laws is three lines of its local `set_vars`: `law` and `tau_cmd` go onto the base workspace, the two logs are cleared, and `sim` is called. The two closed-loop runners are thinner still — they set constants and call `sim`. Changing a law therefore means changing a block inside a model and nothing else; there is no second copy of any law, any guidance expression or any gain in any `.m` of this week.
 
 > [!note] One run order, four sections
 > Sections 7-3 to 7-6 read the **same eight 30-s runs**: block (1) compares the force throughout each, block (2) reads the end of each, and block (3) draws each. Running them apart would send the vessel out twenty-four times for eight trajectories.
@@ -2120,6 +2371,10 @@ The week runs out of **two files**. Every experiment of Part 1 is a block inside
 | 17 | the shaft-speed limit shown to be the thrust cap | $119.682$ N ahead and $66.708$ N astern, the astern cap $56\%$ of the ahead one |
 | 18 | both limits put inside the solve, the force measured out of the hull | at $[340,\,60,\,25]$ the error falls $39.066 \to 0.018$ N, and law 4 is the only law with no unit clipped |
 | 19 | the four laws put into one model, selected by one constant | $28.333$, $29.677$, $29.677$ and $39.989$ N delivered of a $40$ N sway demand |
+| 20 | a four-leg route flown under law 4 with LOS guidance over the speed and heading loops | $0.467$ m rms cross-track, $71$ samples on the servo limit, $0$ clipped |
+| 21 | the lookahead distance swept over the same route | $\Delta = 2$, $5$, $10$ m give $0.395$, $0.446$, $0.533$ m rms over one $180$ s window |
+| 22 | position and heading commanded together, with sway on its own loop | $(10,\,10)$ m and $45^\circ$ reached to $0.000$ m and $0.003^\circ$ |
+| 23 | the outer-loop gain swept against the speed cap | $K_{p,\text{pos}} = 0.15$, $0.30$, $0.60$ settle in $26.08$, $19.44$, $17.48$ s at peak $\lvert u\rvert = 0.836$ m/s throughout |
 
 ---
 
@@ -2145,6 +2400,11 @@ The week runs out of **two files**. Every experiment of Part 1 is a block inside
 - [ ] Able to show that $\lvert n_i\rvert \le n_{\max}$ and $\lvert T_i\rvert \le k_i n_{\max}^2$ are the same constraint, and give both cap values
 - [ ] Able to say why the chord polygon of §7-12 can never break the cap, and where its worst $3.41\%$ sits
 - [ ] Able to say why a scalar $\rho$ after the solve costs force in components no unit was straining
+- [ ] Able to say why only one of the four laws belongs in a closed loop, and what the other three lose into the position of the vessel
+- [ ] Able to linearise the LOS law for small $y_e$ and state the gain of the outer loop in terms of $\Delta$
+- [ ] Able to say why the position error is rotated into the body frame before it reaches the two velocity loops
+- [ ] Able to say why the per-axis speed cap makes an approach arrive without overshoot, and at what distance the proportional term takes over
+- [ ] Able to say why the heading loop is parallel to the position loop here and was sequential in Week 6
 
 ### Laboratory
 
@@ -2161,6 +2421,11 @@ The week runs out of **two files**. Every experiment of Part 1 is a block inside
 - [ ] with only `'7-13'` left, it ran the model four times and wrote `img/W07_alloc_chain_law1.png` … `_law4.png`
 - [ ] `W07_2_build_alloc` ran and printed overlaps 0, diagonals 0
 - [ ] `W07_alloc_chain` was opened and Run was pressed with `law` changed by hand on the canvas, and the six-panel figure named the law it had just run
+- [ ] `W07_3_build_wpt` and `W07_4_build_pose` ran and each printed overlaps 0, diagonals 0
+- [ ] `W07_wpt_run` ran with both lines of `SEC` and wrote `img/W07_wpt_cmd.png` and `img/W07_wpt_sat.png`
+- [ ] `W07_pose_run` ran with both lines of `SEC` and wrote `img/W07_pose_cmd.png` and `img/W07_pose_sat.png`
+- [ ] each of the two models was opened and Run pressed, and the live view drew the hull along the route and onto the commanded pose
+- [ ] both limit figures were read, and the tilt panel was the only one of three with samples on its limit
 
 ### Recorded observations
 
@@ -2172,6 +2437,10 @@ The week runs out of **two files**. Every experiment of Part 1 is a block inside
 - [ ] The per-step cost of the model and the `lsqlin` count beside it, and what the count proves that the timing could not
 - [ ] The two thrust caps of §7-12 line 4, and which of the two bound the pure-surge demand of table (1)
 - [ ] The force error of law 3 and of law 4 at $\boldsymbol{\tau}_d = [340;\,60;\,25]$, read off the motion model, and the unit that was clipped
+- [ ] The worst cross-track error of the route, where on the route it happened, and why it is not a failure of the guidance law
+- [ ] The number of samples on the servo limit in each of the two closed-loop runs, and the number clipped at them
+- [ ] The peak measured surge speed of §7-15 against the outer loop's cap, and which loop the excess belongs to
+- [ ] The settling time at the three outer-loop gains, and the gain past which the cap rather than the gain sets the approach
 
 ---
 
@@ -2189,6 +2458,7 @@ Requirements 1 to 3 are three runs of `W07_openloop`, each one eight numbers giv
 3. **Break it deliberately.** Take the solution of requirement 2 and change one shaft speed by 10 %. Report what appears in $X$, $Y$ and $N$, and say which of the three asymmetries the change exposed.
 4. **Let the allocator choose, and audit it.** Take the pure-sway demand solved by hand in requirement 2 as `tau_cmd`, scale its sway component until the servo limit is exceeded, put $\mathbf{W} = \operatorname{diag}([1\ 10\ 1\ 10\ 1\ 10\ 1\ 10])$ on the workspace as `W_alloc`, and run `W07_alloc_chain` four times with `law` set to $1$, $2$, $3$ and $4$ in turn. Read all four reports off the per-unit table the model's own `StopFcn` prints: for each law report the worst `d asked`, how many units carry a `servo` or `rpm` tag, and the `tau delivered` line with its error. State for which laws `d asked` and `d allowed` differ, and say what the plant did with the command it could not execute. The error printed there is measured **out of the motion model**, so explain why it is not the same quantity as $\lVert\mathbf{B}\mathbf{f} - \boldsymbol{\tau}_d\rVert$ computed from the eight components the allocator chose.
 5. **Find the second limit, and measure past it.** Derive both thrust caps from `otter_config('quad_tilt')` by §7-12 line 3 — not by copying $119.682$ N and $66.708$ N — and state which of the two binds a pure surge demand and why. Then raise a pure surge demand `tau_cmd = [X_d; 0; 0]` from $X_d = 100$ N in steps, with `law = 3`, until the per-unit table first shows an `rpm` tag, report that $X_d$ against the $372.78$ N envelope corner of §7-12 line 4, and press Run again on the same demand with `law = 4`. For both laws report the four $T_i$ with the cap beside each, the worst `n asked`, the clip tags and the `tau delivered` error. Explain the direction in which law 4 moved the load between the two pairs, and why the scalar $\rho$ of §7-8 line 4-a could not have done the same.
+6. **Close the loop, and find the limit from inside it.** Run `W07_pose_run` with only the `'A'` line of `SEC`, then change `p_d` to a freely chosen pose at least $15$ m away and run again. Predict the settling time before running it, from $\lVert\mathbf{p}_d\rVert$ and $u_{\text{lim}}$ by §7-15 line 4, and report the prediction beside the measurement. Then lower `v_lim` to $0.20$ m/s and run a third time: report what happens to the path, to the peak $\lvert\delta_i\rvert$ of the limit figure, and to the settling time, and say which of the three the cap acted on directly. Finally set `law = 1` in `W07_vars` and repeat the first run: report the clip count of the limit figure and the final pose error, and explain why the clipped force shows up as a position error rather than as a force error.
 
 ### ② Verification — mandatory
 
@@ -2206,12 +2476,13 @@ Requirements 1 to 3 are three runs of `W07_openloop`, each one eight numbers giv
 | for requirement 5, the two thrust caps | each one as $k_i n_{\lim}^2$ with the coefficient named, and their ratio |
 | for requirement 5, one row per law | the four $T_i$, the worst `n asked`, the clip tags, and $\lVert\boldsymbol{\tau}_{\mathrm{act}} - \boldsymbol{\tau}_d\rVert$ |
 | for requirement 5, the measurement itself | the `tau delivered` line of the model's table, which comes out of `otter_tilt4` by §7-12 line 17, not a residual recomputed from $\mathbf{f}$ |
+| for requirement 6, one row per run | the predicted and the measured settling time, the final pose error in m and deg, and the three `samples on it` and clip counts of the limit figure, with `law`, `p_d` and `v_lim` named |
 
 A run whose predicted and measured forces disagree by more than rounding is a mistake in the prediction, not in the model. Find it before reporting. Law 4 reads its own exit flag before it accepts a candidate (§7-12 line 14) and falls back to the closed form of §7-9 when no sign combination is feasible, so a law-4 answer that looks like law 2's answer is the fallback and must be reported as one, not as a solve.
 
 ### ③ Analysis (5–10 lines)
 
-Requirement 2 asked for a pure sway and the vessel can produce one, while requirement 1's command cannot. Explain which freedom made the difference, counting it against the five null-space dimensions of §7-1. Then compare requirement 4 against requirements 1 to 3: state which of the two directions of arithmetic has a unique answer and which does not, name what law 4 searched that law 2 did not, and say what the hand solution would have to be redone for if the demanded force changed every 20 ms. Close with requirement 5: state which of the two limits a law can satisfy without knowing the other, and why a residual reported by the allocator is not a statement about the hull.
+Requirement 2 asked for a pure sway and the vessel can produce one, while requirement 1's command cannot. Explain which freedom made the difference, counting it against the five null-space dimensions of §7-1. Then compare requirement 4 against requirements 1 to 3: state which of the two directions of arithmetic has a unique answer and which does not, name what law 4 searched that law 2 did not, and say what the hand solution would have to be redone for if the demanded force changed every 20 ms. Close with requirements 5 and 6: state which of the two limits a law can satisfy without knowing the other, why a residual reported by the allocator is not a statement about the hull, and where the same residual ends up once the allocator sits inside a loop.
 
 ### Grading
 
@@ -2246,6 +2517,11 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 | A law that keeps every $\delta_i$ inside $45^\circ$ still drives a shaft past $n_{\min}$ | the servo limit and the thrust cap are two different limits, and law 3 holds only the first | set `law = 4`, which adds the chord rows of §7-12 line 6. The `limit` column of the per-unit table is the check: law 4 is the only law whose column is `-` in all four rows |
 | An allocation reports a residual of $0$ while the hull produces a visibly different force | the residual was computed as $\lVert\mathbf{B}\mathbf{f} - \boldsymbol{\tau}_d\rVert$ inside the allocator, where the hardware limits have not yet been applied | read `tau_act`, the plant's second output, which `otter_tilt4` computes from the clipped $n_i$ and $\delta_i$ (§7-12 line 17). It is column 5 to 7 of `W07ca_log`, and the per-unit table prints it as `tau delivered` |
 | Law 2 and law 3 report **identical** force errors, which makes the fold look pointless | the plant clips at exactly the angle law 3 folded to, so the two deliver the same force | expected, and Experiment 7-10 measures it: $12.864$ N under both. The fold earns nothing in delivered force; it earns a command the allocator *knows* is legal, which a controller computing its own force error needs |
+| The limit figure reports `100.0 %` used on the tilt axis and `0` samples clipped, which reads as a contradiction | the two columns count different events: `used` is the worst angle as a fraction of the limit, and `samples on it` counts samples *at* the limit, while the clip count is how often the plant had to cut the command back | expected under law 4 only. The limit is inside the solve (§7-12 line 6), so a unit may sit exactly on $\pm 45^\circ$ with nothing left to cut. Set `law = 1` in `W07_vars` and the clip count stops being zero |
+| `W07_wpt_run` or `W07_pose_run` runs with no live view, while pressing Run on the model shows one | the runners set `animate = 0` and `W07_0_setup` sets it to $1$ | expected. The Animate block is never removed, only told to do nothing; a sweep of three gains does not want three live views |
+| The run ends well before `T_wpt` | the guidance block drops `gate` at the last waypoint and a Stop Simulation block ends the run `stop_hold` seconds later | expected: $274.12$ s of a $400$ s stop time. `T_wpt` is an upper bound, not the run length |
+| A reader written by hand indexes the allocator log and gets a scalar where a column was expected | a To Workspace block in `'Array'` format writes a column-vector signal as $24\times1\times N$, not $N\times24$ | `squeeze` first and then transpose, as `W07_plot_sat` does, and assert the width before using it |
+| A legend placed inside the axes of a limit figure covers the `n_min` and `astern cap` labels | the limit lines are drawn with `yline`, whose labels sit at the right-hand edge inside the axes | put the legend outside with `'Location','southoutside'`, which is what the shared `W07_plot_sat` does |
 
 ---
 
@@ -2284,12 +2560,21 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 - `W07_simulink/W07_alloc_run.m` — the one entry point of §7-8 to §7-13: comment a line out of its `SEC` list and that section does not run. It implements no allocation law; it sets `law` and `tau_cmd` and calls `sim`
 - `W07_simulink/W07_openloop_run.m` — the one entry point of §7-2 to §7-6, with the eight scenarios of §7-5 in its `SCN` list
 - `W07_alloc_chain`, subsystem `allocation` — four MATLAB Function blocks, each holding one of laws 1 to 4 complete, with a Multiport Switch selecting one of them from the `law` constant of §7-13
+- `W07_simulink/W07_wpt_run.m` — the one entry point of §7-14, two lines in its `SEC` list. It sets constants and calls `sim`
+- `W07_simulink/W07_pose_run.m` — the one entry point of §7-15, two lines in its `SEC` list
+- `W07_wpt_los`, subsystem `guidance` — Week 5's lookahead LOS law with the leg counter in a visible Unit Delay; `_tools/add_guidance.m` builds it
+- `W07_pose_dp`, subsystem `position loop` — the NED error, the rotation into the body frame, the gain and the per-axis cap; `_tools/add_position_loop.m` builds it
+- `_tools/add_speed_loop.m` and `_tools/add_heading_loop.m` — the Week 3 PI and the Week 4 PD, one function each, called by both closed-loop builders rather than copied into either
+- `_tools/add_allocation_tilt4.m` — the allocation subsystem of all three models of this week: four laws behind a switch for §7-8 to §7-13, one law and no switch for §7-14 and §7-15
+- `W07_simulink/W07_plot_sat.m` — the actuator-limit figure of both closed-loop sections, written once and called twice
+- **Week 5 §5-3 — the lookahead LOS law** that §7-14 reuses unchanged, including why the lookahead distance and not a gain is the tuning knob, and §5-4 for the switching radius
+- **Week 6 §6-3 — three loops and the one rotation between them**, which §7-15 repeats with a second velocity loop instead of a bow thruster, and §6-5 for the latched phases this week does without
 
 ---
 
 ## Next Week
 
-- **The closed loop, and what the allocator owes it.** §7-7 to §7-12 assumed the three demanded numbers arrived from outside. Closing the loop puts a controller in front of the allocator, and three of this week's measurements then become the controller's problem: the force error a constrained law pays (§7-10) is a disturbance the controller did not ask for, the per-step cost of the allocator (§7-11) is dead time inside the loop, and the gap between the force the allocator reported and the force the hull received (§7-12) is a model error the controller must reject without ever being told of it
-- The five null-space dimensions counted in §7-1 are now spent three ways — minimum norm, a price list, and sixteen convex subsets — and none of the three asked what the hull was trying to do
-- What must be prepared: the three asymmetries of §7-4 stated from memory with the numbers $0.5817$, $0.25$ m and $45^\circ$ attached to the right one, and the four allocation laws of §7-8 to §7-12 ranked by what each one gives up
-- What is deliberately left open: servo rate limits, singularity-free azimuth handling, and solving the sixteen subsets offline rather than every step
+- **Disturbance, and what a loop cannot absorb quietly.** §7-14 and §7-15 closed the loop around the one law that keeps its own limits, so three of this week's measurements are now inside a loop rather than beside it: the force error a constrained law pays (§7-10) is a disturbance the controller did not ask for, the per-step cost of the allocator (§7-11) is dead time, and the residue between asked and applied force — $0.9890$ N on the route and $0.9998$ N on the pose — is a model error the controller rejects without ever being told of it. With wind and current added, those three stop being small
+- The servo limit was reached at $71$ samples of the route and $155$ of the pose with **nothing clipped**. The question that follows is what happens when the demand is past the envelope rather than on its edge, which is where law 4's fallback of §7-12 line 14 starts to matter
+- What must be prepared: the three asymmetries of §7-4 stated from memory with the numbers $0.5817$, $0.25$ m and $45^\circ$ attached to the right one, the four allocation laws of §7-8 to §7-12 ranked by what each one gives up, and the three-loop cascade of §7-15 drawn from memory with the rotation in the right place
+- What is deliberately left open: servo rate limits, singularity-free azimuth handling, solving the sixteen subsets offline rather than every step, and an estimator between the measurement and the loops
