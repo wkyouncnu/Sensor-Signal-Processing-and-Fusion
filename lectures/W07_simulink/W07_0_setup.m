@@ -82,7 +82,15 @@ d_cmd = deg2rad(d_deg);          % 틸팅 각 delta [rad] — 모델이 받는 �
 %      2  가중 최소노름           / weighted minimum norm              7-9
 %      3  가중 + 각 한계로 접기   / weighted, folded onto the limit     7-10
 %      4  두 한계를 제약으로      / both limits as constraints   7-10 · 7-12
-law     = 1;
+%
+%  **기본값은 4 다** (사용자 지시, 2026-11-15). 이 강의의 판정 기준이 "배분기가
+%  의도한 힘" 이 아니라 "선체가 실제로 받은 힘" 이고, 한계 근처에서 그 둘이
+%  같은 법칙은 4 뿐이다 — §7-12 의 `Which of the four laws to use` 표.
+%  1·2·3 은 각각 실패 하나씩을 떼어 보여주려고 모델에 남아 있다.
+%  The default is 4: this course judges the hull, not the allocator, and law 4
+%  is the only law whose answer is what the hull receives near a limit. Laws 1
+%  to 3 remain so that each isolates one failure a student can recognise.
+law     = 4;
 
 %  **요구를 왜 순수 횡력으로 두는가** / why the demand is pure sway
 %      네 법칙이 서로 다른 답을 내는 요구여야 비교가 된다. 횡력만 40 N 을

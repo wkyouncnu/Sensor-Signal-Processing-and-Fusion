@@ -1885,7 +1885,7 @@ The first panel is the argument of this section drawn once: laws 1, 2 and 3 all 
 > | 3 · weighted, folded onto the servo limit | a command must be legal in the angle and the extra cost of a solver cannot be paid. The fold is a few lines of arithmetic and it guarantees the servo never asks for a stop | the thrust cap can bind — it is not in the problem, and §7-10 measured that folding changes the delivered force without the allocator knowing |
 > | 4 · both limits as constraints | the hull is worked near its envelope, where a demand can reach either limit. It is the only law whose answer is what the hull receives | the step budget cannot hold sixteen quadratic programs, or the demand is known to stay far inside every limit, where it costs a solver to reproduce law 2's answer |
 >
-> For this course's purpose — a controller that runs the Otter near its limits and must be judged on what the hull did, not on what the allocator intended — **law 4 is the default**, and §7-11 measures what it costs at $50$ Hz. Laws 1 to 3 are in the model because each one isolates a single failure a student can then recognise: law 1 ignores that the units differ, law 2 ignores that the hardware has stops, law 3 ignores that a thrust has a ceiling.
+> For this course's purpose — a controller that runs the Otter near its limits and must be judged on what the hull did, not on what the allocator intended — **law 4 is the default**, and it is the value `W07_0_setup` leaves on the workspace, so opening `W07_alloc_chain` and pressing Run exercises law 4 unless the number is changed. §7-11 measures what it costs at $50$ Hz. Laws 1 to 3 are in the model because each one isolates a single failure a student can then recognise: law 1 ignores that the units differ, law 2 ignores that the hardware has stops, law 3 ignores that a thrust has a ceiling.
 
 > [!note] What this week does not do
 > Three things are deliberately left out, and each has a reason.
@@ -1932,7 +1932,7 @@ The first panel is the argument of this section drawn once: laws 1, 2 and 3 all 
 
 | Symbol | Quantity | Value or source |
 |---|---|---|
-| `law` | Constant selecting the allocation law | $1$, $2$, $3$ or $4$; set in `W07_0_setup` |
+| `law` | Constant selecting the allocation law | $1$, $2$, $3$ or $4$; set in `W07_0_setup`, where the default is $4$ |
 | $\boldsymbol{\tau}_d$ | demanded generalised force | `tau_cmd` $= [0;\,40;\,0]$, N and N m |
 | $\boldsymbol{\tau}_{\text{act}}$ | force the hull received | second output of the `Otter hull` block |
 | $\alpha_{\max}$ | servo travel | $45^\circ$, `otter_config('quad_tilt')` |
