@@ -1,5 +1,5 @@
-%W07_ALLOC_RUN  7주차 제어배분 — **모델을 돌려서** §7-8 부터 §7-13 까지를 낸다.
-%               Week 7 control allocation: 7-8 to 7-13, all of it by running
+%W07_ALLOC_RUN  7주차 제어배분 — **모델을 돌려서** §7-8 부터 §7-12 까지를 낸다.
+%               Week 7 control allocation: 7-8 to 7-12, all of it by running
 %               the model.
 %
 %  이 파일이 **하지 않는** 일 / what this file does NOT do
@@ -97,9 +97,8 @@ SEC = { ...
     '7-8'   'the minimum-norm solution, straight out of the block'
     '7-9'   'the weight matrix W, swept'
     '7-10'  'the servo-angle limit: law 2 against law 3'
-    '7-11'  'how long one solve takes, the four laws timed'
-    '7-12'  'the thrust cap as well: law 4, and how Q and eps are tuned'
-    '7-13'  'the four laws side by side, out of one model'
+    '7-11'  'the thrust cap as well: law 4, and how Q and eps are tuned'
+    '7-12'  'the four laws side by side, out of one model'
 };
 
 tau_nom  = [  0 ;  40 ;  0];    % 순수 횡방향 — 서보 한계를 건드린다 / servo-binding
@@ -267,80 +266,9 @@ sgtitle('7-10  a limit the solver never saw, and a fold that respects it', ...
 savepng(fig, fullfile(here, 'img', 'W07_alloc_limits.png'));
 end
 
-%% §7-11  한 번 푸는 데 걸리는 시간, 그리고 스위치가 무엇을 고르는가 ---------
+%% §7-11  두 한계 모두 — 법칙 4, 그리고 Q 와 eps -----------------------------
 if want('7-11')
-hdr('7-11', 'what one solve costs, and what the switch does not save');
-
-%  한 번의 `sim` 에는 **고정비**가 있다 — 초기화·로그 기록·창 닫기. 그 고정비가
-%  배분 한 번보다 훨씬 커서, 총 시간을 스텝 수로 나누면 네 법칙이 모두 같아
-%  보인다. 그래서 **정지 시각 둘**에서 재고 기울기를 쓴다 — 고정비가 상쇄되고
-%  한 스텝의 값만 남는다.
-%  One sim carries a fixed cost -- initialise, log, close -- far larger than one
-%  allocation solve, so dividing the total by the number of steps makes the four
-%  laws look identical. Timing at two stop times and taking the slope cancels
-%  that fixed cost and leaves the cost of one step.
-%  **짧은 쪽과 긴 쪽의 차이가 커야** 기울기가 잡음에 묻히지 않는다. 1 s 와 5 s
-%  로는 네 법칙의 차이가 측정 오차 안에 들어간다 — 1 s 와 20 s 로 벌린다.
-%  The two stop times must be far apart or the slope drowns in noise: at 1 s
-%  against 5 s the four laws fall inside the measurement error. 1 s against
-%  20 s gives ten times the resolution.
-T_TIME = 20;
-fprintf('  a fixed cost (initialise, log, close) dominates one sim, so the\n');
-fprintf('  laws are timed at two stop times and the slope is taken: the fixed\n');
-fprintf('  cost cancels and the cost of one step is what is left.\n');
-fprintf('        law   t(1 s) [s]  t(20 s) [s]   per step [ms]   relative to law 1\n');
-tms = zeros(1,4);
-for k = 1:4
-    T_final = T_SWEEP;  %#ok<NASGU>
-    set_vars(k, tau_nom);  sim(mdl);                % 예열 / warm-up, discarded
-    set_vars(k, tau_nom);
-    t0 = tic;  sim(mdl);  w1 = toc(t0);
-    Rt = read_logs(k);  s1 = Rt.steps;
-    T_final = T_TIME;  %#ok<NASGU>
-    set_vars(k, tau_nom);
-    t0 = tic;  sim(mdl);  w2 = toc(t0);
-    Rt = read_logs(k);  s2 = Rt.steps;
-    tms(k) = 1e3 * (w2 - w1) / (s2 - s1);
-    fprintf('   %10d %12.2f %12.2f %15.3f %18.1f\n', k, w1, w2, ...
-            tms(k), tms(k) / tms(1));
-end
-fprintf('  the four rows agree to within %.0f %%, which is the measurement\n', ...
-        100 * (max(tms) - min(tms)) / min(tms));
-fprintf('  itself. the next table says why.\n');
-
-%  스위치는 **출력**을 고를 뿐, 계산을 고르지 않는다. 고르지 않은 가지의 블록도
-%  매 스텝 돈다 — 그래서 `law` 가 1 이어도 법칙 4 의 `lsqlin` 이 다 돌아간다.
-%  벽시계로는 보이지 않으니 **프로파일러로 호출 횟수를 센다.**
-%  A Multiport Switch picks an output, not a computation: the blocks on the
-%  branches it did not pick still run every step. With law = 1 the lsqlin calls
-%  of law 4 are all still made. Wall time cannot see that, so the calls are
-%  counted with the profiler.
-fprintf('  how many constrained solves each step really makes, counted by the\n');
-fprintf('  profiler -- `law` selects an output, not a computation\n');
-fprintf('        law   steps   lsqlin calls   calls per step\n');
-for k = 1:4
-    T_final = T_SWEEP;  %#ok<NASGU>
-    set_vars(k, tau_nom);  sim(mdl);                % 예열 / warm-up
-    profile off; profile clear; profile on
-    sim(mdl);
-    profile off
-    S  = profile('info');
-    nm = {S.FunctionTable.FunctionName};
-    i0 = find(strcmp(nm, 'lsqlin'), 1);
-    nc = 0;
-    if ~isempty(i0), nc = S.FunctionTable(i0).NumCalls; end
-    Rt = read_logs(k);
-    fprintf('   %10d %7d %14d %16.2f\n', k, Rt.steps, nc, nc / Rt.steps);
-end
-profile clear
-fprintf('  every row is the same: on real hardware one law is built, not four\n');
-fprintf('  (a Variant Subsystem), and then the cost of that law is what runs\n');
-T_final = T_SWEEP;
-end
-
-%% §7-12  두 한계 모두 — 법칙 4, 그리고 Q 와 eps -----------------------------
-if want('7-12')
-hdr('7-12', 'the thrust cap as well: law 4, and how Q and eps are tuned');
+hdr('7-11', 'the thrust cap as well: law 4, and how Q and eps are tuned');
 T_final = T_SWEEP;
 Q_tau   = eye(3);  %#ok<NASGU>
 eps_reg = 1e-4;  %#ok<NASGU>
@@ -409,13 +337,13 @@ title(sprintf('Demand [%g %g %g]', tau_hard), 'FontSize', 9);
 subplot(2,2,4);
 quad_thrust_plan(quadq, RH(4).T, RH(4).d_got, tau_hard(1:2).', ...
                  'Law 4: inside both limits, and still on the demand');
-sgtitle('7-12  two limits at once, and what they cost each law', 'FontSize', 11);
+sgtitle('7-11  two limits at once, and what they cost each law', 'FontSize', 11);
 savepng(fig, fullfile(here, 'img', 'W07_chain_sat.png'));
 end
 
-%% §7-13  법칙 넷을 한 모델에서 ---------------------------------------------
-if want('7-13')
-hdr('7-13', 'the four laws side by side, out of one model');
+%% §7-12  법칙 넷을 한 모델에서 ---------------------------------------------
+if want('7-12')
+hdr('7-12', 'the four laws side by side, out of one model');
 T_final  = T_SHOW;
 W07quiet = false;  %#ok<NASGU>  % StopFcn 이 진단 그림 여섯 칸을 낸다 / six panels each
 
@@ -448,7 +376,7 @@ bar(arrayfun(@(R) norm(R.e), RS)); grid on
 set(gca, 'XTickLabel', {'law 1','law 2','law 3','law 4'});
 ylabel('||tau delivered - tau demanded||  [N]');
 title('The same model, the same demand, four answers', 'FontSize', 9);
-sgtitle('7-13  one model, four laws, chosen by the Constant `law`', 'FontSize', 11);
+sgtitle('7-12  one model, four laws, chosen by the Constant `law`', 'FontSize', 11);
 savepng(fig, fullfile(here, 'img', 'W07_chain_tau.png'));
 
 fprintf('\n  which law to use\n');

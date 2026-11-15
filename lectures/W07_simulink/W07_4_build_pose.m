@@ -23,7 +23,7 @@
 %   6주차와 무엇이 다른가 / what differs from Week 6
 %       6주차의 선체는 횡방향으로 **선수 추진기 하나**밖에 없어서 횡력이 귀했고,
 %       그래서 임무 상태기계가 "먼저 돌고, 그 다음 옆으로" 를 시켰다. 네 틸팅
-%       추진기는 횡력을 순수하게 295 N 까지 낸다 (§7-13 의 측정). 그러므로 이
+%       추진기는 횡력을 순수하게 295 N 까지 낸다 (§7-12 의 측정). 그러므로 이
 %       주차의 위치 제어는 상태기계가 없다 — 세 자유도를 **동시에** 명령하고,
 %       배분기가 그것을 나눠 준다. gate 는 상수 1 로 켜 둔다.
 %       Week 6 had a single bow thruster, so sway was scarce and a mission
@@ -148,14 +148,20 @@ goto_at(m, {'Otter USV', 1}, port_xy(m, 'Otter USV', 'Outport', 1), 'up',   'x')
 goto_at(m, {'Otter USV', 2}, port_xy(m, 'Otter USV', 'Outport', 2), 'down', 'tau_act');
 
 % ---- 계측 / measurement --------------------------------------------------
-%  열 열일곱 / seventeen columns
+%  열 스물다섯 / twenty-five columns
 %    1 u   2 v   3 r   4 N   5 E   6 psi [deg]
 %    7-8 p_d [N_d E_d]   9 psi_d [deg]   10-11 nu_d [u_d v_d]
 %   12-14 tau_cmd [X Y N]               15-17 tau_act [X Y N]
-extra = {'p_d', 'psi_d_deg', 'nu_d', 'tau_cmd', 'tau_act'};
+%   18-21 n [rad/s]              한계를 지난 뒤 / after clipping
+%   22-25 delta [rad]            한계를 지난 뒤 / after clipping
+%  마지막 여덟 열은 배분기가 전역 태그로 내보낸 것이다. 장부는 Run 이 끝난 뒤에야
+%  읽히므로, 실시간 화면은 이 여덟 열을 한계선과 함께 그린다 / the last eight
+%  columns arrive from the allocator's global tags. The record is readable only
+%  after the run ends, so the live view draws these eight against their limits.
+extra = {'p_d', 'psi_d_deg', 'nu_d', 'tau_cmd', 'tau_act', 'n_act', 'delta_act'};
 add_measurement(m, [1860 Y-351 2020 Y+351], 'W07pose', extra, ...
     struct('logFeed', true, ...
-           'weekName', 'W07 pose  this week:  p_d, psi_d, nu_d, tau asked and applied'));
+           'weekName', 'W07 pose  this week:  p_d, psi_d, nu_d, tau asked and applied, n, delta'));
 tags = [{'x'} extra];
 for i = 1:numel(tags)
     q  = port_xy(m, 'Measurements', 'Inport', i);
@@ -177,7 +183,7 @@ note = strjoin({ ...
     '             machine this week.', ...
     'Inner loops  velocity loop  ->  X and Y   (two Week-3 PIs side by side)', ...
     '             heading PD     ->  N         (Week 4)', ...
-    'Allocation   law 4 of section 7-12.  All three degrees of freedom are', ...
+    'Allocation   law 4 of section 7-11.  All three degrees of freedom are', ...
     '             commanded at once, which Week 6 could not afford: its single', ...
     '             bow thruster made sway scarce.  Four tilting thrusters', ...
     '             deliver up to 295 N of pure sway.', ...

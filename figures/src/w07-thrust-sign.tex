@@ -1,0 +1,138 @@
+% figures/w07-thrust-sign.svg — 추력 부호 sigma_i 가 기하로 무엇인가.
+%
+%   bash _tools/tikz2svg.sh figures/src/w07-thrust-sign.tex figures/w07-thrust-sign.svg
+%
+% 사용자 지시 (2026-11-16): "기하학적으로 부호가 먼지...등등.... 기하학적으로
+% 그림으로 설명해야 이해가 더 잘될듯.." — §7-8 의 sigma_i 를 그림으로.
+%
+% 왼쪽 칸: sigma_i = sign(f_xi) 는 **평면을 세로축으로 가른 쪽**을 읽는 것이고,
+%          sigma_i = -1 인 요구는 원점에 대한 **점대칭**으로 앞쪽 반평면에 옮겨
+%          진다. 길이는 그대로, 방향은 정확히 pi 돌고, 그 대가가 T_i < 0 이다.
+%          f_i = (-43.30, +25.00) N, |f| = 49.999 N, 생각 없는 atan2 는 150 도,
+%          점대칭 뒤는 -30 도 — 45 도 벽 안쪽인지 밖인지가 그림에 보인다.
+% 오른쪽 칸: 그 부호를 읽지 않으면 45 도 벽이 요구를 **깎는 것이 아니라 뒤집는다.**
+%          f_i = (-50, 0) N → 접지 않으면 180 도 → 45 도로 잘려 (+35.36,+35.36),
+%          접으면 T = -50 N, delta = 0 로 요구 그대로. 강의 §7-8 2-b 표의 그림이다.
+%
+% 자 / the scale          0.04 cm/N  →  50 N 이 2.0 cm
+% 배치 / the layout       칸 중심 간격 8.6 cm. 설명하는 글은 **칸 안에 넣지 않고**
+%                         칸 아래 text width 블록으로 내린다 — 안에 넣으면 벽선·
+%                         화살표·각 표시와 겹친다 (처음 판을 그렇게 그려 겹쳤다).
+%                         벽 이름표(alpha_max)는 (a) 에만 둔다. (b) 에 또 두면
+%                         45 도로 잘린 빨간 화살표의 이름표와 같은 자리를 다툰다.
+% 규칙 / the rules        글자는 \scriptsize 이상. w07-servo-cone.tex 과 같은 축·색.
+\documentclass[border=5pt]{standalone}
+\input{gnc-style}
+
+\definecolor{knownc}{HTML}{1D4ED8}
+
+\tikzset{
+  ax/.style    = {ink, line width=0.5pt, -{Stealth[length=4pt,width=3pt]}},
+  wall/.style  = {accent, line width=1.0pt},
+  fwd/.style   = {fill=accent!12},
+  rev/.style   = {fill=warn!8},
+  fvec/.style  = {ink, line width=1.2pt, -{Stealth[length=5pt,width=3.6pt]}},
+  gvec/.style  = {knownc, line width=1.2pt, -{Stealth[length=5pt,width=3.6pt]}},
+  bvec/.style  = {warn, line width=1.2pt, -{Stealth[length=5pt,width=3.6pt]}},
+  mirror/.style= {soft, line width=0.6pt, densely dotted},
+  arc/.style   = {ink, line width=0.5pt},
+  lab/.style   = {font=\scriptsize, align=center, inner sep=1.5pt},
+  tlab/.style  = {font=\small, align=center, inner sep=2pt},
+  blk/.style   = {font=\scriptsize, align=left, text width=6.4cm,
+                  anchor=north, inner sep=0pt},
+  note/.style  = {font=\scriptsize, align=center, inner sep=3pt,
+                  draw=knownc, fill=white, rounded corners=1pt, text=knownc},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+% ===== (a) 부호는 반평면을 읽는 것이고, 접기는 점대칭이다 ==================
+\begin{scope}[shift={(0,0)}]
+  \fill[rev] (-2.40,-2.40) rectangle (0,2.40);
+  \fill[fwd] (0,0) -- (1.626,1.626) -- (1.626,-1.626) -- cycle;
+
+  \draw[ax] (-2.50,0) -- (2.60,0);
+  \draw[ax] (0,-2.50) -- (0,2.50);
+  \node[lab, anchor=west]       at (2.62,0)      {$f_{x,i}$};
+  \node[lab, anchor=south east] at (-0.06,2.42)  {$f_{y,i}$};
+
+  \draw[wall] (0,0) -- ( 1.626, 1.626);
+  \draw[wall] (0,0) -- ( 1.626,-1.626);
+  \node[lab, anchor=south west, text=accent] at (1.72, 1.62) {$+\alpha_{\max}$};
+  \node[lab, anchor=north west, text=accent] at (1.72,-1.62) {$-\alpha_{\max}$};
+
+  % 요구된 성분 쌍: (-43.30, +25.00) N  →  150 도
+  \draw[fvec] (0,0) -- (-1.732,1.000);
+  \node[lab, anchor=south east] at (-1.78,1.06)
+    {asked\\$(-43.30,\;+25.00)$ N};
+  \draw[arc] (0.55,0) arc (0:150:0.55);
+  \node[lab, anchor=east] at (-0.34,0.62) {$150^\circ$};
+
+  % 점대칭 — 같은 길이, 정확히 pi
+  \draw[mirror] (-1.732,1.000) -- (1.800,-1.039);
+  \draw[gvec]   (0,0) -- (1.732,-1.000);
+  \node[lab, anchor=west, text=knownc] at (1.86,-0.92)
+    {$T_i=-50$ N\\$\delta_i=-30^\circ$};
+
+  \node[lab, text=warn]   at (-1.50,-2.30) {$\sigma_i=-1$\\astern half};
+  \node[lab, text=accent] at ( 1.02,-2.30) {$\sigma_i=+1$\\ahead half};
+
+  \node[tlab] at (0.05,3.05)
+    {(a)~$\sigma_i$ reads \textbf{which half-plane} the demand lies in};
+
+  \node[blk] at (0.05,-2.95)
+    {The demand points into the astern half, so $\sigma_i=-1$. Multiplying
+     \emph{both} \texttt{atan2} arguments by $\sigma_i$ reflects the arrow
+     through the origin: same length, direction turned through exactly $\pi$,
+     and the price of that turn is $T_i<0$.};
+\end{scope}
+
+% ===== (b) 접지 않으면 벽이 요구를 뒤집는다 ================================
+\begin{scope}[shift={(8.6,0)}]
+  \fill[fwd] (0,0) -- (1.626,1.626) -- (1.626,-1.626) -- cycle;
+
+  \draw[ax] (-2.50,0) -- (2.60,0);
+  \draw[ax] (0,-2.50) -- (0,2.50);
+  \node[lab, anchor=west]       at (2.62,0)      {$f_{x,i}$};
+  \node[lab, anchor=south east] at (-0.06,2.42)  {$f_{y,i}$};
+
+  \draw[wall] (0,0) -- ( 1.626, 1.626);
+  \draw[wall] (0,0) -- ( 1.626,-1.626);
+
+  % 요구: 똑바로 뒤로 50 N
+  \draw[fvec] (0,0) -- (-2.000,0);
+  \node[lab, anchor=south] at (-1.00,0.12) {asked $(-50,\;0)$ N};
+
+  % 접지 않은 결과: 180 도를 45 도 벽으로 자른다
+  \draw[bvec] (0,0) -- (1.414,1.414);
+  \node[lab, anchor=south west, text=warn] at (1.46,1.50)
+    {no fold: the $180^\circ$ command\\
+     is clipped to the $+45^\circ$ wall\\
+     and delivers $(+35.36,\;+35.36)$ N};
+
+  % 접은 결과: 벽이 아무것도 하지 않는다
+  \draw[gvec] (0,-0.32) -- (-2.000,-0.32);
+  \node[lab, anchor=north east, text=knownc] at (0.10,-0.48)
+    {folded: $T_i=-50$ N at $\delta_i=0$,\\exactly the demand};
+
+  \node[tlab] at (0.05,3.05)
+    {(b)~without the fold the servo wall \textbf{reverses} the demand};
+
+  \node[blk] at (0.05,-2.95)
+    {Straight astern is $180^\circ$, the farthest point from the wedge.
+     Clipping that angle keeps $T_i>0$, so the unit pushes the hull
+     \emph{forward} and adds a sway that was never asked for. Folding first
+     leaves the demand untouched.};
+\end{scope}
+
+% ===== 아래 한 줄 ==========================================================
+\node[note] at (4.32,-4.85)
+  {A propeller running astern is $T_i<0$ at a small angle, never $T_i>0$ at
+   $180^\circ$. The fold is what buys that reading, and it is why
+   $\sigma_i f_{x,i}\ge 0$ holds by construction,\\
+   which is what makes the servo limit the pair of straight lines
+   $\lvert f_{y,i}\rvert \le f_{x,i}\tan\alpha_{\max}$ used in \S7-10.};
+
+\end{tikzpicture}
+\end{document}

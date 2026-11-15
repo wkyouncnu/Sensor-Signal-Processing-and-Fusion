@@ -26,7 +26,7 @@
 %       W07_alloc_chain   배분기 넷을 `law` 하나로 비교한다 (열린 루프)
 %       W07_wpt_los       LOS 유도 + 전진속도 + 선수각. 루프가 닫힌다
 %       W07_pose_dp       (0,0,0도) 에서 (10 m, 10 m, 45도) 로 가서 머문다
-%       The last two close the loop with law 4 alone, the law §7-12 selects.
+%       The last two close the loop with law 4 alone, the law §7-11 selects.
 %
 %   See also W07_1_BUILD_OPENLOOP, W07_2_BUILD_ALLOC, W07_3_BUILD_WPT,
 %            W07_4_BUILD_POSE, W07_V_OPENLOOP, W07_VARS, W07_PLOT,
@@ -90,11 +90,11 @@ d_cmd = deg2rad(d_deg);          % 틸팅 각 delta [rad] — 모델이 받는 �
 %      1  최소노름                / minimum norm                       7-8
 %      2  가중 최소노름           / weighted minimum norm              7-9
 %      3  가중 + 각 한계로 접기   / weighted, folded onto the limit     7-10
-%      4  두 한계를 제약으로      / both limits as constraints   7-10 · 7-12
+%      4  두 한계를 제약으로      / both limits as constraints   7-10 · 7-11
 %
 %  **기본값은 4 다** (사용자 지시, 2026-11-15). 이 강의의 판정 기준이 "배분기가
 %  의도한 힘" 이 아니라 "선체가 실제로 받은 힘" 이고, 한계 근처에서 그 둘이
-%  같은 법칙은 4 뿐이다 — §7-12 의 `Which of the four laws to use` 표.
+%  같은 법칙은 4 뿐이다 — §7-11 의 `Which of the four laws to use` 표.
 %  1·2·3 은 각각 실패 하나씩을 떼어 보여주려고 모델에 남아 있다.
 %  The default is 4: this course judges the hull, not the allocator, and law 4
 %  is the only law whose answer is what the hull receives near a limit. Laws 1
@@ -126,7 +126,7 @@ k_neg   = cfg.k_neg;             % 추력계수, 후진 / thrust coefficient, as
 
 %% ---- 닫힌 루프의 게인 / the closed-loop gains -------------------------
 %  3·4단계 모델 `W07_wpt_los` 와 `W07_pose_dp` 가 쓰는 값이다. 배분기는 둘 다
-%  **법칙 4 하나**이고 (§7-12), 그래서 이 게인들이 정하는 것은 "배가 얼마나
+%  **법칙 4 하나**이고 (§7-11), 그래서 이 게인들이 정하는 것은 "배가 얼마나
 %  급하게 따라가는가" 뿐이다 / used by the two closed-loop models; both allocate
 %  with law 4 alone, so these gains set only how briskly the hull follows
 %
@@ -136,12 +136,12 @@ k_neg   = cfg.k_neg;             % 추력계수, 후진 / thrust coefficient, as
 %      추진기 넷이 낼 수 있는 전진력은 그보다 훨씬 크다. 그래서 3·4주차에서
 %      제어기를 묶고 있던 것은 **구동장치의 한계**였고, 이 주차에서는 그것이
 %      풀린다. 아래의 X_max · Y_max · N_lim 은 물리적 한계가 아니라 **승차감을
-%      위해 사람이 고른 값**이다 — §7-14 가 남은 여유를 표로 센다.
+%      위해 사람이 고른 값**이다 — §7-13 가 남은 여유를 표로 센다.
 %      The hull is Weeks 3 to 6's hull; only the actuation changed. Holding
 %      1 m/s costs the hull some 78 N, and four thrusters deliver far more, so
 %      the ceiling that bound the controllers in Weeks 3 to 6 is gone. X_max,
 %      Y_max and N_lim below are therefore a COMFORT choice, not a physical
-%      limit, and §7-14 counts the headroom that remains.
+%      limit, and §7-13 counts the headroom that remains.
 
 % -- 안쪽 루프, 두 주차와 같은 PI / the inner loops, Weeks 3 and 6 unchanged
 Kp_u  = 200;   Ki_u = 200;      % 전진 PI / the surge PI        (3주차)
@@ -196,8 +196,18 @@ x0(8)  = 0;                      % E [m]
 %% ---- 실시간 화면 / the live view --------------------------------------
 %  Animate 블록을 빼지 않는다. animate = 0 이면 블록이 아무것도 하지 않는다
 %  the Animate block is never removed; animate = 0 makes it do nothing
+%
+%  **화면이 느리면 고칠 것은 `animate_every` 하나다.** 모델은 20 ms 마다 한
+%  스텝을 밟지만 사람의 눈은 그만큼 못 따라가므로, 이 값만큼 시뮬레이션 시각이
+%  지났을 때에만 다시 그린다. 수치는 바뀌지 않는다 — 그림의 간격만 바뀐다.
+%      0.2  부드럽지만 Run 이 느려진다 / smooth, slower run
+%      0.5  기본값 / the default
+%      2.0  Run 이 거의 방해받지 않는다 / the run is barely held up
+%  If the live view feels slow, this is the one number to change: the model
+%  steps every 20 ms, the eye cannot, and the window is redrawn only after this
+%  much simulated time has passed. The numbers do not change, only the picture.
 animate       = 1;               % 사람이 Run 을 누를 때는 1
-animate_every = 0.5;             % 다시 그리는 간격 [s]
+animate_every = 0.5;             % 다시 그리는 간격 [s] / redraw interval
 pace          = 0;               % 1 이면 현실 시간으로 진행한다
 track_Emin    = -60;             % 실시간 화면의 축 범위 [m]
 track_Emax    =  140;

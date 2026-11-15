@@ -35,7 +35,7 @@ function [f, R] = W07_plot_sat(A, t, ttl, pf)
 %       한 추진기가 내는 힘은 `f = [fx fy]` 두 성분이고, 그 크기가 추력,
 %       방향이 틸팅각이다. 그런데 추력 캡은 전진(`T_pos`) 과 후진(`T_neg`) 이
 %       다르다 — 프로펠러가 뒤로 밀 때 더 약하다. 그래서 크기만 보면 안 되고
-%       `sign(fx)·|f|` 로 **쪽까지** 본 뒤 그 쪽의 캡과 견준다 (§7-13).
+%       `sign(fx)·|f|` 로 **쪽까지** 본 뒤 그 쪽의 캡과 견준다 (§7-12).
 %       One unit's force is two components whose magnitude is the thrust and
 %       whose direction is the tilt angle. The cap differs ahead and astern, so
 %       the magnitude alone is not enough: the side is taken from sign(fx) and

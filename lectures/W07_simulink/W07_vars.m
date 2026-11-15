@@ -43,7 +43,7 @@ V.d_cmd = deg2rad([45 45 45 45])';
 % --- 제어배분 / control allocation (W07_alloc_chain)
 %     `law` 하나가 법칙을 고른다 / one number selects the law
 %       1 최소노름 · 2 가중 최소노름 · 3 가중 + 각 한계로 접기 · 4 두 한계를 제약으로
-%     기본값 4 — §7-12 의 법칙 선택 표. 절 스크립트는 `set_vars` 로 저마다 덮어쓴다
+%     기본값 4 — §7-11 의 법칙 선택 표. 절 스크립트는 `set_vars` 로 저마다 덮어쓴다
 %     the default is 4; each section of W07_alloc_run overrides it in set_vars
 V.law       = 4;
 V.tau_cmd   = [0; 40; 0];        % 순수 횡력 요구 / a pure sway demand, N and N m

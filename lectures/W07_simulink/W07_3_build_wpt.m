@@ -25,13 +25,13 @@
 %
 %   왜 법칙 4 하나인가 / why one law and not four
 %       Multiport Switch 는 **계산이 아니라 출력을 고른다** — 스위치를 두면 매
-%       스텝마다 법칙 넷이 모두 풀린다. §7-8 … §7-12 의 비교 모델에서는 그것이
+%       스텝마다 법칙 넷이 모두 풀린다. §7-8 … §7-11 의 비교 모델에서는 그것이
 %       옳다 (네 답을 나란히 보려고 만든 모델이다). 닫힌 루프에서는 그 값을
-%       치를 수 없고, 치를 이유도 없다 — §7-13 이 고른 하나로 돌린다. 법칙이
+%       치를 수 없고, 치를 이유도 없다 — §7-12 이 고른 하나로 돌린다. 법칙이
 %       하나이므로 `add_allocation_tilt4` 는 스위치도 `law` 포트도 만들지 않는다.
 %       A Multiport Switch selects an OUTPUT, not a computation: with it in
 %       place all four laws are solved every step. That is right for the
-%       comparison model of 7-8 to 7-12 and wrong here. Given a single law the
+%       comparison model of 7-8 to 7-11 and wrong here. Given a single law the
 %       allocator builds neither switch nor `law` inport.
 %
 %   신호는 태그로 다닌다 / signals travel by tag
@@ -147,7 +147,7 @@ route(m, 'From x sp', 1, 'speed loop', 2, zeros(0,2));
 
 % ---- 선수각 오토파일럿 (4주차) / the heading autopilot of Week 4 ---------
 %  한계는 `N_lim` 이다. 네 틸팅 추진기가 낼 수 있는 모멘트는 전진력 100 N 을
-%  들고도 405 N m 이므로 (§7-13), 이 한계는 설계가 고른 값이고 구동장치가
+%  들고도 405 N m 이므로 (§7-12), 이 한계는 설계가 고른 값이고 구동장치가
 %  강제한 값이 아니다 / the limit is a design choice, not a physical ceiling
 add_heading_loop(m, [900 450 1100 570], 'N_lim');
 q = port_xy(m, 'heading autopilot', 'Inport', 1);
@@ -195,14 +195,20 @@ add_block('simulink/Sinks/Stop Simulation', [m '/mission over'], ...
 route(m, 'From stop', 1, 'mission over', 1, zeros(0,2));
 
 % ---- 계측 / measurement --------------------------------------------------
-%  열 열다섯 / fifteen columns
+%  열 스물셋 / twenty-three columns
 %    1 u   2 v   3 r   4 N   5 E   6 psi [deg]
 %    7 psi_d [deg]   8 u_d_eff   9 y_e
 %   10-12 tau_cmd [X Y N]        13-15 tau_act [X Y N]
-extra = {'psi_d_deg', 'u_d_eff', 'y_e', 'tau_cmd', 'tau_act'};
+%   16-19 n [rad/s]              한계를 지난 뒤 / after clipping
+%   20-23 delta [rad]            한계를 지난 뒤 / after clipping
+%  마지막 여덟 열은 배분기가 전역 태그로 내보낸 것이다. 장부는 Run 이 끝난 뒤에야
+%  읽히므로, 실시간 화면은 이 여덟 열을 한계선과 함께 그린다 / the last eight
+%  columns arrive from the allocator's global tags. The record is readable only
+%  after the run ends, so the live view draws these eight against their limits.
+extra = {'psi_d_deg', 'u_d_eff', 'y_e', 'tau_cmd', 'tau_act', 'n_act', 'delta_act'};
 add_measurement(m, [1900 Y-351 2060 Y+351], 'W07wpt', extra, ...
     struct('logFeed', true, ...
-           'weekName', 'W07 wpt  this week:  psi_d, u_d gated, y_e, tau asked and applied'));
+           'weekName', 'W07 wpt  this week:  psi_d, u_d gated, y_e, tau asked and applied, n, delta'));
 tags = [{'x'} extra];
 for i = 1:numel(tags)
     q  = port_xy(m, 'Measurements', 'Inport', i);
@@ -221,7 +227,7 @@ note = strjoin({ ...
     '             stops the run.', ...
     'Inner loops  surge-speed PI  ->  X        (Week 3)', ...
     '             heading PD      ->  N        (Week 4)', ...
-    'Allocation   law 4 of section 7-12: servo limits and the thruster cap as', ...
+    'Allocation   law 4 of section 7-11: servo limits and the thruster cap as', ...
     '             constraints.  It returns four speeds and four angles already', ...
     '             inside their limits.', ...
     'Plant        otter_tilt4 applies the clipped commands and reports the', ...

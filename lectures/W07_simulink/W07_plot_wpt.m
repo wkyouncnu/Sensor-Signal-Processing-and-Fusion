@@ -17,7 +17,7 @@ function [f, R] = W07_plot_wpt(pf)
 %       has its own workspace, so it cannot happen.
 %
 %   읽는 로그 둘 / the two logs it reads
-%       `W07wpt`      상태와 명령, 15 열 (`add_measurement`)
+%       `W07wpt`      상태와 명령, 23 열 (`add_measurement`)
 %       `W07wpt_act`  배분기의 24 열 기록 (`add_allocation_tilt4`)
 %     로그 열 / the columns
 %       1 u   2 v   3 r   4 N   5 E   6 psi [deg]
@@ -42,7 +42,7 @@ if isempty(pf) && base_var('W07quiet', false)
     return
 end
 
-[t, y] = log_xy('W07wpt', 15);
+[t, y] = log_xy('W07wpt', 23);
 if isempty(t)
     fprintf('  W07_plot_wpt: W07wpt 로그가 없다. 먼저 모델을 돌린다.\n');
     f = [];  R = struct();

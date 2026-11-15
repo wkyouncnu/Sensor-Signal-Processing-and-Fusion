@@ -23,6 +23,25 @@ function W07_anim(y, t, o)
 %       line is created first so the dashed command rides on top: the other way
 %       round the command vanishes exactly where the tracking is best.
 %
+%   화면이 시뮬레이션을 따라가게 하는 것 셋 / the three things that keep up
+%     1  **표본을 쌓는 자리를 미리 잡는다.** 매 스텝 `S.Y = [S.Y; y]` 로 이으면
+%        그때마다 배열 전체가 새로 할당되어 복사된다 — 400 초 Run 이면 2 만 번,
+%        옮기는 숫자가 30 억 개가 넘는다. 미리 잡아 둔 칸에 넣기만 하면 한 스텝의
+%        비용이 표본 수와 무관해진다
+%        preallocate: growing the buffer by concatenation reallocates the whole
+%        array on every step, which is O(N^2) and the real reason the window
+%        lagged. Writing into reserved rows makes one step cost the same at the
+%        end of the run as at the start.
+%     2  **그릴 때는 솎는다.** 2 만 점짜리 곡선을 선 열셋에 매번 밀어 넣어도
+%        화면의 가로 픽셀은 600 개뿐이다. `MAXPTS` 개로 솎아 그려도 눈에
+%        보이는 그림은 같고, 마지막 점은 **반드시** 넣는다
+%        decimate for drawing: pushing 20 000 points into thirteen line objects
+%        buys nothing on a 600-pixel axis. The last sample is always kept.
+%     3  **그리는 간격을 사람이 고른다.** `animate_every` [s] — `W07_0_setup`
+%        에서 고친다. 0.5 가 기본, 0.2 면 더 부드럽고 더 느리며, 2 면 Run 이
+%        거의 방해받지 않는다
+%        the redraw interval is a variable, animate_every, set in W07_0_setup
+%
 %   입력 / inputs
 %     y   그 스텝의 **로그 벡터 전부**. `add_measurement` 의 `opts.logFeed` 가
 %         켜져 있어 상태 여섯이 아니라 기록되는 열 전부가 들어온다. 앞 여섯은
@@ -41,16 +60,32 @@ function W07_anim(y, t, o)
 %           .info     제목에 쓸 {이름, 열, 배율} 목록 / the title readouts
 %           .panels   오른쪽 칸들. 한 칸이 중괄호 하나다 / one brace per panel
 %                       {ylabel, [열…], {선모양…}, {색이름…}, {범례…}, 0선}
+%                     뒤에 셋을 더 붙일 수 있다 / three optional entries follow
+%                       {7} 배율 — 열의 값에 곱한다 (rad 를 도로 등)
+%                           a scale applied to the columns, e.g. rad to degrees
+%                       {8} [lo hi] 한계 — 배율을 **곱한 뒤의** 단위로 쓴다.
+%                           빨간 파선 둘로 그리고, 세로축이 언제나 그 둘을
+%                           품으므로 여유가 얼마나 남았는지 한눈에 보인다
+%                           the limits, in the scaled unit, drawn as two red
+%                           dashed lines; the axis always contains them, so how
+%                           much room is left is visible at a glance
+%                       {9} {아래 이름, 위 이름} 한계선의 이름표 / their labels
 %
 %   색 이름 / the colour keys
 %       'act' 실제 · 'cmd' 명령 · 'sway' 횡방향 · 'aux' 보조 · 'grey' 회색
+%       'u1'…'u4' 네 단위. `W07_plot_sat` 과 **같은 색**이라 실시간에서 본
+%       1 번 단위가 저장된 그림에서도 같은 색이다
+%       the four units, in the same colours as W07_plot_sat
 %
 %   See also W07WPT_ANIMATE, W07POSE_ANIMATE, W07_PLOT_WPT, W07_PLOT_POSE.
 
-persistent fig ax h S tLast tPrev every
+persistent fig ax h S tLast tPrev every Lship
 
-NMAX = 40000;                      % 기록을 무한히 늘리지 않는다 / cap the series
-y    = y(:).';
+CAP0   = 4096;                 % 처음 잡아 두는 줄 수 / rows reserved at the start
+NMAX   = 32768;                % 그 이상은 한 칸 걸러 버린다 / then halve in place
+MAXPTS = 1500;                 % 한 곡선에 그리는 점 수 / points drawn per curve
+
+y = y(:).';
 
 %  새 Run 인가. 시각이 뒤로 갔거나 창이 닫혔으면 새 Run 이다
 %  a new run: the clock went backwards, or the window is gone
@@ -58,18 +93,50 @@ newRun = isempty(tLast) || isempty(fig) || ~isvalid(fig) || t < tPrev;
 tPrev  = t;
 
 if newRun
-    S     = struct('t', zeros(0,1), 'Y', zeros(0, numel(y)));
+    S     = struct('t', zeros(CAP0,1), 'Y', zeros(CAP0, numel(y)), ...
+                   'n', 0, 'k', 0, 'dec', 1);
     tLast = -inf;
     every = base_var('animate_every', 0.5);
-    [fig, ax, h] = build_window(o, y);
+
+    %  **그려지는** 선체의 길이. 실제는 2.0 m 지만, 200 m 짜리 장면에서 2 m 는
+    %  점 하나라 선수각이 보이지 않는다. 이전 주차(`_tools/live_track`,
+    %  `_tools/live_guidance`)와 같은 규칙 — 넓은 쪽 축의 4.5 %, 실제 크기가
+    %  그보다 크면 실제 크기
+    %  the DRAWN hull length: 4.5 per cent of the wider axis span, never below
+    %  the true 2.0 m. The same rule as the earlier weeks; at true size a 2 m
+    %  boat is one dot in a 200 m scene and its heading cannot be read.
+    if numel(o.lim) == 4
+        Lship = max(0.045*max(o.lim(2)-o.lim(1), o.lim(4)-o.lim(3)), 2.00);
+    else
+        Lship = 2.00;
+    end
+
+    [fig, ax, h] = build_window(o, y, Lship);
 end
 
-%  표본을 쌓는다 / append this sample
-S.t = [S.t; t];
-S.Y = [S.Y; y];
-if numel(S.t) > NMAX
-    S.t = S.t(end-NMAX+1:end);
-    S.Y = S.Y(end-NMAX+1:end, :);
+%  표본을 쌓는다 — 미리 잡아 둔 칸에 **넣기만** 한다 / append, no reallocation
+S.k = S.k + 1;
+if mod(S.k - 1, S.dec) == 0
+    if S.n == size(S.t, 1)
+        if size(S.t,1) < NMAX
+            S.t = [S.t; zeros(size(S.t,1), 1)];       % 두 배로 / double
+            S.Y = [S.Y; zeros(size(S.Y))];
+        else
+            %  가득 찼다. 한 칸 걸러 버리고 받는 간격을 두 배로 한다. Run 전체가
+            %  계속 보이면서 자리는 더 늘지 않는다
+            %  full: drop every other sample and halve the intake rate, so the
+            %  whole run stays visible and the memory stops growing
+            keep = 1:2:S.n;
+            mkeep = numel(keep);
+            S.t(1:mkeep)   = S.t(keep);
+            S.Y(1:mkeep,:) = S.Y(keep,:);
+            S.n   = mkeep;
+            S.dec = S.dec*2;
+        end
+    end
+    S.n          = S.n + 1;
+    S.t(S.n)     = t;
+    S.Y(S.n,:)   = y;
 end
 
 %  그리는 간격. 매 스텝 그리면 시뮬레이션보다 그림이 느려진다
@@ -77,33 +144,43 @@ end
 if t - tLast < every, return; end
 tLast = t;
 
+%  그릴 점만 고른다. 마지막 점은 언제나 들어간다 / the points to draw
+idx = draw_idx(S.n, MAXPTS);
+tt  = S.t(idx);
+
 N = y(4);  E = y(5);  psi = y(6);          % psi 는 **도** / psi in degrees
 
 %% ---- 왼쪽: 항적 / left: the track ------------------------------------
-set(h.trail, 'XData', S.Y(:,5), 'YData', S.Y(:,4));
-[hE, hN] = hull_ned(N, E, psi*pi/180);
+set(h.trail, 'XData', S.Y(idx,5), 'YData', S.Y(idx,4));
+[hE, hN] = hull_ned(N, E, psi*pi/180, Lship);
 set(h.hull, 'XData', hE, 'YData', hN);
-set(h.head, 'XData', [E, E + 3.2*sind(psi)], ...
-            'YData', [N, N + 3.2*cosd(psi)]);
+set(h.head, 'XData', [E, E + 1.8*Lship*sind(psi)], ...
+            'YData', [N, N + 1.8*Lship*cosd(psi)]);
 set(h.dot,  'XData', E, 'YData', N);
-fit_lims(ax.xy, E, N, 3);
+fit_lims(ax.xy, E, N, max(3, 0.6*Lship));
 
 %  명령 위치가 있는 모델이면 그 자취도 함께 / the commanded position, if any
 if ~isempty(o.cmdNE)
-    set(h.cmd,  'XData', S.Y(:,o.cmdNE(2)), 'YData', S.Y(:,o.cmdNE(1)));
-    set(h.mark, 'XData', y(o.cmdNE(2)),     'YData', y(o.cmdNE(1)));
-    fit_lims(ax.xy, y(o.cmdNE(2)), y(o.cmdNE(1)), 3);
+    set(h.cmd,  'XData', S.Y(idx,o.cmdNE(2)), 'YData', S.Y(idx,o.cmdNE(1)));
+    set(h.mark, 'XData', y(o.cmdNE(2)),       'YData', y(o.cmdNE(1)));
+    fit_lims(ax.xy, y(o.cmdNE(2)), y(o.cmdNE(1)), max(3, 0.6*Lship));
 end
 
 set(h.info, 'String', info_lines(t, y, o));
 
 %% ---- 오른쪽: 명령 대 실제 / right: command against actual ------------
 for k = 1:numel(o.panels)
-    c = o.panels{k}{2};
+    Q  = o.panels{k};
+    c  = Q{2};
+    sc = pan_scale(Q);
+    D  = S.Y(idx, c)*sc;
     for j = 1:numel(c)
-        set(h.p{k}(j), 'XData', S.t, 'YData', S.Y(:,c(j)));
+        set(h.p{k}(j), 'XData', tt, 'YData', D(:,j));
     end
-    pad_y(ax.p(k), reshape(S.Y(:,c), [], 1));
+    %  한계가 있는 칸은 세로축이 **한계를 품는다.** 곡선만 보고 "여유가 있다"
+    %  고 말할 수 없게 하려는 것이다
+    %  a panel with limits always shows them, so margin is never guessed
+    pad_y(ax.p(k), [D(:); pan_lim(Q)'], leg_room(Q));
     set(ax.p(k), 'XLim', [0 max(t, 1)]);
 end
 
@@ -111,22 +188,32 @@ drawnow limitrate
 end
 
 % =========================================================================
-function [fig, ax, h] = build_window(o, y)
+function [fig, ax, h] = build_window(o, y, Lship)
 %  창 하나를 짓는다. 축과 핸들을 돌려주므로 매 스텝 `set` 만 한다
 %  build the window once; every step afterwards is a set() on these handles
 
-P   = palette();
-np  = numel(o.panels);
+P  = palette();
+np = numel(o.panels);
+
+%  칸이 여섯을 넘으면 **두 열**로 세운다. 한 열에 일곱이면 한 칸이 90 px 밖에
+%  안 되어 곡선이 선 하나로 보인다
+%  beyond five panels the right-hand side becomes two columns: seven panels in
+%  one column leave 90 px each, and a curve in 90 px is a line
+if np <= 5
+    ncg = 2;  nr = np;  W = 1340;
+else
+    ncg = 3;  nr = ceil(np/2);  W = 1560;
+end
 
 old = findall(0, 'Type','figure', 'Tag', o.tag);
 if ~isempty(old), delete(old); end
-fig = lab_fig(o.name, 1340, min(900, 180 + 170*np));
+fig = lab_fig(o.name, W, min(900, 180 + 170*nr));
 set(fig, 'Tag', o.tag);
 
 N = y(4);  E = y(5);
 
 %% ---- 항적 / the track ------------------------------------------------
-ax.xy = subplot(np, 2, 1:2:(2*np-1), 'Parent', fig);
+ax.xy = subplot(nr, ncg, 1:ncg:(ncg*(nr-1)+1), 'Parent', fig);
 hold(ax.xy, 'on');  grid(ax.xy, 'on');  axis(ax.xy, 'equal');
 xlabel(ax.xy, 'east [m]');  ylabel(ax.xy, 'north [m]');
 
@@ -148,7 +235,7 @@ end
 %  목표 자세는 **점선 선체**로. 점 하나로는 선수각 명령이 보이지 않는다
 %  the target pose as a dashed hull: a marker alone cannot show a heading
 if ~isempty(o.goal)
-    [gE, gN] = hull_ned(o.goal(1), o.goal(2), o.goal(3)*pi/180);
+    [gE, gN] = hull_ned(o.goal(1), o.goal(2), o.goal(3)*pi/180, Lship);
     patch('Parent', ax.xy, 'XData', gE, 'YData', gN, 'FaceColor','none', ...
           'EdgeColor', P.cmd, 'LineStyle','--', 'LineWidth', 1.1, ...
           'DisplayName', 'target pose');
@@ -169,10 +256,15 @@ h.mark  = plot(ax.xy, nan, nan, 's', 'MarkerSize', 8, 'LineWidth', 1.2, ...
                'DisplayName', 'command now');
 h.trail = plot(ax.xy, nan, nan, '-', 'Color', P.act, 'LineWidth', 1.4, ...
                'DisplayName', 'actual track');
+if Lship > 2.001
+    hullName = sprintf('hull (drawn %.0f m; true length 2.0 m)', Lship);
+else
+    hullName = 'hull (2.0 m, true size)';
+end
 h.hull  = patch('Parent', ax.xy, 'XData', nan, 'YData', nan, ...
                 'FaceColor', [0.95 0.45 0.20], 'FaceAlpha', 0.90, ...
                 'EdgeColor', [0.40 0.15 0.05], 'LineWidth', 1.1, ...
-                'DisplayName', 'hull (2.0 m, true size)');
+                'DisplayName', hullName);
 h.head  = plot(ax.xy, nan, nan, '-', 'Color', [0.40 0.15 0.05], ...
                'LineWidth', 1.5, 'HandleVisibility','off');
 h.dot   = plot(ax.xy, nan, nan, 'k.', 'MarkerSize', 9, 'HandleVisibility','off');
@@ -188,12 +280,35 @@ h.info = title(ax.xy, '', 'Interpreter','tex', 'FontSize', 9);
 %  보이지 않는다 / on one axis each: separate axes rescale and hide the error
 ax.p = gobjects(1, np);
 h.p  = cell(1, np);
+last = zeros(1, ncg-1);               % 열마다 맨 아래 칸 / bottom cell per column
 for k = 1:np
     Q = o.panels{k};
-    a = subplot(np, 2, 2*k, 'Parent', fig);
+    if ncg == 2
+        cell_k = 2*k;  col = 1;
+    else
+        col    = 1 + mod(k-1, 2);                  % 둘째 열인가 셋째 열인가
+        cell_k = 3*(ceil(k/2) - 1) + 1 + col;
+    end
+    last(col) = k;
+
+    a = subplot(nr, ncg, cell_k, 'Parent', fig);
     hold(a, 'on');  grid(a, 'on');  set(a, 'FontSize', 8);
     ylabel(a, Q{1});
     if Q{6}, yline(a, 0, 'k:', 'HandleVisibility','off'); end
+
+    %  한계선 먼저. 곡선 **아래**에 깔려야 곡선이 한계선을 가리지 않는다
+    %  the limit lines first, so the curves are drawn on top of them
+    L = pan_lim(Q);
+    if ~isempty(L)
+        nm = pan_names(Q);
+        yline(a, L(1), 'r--', nm{1}, 'FontSize', 7, 'LineWidth', 1.0, ...
+              'LabelHorizontalAlignment','left', ...
+              'LabelVerticalAlignment','bottom', 'HandleVisibility','off');
+        yline(a, L(2), 'r--', nm{2}, 'FontSize', 7, 'LineWidth', 1.0, ...
+              'LabelHorizontalAlignment','left', ...
+              'LabelVerticalAlignment','top', 'HandleVisibility','off');
+    end
+
     hh = gobjects(1, numel(Q{2}));
     for j = 1:numel(Q{2})
         hh(j) = plot(a, nan, nan, Q{3}{j}, 'Color', P.(Q{4}{j}), ...
@@ -203,14 +318,51 @@ for k = 1:np
     %  가려지고, 가려지는 자리가 하필 정상상태다
     %  a filled legend box hides the curve beneath it, and that is exactly
     %  where the steady state is
+    %  넷을 한 줄로 늘어놓으면 범례가 칸보다 넓어져 왼쪽 눈금 위로 삐져
+    %  나간다. 그래서 셋 이상은 **두 칸짜리 블록**으로 접는다
+    %  four entries on one line are wider than the panel and spill over the
+    %  tick labels, so three or more fold into a two-column block
     legend(a, 'Location','southeast', 'AutoUpdate','off', 'FontSize', 7, ...
-           'Orientation','horizontal', 'Box','off', 'Color','none');
+           'NumColumns', min(numel(Q{2}), 2), 'Box','off', 'Color','none');
     p = get(a, 'Position');
     set(a, 'Position', [p(1) p(2) p(3)*0.92 p(4)]);
     ax.p(k) = a;
     h.p{k}  = hh;
 end
-xlabel(ax.p(np), 'time [s]');
+for c = 1:numel(last)
+    if last(c) > 0, xlabel(ax.p(last(c)), 'time [s]'); end
+end
+end
+
+% =========================================================================
+function s = pan_scale(Q)
+%  칸의 배율. 없으면 1 / the panel scale, 1 when absent
+if numel(Q) >= 7 && ~isempty(Q{7}), s = Q{7}; else, s = 1; end
+end
+
+% =========================================================================
+function L = pan_lim(Q)
+%  칸의 [아래 위] 한계. 없으면 [] / the panel limits or []
+if numel(Q) >= 8 && numel(Q{8}) == 2, L = sort(Q{8}(:)).'; else, L = []; end
+end
+
+% =========================================================================
+function nm = pan_names(Q)
+%  한계선의 이름표 / the labels of the two limit lines
+if numel(Q) >= 9 && numel(Q{9}) == 2, nm = Q{9}; else, nm = {'min','max'}; end
+end
+
+% =========================================================================
+function idx = draw_idx(n, maxp)
+%  그릴 점의 번호. 표본이 많으면 **솎는다** — 화면의 가로 픽셀보다 촘촘하게
+%  그려도 보이는 그림은 같고, 마지막 점은 언제나 넣는다
+%  which samples to draw: beyond maxp the series is thinned, and the last sample
+%  is always included so the curve ends where the vessel is
+if n <= 0, idx = []; return; end
+if n <= maxp, idx = 1:n; return; end
+s   = ceil(n/maxp);
+idx = 1:s:n;
+if idx(end) ~= n, idx(end+1) = n; end
 end
 
 % =========================================================================
@@ -220,7 +372,11 @@ P = struct('act',  [0    0.45 0.74], ...   % 실제 / actual
            'cmd',  [0.75 0.10 0.10], ...   % 명령 / command
            'sway', [0.85 0.33 0.10], ...   % 횡방향 / sway
            'aux',  [0.49 0.18 0.56], ...   % 보조 / the third quantity
-           'grey', [0.40 0.40 0.40]);
+           'grey', [0.40 0.40 0.40], ...
+           'u1',   [0    0.45 0.74], ...   % 네 단위 / the four units,
+           'u2',   [0.85 0.33 0.10], ...   % `W07_plot_sat` 과 같은 색
+           'u3',   [0.47 0.67 0.19], ...   % the same colours as W07_plot_sat
+           'u4',   [0.49 0.18 0.56]);
 end
 
 % =========================================================================
@@ -229,24 +385,25 @@ function s = info_lines(t, y, o)
 %  two title lines, carrying only the numbers the picture cannot show
 L = {sprintf('t = %6.2f s', t)};
 for i = 1:size(o.info, 1)
-    L{end+1} = sprintf('%s %7.2f', o.info{i,1}, y(o.info{i,2})*o.info{i,3});
+    L{end+1} = sprintf('%s %7.2f', o.info{i,1}, y(o.info{i,2})*o.info{i,3}); %#ok<AGROW>
 end
 
 %  세 토막씩 끊는다. 한 줄에 몰면 제목이 그림 폭을 넘어 잘린다
 %  three readouts to a line: on one line the title runs past the edge
 s = {};
 for i = 1:3:numel(L)
-    s{end+1} = strjoin(L(i:min(i+2, numel(L))), '      ');
+    s{end+1} = strjoin(L(i:min(i+2, numel(L))), '      '); %#ok<AGROW>
 end
 end
 
 % =========================================================================
-function [xe, yn] = hull_ned(N, E, psi)
-%  선체 윤곽을 NED 로. `_tools/draw_ship` 과 **같은 다각형**이고 실제 크기다
-%  the hull outline in NED: the same polygon as draw_ship, at true size
-L = 2.00;                          % Otter 전장 / overall length [m]
-a = L/2;
-b = L*(1.08/2.00)/2;               % 반폭 / half beam
+function [xe, yn] = hull_ned(N, E, psi, L)
+%  선체 윤곽을 NED 로. `_tools/draw_ship` 과 **같은 다각형**이고, `L` 은
+%  **그려지는** 길이다 — 실제 전장은 2.0 m 로 바뀌지 않는다
+%  the hull outline in NED: the same polygon as draw_ship. L is the DRAWN
+%  length; the true overall length stays 2.0 m whatever is drawn.
+a  = L/2;
+b  = L*(1.08/2.00)/2;              % 반폭 — 실제 비율 그대로 / half beam
 bx = [ -a   -a    0.25*a   a    0.25*a ];
 by = [  b   -b   -b        0    b      ];
 yn = N + bx*cos(psi) - by*sin(psi);
@@ -273,14 +430,32 @@ if ~isequal(ny, yl), set(a, 'YLim', ny); end
 end
 
 % =========================================================================
-function pad_y(a, D)
+function pad_y(a, D, bot)
 %  t = 0 에서는 값이 하나뿐이어서 위아래가 같다. 그때 ylim 을 그대로 주면
 %  MATLAB 이 거부하므로 **반드시** 벌려 준다
 %  at t = 0 the series holds one value and lo == hi, which ylim rejects, so the
 %  range is always opened by a little
+%
+%  `bot` 은 **범례가 앉을 자리**다. 범례는 오른쪽 아래에 있으므로 그만큼
+%  아래를 더 비워 두면 범례가 곡선도 한계선도 덮지 않는다
+%  bot is the room the legend sits in: it hangs in the lower right corner, so
+%  opening the bottom by that fraction keeps it off the curves and the limits
 D = D(isfinite(D));
 if isempty(D), return; end
 lo = min(D);  hi = max(D);
 dd = max((hi - lo)*0.10, max(abs([lo hi]))*0.05 + 1e-3);
-set(a, 'YLim', [lo - dd, hi + dd]);
+lo = lo - dd;  hi = hi + dd;
+set(a, 'YLim', [lo - bot*(hi - lo), hi]);
+end
+
+% =========================================================================
+function b = leg_room(Q)
+%  범례가 몇 줄인가 / how many lines the legend takes
+%      둘까지는 한 줄, 셋부터는 두 줄이다 (`NumColumns` 가 둘이므로)
+%      up to two entries it is one line; three or more make two
+%      포화한 신호는 **한계선 위에 그대로 눕는다.** 그러니 두 줄짜리
+%      범례는 그 선보다 더 아래에 앉아야 한다
+%      a saturated signal lies exactly on its limit line, so a two-line legend
+%      has to sit below that line, not on it
+if numel(Q{2}) >= 3, b = 0.36; else, b = 0.18; end
 end

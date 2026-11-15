@@ -15,6 +15,14 @@ function [s, ins] = add_allocation_tilt4(m, pos, laws, logName)
 %            법칙이 둘 이상이면 {'tau d','law'}, 하나면 {'tau d'} /
 %            with more than one law the Multiport Switch needs `law`
 %
+%   나가는 것 / what leaves
+%       출력 포트 둘 — `n` (4) 과 `delta` (4), 둘 다 한계를 지난 뒤의 값이다.
+%       같은 둘이 **전역 태그** `n_act` · `delta_act` 로도 나간다. 그것을 받는
+%       From 을 두면 모델 어디에서나 깎인 명령을 읽을 수 있고, 실시간 화면이
+%       바로 그것을 쓴다 / two outports, n and delta, both after clipping; the
+%       same two also leave as the global tags n_act and delta_act, which a
+%       From anywhere in the model can read. The live view uses exactly those.
+%
 %   왜 함수인가 / why this is a function
 %       같은 배분기를 모델 셋이 쓴다 — §7-8~§7-12 의 비교 모델, 웨이포인트 추종,
 %       위치 제어. 복사하면 한쪽만 고쳐진다 (CLAUDE.md §5, standing order §15-34) /
@@ -130,6 +138,24 @@ add_block('simulink/Discontinuities/Saturation', [s '/servo limit'], ...
           'UpperLimit', 'alpha_lim', 'LowerLimit', '-alpha_lim', ...
           'Position', [690 280 750 340]);
 
+%  ---- (4-1) 실시간 화면이 쓰는 두 태그 / two tags for the live view -----
+%  한계를 지난 `n` 과 `delta` 는 플랜트로만 가는 것이 아니다. 실시간 화면도
+%  **깎인 뒤의 값**을 한계선과 함께 보여야 하므로, 여기서 전역 태그로 내보낸다.
+%  장부(To Workspace)는 Run 이 끝난 뒤에야 읽히므로 실시간에는 쓸 수 없다.
+%  꼬리표를 받는 From 이 없는 모델(`W07_alloc_chain`)에서는 Goto 가 그냥 놓여
+%  있을 뿐이고, 그것은 Simulink 에서 오류가 아니다.
+%  The clipped n and delta do not only go to the plant: the live view has to
+%  show THE VALUES AFTER CLIPPING against their limits, and the To Workspace
+%  record is readable only once the run is over. A global Goto is therefore the
+%  only live path. In a model with no matching From the Goto simply sits there,
+%  which Simulink allows.
+add_block('simulink/Signal Routing/Goto', [s '/n live'], ...
+          'GotoTag', 'n_act', 'TagVisibility', 'global', 'ShowName', 'off', ...
+          'Position', [780  25 850  55]);
+add_block('simulink/Signal Routing/Goto', [s '/delta live'], ...
+          'GotoTag', 'delta_act', 'TagVisibility', 'global', 'ShowName', 'off', ...
+          'Position', [780 225 850 255]);
+
 %  ---- (5) 배분기의 장부 / the allocator's own record --------------------
 %  요구한 명령과 한계가 허락한 명령을 함께 기록한다. 스물넷 열이다 /
 %  what was asked and what the limits allowed, side by side; twenty-four columns:
@@ -169,6 +195,11 @@ lane_line(s, 'force to input', 1, 'shaft limit', 1, 655);
 lane_line(s, 'force to input', 2, 'servo limit', 1, 670);
 add_line(s, 'shaft limit/1', 'n/1');
 add_line(s, 'servo limit/1', 'delta/1');
+
+%  실시간 화면으로 가는 분기 둘. 같은 신호의 분기이므로 통로만 따로 쓴다
+%  two branches to the live view; same signal, so only the lane has to differ
+elbow(s, 'shaft limit', 1, 'n live',     1, 758);
+elbow(s, 'servo limit', 1, 'delta live', 1, 768);
 
 %  장부로 가는 분기 다섯. 통로를 하나씩 따로 쓴다 / five branches, one lane each
 if ~isempty(logName)
@@ -210,7 +241,11 @@ L = [L, { ...
 '                  delta = 0, because below that the angle is arithmetic', ...
 '                  noise and the servo would chatter at rest.', ...
 'shaft limit       n clipped to [n_min, n_max].', ...
-'servo limit       delta clipped to +-alpha_lim.'}];
+'servo limit       delta clipped to +-alpha_lim.', ...
+'n live            the two clipped commands also leave as the global tags', ...
+'delta live        n_act and delta_act, so the live view can draw them', ...
+'                  against their limits while the run is still going. The', ...
+'                  record below is readable only after it ends.'}];
 if ~isempty(logName)
     L = [L, { ...
 ['actuator          the record of this solve, written to ' logName ' as 24'], ...

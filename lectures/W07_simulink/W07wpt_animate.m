@@ -17,8 +17,21 @@ function W07wpt_animate(y, t)
 %       1 u   2 v   3 r   4 N   5 E   6 psi [deg]
 %       7 psi_d [deg]   8 u_d gated   9 y_e
 %       10-12 tau asked [X Y N]       13-15 tau applied [X Y N]
+%       16-19 n [rad/s]               20-23 delta [rad]
 %
-%   See also W07_ANIM, W07_PLOT_WPT, W07_3_BUILD_WPT.
+%   뒤의 여덟 열은 **한계를 지난 뒤**의 명령이다 / the last eight columns are
+%   the commands AFTER clipping
+%       배분기가 푼 것이 아니라 추진기가 실제로 받은 것이다. 그래서 그 여덟을
+%       한계선과 함께 그리면 "배가 못 따라간 것인가, 추진기가 다 쓴 것인가" 를
+%       Run 이 끝나기 전에 가른다. 포화에 붙은 채로 오차가 남아 있으면 제어기를
+%       더 조여도 소용이 없다.
+%       These are what the thrusters received, not what the allocator asked for.
+%       Drawn against their limits they separate "the controller is too slow"
+%       from "the actuators are spent", while the run is still going: an error
+%       that persists with a unit pinned to its limit will not be fixed by a
+%       larger gain.
+%
+%   See also W07_ANIM, W07_PLOT_WPT, W07_PLOT_SAT, W07_3_BUILD_WPT.
 
 o.tag   = 'W07wpt_anim';
 o.name  = 'W07 live view  -  waypoint following';
@@ -29,7 +42,18 @@ o.goal  = [];
 o.cmdNE = [];                      % LOS 는 위치를 명령하지 않는다 / no position command
 o.info  = {'\psi', 6, 1; '\psi_d', 7, 1; 'u', 1, 1; 'u_d', 8, 1; 'y_e', 9, 1};
 
-%  점선이 명령, 실선이 실제. 다섯 칸 모두 같다 / dashed command, solid actual
+%  한계 둘. 배분기가 쓴 것과 **같은 값**을 읽는다 — 화면의 빨간 선과 모델
+%  안의 포화가 어긋나면 그림이 거짓말을 한다
+%  the two limits, read from the same variables the allocator saturates with:
+%  a red line that disagrees with the model would make the picture a lie
+nlo = base_var('n_min',     -101.74);
+nhi = base_var('n_max',      103.93);
+alim = rad2deg(base_var('alpha_lim', pi/4));
+
+%  점선이 명령, 실선이 실제. 앞의 다섯 칸이 모두 같다 / dashed command, solid
+%  actual, in the first five panels. 뒤의 두 칸은 네 단위를 색으로 가른다 —
+%  `W07_plot_sat` 과 같은 색이다 / the last two separate the four units by
+%  colour, the same colours W07_plot_sat uses
 o.panels = { ...
     {'\psi  [deg]',        [6 7],   {'-','--'},           {'act','cmd'}, ...
      {'\psi  actual','\psi_d  LOS'},                        false}, ...
@@ -41,7 +65,14 @@ o.panels = { ...
      {'act','sway','cmd','aux'}, ...
      {'X applied','Y applied','X asked','Y asked'},         true}, ...
     {'\tau_N  [N m]',      [15 12], {'-','--'},           {'act','cmd'}, ...
-     {'N applied','N asked'},                               true}};
+     {'N applied','N asked'},                               true}, ...
+    {'n  [rad/s]',         [16 17 18 19], {'-','-','-','-'}, ...
+     {'u1','u2','u3','u4'}, {'n_1','n_2','n_3','n_4'},      true, ...
+     1, [nlo nhi], {'n_{min}','n_{max}'}}, ...
+    {'\delta  [deg]',      [20 21 22 23], {'-','-','-','-'}, ...
+     {'u1','u2','u3','u4'}, ...
+     {'\delta_1','\delta_2','\delta_3','\delta_4'},         true, ...
+     180/pi, alim*[-1 1], {'-\alpha_{max}','+\alpha_{max}'}}};
 
 W07_anim(y, t, o);
 end

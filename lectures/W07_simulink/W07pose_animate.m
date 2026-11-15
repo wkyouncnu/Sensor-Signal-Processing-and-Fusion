@@ -19,8 +19,18 @@ function W07pose_animate(y, t)
 %       1 u   2 v   3 r   4 N   5 E   6 psi [deg]
 %       7-8 p_d [N E]   9 psi_d [deg]   10-11 nu_d [u_d v_d]
 %       12-14 tau asked [X Y N]         15-17 tau applied [X Y N]
+%       18-21 n [rad/s]                 22-25 delta [rad]
 %
-%   See also W07_ANIM, W07_PLOT_POSE, W07_4_BUILD_POSE.
+%   뒤의 여덟 열은 **한계를 지난 뒤**의 명령이다 / the last eight columns are
+%   the commands AFTER clipping
+%       위치 유지에서 이 여덟이 특히 중요하다. 정지한 배는 속도가 없어 선체의
+%       저항이 거의 돕지 않으므로 네 단위가 서로를 밀며 버티고, 바람이나 초기
+%       오차가 조금만 커져도 한계에 먼저 닿는 것은 제어기가 아니라 추진기다.
+%       They matter most in position hold: a stationary hull gets almost no help
+%       from its own damping, the four units push against each other to stand
+%       still, and what reaches a limit first is the actuator, not the loop.
+%
+%   See also W07_ANIM, W07_PLOT_POSE, W07_PLOT_SAT, W07_4_BUILD_POSE.
 
 pd = base_var('p_d', [10; 10]);
 
@@ -33,7 +43,16 @@ o.cmdNE = [7 8];                   % 바깥 고리가 위치를 명령한다 / a
 o.info  = {'N', 4, 1; 'E', 5, 1; '\psi', 6, 1; ...
            'N_d', 7, 1; 'E_d', 8, 1; '\psi_d', 9, 1};
 
-%  점선이 명령, 실선이 실제. 다섯 칸 모두 같다 / dashed command, solid actual
+%  한계 둘. 배분기가 쓴 것과 **같은 값**을 읽는다 — 화면의 빨간 선과 모델
+%  안의 포화가 어긋나면 그림이 거짓말을 한다
+%  the two limits, read from the same variables the allocator saturates with
+nlo  = base_var('n_min',     -101.74);
+nhi  = base_var('n_max',      103.93);
+alim = rad2deg(base_var('alpha_lim', pi/4));
+
+%  점선이 명령, 실선이 실제. 앞의 다섯 칸이 모두 같다 / dashed command, solid
+%  actual, in the first five panels. 뒤의 두 칸은 네 단위를 색으로 가른다
+%  the last two separate the four units by colour, as W07_plot_sat does
 o.panels = { ...
     {'north  [m]',  [4 7],   {'-','--'}, {'act','cmd'}, ...
      {'N  actual','N_d  command'},                           false}, ...
@@ -46,7 +65,14 @@ o.panels = { ...
      {'u  actual','v  actual','u_d  outer loop','v_d  outer loop'}, true}, ...
     {'\tau_X , \tau_Y  [N]', [15 16 12 13], {'-','-','--','--'}, ...
      {'act','sway','cmd','aux'}, ...
-     {'X applied','Y applied','X asked','Y asked'},          true}};
+     {'X applied','Y applied','X asked','Y asked'},          true}, ...
+    {'n  [rad/s]',  [18 19 20 21], {'-','-','-','-'}, ...
+     {'u1','u2','u3','u4'}, {'n_1','n_2','n_3','n_4'},       true, ...
+     1, [nlo nhi], {'n_{min}','n_{max}'}}, ...
+    {'\delta  [deg]', [22 23 24 25], {'-','-','-','-'}, ...
+     {'u1','u2','u3','u4'}, ...
+     {'\delta_1','\delta_2','\delta_3','\delta_4'},          true, ...
+     180/pi, alim*[-1 1], {'-\alpha_{max}','+\alpha_{max}'}}};
 
 W07_anim(y, t, o);
 end
