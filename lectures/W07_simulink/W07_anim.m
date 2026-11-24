@@ -151,7 +151,10 @@ tt  = S.t(idx);
 N = y(4);  E = y(5);  psi = y(6);          % psi 는 **도** / psi in degrees
 
 %% ---- 왼쪽: 항적 / left: the track ------------------------------------
-set(h.trail, 'XData', S.Y(idx,5), 'YData', S.Y(idx,4));
+Yd = S.Y(idx,:);
+set(h.trail, 'XData', Yd(:,5), 'YData', Yd(:,4));
+[gE, gN] = ghost_hulls(Yd, Lship, 7);
+set(h.ghost, 'XData', gE, 'YData', gN);
 [hE, hN] = hull_ned(N, E, psi*pi/180, Lship);
 set(h.hull, 'XData', hE, 'YData', hN);
 set(h.head, 'XData', [E, E + 1.8*Lship*sind(psi)], ...
@@ -199,10 +202,19 @@ np = numel(o.panels);
 %  안 되어 곡선이 선 하나로 보인다
 %  beyond five panels the right-hand side becomes two columns: seven panels in
 %  one column leave 90 px each, and a curve in 90 px is a line
+%  항적 칸은 `axis equal` 이라 **정사각형**이다. 한 열만 주면 그 정사각형이
+%  열 너비에 눌려, 남는 세로가 열 높이의 절반 가까이 빈다. 그래서 칸이 여섯을
+%  넘으면 격자를 네 열로 하고 항적에 **두 열**을 준다 — 항적이 세로를 채우고,
+%  그래프 열은 여전히 450 px 씩이다. `ncw` 가 항적이 차지하는 열 수다
+%  the track is `axis equal`, hence square: given one column of the grid it is
+%  squeezed to that column's width and leaves nearly half the column height
+%  empty. So beyond five panels the grid is four columns wide and the track
+%  takes TWO of them: the track then fills the height and each panel column is
+%  still 450 px. `ncw` is how many columns the track spans.
 if np <= 5
-    ncg = 2;  nr = np;  W = 1340;
+    ncg = 2;  ncw = 1;  nr = np;             W = 1340;
 else
-    ncg = 3;  nr = ceil(np/2);  W = 1560;
+    ncg = 4;  ncw = 2;  nr = ceil(np/2);     W = 1800;
 end
 
 old = findall(0, 'Type','figure', 'Tag', o.tag);
@@ -213,7 +225,11 @@ set(fig, 'Tag', o.tag);
 N = y(4);  E = y(5);
 
 %% ---- 항적 / the track ------------------------------------------------
-ax.xy = subplot(nr, ncg, 1:ncg:(ncg*(nr-1)+1), 'Parent', fig);
+tcell = [];
+for r = 1:nr
+    tcell = [tcell, ncg*(r-1) + (1:ncw)];              %#ok<AGROW>
+end
+ax.xy = subplot(nr, ncg, tcell, 'Parent', fig);
 hold(ax.xy, 'on');  grid(ax.xy, 'on');  axis(ax.xy, 'equal');
 xlabel(ax.xy, 'east [m]');  ylabel(ax.xy, 'north [m]');
 
@@ -249,13 +265,38 @@ plot(ax.xy, E, N, 'x', 'MarkerSize', 9, 'LineWidth', 1.4, ...
      'Color', P.grey, 'HandleVisibility','off');
 text(ax.xy, E + 1.0, N - 1.6, 'start', 'FontSize', 8, 'Color', P.grey);
 
+%  명령 위치가 없는 모델에서는 범례에서도 빼야 한다. 그리지 않는 선의 이름이
+%  범례에 남으면 학생이 "저 선은 왜 안 보이나" 를 묻는다 — LOS 는 위치를
+%  명령하지 않으므로 이 두 핸들은 끝까지 NaN 이다
+%  a model that commands no position must not advertise one: a legend entry for
+%  a line that never draws is read as a missing line, and LOS commands no
+%  position, so these two handles stay NaN for the whole run
+cmdVis = 'on';
+if isempty(o.cmdNE), cmdVis = 'off'; end
 h.cmd   = plot(ax.xy, nan, nan, '--', 'Color', P.cmd, 'LineWidth', 1.2, ...
-               'DisplayName', 'commanded position');
+               'DisplayName', 'commanded position', 'HandleVisibility', cmdVis);
 h.mark  = plot(ax.xy, nan, nan, 's', 'MarkerSize', 8, 'LineWidth', 1.2, ...
                'MarkerEdgeColor', P.cmd, 'MarkerFaceColor','none', ...
-               'DisplayName', 'command now');
+               'DisplayName', 'command now', 'HandleVisibility', cmdVis);
+%  자취 위의 선체들. 궤적선만으로는 배가 그때 어디를 **향하고** 있었는지 알 수
+%  없고, 그 차이가 크랩각이다 — `_tools/track_ships` 가 저장된 그림에 하는 것을
+%  살아 있는 화면에도 한다. 한계선 하나에 NaN 으로 끊어 넣어 `set` 한 번으로
+%  전부 갱신한다
+%  the hulls along the trail: a track line does not say where the vessel was
+%  pointing while it drew it, and that difference is the crab angle. This is
+%  what `_tools/track_ships` does in the saved figure, done live. All of the
+%  outlines go into one line object separated by NaN, so one set() updates them
+h.ghost = plot(ax.xy, nan, nan, '-', 'Color', [0.55 0.33 0.16], ...
+               'LineWidth', 0.9, ...
+               'DisplayName', 'hull and heading along the track');
+
+%  자취선은 선체들 **위에** 그린다. 아래에 두면 선체 윤곽이 자취를 덮어, 정작
+%  배가 지나간 자리가 보이지 않는다
+%  the trail goes ON TOP of the hulls: underneath them the outlines cover the
+%  very line the figure is about
 h.trail = plot(ax.xy, nan, nan, '-', 'Color', P.act, 'LineWidth', 1.4, ...
                'DisplayName', 'actual track');
+
 if Lship > 2.001
     hullName = sprintf('hull (drawn %.0f m; true length 2.0 m)', Lship);
 else
@@ -286,8 +327,8 @@ for k = 1:np
     if ncg == 2
         cell_k = 2*k;  col = 1;
     else
-        col    = 1 + mod(k-1, 2);                  % 둘째 열인가 셋째 열인가
-        cell_k = 3*(ceil(k/2) - 1) + 1 + col;
+        col    = 1 + mod(k-1, 2);        % 그래프 열 둘 가운데 어느 쪽인가
+        cell_k = ncg*(ceil(k/2) - 1) + ncw + col;
     end
     last(col) = k;
 
@@ -393,6 +434,49 @@ end
 s = {};
 for i = 1:3:numel(L)
     s{end+1} = strjoin(L(i:min(i+2, numel(L))), '      '); %#ok<AGROW>
+end
+end
+
+% =========================================================================
+function [gE, gN] = ghost_hulls(Yd, Lship, nmark)
+%  자취를 따라 선체 윤곽과 선수방위를 뽑는다. 간격은 **시간이 아니라 호길이**로
+%  정한다 (`_tools/ship_marks`) — 멈춰 있던 동안 선체가 한자리에 쌓이지 않는다.
+%  채우지 않고 윤곽만 그리는 이유는 둘이다: 매 스텝 `set` 한 번으로 끝나고,
+%  지금 위치의 **채운** 선체가 그 위에 또렷이 올라온다
+%  the hull outline and heading along the trail, spaced by ARC LENGTH rather
+%  than by time (`_tools/ship_marks`), so a vessel that sat still does not
+%  stack hulls on one spot. They are outlines, not filled patches, for two
+%  reasons: one set() per step updates all of them, and the filled hull at the
+%  present position still reads clearly on top.
+gE = nan(0,1);  gN = nan(0,1);
+if size(Yd,1) < 3, return; end
+k = ship_marks(Yd(:,4), Yd(:,5), nmark);
+
+%  자취가 짧을 때는 일곱 자리가 선체 길이보다 촘촘해져 선체들이 서로 붙고,
+%  붙은 윤곽이 자취를 덮는다. 그래서 **앞 선체에서 1.6 L 이상** 떨어진 것만
+%  남긴다 — Run 이 막 시작했을 때 하나나 둘만 그려지는 것이 옳다
+%  early in a run the seven positions fall closer together than the hull is
+%  long, the outlines touch and the chain of them hides the trail. So only a
+%  mark at least 1.6 L from the one kept before it is drawn: one or two hulls
+%  just after the start is the right picture.
+keep = false(size(k));
+lastE = -inf;  lastN = -inf;
+for q = 1:numel(k)
+    if hypot(Yd(k(q),4) - lastN, Yd(k(q),5) - lastE) >= 1.6*Lship
+        keep(q) = true;
+        lastN = Yd(k(q),4);  lastE = Yd(k(q),5);
+    end
+end
+k = k(keep);
+
+for q = 1:numel(k)
+    j   = k(q);
+    psi = Yd(j,6)*pi/180;                  % psi 는 **도** / psi in degrees
+    [eE, eN] = hull_ned(Yd(j,4), Yd(j,5), psi, Lship);
+    gE = [gE; eE(:); eE(1); nan; ...
+          Yd(j,5); Yd(j,5) + 1.4*Lship*sin(psi); nan];           %#ok<AGROW>
+    gN = [gN; eN(:); eN(1); nan; ...
+          Yd(j,4); Yd(j,4) + 1.4*Lship*cos(psi); nan];           %#ok<AGROW>
 end
 end
 

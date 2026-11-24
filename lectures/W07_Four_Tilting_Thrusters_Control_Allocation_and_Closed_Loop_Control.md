@@ -2037,7 +2037,27 @@ W07_3_build_wpt         % writes W07_wpt_los.slx and the block-diagram PNGs
 W07_wpt_run             % runs the model and draws both figures
 ```
 
-The runner reads its values from `W07_vars`, so nothing has to be set up first. `W07_0_setup` is what to run before pressing **Run** on the model by hand: the same values, plus `animate = 1`.
+The runner reads its values from `W07_vars`, so nothing has to be set up first, and neither does the model. `W07_0_setup` puts the same values in the base workspace together with `animate = 1`, which is what to run when one of them is to be changed by hand before pressing **Run**.
+
+> [!tip] The model alone is enough
+> Opening `W07_simulink/W07_wpt_los.slx` and pressing **Run** — with no script
+> run first — produces three windows: the live view of the route being flown,
+> the command-against-actual sheet, and the actuator-limit sheet. The two
+> result figures in this section are what that press of Run draws.
+> The live view carries the track and seven panels: $\psi$ against the LOS
+> command, $u$ against the gated speed command, the cross-track error on its
+> own axis, then $\tau_X$ and $\tau_Y$ together, then $\tau_N$, and finally the
+> four $n_i$ and the four $\delta_i$ against their limit lines — so a leg flown
+> on a unit that has run out of travel is visible while it is being flown,
+> rather than afterwards. The track draws the hull and the heading along the
+> route and not the trail alone, because the angle between the two is the crab
+> angle of §7-5, and on the diagonal leg it is what the lookahead has to absorb.
+> The `InitFcn` is what makes this work: it puts `_tools` and the week folder on
+> the path, calls `mss_path`, fills in any constant the base workspace is
+> missing, raises `animate` to $1$ and reads `pace`. The `StopFcn` then calls
+> `W07_plot_wpt`, which draws the second window and hands the third to
+> `W07_plot_sat`. Running the section script instead is the same simulation with
+> the live view switched off and a printed table added.
 
 ![Top level of W07_wpt_los: the guidance subsystem on the left turns the waypoint list into a heading command and a cross-track error, the speed and heading loops sit in the middle column, the allocation subsystem holding law 4 follows, and the Otter plant returns both the state and the force it actually produced](W07_simulink/img/W07_wpt_los.png)
 
@@ -2164,12 +2184,8 @@ W07_pose_run            % runs the model and draws both figures
 > components are asked and applied together, so a heading that lags can be
 > charged either to the loop or to the four units — and finally $n_i$ and
 > $\delta_i$ against their limit lines.
-> The `InitFcn` is what makes this work: it puts `_tools` and the week folder on
-> the path, calls `mss_path`, fills in any constant the base workspace is
-> missing, raises `animate` to $1$ and reads `pace`. The `StopFcn` then calls
-> `W07_plot_pose`, which draws the first figure and hands the second to
-> `W07_plot_sat`. Running the section script instead is the same simulation with
-> the live view switched off and a printed table added.
+> The `InitFcn` and the `StopFcn` do what §7-13 describes, with `W07_plot_pose`
+> in the place of `W07_plot_wpt`.
 
 ![Top level of W07_pose_dp: the position-loop subsystem turns the commanded position into a body-axis velocity command, the velocity loop and the heading autopilot form the three force components, and the law-4 allocation subsystem drives the Otter plant](W07_simulink/img/W07_pose_dp.png)
 
