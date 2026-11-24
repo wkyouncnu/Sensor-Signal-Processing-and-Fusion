@@ -32,10 +32,25 @@ function W07pose_animate(y, t)
 %
 %   See also W07_ANIM, W07_PLOT_POSE, W07_PLOT_SAT, W07_4_BUILD_POSE.
 
+%  명세를 **한 Run 에 한 번만** 만든다 — 이유는 `W07wpt_animate` 와 같다.
+%  built ONCE per run, for the reason W07wpt_animate gives
+persistent o tLastRun
+if isempty(o) || isempty(tLastRun) || t < tLastRun
+    o = pose_spec();
+end
+tLastRun = t;
+
+W07_anim(y, t, o);
+end
+
+% =========================================================================
+function o = pose_spec()
+%POSE_SPEC  이 Run 에서 그릴 것 / what this run draws
 pd = base_var('p_d', [10; 10]);
 
 o.tag   = 'W07pose_anim';
 o.name  = 'W07 live view  -  position hold';
+o.T     = base_var('T_pose', 60);          % 제목의 `t / T` 에 쓴다 / for t / T
 o.lim   = [-6, max(pd(2)) + 8, -6, max(pd(1)) + 8];
 o.wp    = [];
 o.goal  = [pd(1), pd(2), rad2deg(base_var('psi_set', pi/4))];
@@ -86,5 +101,18 @@ o.panels = { ...
      {'\delta_1','\delta_2','\delta_3','\delta_4'},          true, ...
      180/pi, alim*[-1 1], {'-\alpha_{max}','+\alpha_{max}'}}};
 
-W07_anim(y, t, o);
+%  추진기 넷을 화살표로. 열 번호만 다르고 규칙은 wpt 와 **같다**
+%  the same arrows as the wpt view; only the log columns differ
+q = base_var('quad', []);
+if isempty(q)
+    o.thr = [];
+else
+    o.thr = struct('n',     18:21, ...
+                   'd',     22:25, ...
+                   'pos',   q(1:2,:), ...
+                   'mount', q(4,:), ...
+                   'kpos',  base_var('k_pos', 0.01108), ...
+                   'kneg',  base_var('k_neg', 0.006445), ...
+                   'Tref',  base_var('T_pos', 119.68));
+end
 end

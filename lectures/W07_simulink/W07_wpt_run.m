@@ -52,9 +52,16 @@ W07batch = true;     % run_alone 이 animate 를 올리지 않게 / keep it quie
 W07quiet = true;     % StopFcn 의 그림을 끈다. 이 파일이 대신 그린다
 
 %% 돌릴 절 / the sections to run ---------------------------------------------
+%     **B 는 기본에서 빠져 있다** (사용자 지시, 2026-11-24: "the lookahead
+%     distance, swept 할 필요 없어"). 절 B 는 `sim` 을 세 번 더 돌리므로 혼자
+%     몇 분을 더 쓰는데, 강의자료에 실리는 그림은 전부 절 A 가 낸다. 숫자가
+%     필요하면 아래 `%` 하나를 지운다 — 그것이 이 파일의 규칙이다.
+%     Section B is OFF by default: it runs sim three more times and so costs
+%     several minutes on its own, while every figure the lecture carries comes
+%     out of section A. Delete the one % below to get the table back.
 SEC = { ...
     'A'  'the four-leg route, with every command beside what happened'
-    'B'  'the lookahead distance Delta, swept over the first two legs'
+%   'B'  'the lookahead distance Delta, swept over the first two legs'
 };
 want = @(s) any(strcmp(s, SEC(:,1)));
 
@@ -67,7 +74,13 @@ fprintf('  sections: %s\n', strjoin(SEC(:,1).', ', '));
 if want('A')
     hdr('A', 'one run of the whole route');
     set_vars(struct('Delta', V.Delta, 'T_wpt', V.T_wpt));
+    %  `sim` 이 도는 동안은 화면에 아무것도 없다. 몇 분이 걸리므로, 얼마나
+    %  기다리는 것인지 **미리** 말해 둔다 / say how long the silence will be
+    fprintf('   one run of %g s of track; a few minutes, with no output until it ends\n', ...
+            V.T_wpt);
+    t0 = tic;
     sim(mdl);
+    fprintf('   the run took %.0f s\n', toc(t0));
     W07_plot_wpt(fullfile(img, 'W07_wpt'));    % 수치는 그 함수가 찍는다 / it prints
 end
 
@@ -81,14 +94,22 @@ if want('B')
     D_SWEEP = [2 5 10];
     T_B     = 180;            % 앞의 두 다리까지 / the first two legs only
     SW      = nan(numel(D_SWEEP), 4);
+    %  한 줄은 **돌자마자** 찍는다. `sim` 세 번은 몇 분이 걸리는데 표를 끝에서
+    %  한 번에 찍으면 그동안 화면이 비어 멎은 것처럼 보이고, 그래서 Ctrl-C 를
+    %  누르게 된다 — 그러면 이 스크립트의 끝줄이 돌지 않아 플래그가 남는다
+    %  each row is printed AS IT FINISHES: three sims take minutes, and a table
+    %  printed only at the end leaves the screen blank throughout, which reads as
+    %  a hang and invites the Ctrl-C that stops the closing line from running
+    fprintf('\n   over %g s, from the instant |y_e| first falls below Delta\n', T_B);
+    fprintf('   three runs, each a few minutes; a row appears as each one ends\n');
+    fprintf('    Delta [m]   |y_e| rms [m]   |y_e| max [m]   |psi err| rms [deg]   took [s]\n');
     for i = 1:numel(D_SWEEP)
         set_vars(struct('Delta', D_SWEEP(i), 'T_wpt', T_B));
+        t0 = tic;
         sim(mdl);
         SW(i,:) = wstat(D_SWEEP(i));
+        fprintf('   %8.1f %14.3f %15.3f %20.3f %11.0f\n', SW(i,:), toc(t0));
     end
-    fprintf('\n   over %g s, from the instant |y_e| first falls below Delta\n', T_B);
-    fprintf('    Delta [m]   |y_e| rms [m]   |y_e| max [m]   |psi err| rms [deg]\n');
-    fprintf('   %8.1f %14.3f %15.3f %20.3f\n', SW(:, [1 2 3 4]).');
     fprintf('   Larger Delta turns the vessel less and keeps it further from the leg.\n');
     set_vars(struct('Delta', V.Delta, 'T_wpt', V.T_wpt));
 end

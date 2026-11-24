@@ -33,8 +33,29 @@ function W07wpt_animate(y, t)
 %
 %   See also W07_ANIM, W07_PLOT_WPT, W07_PLOT_SAT, W07_3_BUILD_WPT.
 
+%  명세를 **한 Run 에 한 번만** 만든다. 이 함수는 Run 마다 2 만 번 불리고,
+%  명세를 세우는 데 `base_var` 가 열 번 넘게 기본 작업공간을 들여다본다 —
+%  그것을 매 스텝 되풀이하면 그리지 않는 스텝에서도 값이 새어 나간다.
+%  시각이 뒤로 가면 새 Run 이므로 그때 다시 세운다 (`W07_anim` 과 같은 판정).
+%  The spec is built ONCE per run: this function is called some twenty thousand
+%  times, and building the spec reaches into the base workspace a dozen times
+%  through base_var. A clock that goes backwards means a new run, the same test
+%  W07_anim uses.
+persistent o tLastRun
+if isempty(o) || isempty(tLastRun) || t < tLastRun
+    o = wpt_spec();
+end
+tLastRun = t;
+
+W07_anim(y, t, o);
+end
+
+% =========================================================================
+function o = wpt_spec()
+%WPT_SPEC  이 Run 에서 그릴 것 / what this run draws
 o.tag   = 'W07wpt_anim';
 o.name  = 'W07 live view  -  waypoint following';
+o.T     = base_var('T_wpt', 400);          % 제목의 `t / T` 에 쓴다 / for t / T
 o.lim   = [base_var('track_Emin', -60), base_var('track_Emax', 140), ...
            base_var('track_Nmin', -60), base_var('track_Nmax', 140)];
 o.wp    = [base_var('WP_N', 0), base_var('WP_E', 0)];
@@ -74,5 +95,21 @@ o.panels = { ...
      {'\delta_1','\delta_2','\delta_3','\delta_4'},         true, ...
      180/pi, alim*[-1 1], {'-\alpha_{max}','+\alpha_{max}'}}};
 
-W07_anim(y, t, o);
+%  추진기 넷을 항적 칸에 화살표로 / the four units, as arrows on the track
+%      거치점과 거치 부호는 `V.quad` 의 네 행에서 그대로 온다 —
+%      `[pos ; alpha_max ; mount]` (`W07_vars`). 여기서 다시 적지 않는다.
+%      the stations and the mounting signs come straight out of V.quad's rows,
+%      [pos ; alpha_max ; mount], so they are never written down twice
+q = base_var('quad', []);
+if isempty(q)
+    o.thr = [];
+else
+    o.thr = struct('n',     16:19, ...
+                   'd',     20:23, ...
+                   'pos',   q(1:2,:), ...
+                   'mount', q(4,:), ...
+                   'kpos',  base_var('k_pos', 0.01108), ...
+                   'kneg',  base_var('k_neg', 0.006445), ...
+                   'Tref',  base_var('T_pos', 119.68));
+end
 end

@@ -43,9 +43,15 @@ W07batch = true;
 W07quiet = true;     % StopFcn 의 그림을 끈다. 이 파일이 대신 그린다
 
 %% 돌릴 절 / the sections to run ---------------------------------------------
+%     **B 는 기본에서 빠져 있다** (사용자 지시, 2026-11-24). 절 B 는 `sim` 을
+%     세 번 더 돌려 혼자 몇 분을 쓰는데, 강의자료에 실리는 그림은 전부 절 A 가
+%     낸다. 숫자가 필요하면 아래 `%` 하나를 지운다.
+%     Section B is OFF by default: three more sims, minutes of them, while every
+%     figure the lecture carries comes out of section A. Delete the one % to
+%     bring the table back.
 SEC = { ...
     'A'  'from the origin to (10, 10) m at 45 deg, command beside actual'
-    'B'  'the outer-loop gain Kp_pos, swept'
+%   'B'  'the outer-loop gain Kp_pos, swept'
 };
 want = @(s) any(strcmp(s, SEC(:,1)));
 
@@ -59,7 +65,13 @@ fprintf('  sections: %s\n', strjoin(SEC(:,1).', ', '));
 if want('A')
     hdr('A', 'one run to the commanded pose');
     set_vars(struct('Kp_pos', V.Kp_pos, 'T_pose', V.T_pose));
+    %  `sim` 이 도는 동안은 화면에 아무것도 없다. 플랜트가 해석 실행
+    %  (`coder.extrinsic('otter_tilt4')`)이라 실제 시간은 운항 시간의 몇 배다.
+    %  그래서 **얼마나 조용할 것인지** 미리 말해 둔다 / say how long the silence is
+    fprintf('   one run of %g s of motion; no output until it ends\n', V.T_pose);
+    t0 = tic;
     sim(mdl);
+    fprintf('   the run took %.0f s\n', toc(t0));
     W07_plot_pose(fullfile(img, 'W07_pose'));   % 수치는 그 함수가 찍는다 / it prints
 end
 
@@ -74,14 +86,22 @@ if want('B')
     hdr('B', 'the outer-loop gain, swept');
     K_SWEEP = [0.15 0.30 0.60];
     SW      = nan(numel(K_SWEEP), 4);
+    %  한 줄은 **돌자마자** 찍는다. 표를 끝에서 한 번에 찍으면 그동안 화면이
+    %  비어 멎은 것처럼 보이고, 그래서 Ctrl-C 를 누르게 된다 — 그러면 이
+    %  스크립트의 끝줄이 돌지 않아 플래그가 남는다 (§15-93)
+    %  each row is printed AS IT FINISHES: a table printed only at the end
+    %  leaves the screen blank throughout, which reads as a hang and invites
+    %  the Ctrl-C that stops the closing line from clearing the flags
+    fprintf('\n   settling = the last instant the error leaves the band, +1 sample\n');
+    fprintf('   three runs; a row appears as each one ends\n');
+    fprintf('    Kp_pos    t to 0.50 m [s]   peak |u| [m/s]   overshoot [m]   took [s]\n');
     for i = 1:numel(K_SWEEP)
         set_vars(struct('Kp_pos', K_SWEEP(i), 'T_pose', V.T_pose));
+        t0 = tic;
         sim(mdl);
         SW(i,:) = pstat(K_SWEEP(i));
+        fprintf('   %7.2f %16.2f %16.3f %15.3f %11.0f\n', SW(i,:), toc(t0));
     end
-    fprintf('\n   settling = the last instant the error leaves the band, +1 sample\n');
-    fprintf('    Kp_pos    t to 0.50 m [s]   peak |u| [m/s]   overshoot [m]\n');
-    fprintf('   %7.2f %16.2f %16.3f %15.3f\n', SW.');
     fprintf('   The speed cap is %g m/s: where peak |u| sits on it, the gain is\n', V.u_lim);
     fprintf('   no longer what sets the approach — the cap is.\n');
     set_vars(struct('Kp_pos', V.Kp_pos, 'T_pose', V.T_pose));

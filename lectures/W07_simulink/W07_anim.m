@@ -42,6 +42,23 @@ function W07_anim(y, t, o)
 %        거의 방해받지 않는다
 %        the redraw interval is a variable, animate_every, set in W07_0_setup
 %
+%   추진기 넷을 화살표로 / the four units as arrows
+%       사용자 지시 (2026-11-24): "이 주차 강의자료처럼 네 추진기의 힘을
+%       화살표 방향과 회전각도로도 표시해줘." `figures/w07-tilt-geometry.svg`
+%       가 종이에 그리는 것과 **같은 규칙**이다 —
+%         · 점선 토막이 그 유닛의 **0 도**다. 선수 둘은 $+x_b$, 선미 둘은
+%           $-x_b$ 를 가리킨다 (거치 부호 `cfg.mount`)
+%         · 화살표가 **그 순간의 추력 벡터**다. 0 도에서 화살표까지의 벌어짐이
+%           곧 서보각 $\delta_i$ 이므로, 회전각이 그림에서 바로 읽힌다
+%         · 길이는 $|T_i|$ 에 비례하고, 꽉 찬 화살표가 `o.thr.Tref` 다
+%         · 역추력은 화살표가 **반대로** 돈다 — $T_i<0$ 이면 벡터가 뒤를 민다
+%       The same rule the week's own figure uses on paper: a dotted stub is the
+%       unit's servo zero, the arrow is the thrust vector at that instant, and
+%       the opening between them IS the servo angle, so the tilt is read off the
+%       picture. Length is proportional to |T_i|, a full arrow being Tref, and a
+%       negative thrust turns the arrow round because the force pushes the other
+%       way.
+%
 %   입력 / inputs
 %     y   그 스텝의 **로그 벡터 전부**. `add_measurement` 의 `opts.logFeed` 가
 %         켜져 있어 상태 여섯이 아니라 기록되는 열 전부가 들어온다. 앞 여섯은
@@ -57,6 +74,21 @@ function W07_anim(y, t, o)
 %           .wp       웨이포인트 n x 2 = [N E], 없으면 [] / the waypoints or []
 %           .goal     [N E psi_deg] 목표 자세, 없으면 [] / the target pose or []
 %           .cmdNE    명령 위치의 열 둘 [cN cE], 없으면 [] / columns or []
+%           .T        이 Run 의 끝 시각 [s]. 제목이 `t / T` 로 찍어 **얼마나
+%                     남았는지** 보인다. 400 초짜리 운항은 실제로 몇 분이
+%                     걸리는데, 남은 양이 보이지 않으면 멎은 것으로 읽힌다
+%                     (사용자 지시, 2026-11-24: "시뮬레이션 완료가 않되고 멈춰")
+%                     the stop time of this run, so the title can show t / T:
+%                     a run of a few minutes with no sense of how much is left
+%                     reads as a hang
+%           .thr      추진기 화살표. 없으면 그리지 않는다 / the arrows, or []
+%                       .n     축회전수 네 열 [rad/s] / the four shaft columns
+%                       .d     서보각 네 열 [rad]     / the four servo columns
+%                       .pos   2 x 4 선체좌표 [x; y] [m] / stations in {b}
+%                       .mount 1 x 4 거치 부호 s_i    / the mounting signs
+%                       .kpos  정추력 계수 [N/(rad/s)^2] / ahead coefficient
+%                       .kneg  역추력 계수             / astern coefficient
+%                       .Tref  꽉 찬 화살표의 추력 [N] / thrust of a full arrow
 %           .info     제목에 쓸 {이름, 열, 배율} 목록 / the title readouts
 %           .panels   오른쪽 칸들. 한 칸이 중괄호 하나다 / one brace per panel
 %                       {ylabel, [열…], {선모양…}, {색이름…}, {범례…}, 0선}
@@ -86,6 +118,13 @@ NMAX   = 32768;                % 그 이상은 한 칸 걸러 버린다 / then h
 MAXPTS = 1500;                 % 한 곡선에 그리는 점 수 / points drawn per curve
 
 y = y(:).';
+
+%  래퍼가 빠뜨린 칸을 채운다. 둘은 **나중에 생긴 칸**이라, 이것이 없으면 옛
+%  래퍼를 그대로 둔 주차에서 필드 오류가 난다
+%  fill the fields a wrapper may not set: both were added later, and without
+%  this an older wrapper would stop at a missing-field error
+if ~isfield(o, 'thr'), o.thr = []; end
+if ~isfield(o, 'T'),   o.T   = []; end
 
 %  새 Run 인가. 시각이 뒤로 갔거나 창이 닫혔으면 새 Run 이다
 %  a new run: the clock went backwards, or the window is gone
@@ -153,13 +192,18 @@ N = y(4);  E = y(5);  psi = y(6);          % psi 는 **도** / psi in degrees
 %% ---- 왼쪽: 항적 / left: the track ------------------------------------
 Yd = S.Y(idx,:);
 set(h.trail, 'XData', Yd(:,5), 'YData', Yd(:,4));
-[gE, gN] = ghost_hulls(Yd, Lship, 7);
-set(h.ghost, 'XData', gE, 'YData', gN);
 [hE, hN] = hull_ned(N, E, psi*pi/180, Lship);
 set(h.hull, 'XData', hE, 'YData', hN);
-set(h.head, 'XData', [E, E + 1.8*Lship*sind(psi)], ...
-            'YData', [N, N + 1.8*Lship*cosd(psi)]);
+set(h.head, 'XData', [E, E + 1.2*Lship*sind(psi)], ...
+            'YData', [N, N + 1.2*Lship*cosd(psi)]);
 set(h.dot,  'XData', E, 'YData', N);
+
+%  추진기 넷의 힘과 서보각 / the thrust and the servo angle of each unit
+if ~isempty(o.thr)
+    [aE, aN, zE, zN] = thruster_arrows(y, psi*pi/180, N, E, o.thr, Lship);
+    set(h.thr0, 'XData', zE, 'YData', zN);
+    set(h.thr,  'XData', aE, 'YData', aN);
+end
 fit_lims(ax.xy, E, N, max(3, 0.6*Lship));
 
 %  명령 위치가 있는 모델이면 그 자취도 함께 / the commanded position, if any
@@ -278,27 +322,24 @@ h.cmd   = plot(ax.xy, nan, nan, '--', 'Color', P.cmd, 'LineWidth', 1.2, ...
 h.mark  = plot(ax.xy, nan, nan, 's', 'MarkerSize', 8, 'LineWidth', 1.2, ...
                'MarkerEdgeColor', P.cmd, 'MarkerFaceColor','none', ...
                'DisplayName', 'command now', 'HandleVisibility', cmdVis);
-%  자취 위의 선체들. 궤적선만으로는 배가 그때 어디를 **향하고** 있었는지 알 수
-%  없고, 그 차이가 크랩각이다 — `_tools/track_ships` 가 저장된 그림에 하는 것을
-%  살아 있는 화면에도 한다. 한계선 하나에 NaN 으로 끊어 넣어 `set` 한 번으로
-%  전부 갱신한다
-%  the hulls along the trail: a track line does not say where the vessel was
-%  pointing while it drew it, and that difference is the crab angle. This is
-%  what `_tools/track_ships` does in the saved figure, done live. All of the
-%  outlines go into one line object separated by NaN, so one set() updates them
-h.ghost = plot(ax.xy, nan, nan, '-', 'Color', [0.55 0.33 0.16], ...
-               'LineWidth', 0.9, ...
-               'DisplayName', 'hull and heading along the track');
-
-%  자취선은 선체들 **위에** 그린다. 아래에 두면 선체 윤곽이 자취를 덮어, 정작
-%  배가 지나간 자리가 보이지 않는다
-%  the trail goes ON TOP of the hulls: underneath them the outlines cover the
-%  very line the figure is about
+%  **자취 위에 선체를 줄줄이 그리지 않는다** (사용자 지시, 2026-11-24).
+%  한때 호길이 간격으로 지나간 선체 윤곽을 함께 그렸으나, 살아 있는 화면에서
+%  그것은 "배가 여러 척" 으로 읽혔다. 선수방위는 **지금 자리의 선체 하나**와
+%  추진기 화살표가 보이면 충분하고, 지나간 선수방위가 필요한 그림 —
+%  강의자료에 실리는 저장된 항적도 — 은 `_tools/track_ships` 가 따로 그린다.
+%  이전 주차(`W06_animate`)도 살아 있는 창에는 선체를 하나만 그린다.
+%  No chain of hulls along the trail: it was read as several vessels. One hull
+%  at the present position, with the thrust arrows, carries the heading; the
+%  saved track figure that goes into the lecture still gets the chain, drawn by
+%  `_tools/track_ships`, and the earlier weeks' live windows draw one hull too.
 h.trail = plot(ax.xy, nan, nan, '-', 'Color', P.act, 'LineWidth', 1.4, ...
                'DisplayName', 'actual track');
 
+%  이전 주차의 문구를 그대로 쓴다 — `W06_animate` 는 `hull (2.0 m, true size)`
+%  다. 넓은 장면에서는 키워 그리므로 **몇 배인지**를 적는다
+%  the earlier weeks' wording, with the magnification named when there is one
 if Lship > 2.001
-    hullName = sprintf('hull (drawn %.0f m; true length 2.0 m)', Lship);
+    hullName = sprintf('hull (2.0 m, drawn x%.1f)', Lship/2.00);
 else
     hullName = 'hull (2.0 m, true size)';
 end
@@ -309,6 +350,25 @@ h.hull  = patch('Parent', ax.xy, 'XData', nan, 'YData', nan, ...
 h.head  = plot(ax.xy, nan, nan, '-', 'Color', [0.40 0.15 0.05], ...
                'LineWidth', 1.5, 'HandleVisibility','off');
 h.dot   = plot(ax.xy, nan, nan, 'k.', 'MarkerSize', 9, 'HandleVisibility','off');
+
+%  추진기 넷. 점선 토막이 **그 유닛의 0 도**이고 화살표가 그 순간의 추력
+%  벡터이므로, 둘 사이의 벌어짐이 곧 서보각 $\delta_i$ 다. 넷을 NaN 으로 끊어
+%  line 두 개에 담으므로 매 스텝 `set` 두 번이면 끝난다.
+%  두 line 의 그리기 순서는 점선 먼저다 — 화살표가 그 위에 올라와야 각이 보인다.
+%  the four units: a dotted stub is that unit's servo zero and the arrow is the
+%  thrust vector, so the opening between them IS the servo angle. All four go
+%  into two line objects separated by NaN, two set() calls per step. The stubs
+%  are created first so the arrows draw on top of them.
+if ~isempty(o.thr)
+    h.thr0 = plot(ax.xy, nan, nan, ':', 'Color', [0.35 0.35 0.35], ...
+                  'LineWidth', 0.9, ...
+                  'DisplayName', 'servo zero of each unit');
+    h.thr  = plot(ax.xy, nan, nan, '-', 'Color', [0.64 0.08 0.18], ...
+                  'LineWidth', 1.6, 'DisplayName', ...
+                  sprintf('thrust of each unit (full arrow %.0f N)', o.thr.Tref));
+else
+    h.thr0 = gobjects(0);  h.thr = gobjects(0);
+end
 
 if numel(o.lim) == 4
     set(ax.xy, 'XLim', o.lim(1:2), 'YLim', o.lim(3:4));
@@ -359,12 +419,16 @@ for k = 1:np
     %  가려지고, 가려지는 자리가 하필 정상상태다
     %  a filled legend box hides the curve beneath it, and that is exactly
     %  where the steady state is
-    %  넷을 한 줄로 늘어놓으면 범례가 칸보다 넓어져 왼쪽 눈금 위로 삐져
-    %  나간다. 그래서 셋 이상은 **두 칸짜리 블록**으로 접는다
-    %  four entries on one line are wider than the panel and spill over the
-    %  tick labels, so three or more fold into a two-column block
+    %  **이전 주차와 같은 범례다** (사용자 지시, 2026-11-24). `W06_animate` 는
+    %  시간 칸의 범례를 `Orientation','horizontal'` 로 두어 **한 줄**로 세운다.
+    %  `NumColumns` 를 쓰면 둘짜리 범례도 두 칸으로 벌어지고 넷짜리는 **두 줄**이
+    %  되어, 그만큼 칸 아래를 비워 주어야 하므로 곡선이 위로 몰린다.
+    %  the earlier weeks' legend: W06_animate lays the time panels' legends out
+    %  horizontally, on ONE line. NumColumns widened a two-entry legend and made
+    %  a four-entry one two lines deep, which then had to be paid for by opening
+    %  the bottom of the panel, squashing the curves into the top.
     legend(a, 'Location','southeast', 'AutoUpdate','off', 'FontSize', 7, ...
-           'NumColumns', min(numel(Q{2}), 2), 'Box','off', 'Color','none');
+           'Orientation','horizontal', 'Box','off', 'Color','none');
     p = get(a, 'Position');
     set(a, 'Position', [p(1) p(2) p(3)*0.92 p(4)]);
     ax.p(k) = a;
@@ -424,7 +488,14 @@ end
 function s = info_lines(t, y, o)
 %  제목 두 줄. 그림에서 못 읽는 수치만 글자로 쓴다
 %  two title lines, carrying only the numbers the picture cannot show
-L = {sprintf('t = %6.2f s', t)};
+%  **얼마나 남았는지** 보인다. 400 초짜리 운항은 실제로 몇 분이 걸리는데,
+%  남은 양이 보이지 않으면 멎은 것으로 읽힌다 (사용자 지시, 2026-11-24)
+%  how much is left: a run of minutes with no sense of progress reads as a hang
+if isfield(o, 'T') && ~isempty(o.T) && o.T > 0
+    L = {sprintf('t = %6.2f / %g s  (%3.0f%%)', t, o.T, 100*min(t/o.T, 1))};
+else
+    L = {sprintf('t = %6.2f s', t)};
+end
 for i = 1:size(o.info, 1)
     L{end+1} = sprintf('%s %7.2f', o.info{i,1}, y(o.info{i,2})*o.info{i,3}); %#ok<AGROW>
 end
@@ -438,45 +509,78 @@ end
 end
 
 % =========================================================================
-function [gE, gN] = ghost_hulls(Yd, Lship, nmark)
-%  자취를 따라 선체 윤곽과 선수방위를 뽑는다. 간격은 **시간이 아니라 호길이**로
-%  정한다 (`_tools/ship_marks`) — 멈춰 있던 동안 선체가 한자리에 쌓이지 않는다.
-%  채우지 않고 윤곽만 그리는 이유는 둘이다: 매 스텝 `set` 한 번으로 끝나고,
-%  지금 위치의 **채운** 선체가 그 위에 또렷이 올라온다
-%  the hull outline and heading along the trail, spaced by ARC LENGTH rather
-%  than by time (`_tools/ship_marks`), so a vessel that sat still does not
-%  stack hulls on one spot. They are outlines, not filled patches, for two
-%  reasons: one set() per step updates all of them, and the filled hull at the
-%  present position still reads clearly on top.
-gE = nan(0,1);  gN = nan(0,1);
-if size(Yd,1) < 3, return; end
-k = ship_marks(Yd(:,4), Yd(:,5), nmark);
+function [aE, aN, zE, zN] = thruster_arrows(y, psi, N, E, T, Lship)
+%THRUSTER_ARROWS  추진기 넷의 힘과 서보각을, 강의자료와 **같은 규칙**으로
+%                 the four units' thrust and tilt, by the week's own rule
+%
+%  규칙은 `figures/src/w07-tilt-geometry.tex` 이 종이에 쓰는 것과 같다 —
+%    · 점선 토막: 그 유닛의 **0 도**. 선수 둘은 $+x_b$, 선미 둘은 $-x_b$
+%      (거치 부호 `cfg.mount`, `_tools/otter_B.m` 의 열 규칙)
+%    · 화살표: 그 순간의 추력 벡터 $s_i T_i [\cos\delta_i;\ \sin\delta_i]$.
+%      0 도에서 화살표까지 벌어진 각이 그대로 $\delta_i$ 다
+%    · 길이: $|T_i|$ 에 비례. 꽉 찬 화살표가 `T.Tref`
+%    · 역추력($T_i<0$)이면 화살표가 **반대로** 돈다 — 힘이 뒤를 민다
+%  The dotted stub is the unit's servo zero (+x_b forward pair, -x_b aft pair,
+%  the mounting sign of otter_B's column rule); the arrow is the thrust vector
+%  at that instant, so the opening between them is the servo angle itself.
+%  Length is proportional to |T_i| with a full arrow at Tref, and a negative
+%  thrust turns the arrow round because the force pushes the other way.
+%
+%  추력은 로그의 $n$ 에서 **모델과 같은 식**으로 낸다 — $T=k\,n|n|$ 이고
+%  정·역의 $k$ 가 다르다 (`otter_tilt4`). 로그에 $T$ 를 따로 싣지 않고 여기서
+%  내는 이유는, 열을 늘리면 모든 주차의 로그 규약이 흔들리기 때문이다.
+%  The thrust comes from the logged n by the model's own law, T = k n|n| with
+%  different coefficients ahead and astern, rather than from an extra log
+%  column, because widening the log would disturb every week's contract.
+aE = nan(0,1);  aN = nan(0,1);  zE = nan(0,1);  zN = nan(0,1);
 
-%  자취가 짧을 때는 일곱 자리가 선체 길이보다 촘촘해져 선체들이 서로 붙고,
-%  붙은 윤곽이 자취를 덮는다. 그래서 **앞 선체에서 1.6 L 이상** 떨어진 것만
-%  남긴다 — Run 이 막 시작했을 때 하나나 둘만 그려지는 것이 옳다
-%  early in a run the seven positions fall closer together than the hull is
-%  long, the outlines touch and the chain of them hides the trail. So only a
-%  mark at least 1.6 L from the one kept before it is drawn: one or two hulls
-%  just after the start is the right picture.
-keep = false(size(k));
-lastE = -inf;  lastN = -inf;
-for q = 1:numel(k)
-    if hypot(Yd(k(q),4) - lastN, Yd(k(q),5) - lastE) >= 1.6*Lship
-        keep(q) = true;
-        lastN = Yd(k(q),4);  lastE = Yd(k(q),5);
-    end
-end
-k = k(keep);
+%  길이는 **전부 `mag` 로 잰다** / every length is measured in mag
+%      `mag` 은 "실제 1 m 가 화면에서 몇 m 로 그려지는가" 다. 거치점은 그것으로
+%      키우고 화살표는 `Lship` 으로 키우면, 200 m 장면(`Lship` 9 m)에서 화살표가
+%      선체보다 길어져 넷이 한 줄로 겹쳐 보인다. 그래서 화살표도, 0 도 토막도,
+%      안 그리는 문턱도 모두 `mag` 배다 — 어느 배율에서도 그림이 같아 보인다.
+%      mag is how long a real metre is drawn. Scaling the stations by mag but
+%      the arrows by Lship made a full arrow longer than the hull in the 200 m
+%      scene, and four of them read as one line. Arrow, stub and cut-off are
+%      all in mag, so the picture looks the same at either scale.
+nU   = numel(T.n);
+mag  = Lship/2.00;        % 선체를 키운 그 배율 / the hull's own magnification
+Lmax = 1.00*mag;          % 꽉 찬 화살표 = 선체 길이의 절반 / half the hull
+hw   = 0.22;              % 화살머리의 몫 / the head, as a fraction
+c    = cos(psi);  s = sin(psi);
 
-for q = 1:numel(k)
-    j   = k(q);
-    psi = Yd(j,6)*pi/180;                  % psi 는 **도** / psi in degrees
-    [eE, eN] = hull_ned(Yd(j,4), Yd(j,5), psi, Lship);
-    gE = [gE; eE(:); eE(1); nan; ...
-          Yd(j,5); Yd(j,5) + 1.4*Lship*sin(psi); nan];           %#ok<AGROW>
-    gN = [gN; eN(:); eN(1); nan; ...
-          Yd(j,4); Yd(j,4) + 1.4*Lship*cos(psi); nan];           %#ok<AGROW>
+for i = 1:nU
+    %  거치점을 선체좌표에서 NED 로 / the station, from {b} into NED
+    xb = T.pos(1,i)*mag;   yb = T.pos(2,i)*mag;
+    sN = N + xb*c - yb*s;
+    sE = E + xb*s + yb*c;
+
+    %  0 도 토막. 거치 부호가 선미 쌍을 뒤로 돌린다 / the servo zero
+    z0 = T.mount(i)*0.25*mag;
+    zN = [zN; sN; sN + z0*c; nan];                               %#ok<AGROW>
+    zE = [zE; sE; sE + z0*s; nan];                               %#ok<AGROW>
+
+    %  추력. 정·역의 계수가 다르다 / the thrust, with two coefficients
+    nn = y(T.n(i));
+    if nn >= 0, Ti = T.kpos*nn*nn; else, Ti = -T.kneg*nn*nn; end
+    Lr = min(abs(Ti)/T.Tref, 1)*Lmax;
+    if Lr < 0.08*mag, continue; end     % 거의 0 이면 그리지 않는다 / skip
+
+    %  추력 벡터. $\delta$ 는 그 쌍의 0 도에서 잰다 / delta from that zero
+    d  = y(T.d(i));
+    eb = sign(Ti)*T.mount(i)*[cos(d); sin(d)];
+    vN = Lr*(eb(1)*c - eb(2)*s);
+    vE = Lr*(eb(1)*s + eb(2)*c);
+    tN = sN + vN;   tE = sE + vE;
+
+    %  화살머리 둘. 축을 따라 물러난 뒤 좌우로 벌린다 / the two barbs
+    uN = vN/Lr;  uE = vE/Lr;
+    pN = -uE;    pE = uN;
+    h1N = tN - hw*Lr*uN + 0.5*hw*Lr*pN;   h1E = tE - hw*Lr*uE + 0.5*hw*Lr*pE;
+    h2N = tN - hw*Lr*uN - 0.5*hw*Lr*pN;   h2E = tE - hw*Lr*uE - 0.5*hw*Lr*pE;
+
+    aN = [aN; sN; tN; nan; h1N; tN; h2N; nan];                   %#ok<AGROW>
+    aE = [aE; sE; tE; nan; h1E; tE; h2E; nan];                   %#ok<AGROW>
 end
 end
 
@@ -533,13 +637,13 @@ set(a, 'YLim', [lo - bot*(hi - lo), hi]);
 end
 
 % =========================================================================
-function b = leg_room(Q)
-%  범례가 몇 줄인가 / how many lines the legend takes
-%      둘까지는 한 줄, 셋부터는 두 줄이다 (`NumColumns` 가 둘이므로)
-%      up to two entries it is one line; three or more make two
-%      포화한 신호는 **한계선 위에 그대로 눕는다.** 그러니 두 줄짜리
-%      범례는 그 선보다 더 아래에 앉아야 한다
-%      a saturated signal lies exactly on its limit line, so a two-line legend
-%      has to sit below that line, not on it
-if numel(Q{2}) >= 3, b = 0.36; else, b = 0.18; end
+function b = leg_room(Q)   %#ok<INUSD>
+%  범례 아래에 비워 둘 몫 / the room left under the legend
+%      범례가 **한 줄**이 되었으므로 (`Orientation','horizontal'`) 칸마다
+%      같은 몫이면 된다. 포화한 신호는 **한계선 위에 그대로 눕는다.** 그러니
+%      범례가 그 선을 가리지 않을 만큼만 비운다.
+%      the legend is now one line in every panel, so one value serves all. A
+%      saturated signal lies exactly on its limit line, and this is the room
+%      that keeps the legend from sitting on it.
+b = 0.18;
 end

@@ -30,12 +30,13 @@ function run_alone(tag, mdl)
 %  왜 animate 를 1 로 올리는가 / why animate is forced on
 %      WXX_vars 는 `animate = 0` 이다. 절 스크립트는 **조용히 빨리** 돌아야 하기
 %      때문이다. 그러나 사람이 Run 을 눌렀다면 화면을 보고 싶은 것이다. 그래서
-%      여기서는 1 로 올린다 — 단, 절 스크립트가 도는 중이면(`<tag>batch` 가 서
-%      있으면) 올리지 않는다. 화면을 그리면 표 하나 뽑는 데 몇 분이 걸린다.
+%      여기서는 1 로 올린다 — 단, 절 스크립트가 도는 중이면 올리지 않는다.
+%      화면을 그리면 표 하나 뽑는 데 몇 분이 걸린다. 둘을 가르는 것은 플래그가
+%      아니라 **호출 스택**이다 (아래 `byScript`).
 %
 %      WXX_vars sets animate = 0 because a section script must run quietly and
 %      fast. A person pressing Run wants the window, so it is raised to 1 here --
-%      unless a section script is running, which `<tag>batch` tells us.
+%      unless a section script is running, which the CALL STACK tells us.
 %
 %  왜 Animate 블록을 빼지 않는가 / why the block is never removed
 %      끄는 것은 **상수 하나**이지 블록이 아니다. animate = 0 이면 블록은
@@ -60,7 +61,10 @@ function run_alone(tag, mdl)
 %  일괄 실행과 부딪히지 않는가 / does this fight a batch run?
 %      않는다. WXX_read 는 Simulink.SimulationInput 으로 변수를 넘기고, 그것은
 %      작업공간보다 **우선**한다. 그래서 여기서 animate 를 올려도 절 스크립트의
-%      animate = 0 이 이긴다. 거기에 `<tag>batch` 검사가 한 겹 더 있다.
+%      animate = 0 이 이긴다. 거기에 호출 스택 검사가 한 겹 더 있다 — 절
+%      스크립트가 부른 `sim` 에서는 애초에 올리지도 치우지도 않는다.
+%      A section script's own animate = 0 arrives through SimulationInput, which
+%      outranks the workspace; the stack test is a second layer on top of that.
 %
 %   See also ENSURE_BASE_VARS, BASE_VAR, MSS_PATH, LIVE_DASH.
 
@@ -71,11 +75,36 @@ mss_path();
 
 %% 2) 없는 변수만 채운다. 있는 것은 그대로 둔다
 V = feval([tag '_vars']);
-if ~evalin('base', sprintf('exist(''%sbatch'', ''var'')', tag))
-    %  사람이 Run 을 눌렀다 — 실시간 화면을 켠다
-    V.animate = 1;
-end
 ensure_base_vars(V);
+
+%  사람이 Run 을 눌렀는가, 절 스크립트가 `sim` 을 불렀는가 / who started this run
+%      `<tag>batch` 만 믿을 수 없다. 절 스크립트가 중간에 멎으면 — 사람이 Ctrl-C
+%      를 누르거나 오류가 나면 — 끝의 `clear` 가 돌지 않아 플래그가 작업공간에
+%      **남는다.** 그 다음에 사람이 Run 을 눌러도 이 함수가 조용히 있고, 아무
+%      창도 뜨지 않아 모델이 고장난 것처럼 보인다 (§15-93 이 막으려던 바로 그
+%      증상이 플래그 자신 때문에 되돌아온다).
+%      그래서 **호출 스택**에 묻는다. 절 스크립트가 `sim` 을 부르면 그 스크립트
+%      이름이 스택에 있고, 사람이 Run 을 누르면 이 함수의 칸 하나뿐이다.
+%      스택은 남을 수가 없으므로 이 판정은 낡지 않는다.
+%      `<tag>batch` cannot be trusted on its own: a section script stopped by
+%      Ctrl-C or an error never reaches its closing `clear`, so the flag stays
+%      behind and the next press of Run draws nothing at all -- the very symptom
+%      §15-93 exists to prevent, brought back by the flag meant to prevent it.
+%      The CALL STACK is asked instead: a script that calls `sim` leaves its own
+%      name there, while a person pressing Run leaves only this function's frame.
+%      A stack cannot go stale, so this verdict cannot either.
+byScript = numel(dbstack) > 1;
+
+if ~byScript
+    %  사람이 Run 을 눌렀다 — 실시간 화면을 켜고, 남아 있던 플래그를 치운다.
+    %  `ensure_base_vars` 는 **없는 변수만** 채우므로 남아 있던 `animate = 0` 은
+    %  그대로 이긴다. 그래서 여기서는 채우는 것이 아니라 **덮어쓴다.**
+    %  a person pressed Run: raise the live view and sweep away stale flags.
+    %  ensure_base_vars fills only what is MISSING, so a leftover `animate = 0`
+    %  would outlive it -- this assigns over it instead of offering a default.
+    assignin('base', 'animate', 1);
+    evalin('base', sprintf('clear %sbatch %squiet', tag, tag));
+end
 
 %% 3) 현실 시간. 모델에 박아 두지 않고 매 Run 마다 읽는다
 if base_var('pace', 0) > 0
