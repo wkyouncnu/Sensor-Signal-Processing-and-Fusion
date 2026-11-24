@@ -33,6 +33,11 @@
 %            W07_WPT_RUN, W07_POSE_RUN, OTTER_TILT4, OTTER_CONFIG,
 %            VERIFY_OTTER_TILT4.
 
+%  `clear` 가 절 스크립트(`W07_pose_run` 등)가 남겼을 `W07batch`·`W07quiet`
+%  까지 지운다. 그 둘이 남아 있으면 `.slx` 를 열고 Run 을 눌러도 실시간 화면도
+%  StopFcn 의 그림도 뜨지 않는다 / clear also removes any W07batch or W07quiet a
+%  section script left behind, which would otherwise silence both the live view
+%  and the StopFcn figures on the next press of Run
 clear; close all;
 
 here = fileparts(mfilename('fullpath'));

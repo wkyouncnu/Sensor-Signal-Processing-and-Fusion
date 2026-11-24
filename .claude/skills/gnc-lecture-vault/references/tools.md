@@ -59,6 +59,11 @@
 │                            md_section.sh                           (강의 .md 에서 한 절만.
 │                              `-l` 로 절 목록, 번호로 그 절만, `-n` 으로 줄 범위.
 │                              145 KB 를 통째로 읽지 않는다 → standing-orders.md §15-65)
+│                            pdf2png.ps1                             (PDF 를 쪽마다 PNG 로.
+│                              사용자의 필기 노트를 읽을 때 쓴다 — 이 컴퓨터에는 poppler ·
+│                              ghostscript · ImageMagick · python 이 없고 WinRT
+│                              Windows.Data.Pdf 만 있다. 구운 PNG 는 스크래치패드에 두고
+│                              볼트에 넣지 않는다 → standing-orders.md §15-92)
 │                            tikz2svg.sh                             (그림 조판. 지금 쓰는 것)
 │                            w01_euler_R.m · w05_track_curves.awk     (그림 기하 계산)
 │                            w03_prop_curve.m                        (추력 곡선 F = k n|n| 그림의 좌표)

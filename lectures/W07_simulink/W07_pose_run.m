@@ -89,6 +89,21 @@ end
 
 fprintf('\n==== done ====\n');
 
+%  **플래그를 들고 나가지 않는다.** `W07batch` 와 `W07quiet` 는 이 스크립트가
+%  도는 동안만 참이어야 한다. 남겨 두면 그 다음에 사람이 `.slx` 를 열고 Run 을
+%  눌렀을 때 `run_alone` 이 실시간 화면을 켜지 않고 StopFcn 이 그림을 내지 않아
+%  **아무 창도 뜨지 않는다** — 모델이 고장난 것처럼 보인다 (standing order
+%  §15-87). 6주차는 `W06_read` 가 onCleanup 으로 같은 일을 한다.
+%  The two flags must be true only while this script runs. Left behind, the
+%  next person to open the .slx and press Run gets no live view and no figure
+%  at all, because run_alone keeps animate at 0 and the StopFcn returns early.
+%  `animate` 와 `pace` 도 함께 지운다. `ensure_base_vars` 는 **없는 변수만**
+%  채우므로, 0 으로 남겨 두면 `run_alone` 이 1 로 올리려 해도 그 0 이 이기고
+%  실시간 화면이 끝내 뜨지 않는다.
+%  animate and pace go too: ensure_base_vars fills only what is MISSING, so a 0
+%  left behind outlives run_alone's attempt to raise it and the window stays shut.
+clear W07batch W07quiet animate pace
+
 % =========================================================================
 function hdr(sec, txt)
 fprintf('\n---- %s  %s %s\n', sec, txt, repmat('-', 1, max(0, 56 - numel(txt))));

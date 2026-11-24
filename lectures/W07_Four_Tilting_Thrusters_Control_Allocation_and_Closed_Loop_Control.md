@@ -757,7 +757,17 @@ arrives from outside the stage under study, exactly as a measurement arrives fro
 | $\boldsymbol{\delta}$ | servo angles handed to the plant | $4\times1$, [rad] |
 | $\boldsymbol{\tau}$ | **achieved** force, $\mathbf{B}\mathbf{f}$, which is compared with $\boldsymbol{\tau}_d$ | $3\times1$, [N, N, N·m] |
 
-Two facts fix everything that follows.
+**The count that decides which week this is.** Three planar degrees of freedom are commanded in every week of this course — surge, sway, yaw. What changes from week to week is how many independent control variables the hull offers against those three, and the rank test of Week 6 §6-1 turns that count into a name.
+
+| Configuration | Control variables | $\operatorname{rank}\mathbf{B}$ | Name | Commands that achieve a reachable $\boldsymbol{\tau}_d$ |
+|---|---|---|---|---|
+| two fixed propellers — Weeks 1 to 5 | 2 | 2 | under-actuated | none at all when $Y \neq 0$: row 2 of $\mathbf{B}$ is identically zero |
+| plus one bow tunnel thruster — Week 6 | 3 | 3 | fully actuated | exactly one, $\mathbf{f} = \mathbf{B}^{-1}\boldsymbol{\tau}_d$ |
+| four tilting units, two components each — this week | 8 | 3 | over-actuated | infinitely many |
+
+Week 6 sat on the middle row, and a square system with a non-zero determinant behaves as the two-unknown systems of elementary algebra behave: $4x + 5y = 3$ together with $10x - 3y = 2$ has one answer, elimination finds it, and the question of a *better* answer never arises because no other answer exists. On that hull $\det\mathbf{B}_6 = 2d = 0.790$ m, with $d = 0.395$ m the transverse arm of §7-1, so the inverse existed and the allocator of §6-2 was a matrix multiply (Week 6 §6-1, derivation step 5; `otter_config('bow_thruster')`).
+
+Two facts fix everything that follows, and one consequence.
 
 1. By §7-1 each tilting unit contributes **two** columns to $\mathbf{B}$, so the force is linear in the eight components and the equation to be solved has **three rows and eight unknowns**:
 

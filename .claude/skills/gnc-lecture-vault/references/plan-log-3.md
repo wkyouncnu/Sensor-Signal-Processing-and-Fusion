@@ -334,3 +334,39 @@ Multiport Switch 는 **계산이 아니라 출력을 고르는 것**이라, 법�
 PNG 를 전부 새로 뽑았다(개루프 64 s · 배분 42 s · 자세 237 s · 웨이포인트 757 s).
 수치는 문서에 적힌 것과 한 자리도 다르지 않다 — 웨이포인트 `|y_e|` rms 0.467 m,
 asked−applied 0.9890 N, 자세 쪽 0.9998 N. `vault_check.sh` 전 항목 0.
+
+---
+
+## 2026-11-24 · 수업 필기를 W07 에 반영 — 그리고 필기와 자료의 대조
+
+사용자의 2026-11-24 수업 필기(`노트_261124_142326.pdf`, 5쪽)를 W07 에 반영했다.
+`_tools/pdf2png.ps1` 로 쪽마다 PNG 를 구워 읽었다 — 이 컴퓨터의 유일한 PDF 변환기가
+WinRT `Windows.Data.Pdf` 다 → `orders-log-7.md` §15-92.
+
+**쪽마다 무엇이 있었고 어디로 갔는가.**
+
+| 쪽 | 필기 | 간 곳 |
+|---|---|---|
+| 1 | W06 복습 — 선수추진기 $B=[1\,1\,0;\ 0\,0\,1;\ b\,-b\,l]$, $N_d$, under/fully/over 흐름 | 분류의 **낱말과 이번 주차의 줄**만 W07 §7-7 로. 유도는 W06 §6-1 에 이미 있다 |
+| 2 | $\mathbf f=B^{-1}\boldsymbol\tau_d$, 두 갈래 $T=k\,n\lvert n\rvert$, $n=\mathrm{sign}(F)\sqrt{\cdot}$ | 더하지 않았다 — W06 §6-1 유도 5·14 가 같은 것을 더 끝까지 쓴다 |
+| 3 | §7-1 **인쇄물 위의 주석** — $T_1=\sqrt{f_{x1}^2+f_{y1}^2}$, 제어기→배분기→플랜트 블록도, "8 unknowns, 3 equations" | 더하지 않았다 — 블록도는 `figures/w07-allocation-chain.svg`, 미지수 셈은 §7-7 에 이미 있다 |
+| 4 | "Pseudo inverse", $\mathbf f=\mathrm{pinv}(B)\boldsymbol\tau_d$, $\delta_1=\tan^{-1}(f_{y1}/f_{x1})$ | 더하지 않았다 — §7-8 · §7-9 가 $\sigma_i$ 접기와 `atan2` 까지 간다 |
+| 5 | 제목 둘 — "Waypoint following", "Position control" | 더하지 않았다 — §7-13 · §7-14 가 그것이다 |
+
+**더한 것은 한 문단이다.** W07 이 "under-actuated / fully actuated / over-actuated"
+라는 **낱말을 한 번도 쓰지 않았다.** W06 이 계급 판정을 세우고 "Week 7 이 과다구동"
+이라고 약속해 두었는데 W07 에 그것을 받는 문장이 없었다. §7-7 의 기호 표 바로 뒤에
+표 한 개(형상 · 제어변수 수 · $\operatorname{rank}B$ · 이름 · 도달 가능한 명령 수)와
+$\det B_6=2d=0.790$ m 를 §6-1 로 가리키는 두 문장을 넣었다. **같은 자리에서 옛 실수
+하나도 고쳤다** — "Two facts fix everything that follows." 라고 쓰고 번호 셋이
+따라왔다. 지금은 "Two facts fix everything that follows, and one consequence." 다.
+
+**필기에서 틀린 셋 — 자료는 셋 다 이미 바르다.** 그래서 자료를 고칠 일이 없었고,
+보고에만 적었다: ① $F<0$ 에서 $\sqrt{F/k_{neg}}$ (절댓값 누락) ② $B$ 를 $3\times6$,
+$\mathbf f$ 를 $6\times1$ 로 적은 것(같은 쪽에 $3\times8$ 과 "8 unknowns" 가 인쇄되어
+있다) ③ 선수 팔을 $l_a$ 로 부른 것(볼트에서 $l_a=1.0$ m 는 **선미** 팔, 선수는
+$l_f=1.5$ m). $T$ 를 부호 없이 쓰고 `atan` 을 쓴 것은 칠판의 1차 근사이고 §7-8 이
+끝까지 간다 → `orders-log-7.md` §15-92.
+
+**같은 수업의 녹화**(유튜브)에서는 자동 생성 제목 외에 아무것도 받지 못했다 —
+설명·날짜·길이·챕터·자막이 전부 비어 있어 순서 대조에 쓸 수 없었다.

@@ -61,14 +61,14 @@ ns = 60 * sqrt(cfg.l_f / cfg.l_a);
 %
 %     tag    n [rad/s]            delta [deg]          무엇을 지시하는가
 S = { ...
-    'S1'  [ 60  60 -60 -60]  [  0   0   0   0]  'surge ahead'
-    'S2'  [-60 -60  60  60]  [  0   0   0   0]  'surge astern'
-    'S3'  [ 60  60  60  60]  [ 45  45  45  45]  'yaw to starboard'
-    'S4'  [ 60  60  60  60]  [-45 -45 -45 -45]  'yaw to port'
-    'S5'  [ 60  60  60  60]  [ 45  45 -45 -45]  'sway to starboard'
-    'S6'  [ 60  60  ns  ns]  [ 45  45 -45 -45]  'sway, moment cancelled'
+    % 'S1'  [ 60  60 -60 -60]  [  0   0   0   0]  'surge ahead'
+    % 'S2'  [-60 -60  60  60]  [  0   0   0   0]  'surge astern'
+    % 'S3'  [ 60  60  60  60]  [ 45  45  45  45]  'yaw to starboard'
+    % 'S4'  [ 60  60  60  60]  [-45 -45 -45 -45]  'yaw to port'
+    % 'S5'  [ 60  60  60  60]  [ 45  45 -45 -45]  'sway to starboard'
+    % 'S6'  [ 60  60  ns  ns]  [ 45  45 -45 -45]  'sway, moment cancelled'
     'S7'  [ 60  60 -60 -60]  [ 45  45   0   0]  'turn while making way'
-    'S8'  [ 60  60  60  60]  [ 70  70 -70 -70]  'tilt beyond the servo limit'
+    % 'S8'  [ 60  60  60  60]  [ 70  70 -70 -70]  'tilt beyond the servo limit'
 };
 
 nc = size(S, 1);
