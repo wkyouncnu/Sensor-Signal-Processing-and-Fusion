@@ -99,7 +99,7 @@ fprintf('\n==== done ====\n');
 %  도는 동안만 참이어야 한다. 남겨 두면 그 다음에 사람이 `.slx` 를 열고 Run 을
 %  눌렀을 때 `run_alone` 이 실시간 화면을 켜지 않고 StopFcn 이 그림을 내지 않아
 %  **아무 창도 뜨지 않는다** — 모델이 고장난 것처럼 보인다 (standing order
-%  §15-87). 6주차는 `W06_read` 가 onCleanup 으로 같은 일을 한다.
+%  §15-93). 5·6주차는 `W05_read`·`W06_read` 가 onCleanup 으로 같은 일을 한다.
 %  The two flags must be true only while this script runs. Left behind, the
 %  next person to open the .slx and press Run gets no live view and no figure
 %  at all, because run_alone keeps animate at 0 and the StopFcn returns early.

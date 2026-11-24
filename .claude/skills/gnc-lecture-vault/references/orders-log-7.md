@@ -456,3 +456,57 @@ over-actuated" 라는 **낱말을 한 번도 쓰지 않는다**는 것. W06 이 
 **5. `md_section.sh` 는 플래그가 **먼저**다.**
 `md_section.sh <파일> -l` 은 `-l` 로 시작하는 절을 찾아서 없다고 한다.
 `md_section.sh -l <파일>` 이 맞다.
+
+---
+
+## §15-93 · 절 스크립트가 세운 플래그를 **들고 나가지 않는다** (2026-11-24)
+
+사용자가 "`W07_pose_dp.slx` 를 돌리면 6주차처럼 실시간 애니메이션이 나오고
+첨부한 그림 두 장이 그대로 떠야 한다" 고 했다. 모델은 **이미 그렇게 배선되어
+있었다** — 빈 작업공간에서 열고 Run 을 누르면 창 셋(`live view` · `command
+against actual` · `inside their limits`)이 정확히 떴다. 고장은 모델이 아니라
+**그 앞에 절 스크립트를 한 번 돌렸을 때** 일어났다. 그때는 창이 **하나도** 뜨지
+않는다.
+
+**원인은 잔류 플래그다.** `W07_pose_run` · `W07_wpt_run` · `W07_alloc_run` 은
+배치 실행을 위해 작업공간에 네 개를 세운다.
+
+| 변수 | 왜 세우나 | 남으면 |
+|---|---|---|
+| `W07batch` | `run_alone` 이 `animate` 를 1 로 올리지 않게 | 실시간 화면이 켜지지 않는다 |
+| `W07quiet` | StopFcn 플로터가 조용히 돌아가게 | StopFcn 이 그림을 내지 않는다 |
+| `animate = 0` | Animate 블록이 아무것도 하지 않게 | 아래 한 줄 |
+| `pace = 0` | 현실 시간 대기를 끄게 | Run 이 즉시 끝난다 |
+
+`animate` 가 더 교활하다. `ensure_base_vars` 는 **없는 변수만** 채우므로
+(값은 학생의 것이다 → §15-20), 0 으로 남은 `animate` 는 `run_alone` 이 1 로
+올리려는 시도를 **이긴다.** `W07batch` 만 지워도 화면은 끝내 뜨지 않는다.
+
+**규칙**: 절 스크립트는 자기가 세운 플래그를 **마지막 줄에서 지운다.**
+
+```matlab
+fprintf('\n==== done ====\n');
+clear W07batch W07quiet animate pace
+```
+
+5·6주차는 `W05_read` · `W06_read` 가 `onCleanup` 으로 같은 일을 한다 —
+스크립트가 중간에 멈춰도 지워지므로 그쪽이 더 낫다. 7주차는 `read` 가
+플래그를 세우지 않아 러너 끝에 두었다.
+
+**판정은 창을 세어서 한다.** "배선이 맞다" 로 끝내지 않는다.
+
+```matlab
+evalc('W07_pose_run');                 % 절 스크립트를 먼저 돌린다
+load_system('W07_pose_dp');
+set_param('W07_pose_dp','SimulationCommand','start');
+numel(findall(groot,'Type','figure'))  % <- 3 이어야 한다. 고치기 전에는 0 이었다
+```
+
+**곁다리로 배운 것 둘.**
+
+- GUI 의 Run 과 `sim()` 을 `InitFcn` 안에서 **구별할 수 없다.** `dbstack` 은
+  양쪽에서 비어 있고, `get_param(bdroot,'Open')` 은 양쪽에서 `'off'` 다.
+  학생이 모델을 열어 둔 채 절 스크립트를 돌리는 것도 정상이므로 `'Open'` 으로
+  판정하면 배치 실행이 애니메이션 때문에 기어간다. **명시적 플래그가 답이다.**
+- `W07_alloc_run` 은 자기가 남긴 `W07quiet` 때문에 **자기 끝인사**("open the
+  model and press Run to see that law again") 를 거짓말로 만들고 있었다.

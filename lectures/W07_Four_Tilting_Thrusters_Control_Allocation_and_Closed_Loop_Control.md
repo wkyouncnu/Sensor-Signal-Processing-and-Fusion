@@ -2153,6 +2153,18 @@ W07_4_build_pose        % writes W07_pose_dp.slx and the block-diagram PNGs
 W07_pose_run            % runs the model and draws both figures
 ```
 
+> [!tip] The model alone is enough
+> Opening `W07_simulink/W07_pose_dp.slx` and pressing **Run** — with no script
+> run first — produces three windows and nothing else is needed: the live view
+> of the hull holding its pose, the command-against-actual sheet, and the
+> actuator-limit sheet. Both figures below are what that press of Run draws.
+> The `InitFcn` is what makes this work: it puts `_tools` and the week folder on
+> the path, calls `mss_path`, fills in any constant the base workspace is
+> missing, raises `animate` to $1$ and reads `pace`. The `StopFcn` then calls
+> `W07_plot_pose`, which draws the first figure and hands the second to
+> `W07_plot_sat`. Running the section script instead is the same simulation with
+> the live view switched off and a printed table added.
+
 ![Top level of W07_pose_dp: the position-loop subsystem turns the commanded position into a body-axis velocity command, the velocity loop and the heading autopilot form the three force components, and the law-4 allocation subsystem drives the Otter plant](W07_simulink/img/W07_pose_dp.png)
 
 ![Inside the position loop: the error is formed in NED, rotated into the body frame by the transpose of the heading rotation, scaled by the outer-loop gain, saturated per axis and multiplied by the gate](W07_simulink/img/W07_pose_dp_pos.png)
@@ -2242,7 +2254,7 @@ The week runs out of **four files**. Every experiment of Part 1 is a block insid
 | `W07_wpt_run.m` | `SEC`, two rows | `A` the whole route, `B` the lookahead sweep |
 | `W07_pose_run.m` | `SEC`, two rows | `A` one run to the pose, `B` the outer-gain sweep |
 
-**Running a model by hand.** Every runner leaves the first selected case in the base workspace — `n_cmd` and `d_cmd` for `W07_openloop`, `law` and `tau_cmd` for `W07_alloc_chain`, the whole constant set for the two closed-loop models. Opening that `.slx` and pressing Run repeats that one case, so the model file itself is never edited. The two closed-loop models also draw the live view while they run, because `W07_0_setup` leaves `animate` at $1$ while the runners set it to $0$.
+**Running a model by hand.** Every runner leaves the first selected case in the base workspace — `n_cmd` and `d_cmd` for `W07_openloop`, `law` and `tau_cmd` for `W07_alloc_chain`, the whole constant set for the two closed-loop models. Opening that `.slx` and pressing Run repeats that one case, so the model file itself is never edited. The two closed-loop models also draw the live view while they run: the runners hold `animate` at $0$ for their own batch runs, but each one **clears that flag on its last line**, so the next press of Run finds the workspace clean and the model's own `InitFcn` raises `animate` back to $1$.
 
 **No runner implements anything a model implements.** `W07_vars` holds the values, the `W07_plot*` functions draw, and each runner only sets constants, clears the logs and calls `sim`. There is no second copy of any law, guidance expression or gain in any `.m` of this week.
 
@@ -2349,6 +2361,7 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 | Law 2 and law 3 report **identical** force errors, which makes the fold look pointless | the plant clips at exactly the angle law 3 folded to | expected: $12.864$ N under both (Experiment 7-10). The fold earns no delivered force; it earns a command the allocator *knows* is legal |
 | The limit figure reports `100.0 %` used on the tilt axis and `0` samples clipped | `used` is the worst angle as a fraction of the limit; the clip count is how often the plant had to cut a command back | expected under law 4 only: the limit is inside the solve (§7-11 line 6). Set `law = 1` and the clip count stops being zero |
 | `W07_wpt_run` or `W07_pose_run` runs with no live view, while pressing Run on the model shows one | the runners set `animate = 0` and `W07_0_setup` sets it to $1$ | expected. The Animate block is never removed, only told to do nothing |
+| Pressing Run on `W07_pose_dp` or `W07_wpt_los` opens **no window at all** — no live view and no figure — although the run completes | an older copy of a section script left `W07quiet`, `W07batch` and `animate = 0` behind in the base workspace. `ensure_base_vars` fills only what is **missing**, so the stale $0$ outlives the `InitFcn`'s attempt to raise it | `clear W07batch W07quiet animate pace`, or simply run `W07_0_setup`, whose own `clear` does the same. The runners shipped with this week clear those four on their last line |
 | The run ends well before `T_wpt` | the guidance block drops `gate` at the last waypoint and a Stop Simulation block ends the run `stop_hold` seconds later | expected: $274.12$ s of a $400$ s stop time. `T_wpt` is an upper bound, not the run length |
 | A reader written by hand indexes the allocator log and gets a scalar where a column was expected | a To Workspace block in `'Array'` format writes a column-vector signal as $24\times1\times N$, not $N\times24$ | `squeeze` first and then transpose, as `W07_plot_sat` does |
 
