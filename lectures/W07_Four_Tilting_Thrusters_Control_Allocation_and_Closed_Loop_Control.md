@@ -2158,6 +2158,12 @@ W07_pose_run            % runs the model and draws both figures
 > run first — produces three windows and nothing else is needed: the live view
 > of the hull holding its pose, the command-against-actual sheet, and the
 > actuator-limit sheet. Both figures below are what that press of Run draws.
+> The live view carries the track and eight panels: $N$, $E$ and $\psi$ against
+> their commands, $u$ and $v$ against what the outer loop asked for, then
+> $\tau_X$ and $\tau_Y$, then $\tau_N$ on its own axis — all three force
+> components are asked and applied together, so a heading that lags can be
+> charged either to the loop or to the four units — and finally $n_i$ and
+> $\delta_i$ against their limit lines.
 > The `InitFcn` is what makes this work: it puts `_tools` and the week folder on
 > the path, calls `mss_path`, fills in any constant the base workspace is
 > missing, raises `animate` to $1$ and reads `pace`. The `StopFcn` then calls
