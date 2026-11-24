@@ -2,8 +2,8 @@
 %             Run the waypoint-following model and draw command against actual.
 %
 %   사용법 / how to use
-%       W07_wpt_run                 아래 `SEC` 의 절을 차례로 돌린다
-%       한 줄을 `%` 로 막으면 그 절이 빠진다 / one % removes one section
+%       W07_wpt_run                 네 다리를 한 번 돌고 그림 둘을 저장한다
+%                                   one run of the route, two PNGs saved
 %
 %   이 파일이 하는 일 / what this file does
 %       법칙은 모델 안에 있고, 제어기도 모델 안에 있다. 여기서 하는 일은
@@ -51,68 +51,30 @@ pace     = 0;        % 현실 시간으로 기다리지 않는다 / no real-time
 W07batch = true;     % run_alone 이 animate 를 올리지 않게 / keep it quiet
 W07quiet = true;     % StopFcn 의 그림을 끈다. 이 파일이 대신 그린다
 
-%% 돌릴 절 / the sections to run ---------------------------------------------
-%     **B 는 기본에서 빠져 있다** (사용자 지시, 2026-11-24: "the lookahead
-%     distance, swept 할 필요 없어"). 절 B 는 `sim` 을 세 번 더 돌리므로 혼자
-%     몇 분을 더 쓰는데, 강의자료에 실리는 그림은 전부 절 A 가 낸다. 숫자가
-%     필요하면 아래 `%` 하나를 지운다 — 그것이 이 파일의 규칙이다.
-%     Section B is OFF by default: it runs sim three more times and so costs
-%     several minutes on its own, while every figure the lecture carries comes
-%     out of section A. Delete the one % below to get the table back.
-SEC = { ...
-    'A'  'the four-leg route, with every command beside what happened'
-%   'B'  'the lookahead distance Delta, swept over the first two legs'
-};
-want = @(s) any(strcmp(s, SEC(:,1)));
-
 fprintf('\n==== W07 waypoint following, run from the model %s ====\n', mdl);
 fprintf('  law %d,  waypoints %d,  Delta %g m,  R_switch %g m,  u_d %g m/s\n', ...
         V.law, numel(V.WP_N), V.Delta, V.R_switch, V.u_d);
-fprintf('  sections: %s\n', strjoin(SEC(:,1).', ', '));
 
-%% A  네 다리를 한 번 — 이 절의 그림이 강의자료에 실린다 --------------------
-if want('A')
-    hdr('A', 'one run of the whole route');
-    set_vars(struct('Delta', V.Delta, 'T_wpt', V.T_wpt));
-    %  `sim` 이 도는 동안은 화면에 아무것도 없다. 몇 분이 걸리므로, 얼마나
-    %  기다리는 것인지 **미리** 말해 둔다 / say how long the silence will be
-    fprintf('   one run of %g s of track; a few minutes, with no output until it ends\n', ...
-            V.T_wpt);
-    t0 = tic;
-    sim(mdl);
-    fprintf('   the run took %.0f s\n', toc(t0));
-    W07_plot_wpt(fullfile(img, 'W07_wpt'));    % 수치는 그 함수가 찍는다 / it prints
-end
-
-%% B  앞보기 거리 Delta — 무엇이 달라지는가 ---------------------------------
-%     Delta 는 "얼마나 앞을 보는가" 다. 작으면 다리에 빨리 붙되 선수각이
-%     바쁘고, 크면 조용히 돌되 다리에서 더 벌어진다. 그 교환을 숫자로 본다.
-%     Delta is how far ahead the vessel aims: small acquires the leg quickly
-%     but works the heading hard, large turns quietly but sits further off.
-if want('B')
-    hdr('B', 'the lookahead distance, swept');
-    D_SWEEP = [2 5 10];
-    T_B     = 180;            % 앞의 두 다리까지 / the first two legs only
-    SW      = nan(numel(D_SWEEP), 4);
-    %  한 줄은 **돌자마자** 찍는다. `sim` 세 번은 몇 분이 걸리는데 표를 끝에서
-    %  한 번에 찍으면 그동안 화면이 비어 멎은 것처럼 보이고, 그래서 Ctrl-C 를
-    %  누르게 된다 — 그러면 이 스크립트의 끝줄이 돌지 않아 플래그가 남는다
-    %  each row is printed AS IT FINISHES: three sims take minutes, and a table
-    %  printed only at the end leaves the screen blank throughout, which reads as
-    %  a hang and invites the Ctrl-C that stops the closing line from running
-    fprintf('\n   over %g s, from the instant |y_e| first falls below Delta\n', T_B);
-    fprintf('   three runs, each a few minutes; a row appears as each one ends\n');
-    fprintf('    Delta [m]   |y_e| rms [m]   |y_e| max [m]   |psi err| rms [deg]   took [s]\n');
-    for i = 1:numel(D_SWEEP)
-        set_vars(struct('Delta', D_SWEEP(i), 'T_wpt', T_B));
-        t0 = tic;
-        sim(mdl);
-        SW(i,:) = wstat(D_SWEEP(i));
-        fprintf('   %8.1f %14.3f %15.3f %20.3f %11.0f\n', SW(i,:), toc(t0));
-    end
-    fprintf('   Larger Delta turns the vessel less and keeps it further from the leg.\n');
-    set_vars(struct('Delta', V.Delta, 'T_wpt', V.T_wpt));
-end
+%% 네 다리를 한 번 — 이 그림이 강의자료에 실린다 ----------------------------
+%     **`sim` 은 한 번만 부른다** (사용자 지시, 2026-11-25). 앞보기 거리
+%     $\Delta$ 를 쓸어 보는 절이 여기 있었으나 지웠다. `sim` 을 세 번 더 돌려
+%     혼자 몇 분을 쓰는데, 강의자료에 실리는 그림도 표도 전부 이 한 번이 낸다.
+%     $\Delta$ 를 바꿔 보려면 `W07_0_setup` 에서 그 값을 고치고 다시 돌린다 —
+%     그것이 학생이 실제로 하는 일이고, 쓸기는 그 일을 대신해 주지 않는다.
+%     ONE sim call. A section that swept the lookahead distance Delta used to
+%     stand here; it cost three more sims and several minutes, and every figure
+%     and every number the lecture carries comes out of this single run. To see
+%     another Delta, change it in W07_0_setup and run again, which is what the
+%     learner does in any case.
+set_vars(struct('Delta', V.Delta, 'T_wpt', V.T_wpt));
+%  `sim` 이 도는 동안은 화면에 아무것도 없다. 몇 분이 걸리므로, 얼마나
+%  기다리는 것인지 **미리** 말해 둔다 / say how long the silence will be
+fprintf('   one run of %g s of track; a few minutes, with no output until it ends\n', ...
+        V.T_wpt);
+t0 = tic;
+sim(mdl);
+fprintf('   the run took %.0f s\n', toc(t0));
+W07_plot_wpt(fullfile(img, 'W07_wpt'));    % 수치는 그 함수가 찍는다 / it prints
 
 fprintf('\n==== done ====\n');
 
@@ -132,11 +94,6 @@ fprintf('\n==== done ====\n');
 clear W07batch W07quiet animate pace
 
 % =========================================================================
-function hdr(sec, txt)
-fprintf('\n---- %s  %s %s\n', sec, txt, repmat('-', 1, max(0, 56 - numel(txt))));
-end
-
-% =========================================================================
 function push_vars(V)
 %PUSH_VARS  `W07_vars` 의 값을 작업공간에 올린다 — 모델이 이 이름들을 읽는다
 %           the names the model resolves every Constant against
@@ -154,20 +111,4 @@ for i = 1:numel(fn)
     assignin('base', fn{i}, ov.(fn{i}));
 end
 evalin('base', 'clear W07wpt W07wpt_act');
-end
-
-% =========================================================================
-function s = wstat(D)
-%WSTAT  한 번의 운항에서 네 수치만 / four numbers out of one run
-%       구간 규칙은 `W07_plot_wpt` 과 **같다** — `|y_e|` 가 처음 Delta 아래로
-%       내려간 뒤부터 끝까지다 / the same window rule as W07_plot_wpt
-W   = evalin('base', 'W07wpt');
-y   = squeeze(W.signals.values);
-if size(y,1) < size(y,2), y = y.'; end
-y_e = y(:,9);
-e   = mod(y(:,6) - y(:,7) + 180, 360) - 180;
-k0  = find(abs(y_e) < D, 1, 'first');
-if isempty(k0), k0 = 1; end
-w   = k0:size(y,1);
-s   = [D, sqrt(mean(y_e(w).^2)), max(abs(y_e(w))), sqrt(mean(e(w).^2))];
 end

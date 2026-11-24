@@ -89,7 +89,7 @@ Upon completion of this week, the learner is able to:
 | Allocation model | `W07_alloc_chain.slx`, written by `W07_2_build_alloc.m` — the four laws as four MATLAB Function blocks behind one Multiport Switch |
 | Allocation runner | `W07_alloc_run.m` — one file, §7-8 to §7-12. It sets `law` and `tau_cmd` on the workspace and calls `sim`: no law is implemented in the `.m` |
 | Closed-loop models | `W07_wpt_los.slx` by `W07_3_build_wpt.m` (§7-13) and `W07_pose_dp.slx` by `W07_4_build_pose.m` (§7-14) — both with law 4 alone and no switch |
-| Closed-loop runners | `W07_wpt_run.m` and `W07_pose_run.m`, two sections each, of which only section `A` runs as the file is shipped. Both set constants and call `sim` |
+| Closed-loop runners | `W07_wpt_run.m` and `W07_pose_run.m`, one run of `sim` each. Both set constants, call `sim` once and draw |
 | Scope of this week | §7-0 to §7-6 are **open loop only** — eight numbers given by hand, no controller and no guidance. §7-7 to §7-12 add the **allocation** that produces those eight numbers from three, still with no controller. §7-13 and §7-14 close the loop around the one law that survives the comparison |
 
 ---
@@ -2063,7 +2063,7 @@ The runner reads its values from `W07_vars`, so nothing has to be set up first, 
 > the path, calls `mss_path`, fills in any constant the base workspace is
 > missing, raises `animate` to $1$ and reads `pace`. The `StopFcn` then calls
 > `W07_plot_wpt`, which draws the second window and hands the third to
-> `W07_plot_sat`. Running the section script instead is the same simulation with
+> `W07_plot_sat`. Running `W07_wpt_run` instead is the same simulation with
 > the live view switched off and a printed table added.
 
 ![Top level of W07_wpt_los: the guidance subsystem on the left turns the waypoint list into a heading command and a cross-track error, the speed and heading loops sit in the middle column, the allocation subsystem holding law 4 follows, and the Otter plant returns both the state and the force it actually produced](W07_simulink/img/W07_wpt_los.png)
@@ -2075,9 +2075,8 @@ The leg counter travels through a **visible** Unit Delay rather than a `persiste
 ```
 ==== W07 waypoint following, run from the model W07_wpt_los ====
   law 4,  waypoints 5,  Delta 5 m,  R_switch 3 m,  u_d 1 m/s
-  sections: A, B
-
----- A  one run of the whole route ------------------------------
+   one run of 400 s of track; a few minutes, with no output until it ends
+   the run took 240 s
 
   W07 waypoint following with allocation law 4
    run length                  274.12 s
@@ -2120,9 +2119,9 @@ The leg counter travels through a **visible** Unit Delay rather than a `persiste
 
 | What to try | What to watch |
 |---|---|
-| leave only the `'B'` line in `SEC` and run | $\Delta = 2$, $5$, $10$ m give $0.395$, $0.446$ and $0.533$ m rms over the same $180$ s window — a shorter window than section `A`'s, which is why its $\Delta = 5$ row reads $0.446$ and not $0.467$. A shorter lookahead holds the line more closely, and turns harder to do it |
-| set `Delta = 1` in `W07_0_setup` and run section `A` | the heading command begins to chatter between legs — the outer loop's gain is $1/\Delta$, and the loop is now faster than the autopilot under it |
-| set `law = 1` in `W07_vars` and run section `A` | the corners widen: the force lost at $\pm 45^\circ$ is no longer recovered, and the cross-track error at a corner grows |
+| set `Delta = 2` in `W07_0_setup`, run, then repeat with $10$ | the rms cross-track error moves in the same direction as $\Delta$: a shorter lookahead holds the line more closely, and turns harder to do it. The runner prints the rms over its own window, so compare the printed figure, not the picture |
+| set `Delta = 1` in `W07_0_setup` and run | the heading command begins to chatter between legs — the outer loop's gain is $1/\Delta$, and the loop is now faster than the autopilot under it |
+| set `law = 1` in `W07_vars` and run | the corners widen: the force lost at $\pm 45^\circ$ is no longer recovered, and the cross-track error at a corner grows |
 | set `R_switch = 10` | the corners are cut: the next leg becomes active before the vessel has arrived, which lowers $y_e$ at the cost of not passing the waypoint |
 
 ---
@@ -2206,9 +2205,8 @@ W07_pose_run            % runs the model and draws both figures
 ==== W07 position and heading control, model W07_pose_dp ====
   law 4,  target N 10 m  E 10 m  psi 45 deg,  Kp_pos 0.3
   speed cap on the outer loop: u 0.8 m/s,  v 0.6 m/s
-  sections: A, B
-
----- A  one run to the commanded pose ---------------------------
+   one run of 60 s of motion; no output until it ends
+   the run took 55 s
 
   W07 position and heading hold with allocation law 4
    run length                   60.00 s
@@ -2251,8 +2249,8 @@ W07_pose_run            % runs the model and draws both figures
 
 | What to try | What to watch |
 |---|---|
-| leave only the `'B'` line in `SEC` and run | $K_{p,\text{pos}} = 0.15$, $0.30$, $0.60$ settle in $26.08$, $19.44$ and $17.48$ s while peak $\lvert u\rvert$ stays at $0.836$ — past a point the cap sets the approach, not the gain |
-| set `psi_set = deg2rad(0)` and run section `A` | the vessel reaches the same point holding $0^\circ$: the path is unchanged, and the four units simply redistribute between surge and sway |
+| set `Kp_pos = 0.15` in `W07_0_setup`, run, then repeat with $0.60$ | the settling time falls, but far less than the gain rises, and the peak $\lvert u\rvert$ the runner prints hardly moves: past a point the cap sets the approach, not the gain |
+| set `psi_set = deg2rad(0)` and run | the vessel reaches the same point holding $0^\circ$: the path is unchanged, and the four units simply redistribute between surge and sway |
 | set `v_lim = 0` | the manoeuvre becomes §7-13's: no sway is commanded, and the position loop can only drive the vessel along its own bow |
 | set `p_d = [40; 0]` and raise `T_pose` to $120$ | the approach spends almost all of its time on the cap, and the settling time becomes distance divided by $u_{\text{lim}}$ |
 
@@ -2275,17 +2273,17 @@ The week runs out of **four files**. Every experiment of Part 1 is a block insid
 | 7-10 | `W07_alloc_chain` | `W07_alloc_run`, section `7-10` | laws 2 and 3 at the $45^\circ$ servo limit, and what folding costs |
 | 7-11 | `W07_alloc_chain` | `W07_alloc_run`, section `7-11` | law 4 with both limits inside the solve, and the $\varepsilon$ and $\mathbf{Q}$ sweeps |
 | 7-12 | `W07_alloc_chain` | `W07_alloc_run`, section `7-12` | the four laws side by side, one constant apart |
-| 7-13 | `W07_wpt_los` | `W07_3_build_wpt`, `W07_wpt_run` | the four-leg route under law 4. The $\Delta$ sweep is section `B` of the runner, commented out |
-| 7-14 | `W07_pose_dp` | `W07_4_build_pose`, `W07_pose_run` | the pose command at $(10,\,10)$ m and $45^\circ$. The $K_{p,\text{pos}}$ sweep is section `B` of the runner, commented out |
+| 7-13 | `W07_wpt_los` | `W07_3_build_wpt`, `W07_wpt_run` | the four-leg route under law 4, in one call of `sim` |
+| 7-14 | `W07_pose_dp` | `W07_4_build_pose`, `W07_pose_run` | the pose command at $(10,\,10)$ m and $45^\circ$, in one call of `sim` |
 
-**Choosing what runs.** Each file carries one list near its top, and one line of that list is one unit of work. Put a `%` in front of a line and it drops out; take the `%` away and it comes back. The two closed-loop runners are shipped with their sweep already commented out, because each sweep calls `sim` three more times and the figures the lecture carries all come out of section `A`.
+**Choosing what runs.** The two open-chain runners each carry one list near the top, and one line of that list is one unit of work. Put a `%` in front of a line and it drops out; take the `%` away and it comes back. The two closed-loop runners carry no list at all: each one calls `sim` exactly once, because a single run of a closed loop takes minutes and the figures and the numbers the lecture carries all come out of that one run. To see another value, change it in `W07_0_setup` and run the file again — which is what the "What to try" tables of §7-13 and §7-14 ask for.
 
 | File | The list | One line is |
 |---|---|---|
 | `W07_openloop_run.m` | `S`, eight rows | one scenario, `S1` to `S8` |
 | `W07_alloc_run.m` | `SEC`, five rows | one section, §7-8 to §7-12 |
-| `W07_wpt_run.m` | `SEC`, two rows | `A` the whole route, `B` the lookahead sweep (commented out) |
-| `W07_pose_run.m` | `SEC`, two rows | `A` one run to the pose, `B` the outer-gain sweep (commented out) |
+| `W07_wpt_run.m` | none | one run of the whole route |
+| `W07_pose_run.m` | none | one run to the commanded pose |
 
 **Running a model by hand.** Every runner leaves the first selected case in the base workspace — `n_cmd` and `d_cmd` for `W07_openloop`, `law` and `tau_cmd` for `W07_alloc_chain`, the whole constant set for the two closed-loop models. Opening that `.slx` and pressing Run repeats that one case, so the model file itself is never edited. The two closed-loop models also draw the live view while they run: the runners hold `animate` at $0$ for their own batch runs, but each one **clears that flag on its last line**, so the next press of Run finds the workspace clean and the model's own `InitFcn` raises `animate` back to $1$.
 
@@ -2316,8 +2314,8 @@ The week runs out of **four files**. Every experiment of Part 1 is a block insid
 | 12 | the shaft-speed limit shown to be the thrust cap | $119.682$ N ahead and $66.708$ N astern, the astern cap $56\%$ of the ahead one |
 | 13 | both limits put inside the solve, the force measured out of the hull | at $[340,\,60,\,25]$ the error falls $39.066 \to 0.018$ N, and law 4 is the only law with no unit clipped |
 | 14 | the four laws put into one model, selected by one constant | $28.333$, $29.677$, $29.677$ and $39.989$ N delivered of a $40$ N sway demand |
-| 15 | a four-leg route flown under law 4 with LOS guidance, and the lookahead distance swept over it | $0.467$ m rms cross-track, $71$ samples on the servo limit, $0$ clipped; $\Delta = 2$, $5$, $10$ m give $0.395$, $0.446$, $0.533$ m rms |
-| 16 | position and heading commanded together, and the outer-loop gain swept against the speed cap | $(10,\,10)$ m and $45^\circ$ reached to $0.000$ m and $0.003^\circ$; $K_{p,\text{pos}} = 0.15$, $0.30$, $0.60$ settle in $26.08$, $19.44$, $17.48$ s at peak $\lvert u\rvert = 0.836$ m/s |
+| 15 | a four-leg route flown under law 4 with LOS guidance | $0.467$ m rms cross-track, $71$ samples on the servo limit, $0$ clipped |
+| 16 | position and heading commanded together, against the speed cap | $(10,\,10)$ m and $45^\circ$ reached to $0.000$ m and $0.003^\circ$, settling in $19.44$ s at peak $\lvert u\rvert = 0.836$ m/s against a $0.80$ m/s command |
 
 ---
 
@@ -2335,7 +2333,7 @@ Requirements 1 to 3 are three runs of `W07_openloop`, eight numbers given by han
 3. **Break it deliberately.** Take the solution of requirement 2 and change one shaft speed by 10 %. Report what appears in $X$, $Y$ and $N$, and say which of the three asymmetries the change exposed.
 4. **Let the allocator choose, and audit it.** Take the pure-sway demand solved by hand in requirement 2 as `tau_cmd`, scale its sway component until the servo limit is exceeded, put $\mathbf{W} = \operatorname{diag}([1\ 10\ 1\ 10\ 1\ 10\ 1\ 10])$ on the workspace as `W_alloc`, and run `W07_alloc_chain` with `law` set to $1$, $2$, $3$ and $4$ in turn. From the per-unit table the model's `StopFcn` prints, report for each law the worst `d asked`, how many units carry a `servo` or `rpm` tag, and the `tau delivered` line with its error. State for which laws `d asked` and `d allowed` differ, and explain why the error printed there — measured **out of the motion model** — is not $\lVert\mathbf{B}\mathbf{f} - \boldsymbol{\tau}_d\rVert$ computed from the allocator's own eight components.
 5. **Find the second limit, and measure past it.** Derive both thrust caps from `otter_config('quad_tilt')` by §7-11 line 3 — not by copying $119.682$ N and $66.708$ N — and state which binds a pure surge demand and why. Then raise `tau_cmd = [X_d; 0; 0]` from $X_d = 100$ N in steps, with `law = 3`, until the per-unit table first shows an `rpm` tag; report that $X_d$ against the $372.78$ N envelope corner of §7-11 line 4, then press Run on the same demand with `law = 4`. For both laws report the four $T_i$ with the cap beside each, the worst `n asked`, the clip tags and the `tau delivered` error. Explain the direction in which law 4 moved the load between the two pairs, and why the scalar $\rho$ of §7-8 line 4-a could not have done the same.
-6. **Close the loop, and find the limit from inside it.** Run `W07_pose_run` as it is shipped, with only the `'A'` line of `SEC` active, then change `p_d` to a freely chosen pose at least $15$ m away and run again. Predict the settling time before running it, from $\lVert\mathbf{p}_d\rVert$ and $u_{\text{lim}}$ by §7-14 line 4, and report the prediction beside the measurement. Then lower `v_lim` to $0.20$ m/s and run a third time: report what happens to the path, to the peak $\lvert\delta_i\rvert$ of the limit figure, and to the settling time, and say which of the three the cap acted on directly. Finally set `law = 1` in `W07_vars` and repeat the first run: report the clip count of the limit figure and the final pose error, and explain why the clipped force shows up as a position error rather than as a force error.
+6. **Close the loop, and find the limit from inside it.** Run `W07_pose_run` as it is shipped, then change `p_d` to a freely chosen pose at least $15$ m away and run again. Predict the settling time before running it, from $\lVert\mathbf{p}_d\rVert$ and $u_{\text{lim}}$ by §7-14 line 4, and report the prediction beside the measurement. Then lower `v_lim` to $0.20$ m/s and run a third time: report what happens to the path, to the peak $\lvert\delta_i\rvert$ of the limit figure, and to the settling time, and say which of the three the cap acted on directly. Finally set `law = 1` in `W07_vars` and repeat the first run: report the clip count of the limit figure and the final pose error, and explain why the clipped force shows up as a position error rather than as a force error.
 
 ### ② Verification — mandatory
 
@@ -2394,7 +2392,7 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 | Law 2 and law 3 report **identical** force errors, which makes the fold look pointless | the plant clips at exactly the angle law 3 folded to | expected: $12.864$ N under both (Experiment 7-10). The fold earns no delivered force; it earns a command the allocator *knows* is legal |
 | The limit figure reports `100.0 %` used on the tilt axis and `0` samples clipped | `used` is the worst angle as a fraction of the limit; the clip count is how often the plant had to cut a command back | expected under law 4 only: the limit is inside the solve (§7-11 line 6). Set `law = 1` and the clip count stops being zero |
 | `W07_wpt_run` or `W07_pose_run` runs with no live view, while pressing Run on the model shows one | the runners set `animate = 0` and `W07_0_setup` sets it to $1$ | expected. The Animate block is never removed, only told to do nothing |
-| Pressing Run on `W07_pose_dp` or `W07_wpt_los` opens **no window at all** — no live view and no figure — although the run completes | an older copy of a section script left `W07quiet`, `W07batch` and `animate = 0` behind in the base workspace. `ensure_base_vars` fills only what is **missing**, so the stale $0$ outlives the `InitFcn`'s attempt to raise it | `clear W07batch W07quiet animate pace`, or simply run `W07_0_setup`, whose own `clear` does the same. The runners shipped with this week clear those four on their last line |
+| Pressing Run on `W07_pose_dp` or `W07_wpt_los` opens **no window at all** — no live view and no figure — although the run completes | an older copy of a runner left `W07quiet`, `W07batch` and `animate = 0` behind in the base workspace. `ensure_base_vars` fills only what is **missing**, so the stale $0$ outlives the `InitFcn`'s attempt to raise it | `clear W07batch W07quiet animate pace`, or simply run `W07_0_setup`, whose own `clear` does the same. The runners shipped with this week clear those four on their last line |
 | The run ends well before `T_wpt` | the guidance block drops `gate` at the last waypoint and a Stop Simulation block ends the run `stop_hold` seconds later | expected: $274.12$ s of a $400$ s stop time. `T_wpt` is an upper bound, not the run length |
 | A reader written by hand indexes the allocator log and gets a scalar where a column was expected | a To Workspace block in `'Array'` format writes a column-vector signal as $24\times1\times N$, not $N\times24$ | `squeeze` first and then transpose, as `W07_plot_sat` does |
 
