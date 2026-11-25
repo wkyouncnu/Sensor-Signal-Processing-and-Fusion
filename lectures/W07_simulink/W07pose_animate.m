@@ -50,13 +50,15 @@ pd = base_var('p_d', [10; 10]);
 
 o.tag   = 'W07pose_anim';
 o.name  = 'W07 live view  -  position hold';
-o.T     = base_var('T_pose', 60);          % 제목의 `t / T` 에 쓴다 / for t / T
+o.T     = base_var('T_pose', 60);          % 제목의 시간 상한 / the title's time cap
 o.lim   = [-6, max(pd(2)) + 8, -6, max(pd(1)) + 8];
 o.wp    = [];
 o.goal  = [pd(1), pd(2), rad2deg(base_var('psi_set', pi/4))];
 o.cmdNE = [7 8];                   % 바깥 고리가 위치를 명령한다 / a position command
-o.info  = {'N', 4, 1; 'E', 5, 1; '\psi', 6, 1; ...
-           'N_d', 7, 1; 'E_d', 8, 1; '\psi_d', 9, 1};
+%  넷째 칸이 **단위**다. 숫자만 있는 제목은 읽는 사람이 deg 인지 rad 인지
+%  되물어야 한다 (사용자 지시, 2026-11-25) / the fourth cell is the UNIT
+o.info  = {'N', 4, 1, 'm'; 'E', 5, 1, 'm'; '\psi', 6, 1, 'deg'; ...
+           'N_d', 7, 1, 'm'; 'E_d', 8, 1, 'm'; '\psi_d', 9, 1, 'deg'};
 
 %  한계 둘. 배분기가 쓴 것과 **같은 값**을 읽는다 — 화면의 빨간 선과 모델
 %  안의 포화가 어긋나면 그림이 거짓말을 한다

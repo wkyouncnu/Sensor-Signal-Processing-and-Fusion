@@ -89,7 +89,10 @@ function W07_anim(y, t, o)
 %                       .kpos  정추력 계수 [N/(rad/s)^2] / ahead coefficient
 %                       .kneg  역추력 계수             / astern coefficient
 %                       .Tref  꽉 찬 화살표의 추력 [N] / thrust of a full arrow
-%           .info     제목에 쓸 {이름, 열, 배율} 목록 / the title readouts
+%           .info     제목에 쓸 {이름, 열, 배율, 단위} 목록. 넷째 칸은 생략해도
+%                     되지만, 쓰면 숫자 뒤에 그대로 찍힌다 (deg·m/s·m)
+%                     the title readouts, {name, column, scale, unit}; the unit
+%                     may be omitted, and prints after the number when given
 %           .panels   오른쪽 칸들. 한 칸이 중괄호 하나다 / one brace per panel
 %                       {ylabel, [열…], {선모양…}, {색이름…}, {범례…}, 0선}
 %                     뒤에 셋을 더 붙일 수 있다 / three optional entries follow
@@ -111,7 +114,7 @@ function W07_anim(y, t, o)
 %
 %   See also W07WPT_ANIMATE, W07POSE_ANIMATE, W07_PLOT_WPT, W07_PLOT_POSE.
 
-persistent fig ax h S tLast tPrev every Lship
+persistent fig ax h S tLast tPrev every Lship G
 
 CAP0   = 4096;                 % 처음 잡아 두는 줄 수 / rows reserved at the start
 NMAX   = 32768;                % 그 이상은 한 칸 걸러 버린다 / then halve in place
@@ -150,7 +153,10 @@ if newRun
         Lship = 2.00;
     end
 
-    [fig, ax, h] = build_window(o, y, Lship);
+    %  그려지는 선체의 **윤곽**. 거치점 넷을 품어야 한다 / it must hold the four
+    G = hull_geom(o, Lship);
+
+    [fig, ax, h] = build_window(o, y, Lship, G);
 end
 
 %  표본을 쌓는다 — 미리 잡아 둔 칸에 **넣기만** 한다 / append, no reallocation
@@ -180,8 +186,19 @@ end
 
 %  그리는 간격. 매 스텝 그리면 시뮬레이션보다 그림이 느려진다
 %  the redraw interval: drawing every step makes the picture the bottleneck
+%
+%  **돌아가는 중에도 바꿀 수 있다** (사용자 지시, 2026-11-25). 매 **다시 그릴
+%  때마다** 작업공간의 `animate_every` 를 새로 읽으므로, 운항이 지루하면
+%  명령창에 `animate_every = 2` 를 치면 그 자리에서 빨라지고, 자세히 보고
+%  싶으면 `animate_every = 0.1` 로 되돌린다. Run 을 다시 누를 필요가 없다.
+%  읽기는 다시 그릴 때 한 번뿐이라 매 스텝 비용이 아니다
+%  the interval is LIVE: animate_every is re-read at each redraw, so typing
+%  `animate_every = 2` at the prompt speeds a running simulation up at once,
+%  and 0.1 slows it back down. No need to stop and press Run again. The read
+%  costs one evalin per redraw, not one per step
 if t - tLast < every, return; end
 tLast = t;
+every = max(base_var('animate_every', 0.5), 0);
 
 %  그릴 점만 고른다. 마지막 점은 언제나 들어간다 / the points to draw
 idx = draw_idx(S.n, MAXPTS);
@@ -192,25 +209,34 @@ N = y(4);  E = y(5);  psi = y(6);          % psi 는 **도** / psi in degrees
 %% ---- 왼쪽: 항적 / left: the track ------------------------------------
 Yd = S.Y(idx,:);
 set(h.trail, 'XData', Yd(:,5), 'YData', Yd(:,4));
-[hE, hN] = hull_ned(N, E, psi*pi/180, Lship);
+[hE, hN] = hull_ned(N, E, psi*pi/180, G);
 set(h.hull, 'XData', hE, 'YData', hN);
-set(h.head, 'XData', [E, E + 1.2*Lship*sind(psi)], ...
-            'YData', [N, N + 1.2*Lship*cosd(psi)]);
+%  선수 방향선은 **뱃머리 바로 앞까지**만. 선체가 거치점을 품을 만큼 커졌으므로
+%  긴 선은 그 자체가 또 하나의 물체처럼 보인다 (사용자 지시, 2026-11-25)
+%  the heading line now stops just ahead of the bow: with a hull large enough to
+%  hold the mounting points, a long line reads as another object of its own
+set(h.head, 'XData', [E, E + 1.05*G.af*sind(psi)], ...
+            'YData', [N, N + 1.05*G.af*cosd(psi)]);
 set(h.dot,  'XData', E, 'YData', N);
 
 %  추진기 넷의 힘과 서보각 / the thrust and the servo angle of each unit
 if ~isempty(o.thr)
-    [aE, aN, zE, zN] = thruster_arrows(y, psi*pi/180, N, E, o.thr, Lship);
+    [aE, aN, zE, zN, pE, pN, dE, dN] = ...
+        thruster_arrows(y, psi*pi/180, N, E, o.thr, Lship);
     set(h.thr0, 'XData', zE, 'YData', zN);
     set(h.thr,  'XData', aE, 'YData', aN);
+    set(h.thrH, 'XData', pE, 'YData', pN);
+    set(h.thrP, 'XData', dE, 'YData', dN);
 end
-fit_lims(ax.xy, E, N, max(3, 0.6*Lship));
+%  여백은 **윤곽과 꽉 찬 화살표**를 합친 것만큼 / pad by hull plus a full arrow
+pad = max(3, 1.1*(G.af + 2.20*G.mag));
+fit_lims(ax.xy, E, N, pad);
 
 %  명령 위치가 있는 모델이면 그 자취도 함께 / the commanded position, if any
 if ~isempty(o.cmdNE)
     set(h.cmd,  'XData', S.Y(idx,o.cmdNE(2)), 'YData', S.Y(idx,o.cmdNE(1)));
     set(h.mark, 'XData', y(o.cmdNE(2)),       'YData', y(o.cmdNE(1)));
-    fit_lims(ax.xy, y(o.cmdNE(2)), y(o.cmdNE(1)), max(3, 0.6*Lship));
+    fit_lims(ax.xy, y(o.cmdNE(2)), y(o.cmdNE(1)), pad);
 end
 
 set(h.info, 'String', info_lines(t, y, o));
@@ -235,7 +261,7 @@ drawnow limitrate
 end
 
 % =========================================================================
-function [fig, ax, h] = build_window(o, y, Lship)
+function [fig, ax, h] = build_window(o, y, Lship, G)
 %  창 하나를 짓는다. 축과 핸들을 돌려주므로 매 스텝 `set` 만 한다
 %  build the window once; every step afterwards is a set() on these handles
 
@@ -295,7 +321,7 @@ end
 %  목표 자세는 **점선 선체**로. 점 하나로는 선수각 명령이 보이지 않는다
 %  the target pose as a dashed hull: a marker alone cannot show a heading
 if ~isempty(o.goal)
-    [gE, gN] = hull_ned(o.goal(1), o.goal(2), o.goal(3)*pi/180, Lship);
+    [gE, gN] = hull_ned(o.goal(1), o.goal(2), o.goal(3)*pi/180, G);
     patch('Parent', ax.xy, 'XData', gE, 'YData', gN, 'FaceColor','none', ...
           'EdgeColor', P.cmd, 'LineStyle','--', 'LineWidth', 1.1, ...
           'DisplayName', 'target pose');
@@ -338,17 +364,26 @@ h.trail = plot(ax.xy, nan, nan, '-', 'Color', P.act, 'LineWidth', 1.4, ...
 %  이전 주차의 문구를 그대로 쓴다 — `W06_animate` 는 `hull (2.0 m, true size)`
 %  다. 넓은 장면에서는 키워 그리므로 **몇 배인지**를 적는다
 %  the earlier weeks' wording, with the magnification named when there is one
+%  **윤곽은 폰툰과 거치 암을 함께 싼 것**이라 2.0 m 가 아니라 3.35 m 다 —
+%  오픈루프 실습 그림(`_tools/quad_thrust_plan`)이 그리는 그 윤곽이다
+%  the outline wraps the pontoons AND the mounting arms, 3.35 m rather than
+%  2.0 m: the same outline the open-loop practice figure draws
 if Lship > 2.001
-    hullName = sprintf('hull (2.0 m, drawn x%.1f)', Lship/2.00);
+    hullName = sprintf('hull and arms (%.2f m, drawn x%.1f)', G.len, G.mag);
 else
-    hullName = 'hull (2.0 m, true size)';
+    hullName = sprintf('hull and arms (%.2f m, true size)', G.len);
 end
+%  **반투명**이다. 거치점을 품을 만큼 커진 윤곽을 꽉 채워 칠하면 화살표가 그
+%  안에 잠겨 보이지 않는다 — 오픈루프 그림도 폰툰을 옅게 칠하고 화살표를 그
+%  위에 올린다 / translucent: a filled outline large enough to hold the stations
+%  drowns the arrows, and the open-loop figure likewise draws pale pontoons
+%  with the arrows over them
 h.hull  = patch('Parent', ax.xy, 'XData', nan, 'YData', nan, ...
-                'FaceColor', [0.95 0.45 0.20], 'FaceAlpha', 0.90, ...
-                'EdgeColor', [0.40 0.15 0.05], 'LineWidth', 1.1, ...
+                'FaceColor', [0.96 0.72 0.50], 'FaceAlpha', 0.55, ...
+                'EdgeColor', [0.40 0.15 0.05], 'LineWidth', 1.2, ...
                 'DisplayName', hullName);
 h.head  = plot(ax.xy, nan, nan, '-', 'Color', [0.40 0.15 0.05], ...
-               'LineWidth', 1.5, 'HandleVisibility','off');
+               'LineWidth', 1.2, 'HandleVisibility','off');
 h.dot   = plot(ax.xy, nan, nan, 'k.', 'MarkerSize', 9, 'HandleVisibility','off');
 
 %  추진기 넷. 점선 토막이 **그 유닛의 0 도**이고 화살표가 그 순간의 추력
@@ -360,14 +395,30 @@ h.dot   = plot(ax.xy, nan, nan, 'k.', 'MarkerSize', 9, 'HandleVisibility','off')
 %  into two line objects separated by NaN, two set() calls per step. The stubs
 %  are created first so the arrows draw on top of them.
 if ~isempty(o.thr)
+    ARR = [0.78 0.10 0.12];        % 오픈루프 그림의 빨강보다 짙다 / deeper than the open-loop red
     h.thr0 = plot(ax.xy, nan, nan, ':', 'Color', [0.35 0.35 0.35], ...
-                  'LineWidth', 0.9, ...
+                  'LineWidth', 1.0, ...
                   'DisplayName', 'servo zero of each unit');
-    h.thr  = plot(ax.xy, nan, nan, '-', 'Color', [0.64 0.08 0.18], ...
-                  'LineWidth', 1.6, 'DisplayName', ...
-                  sprintf('thrust of each unit (full arrow %.0f N)', o.thr.Tref));
+    h.thr  = plot(ax.xy, nan, nan, '-', 'Color', ARR, ...
+                  'LineWidth', 2.4, 'DisplayName', ...
+                  sprintf('thrust of each unit (full arrow %.0f N, length \\propto \\surd|T|)', ...
+                          o.thr.Tref));
+    %  화살머리는 **채운 삼각형**이다. 선 두 토막으로 그린 머리는 넓은 장면에서
+    %  보이지 않아 방향을 읽을 수 없었다 (사용자 지시, 2026-11-25). 넷을 한
+    %  patch 의 **열 넷**으로 담으므로 매 스텝 `set` 한 번이면 끝난다.
+    %  the head is a FILLED triangle: two short line segments vanished in a
+    %  wide scene and the direction could not be read. All four heads are four
+    %  COLUMNS of one patch, so one set() per step draws them.
+    h.thrH = patch('Parent', ax.xy, 'XData', nan(3,1), 'YData', nan(3,1), ...
+                   'FaceColor', ARR, 'EdgeColor', 'none', ...
+                   'HandleVisibility', 'off');
+    %  거치점. 오픈루프 그림의 검은 점과 같은 뜻이다 / the station, as there
+    h.thrP = plot(ax.xy, nan, nan, 'o', 'MarkerSize', 4, ...
+                  'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'none', ...
+                  'HandleVisibility', 'off');
 else
-    h.thr0 = gobjects(0);  h.thr = gobjects(0);
+    h.thr0 = gobjects(0);  h.thr  = gobjects(0);
+    h.thrH = gobjects(0);  h.thrP = gobjects(0);
 end
 
 if numel(o.lim) == 4
@@ -491,13 +542,43 @@ function s = info_lines(t, y, o)
 %  **얼마나 남았는지** 보인다. 400 초짜리 운항은 실제로 몇 분이 걸리는데,
 %  남은 양이 보이지 않으면 멎은 것으로 읽힌다 (사용자 지시, 2026-11-24)
 %  how much is left: a run of minutes with no sense of progress reads as a hang
+%
+%  다만 **`o.T` 는 상한이다.** 마지막 웨이포인트에 닿으면 Stop 블록이 시계보다
+%  먼저 선다 — 다섯 점을 다 돈 운항이 274 s / 400 s 로 끝나므로, "t / T" 만
+%  쓰면 멀쩡히 끝난 운항이 "68 % 에서 멎었다" 로 읽힌다 (사용자 지시, 2026-11-25)
+%  o.T is a CAP, not the finish line: the Stop block fires on arrival, so a
+%  route flown to its end stops at 274 s of 400 s. Showing t/T alone makes a
+%  completed run read as one that quit at 68 % of the clock
 if isfield(o, 'T') && ~isempty(o.T) && o.T > 0
-    L = {sprintf('t = %6.2f / %g s  (%3.0f%%)', t, o.T, 100*min(t/o.T, 1))};
+    L = {sprintf('t = %6.2f s  (limit %g s)', t, o.T)};
 else
     L = {sprintf('t = %6.2f s', t)};
 end
+%  끝났는지 아닌지는 시계가 아니라 **마지막 점까지의 거리**가 말한다.
+%  그 거리가 전환 반지름 안에 들면 운항이 완주한 것이다
+%  what says whether the run is done is the distance to the LAST waypoint,
+%  not the clock: inside the switching circle, the route has been flown
+if isfield(o, 'wp') && ~isempty(o.wp)
+    dl = hypot(o.wp(end,1) - y(4), o.wp(end,2) - y(5));
+    nw = size(o.wp, 1);
+    if dl <= base_var('R_switch', 3)
+        L{end+1} = sprintf('wp %d of %d  reached', nw, nw);
+    else
+        L{end+1} = sprintf('to wp %d  %5.1f m', nw, dl);
+    end
+end
+%  **단위를 붙여 쓴다.** 숫자만 적으면 각이 deg 인지 rad 인지, 속도가 m/s
+%  인지 kn 인지 화면에서 알 수 없다 (사용자 지시, 2026-11-25)
+%  each readout carries its UNIT: a bare number leaves the reader guessing
+%  whether an angle is deg or rad, a speed m/s or knots
+hasU = size(o.info, 2) >= 4;
 for i = 1:size(o.info, 1)
-    L{end+1} = sprintf('%s %7.2f', o.info{i,1}, y(o.info{i,2})*o.info{i,3}); %#ok<AGROW>
+    v = y(o.info{i,2})*o.info{i,3};
+    if hasU && ~isempty(o.info{i,4})
+        L{end+1} = sprintf('%s %7.2f %s', o.info{i,1}, v, o.info{i,4}); %#ok<AGROW>
+    else
+        L{end+1} = sprintf('%s %7.2f', o.info{i,1}, v);                 %#ok<AGROW>
+    end
 end
 
 %  세 토막씩 끊는다. 한 줄에 몰면 제목이 그림 폭을 넘어 잘린다
@@ -509,7 +590,8 @@ end
 end
 
 % =========================================================================
-function [aE, aN, zE, zN] = thruster_arrows(y, psi, N, E, T, Lship)
+function [aE, aN, zE, zN, pE, pN, dE, dN] = ...
+                             thruster_arrows(y, psi, N, E, T, Lship)
 %THRUSTER_ARROWS  추진기 넷의 힘과 서보각을, 강의자료와 **같은 규칙**으로
 %                 the four units' thrust and tilt, by the week's own rule
 %
@@ -533,6 +615,7 @@ function [aE, aN, zE, zN] = thruster_arrows(y, psi, N, E, T, Lship)
 %  different coefficients ahead and astern, rather than from an extra log
 %  column, because widening the log would disturb every week's contract.
 aE = nan(0,1);  aN = nan(0,1);  zE = nan(0,1);  zN = nan(0,1);
+pE = nan(3,0);  pN = nan(3,0);  dE = nan(0,1);  dN = nan(0,1);
 
 %  길이는 **전부 `mag` 로 잰다** / every length is measured in mag
 %      `mag` 은 "실제 1 m 가 화면에서 몇 m 로 그려지는가" 다. 거치점은 그것으로
@@ -543,10 +626,23 @@ aE = nan(0,1);  aN = nan(0,1);  zE = nan(0,1);  zN = nan(0,1);
 %      the arrows by Lship made a full arrow longer than the hull in the 200 m
 %      scene, and four of them read as one line. Arrow, stub and cut-off are
 %      all in mag, so the picture looks the same at either scale.
+%  길이 규칙은 **제곱근**이다 / the length rule is a SQUARE ROOT
+%      $u_d=1$ m/s 로 항행하는 동안 유닛 하나가 내는 추력은 7 N 안팎이고
+%      $T_{ref}=120$ N 이다. 길이를 $|T|$ 에 **비례**시키면 그 화살표가 꽉 찬
+%      것의 6 % 라, 넓은 장면에서는 점이 되어 방향도 크기도 보이지 않았다
+%      (사용자 지시, 2026-11-25). 그래서 $0.25+0.75\sqrt{|T|/T_{ref}}$ 로
+%      그린다 — 단조이고, 꽉 찬 화살표는 여전히 $T_{ref}$ 이며, 작은 추력도
+%      방향을 읽을 만큼 남는다. 범례가 그 규칙을 밝힌다.
+%      At u_d = 1 m/s one unit gives about 7 N against a 120 N reference, so a
+%      length proportional to |T| drew 6 per cent of a full arrow — a dot, with
+%      neither direction nor size readable. The rule is 0.25 + 0.75*sqrt(ratio):
+%      monotone, still exactly Tref at a full arrow, and small thrusts keep
+%      enough length to show which way they point. The legend names the rule.
 nU   = numel(T.n);
 mag  = Lship/2.00;        % 선체를 키운 그 배율 / the hull's own magnification
-Lmax = 1.00*mag;          % 꽉 찬 화살표 = 선체 길이의 절반 / half the hull
-hw   = 0.22;              % 화살머리의 몫 / the head, as a fraction
+Lmax = 2.20*mag;          % 꽉 찬 화살표 / a full arrow, in drawn metres
+hfr  = 0.24;              % 화살머리의 몫 / the head, as a fraction of Lr
+hmin = 0.32*mag;          % 화살머리의 최소 길이 / its floor, so it stays sharp
 c    = cos(psi);  s = sin(psi);
 
 for i = 1:nU
@@ -555,45 +651,91 @@ for i = 1:nU
     sN = N + xb*c - yb*s;
     sE = E + xb*s + yb*c;
 
+    %  거치점 하나에 점 하나. 화살표가 **어디서 나오는지**를 그것이 말한다
+    %  one dot per station: it says where the arrow comes from
+    dN = [dN; sN];                                               %#ok<AGROW>
+    dE = [dE; sE];                                               %#ok<AGROW>
+
     %  0 도 토막. 거치 부호가 선미 쌍을 뒤로 돌린다 / the servo zero
-    z0 = T.mount(i)*0.25*mag;
+    z0 = T.mount(i)*0.45*mag;
     zN = [zN; sN; sN + z0*c; nan];                               %#ok<AGROW>
     zE = [zE; sE; sE + z0*s; nan];                               %#ok<AGROW>
 
     %  추력. 정·역의 계수가 다르다 / the thrust, with two coefficients
     nn = y(T.n(i));
     if nn >= 0, Ti = T.kpos*nn*nn; else, Ti = -T.kneg*nn*nn; end
-    Lr = min(abs(Ti)/T.Tref, 1)*Lmax;
-    if Lr < 0.08*mag, continue; end     % 거의 0 이면 그리지 않는다 / skip
+    if abs(Ti) < 0.5, continue; end     % 0.5 N 아래면 그리지 않는다 / skip
+    Lr = (0.25 + 0.75*sqrt(min(abs(Ti)/T.Tref, 1)))*Lmax;
 
     %  추력 벡터. $\delta$ 는 그 쌍의 0 도에서 잰다 / delta from that zero
     d  = y(T.d(i));
     eb = sign(Ti)*T.mount(i)*[cos(d); sin(d)];
     vN = Lr*(eb(1)*c - eb(2)*s);
     vE = Lr*(eb(1)*s + eb(2)*c);
-    tN = sN + vN;   tE = sE + vE;
+    tN = sN + vN;   tE = sE + vE;       % 화살표 끝 / the tip
 
-    %  화살머리 둘. 축을 따라 물러난 뒤 좌우로 벌린다 / the two barbs
+    %  단위벡터와 그 수직 / the unit vector along the arrow, and its normal
     uN = vN/Lr;  uE = vE/Lr;
-    pN = -uE;    pE = uN;
-    h1N = tN - hw*Lr*uN + 0.5*hw*Lr*pN;   h1E = tE - hw*Lr*uE + 0.5*hw*Lr*pE;
-    h2N = tN - hw*Lr*uN - 0.5*hw*Lr*pN;   h2E = tE - hw*Lr*uE - 0.5*hw*Lr*pE;
+    qN = -uE;    qE = uN;
 
-    aN = [aN; sN; tN; nan; h1N; tN; h2N; nan];                   %#ok<AGROW>
-    aE = [aE; sE; tE; nan; h1E; tE; h2E; nan];                   %#ok<AGROW>
+    %  채운 삼각형 하나. 끝점이 **뾰족한 꼭지**이고, 밑변은 축을 따라 `hl` 만큼
+    %  물러난 자리에서 좌우로 `0.40*hl` 씩 벌어진다. 길이에 비례시키되 바닥을
+    %  두어, 추력이 작아도 꼭지가 뭉개지지 않는다
+    %  one filled triangle: the tip is the sharp apex, and the base sits hl back
+    %  along the axis, 0.40*hl to each side. Proportional to the length but with
+    %  a floor, so the point stays sharp at small thrust
+    hl = max(hfr*Lr, hmin);
+    hb = 0.40*hl;
+    bN = tN - hl*uN;   bE = tE - hl*uE;
+    pN = [pN, [tN; bN + hb*qN; bN - hb*qN]];                     %#ok<AGROW>
+    pE = [pE, [tE; bE + hb*qE; bE - hb*qE]];                     %#ok<AGROW>
+
+    %  자루는 머리 밑변까지만. 더 뻗으면 삼각형 안으로 선이 비친다
+    %  the shaft stops at the base of the head, or it shows through it
+    Ls = max(Lr - hl, 0);
+    aN = [aN; sN; sN + Ls*uN; nan];                              %#ok<AGROW>
+    aE = [aE; sE; sE + Ls*uE; nan];                              %#ok<AGROW>
 end
 end
 
 % =========================================================================
-function [xe, yn] = hull_ned(N, E, psi, L)
-%  선체 윤곽을 NED 로. `_tools/draw_ship` 과 **같은 다각형**이고, `L` 은
-%  **그려지는** 길이다 — 실제 전장은 2.0 m 로 바뀌지 않는다
-%  the hull outline in NED: the same polygon as draw_ship. L is the DRAWN
-%  length; the true overall length stays 2.0 m whatever is drawn.
-a  = L/2;
-b  = L*(1.08/2.00)/2;              % 반폭 — 실제 비율 그대로 / half beam
-bx = [ -a   -a    0.25*a   a    0.25*a ];
-by = [  b   -b   -b        0    b      ];
+function G = hull_geom(o, Lship)
+%HULL_GEOM  그려지는 선체 윤곽의 치수. **거치점 넷을 품는다**
+%           the drawn hull's extents: it must CONTAIN the four stations
+%
+%  왜 2.0 m 가 아닌가 / why not 2.0 m
+%      Otter 의 폰툰 전장은 2.0 m 지만, 네 유닛은 $x_b=+1.5$ 와 $-1.0$ 에
+%      달린다. 반길이 1.0 m 로 그리면 뱃머리 쪽 둘이 **윤곽 밖 1.5 m** 에 서고,
+%      그래서 화살표가 선체에서 떨어져 나와 따로 떠 보였다 (사용자 지시,
+%      2026-11-25). 오픈루프 실습 그림(`_tools/quad_thrust_plan`)은 폰툰을
+%      $x\in[-1.45,\,1.90]$ 으로 그려 거치점을 품는다 — **같은 윤곽을 쓴다.**
+%      The pontoons are 2.0 m, but the units sit at x_b = +1.5 and -1.0. Drawn
+%      with a 1.0 m half-length the forward pair stood 1.5 m OUTSIDE the
+%      outline, which is why the arrows looked detached. The open-loop practice
+%      figure draws the pontoons over x in [-1.45, 1.90], holding the stations
+%      inside; this is that same outline.
+G.mag = Lship/2.00;               % 실제 1 m 가 화면에서 몇 m 인가 / the scale
+
+af = 1.90;   aa = 1.45;           % 실제 치수 / in true metres
+if ~isempty(o.thr) && isfield(o.thr, 'pos')
+    %  거치점이 그보다 멀면 윤곽을 **그만큼 더** 늘린다 / grow to hold them
+    af = max(af, max(o.thr.pos(1,:)) + 0.40);
+    aa = max(aa, -min(o.thr.pos(1,:)) + 0.40);
+end
+G.len = af + aa;                  % 그려지는 전장 (실제 m) / drawn overall
+G.af  = af*G.mag;                 % 화면 치수 / in drawn metres
+G.aa  = aa*G.mag;
+G.b   = 0.54*G.mag;               % 반폭 — 실제 1.08 m 그대로 / half beam
+end
+
+% =========================================================================
+function [xe, yn] = hull_ned(N, E, psi, G)
+%  선체 윤곽을 NED 로. `_tools/draw_ship` 과 **같은 모양**이고, 치수는
+%  `hull_geom` 이 잰 **그려지는** 치수다 — 실제 전장은 2.0 m 로 바뀌지 않는다
+%  the hull outline in NED: the shape of draw_ship, at the DRAWN extents
+%  hull_geom measured. The true overall length stays 2.0 m whatever is drawn.
+bx = [ -G.aa   -G.aa    0.25*G.af   G.af    0.25*G.af ];
+by = [  G.b    -G.b    -G.b         0       G.b       ];
 yn = N + bx*cos(psi) - by*sin(psi);
 xe = E + bx*sin(psi) + by*cos(psi);
 end

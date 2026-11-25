@@ -55,13 +55,16 @@ function o = wpt_spec()
 %WPT_SPEC  이 Run 에서 그릴 것 / what this run draws
 o.tag   = 'W07wpt_anim';
 o.name  = 'W07 live view  -  waypoint following';
-o.T     = base_var('T_wpt', 400);          % 제목의 `t / T` 에 쓴다 / for t / T
+o.T     = base_var('T_wpt', 400);          % 제목의 시간 상한 / the title's time cap
 o.lim   = [base_var('track_Emin', -60), base_var('track_Emax', 140), ...
            base_var('track_Nmin', -60), base_var('track_Nmax', 140)];
 o.wp    = [base_var('WP_N', 0), base_var('WP_E', 0)];
 o.goal  = [];
 o.cmdNE = [];                      % LOS 는 위치를 명령하지 않는다 / no position command
-o.info  = {'\psi', 6, 1; '\psi_d', 7, 1; 'u', 1, 1; 'u_d', 8, 1; 'y_e', 9, 1};
+%  넷째 칸이 **단위**다. 숫자만 있는 제목은 읽는 사람이 deg 인지 rad 인지
+%  되물어야 한다 (사용자 지시, 2026-11-25) / the fourth cell is the UNIT
+o.info  = {'\psi', 6, 1, 'deg'; '\psi_d', 7, 1, 'deg'; ...
+           'u', 1, 1, 'm/s'; 'u_d', 8, 1, 'm/s'; 'y_e', 9, 1, 'm'};
 
 %  한계 둘. 배분기가 쓴 것과 **같은 값**을 읽는다 — 화면의 빨간 선과 모델
 %  안의 포화가 어긋나면 그림이 거짓말을 한다

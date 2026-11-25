@@ -2056,9 +2056,39 @@ The runner reads its values from `W07_vars`, so nothing has to be set up first, 
 > geometry figure of §7-2 uses: a dotted stub at that unit's servo zero —
 > $+x_b$ for the bow pair, $-x_b$ for the stern pair, by the mounting sign of
 > the column rule — and an arrow along its thrust vector, so the opening
-> between the two **is** $\delta_i$ and the length is $\lvert T_i \rvert$ with a
-> full arrow at the forward cap. A unit driven astern turns its arrow round,
+> between the two **is** $\delta_i$. A unit driven astern turns its arrow round,
 > which is how a stern pair pushing the hull forward reads on the screen.
+> The outline under the arrows is not the $2.0$ m pontoon but the envelope that
+> contains the four stations, $x_b \in [-1.45,\ +1.90]$ m — the same outline
+> `_tools/quad_thrust_plan` draws for the open-loop plan of §7-2 — so every
+> arrow leaves the hull rather than floating beside it, and it is filled
+> translucent so an arrow crossing it stays readable.
+> Arrow length is deliberately **not** linear in $\lvert T_i \rvert$. Holding
+> $u_d = 1$ m/s on a straight leg costs $19.39$ N a unit against the $119.68$ N
+> of a full arrow, which a linear rule would draw at $16$ per cent of full
+> length — a dot. The rule drawn instead is
+>
+> $$L_i \;=\; \left(0.25 + 0.75\sqrt{\frac{\lvert T_i \rvert}{T_{\mathrm{ref}}}}\right) L_{\max},$$
+>
+> monotone in $\lvert T_i \rvert$ and exactly $L_{\max}$ at the cap, which puts
+> that same cruise thrust at $55$ per cent. The legend names the rule so the
+> length is never read as a proportion.
+> The title of the track is the run's instrument panel, and every number on it
+> carries its unit — `deg` for the two headings, `m/s` for the two speeds, `m`
+> for the cross-track error — so an angle is never read as radians. Its first
+> line is `t = 274.00 s (limit 400 s)`, a clock and a cap rather than a
+> percentage, and its second says `to wp 5 109.3 m` while the route is being
+> flown and `wp 5 of 5 reached` once the hull is inside $R_{\text{switch}}$ of
+> the last waypoint. That second line, not the clock, is what says whether a
+> run that stopped early finished its route or quit.
+> The redraw interval is `animate_every`, in seconds of simulated time, and it
+> may be changed **while the run is going**: the animation re-reads it at every
+> redraw, so typing `animate_every = 2` at the prompt speeds up a leg that has
+> become dull, and `0.1` makes the next turn smooth again, with no stop and no
+> second press of Run. The interval costs real time — a $40$ s stretch of this
+> route took $67.6$ s of wall clock at $0.2$ and $43.2$ s at $3$, a factor of
+> $1.56$ — and changes nothing in the numbers, since the solver step is fixed
+> at $h = 0.02$ s either way.
 > The `InitFcn` is what makes this work: it puts `_tools` and the week folder on
 > the path, calls `mss_path`, fills in any constant the base workspace is
 > missing, raises `animate` to $1$ and reads `pace`. The `StopFcn` then calls
@@ -2194,6 +2224,9 @@ W07_pose_run            % runs the model and draws both figures
 > more here than on a route: a hull that is standing still gets no help from
 > its own damping, so the four arrows are what is holding it, and the pairs can
 > be seen opposing each other long before any $n_i$ reaches a limit line.
+> The title reads $N$, $E$ and $\psi$ against their commands in `m` and `deg`
+> instead of the waypoint readouts, and the clock, the units and the live
+> `animate_every` knob behave exactly as §7-13 describes.
 > The `InitFcn` and the `StopFcn` do what §7-13 describes, with `W07_plot_pose`
 > in the place of `W07_plot_wpt`.
 
@@ -2393,7 +2426,8 @@ Requirement 2 asked for a pure sway and the vessel can produce one, while requir
 | The limit figure reports `100.0 %` used on the tilt axis and `0` samples clipped | `used` is the worst angle as a fraction of the limit; the clip count is how often the plant had to cut a command back | expected under law 4 only: the limit is inside the solve (§7-11 line 6). Set `law = 1` and the clip count stops being zero |
 | `W07_wpt_run` or `W07_pose_run` runs with no live view, while pressing Run on the model shows one | the runners set `animate = 0` and `W07_0_setup` sets it to $1$ | expected. The Animate block is never removed, only told to do nothing |
 | Pressing Run on `W07_pose_dp` or `W07_wpt_los` opens **no window at all** — no live view and no figure — although the run completes | an older copy of a runner left `W07quiet`, `W07batch` and `animate = 0` behind in the base workspace. `ensure_base_vars` fills only what is **missing**, so the stale $0$ outlives the `InitFcn`'s attempt to raise it | `clear W07batch W07quiet animate pace`, or simply run `W07_0_setup`, whose own `clear` does the same. The runners shipped with this week clear those four on their last line |
-| The run ends well before `T_wpt` | the guidance block drops `gate` at the last waypoint and a Stop Simulation block ends the run `stop_hold` seconds later | expected: $274.12$ s of a $400$ s stop time. `T_wpt` is an upper bound, not the run length |
+| The run ends well before `T_wpt` | the guidance block drops `gate` at the last waypoint and a Stop Simulation block ends the run `stop_hold` seconds later | expected: $274.12$ s of a $400$ s stop time. `T_wpt` is an upper bound, not the run length. The live view's title says which it was — it reads `wp 5 of 5 reached` on a completed route, and `to wp 5  109.3 m` on one that ran out of clock |
+| The vessel stops after one or two legs, nowhere near waypoint 5, and the live title still counts up to the full `T_wpt` | a short `T_wpt` left in the base workspace by an earlier experiment. `ensure_base_vars` fills only what is **missing**, so a stale value survives a press of Run exactly as a stale `animate` does | run `W07_0_setup` before pressing Run; it reassigns `T_wpt = 400`. The title prints the cap in use, `(limit 400 s)`, so a wrong one is visible from the first frame |
 | A reader written by hand indexes the allocator log and gets a scalar where a column was expected | a To Workspace block in `'Array'` format writes a column-vector signal as $24\times1\times N$, not $N\times24$ | `squeeze` first and then transpose, as `W07_plot_sat` does |
 
 ---
